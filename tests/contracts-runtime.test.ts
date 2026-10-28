@@ -8,6 +8,38 @@ import { createContractApiRouter } from "../src/contracts/contracts.router.ts";
 import { prisma } from "../src/db.ts";
 import { assertRecord, getServerPort, resetDatabase } from "./helpers.ts";
 import { createProjectFixture, createSupplierFixture } from "./project-fixtures.ts";
+import { TradeError } from "../src/trade/errors.ts";
+
+async function createAcceptedApplication() {
+  const project = await createProjectFixture({ status: "ACCEPTED" });
+  const supplier = await createSupplierFixture();
+  const specItemId = project.itemIds[0];
+  if (!specItemId) throw new Error("계약 범위 항목이 필요합니다.");
+  const application = await prisma.application.create({
+    data: {
+      projectId: project.projectId,
+      supplierId: supplier.id,
+      revisionNo: 1,
+      specVersionNo: 1,
+      status: "ACCEPTED",
+      totalAmount: 240_001,
+      durationDays: 14,
+      firstViewedAt: new Date("2026-10-28T00:00:00Z"),
+      items: { create: [{ specItemId, isAvailable: true, amount: 240_001 }] },
+    },
+  });
+  return { application, project, supplier, specItemId };
+}
+
+function contractTestAuth(projectClientId: string, supplierId: string) {
+  return async (request: Request) => {
+    const userId = request.header("x-test-user");
+    if (userId === projectClientId) return { userId, role: Role.CLIENT };
+    if (userId === supplierId) return { userId, role: Role.SUPPLIER };
+    if (userId === "other-client") return { userId, role: Role.CLIENT };
+    return null;
+  };
+}
 
 describe("production 계약 라우터 조립", () => {
   beforeEach(async () => {
@@ -180,5 +212,129 @@ describe("production 계약 라우터 조립", () => {
       expiresInSeconds: 300,
       download: true,
     })).rejects.toHaveProperty("code", "CONTRACT_PDF_URL_FAILED");
+  });
+
+  it("수락 지원서의 금액으로 계약을 만들고 의뢰인 본인만 생성할 수 있다", async () => {
+    const { application, project, supplier, specItemId } = await createAcceptedApplication();
+    const uploads: string[] = [];
+    const router = createContractApiRouter({
+      prismaClient: prisma,
+      bucket: "contracts",
+      storage: {
+        uploadPrivateObject: async ({ path }) => { uploads.push(path); },
+        createSignedUrl: async () => { throw new Error("다운로드는 호출하지 않아야 합니다."); },
+      },
+    });
+    const app = createApp({
+      prismaClient: prisma,
+      authVerifier: contractTestAuth(project.clientId, supplier.id),
+      extraRouters: [router],
+    });
+    const server = app.listen(0);
+    await new Promise<void>((resolve) => server.once("listening", resolve));
+
+    try {
+      const url = `http://127.0.0.1:${getServerPort(server)}/api/contracts/${application.id}`;
+      const body = JSON.stringify({
+        interimRatio: 60,
+        installmentStageBySpecItemId: { [specItemId]: "INTERIM" },
+      });
+      const supplierResponse = await fetch(url, {
+        method: "POST",
+        headers: { "content-type": "application/json", "x-test-user": supplier.id },
+        body,
+      });
+      const otherClientResponse = await fetch(url, {
+        method: "POST",
+        headers: { "content-type": "application/json", "x-test-user": "other-client" },
+        body,
+      });
+      expect(supplierResponse.status).toBe(403);
+      expect(otherClientResponse.status).toBe(403);
+      expect(await prisma.contract.count({ where: { applicationId: application.id } })).toBe(0);
+
+      const clientAmountResponse = await fetch(url, {
+        method: "POST",
+        headers: { "content-type": "application/json", "x-test-user": project.clientId },
+        body: JSON.stringify({ agreedAmount: 1, interimRatio: 60, installmentStageBySpecItemId: { [specItemId]: "INTERIM" } }),
+      });
+      expect(clientAmountResponse.status).toBe(400);
+      expect(await prisma.contract.count({ where: { applicationId: application.id } })).toBe(0);
+
+      const response = await fetch(url, {
+        method: "POST",
+        headers: { "content-type": "application/json", "x-test-user": project.clientId },
+        body,
+      });
+      expect(response.status).toBe(200);
+      const payload = assertRecord(await response.json());
+      expect(payload.status).toBe("PENDING_CONSENT");
+      expect(typeof payload.contractId).toBe("string");
+      const contract = await prisma.contract.findUniqueOrThrow({ where: { applicationId: application.id } });
+      expect(contract.agreedAmount).toBe(application.totalAmount);
+      expect(contract.agreedAmount).not.toBe(1);
+      expect(contract.pdfUrl).toMatch(/^contracts\/.+\.pdf$/);
+      expect(uploads).toHaveLength(1);
+
+      const openApiResponse = await fetch(`http://127.0.0.1:${getServerPort(server)}/api-docs.json`);
+      const openApi = assertRecord(await openApiResponse.json());
+      const paths = assertRecord(openApi.paths);
+      const createPath = assertRecord(paths["/api/contracts/{applicationId}"]);
+      const createOperation = assertRecord(createPath.post);
+      const requestBody = assertRecord(createOperation.requestBody);
+      const content = assertRecord(requestBody.content);
+      const jsonBody = assertRecord(content["application/json"]);
+      const schema = assertRecord(jsonBody.schema);
+      expect(schema.additionalProperties).toBe(false);
+      expect(Object.keys(assertRecord(schema.properties)).sort())
+        .toEqual(["installmentStageBySpecItemId", "interimRatio"]);
+    } finally {
+      await new Promise<void>((resolve) => server.close(() => resolve()));
+    }
+  });
+
+  it("기존 계약의 PDF 업로드가 실패했으면 중복 요청으로 PDF를 재시도한다", async () => {
+    const { application, project, specItemId } = await createAcceptedApplication();
+    let uploadAttempts = 0;
+    const router = createContractApiRouter({
+      prismaClient: prisma,
+      bucket: "contracts",
+      storage: {
+        uploadPrivateObject: async () => {
+          uploadAttempts += 1;
+          if (uploadAttempts === 1) throw new TradeError("CONTRACT_PDF_UPLOAD_FAILED");
+        },
+        createSignedUrl: async () => { throw new Error("다운로드는 호출하지 않아야 합니다."); },
+      },
+    });
+    const app = createApp({
+      prismaClient: prisma,
+      authVerifier: contractTestAuth(project.clientId, "unused-supplier"),
+      extraRouters: [router],
+    });
+    const server = app.listen(0);
+    await new Promise<void>((resolve) => server.once("listening", resolve));
+
+    try {
+      const url = `http://127.0.0.1:${getServerPort(server)}/api/contracts/${application.id}`;
+      const options = {
+        method: "POST",
+        headers: { "content-type": "application/json", "x-test-user": project.clientId },
+        body: JSON.stringify({ installmentStageBySpecItemId: { [specItemId]: "FINAL" } }),
+      };
+      const failedResponse = await fetch(url, options);
+      expect(failedResponse.status).toBe(503);
+      const pending = await prisma.contract.findUniqueOrThrow({ where: { applicationId: application.id } });
+      expect(pending).toMatchObject({ status: "PENDING_CONSENT", contentHash: null, pdfUrl: null });
+
+      const retryResponse = await fetch(url, options);
+      expect(retryResponse.status).toBe(200);
+      expect(await retryResponse.json()).toEqual({ contractId: pending.id, status: "PENDING_CONSENT" });
+      expect(uploadAttempts).toBe(2);
+      expect(await prisma.contract.findUniqueOrThrow({ where: { applicationId: application.id } }))
+        .toMatchObject({ id: pending.id, status: "PENDING_CONSENT", pdfUrl: expect.stringMatching(/^contracts\/.+\.pdf$/) });
+    } finally {
+      await new Promise<void>((resolve) => server.close(() => resolve()));
+    }
   });
 });

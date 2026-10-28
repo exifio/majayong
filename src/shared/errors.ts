@@ -48,6 +48,7 @@ export function mapTradeError(error: { readonly code: string }): AppError {
     case "INSTALLMENT_ID_REQUIRED":
     case "DEPOSIT_ID_REQUIRED":
     case "INVALID_CONTENT_HASH":
+    case "INVALID_CONTRACT_CREATE_BODY":
     case "INVALID_CONTRACT_ID":
     case "IDEMPOTENCY_KEY_REQUIRED":
     case "INVALID_CALLBACK":

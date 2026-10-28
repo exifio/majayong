@@ -67,21 +67,29 @@ function makeWorkflow(initialStatus: ContractRecord['status'] = 'PENDING_CONSENT
 function routeFixture(status: ContractRecord['status'] = 'PENDING_CONSENT') {
   const { workflow, state } = makeWorkflow(status);
   const errors: unknown[] = [];
-  const registered: { postPath?: string; getPath?: string } = {};
+  const registered: { postPaths: string[]; getPath?: string } = { postPaths: [] };
+  let createPost: ContractRequestHandler<TestRequest, TestResponse> | undefined;
   let post: ContractRequestHandler<TestRequest, TestResponse> | undefined;
   let get: ContractRequestHandler<TestRequest, TestResponse> | undefined;
   const router: ContractRouteRegistrar<TestRequest, TestResponse> = {
     post: (path, handler) => {
-      registered.postPath = path;
-      post = handler;
+      registered.postPaths.push(path);
+      if (path === '/:applicationId') createPost = handler;
+      if (path === '/:applicationId/signature') post = handler;
     },
     get: (path, handler) => {
       registered.getPath = path;
       get = handler;
     },
   };
+  const routeWorkflow = {
+    ...workflow,
+    async createContract() {
+      return state().contract;
+    },
+  };
   registerContractRoutes(router, {
-    workflow,
+    workflow: routeWorkflow,
     bucket: 'contracts',
     getAuth: (req) => {
       if (!req.auth) throw new TradeError('UNAUTHORIZED');
@@ -89,8 +97,8 @@ function routeFixture(status: ContractRecord['status'] = 'PENDING_CONSENT') {
     },
     mapTradeError: (error) => ({ code: error.code }),
   });
-  if (!post || !get) throw new Error('contract handlers were not registered');
-  return { post, get, state, errors, registered };
+  if (!createPost || !post || !get) throw new Error('contract handlers were not registered');
+  return { createPost, post, get, state, errors, registered };
 }
 
 function response(): TestResponse {
@@ -117,9 +125,24 @@ test('계약 라우트는 로그인 사용자만 서명에 쓰고 요청 본문 
     auth: { userId: 'client-1', role: 'CLIENT' },
   }, res, next);
 
-  expect(routes.registered.postPath).toBe('/:applicationId/signature');
+  expect(routes.registered.postPaths).toEqual(['/:applicationId', '/:applicationId/signature']);
   expect(res.body).toEqual({ status: 'PENDING_CONSENT' });
   expect(routes.state().contract.clientSignedAt).toEqual(new Date('2026-10-27T12:00:00.000Z'));
+  expect(routes.errors).toEqual([]);
+});
+
+test('계약 생성 라우트는 로그인 사용자를 전달하고 계약 ID와 상태만 반환한다', async () => {
+  const routes = routeFixture();
+  const res = response();
+  const next: ContractHttpNext = (error) => { if (error !== undefined) routes.errors.push(error); };
+
+  await routes.createPost({
+    params: { applicationId: 'application-1' },
+    body: { interimRatio: 40, installmentStageBySpecItemId: { 'spec-1': 'FINAL' } },
+    auth: { userId: 'client-1', role: 'CLIENT' },
+  }, res, next);
+
+  expect(res.body).toEqual({ contractId: 'contract-1', status: 'PENDING_CONSENT' });
   expect(routes.errors).toEqual([]);
 });
 

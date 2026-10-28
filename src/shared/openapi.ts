@@ -236,6 +236,30 @@ export const openApiSpec = {
     "/api/notifications/read-all": {
       post: { tags: ["Notifications"], security: [{ BearerAuth: [] }], summary: "내 미확인 알림 모두 읽음 처리", responses: { "200": { description: "변경한 알림 수" } } },
     },
+    "/api/contracts/{applicationId}": {
+      post: {
+        tags: ["Contracts"], security: [{ BearerAuth: [] }], summary: "수락 지원서에서 계약 생성",
+        parameters: [{ name: "applicationId", in: "path", required: true, schema: { type: "string", format: "uuid" } }],
+        requestBody: { required: true, content: { "application/json": { schema: {
+          type: "object",
+          required: ["installmentStageBySpecItemId"],
+          additionalProperties: false,
+          properties: {
+            interimRatio: { type: "integer", minimum: 1, maximum: 99 },
+            installmentStageBySpecItemId: { type: "object", additionalProperties: { type: "string", enum: ["INTERIM", "FINAL"] } },
+          },
+        } } } },
+        responses: {
+          "200": { description: "생성된 계약 ID와 상태" },
+          "400": { description: "요청 본문 또는 구간 배정이 올바르지 않음" },
+          "401": { description: "미인증" },
+          "403": { description: "의뢰인 본인 소유 프로젝트가 아님" },
+          "404": { description: "지원서를 찾을 수 없음" },
+          "409": { description: "지원서가 수락되지 않았거나 계약이 이미 존재함" },
+          "503": { description: "PDF 저장 실패; 동일 요청으로 PDF 저장을 재시도할 수 있음" },
+        },
+      },
+    },
     "/api/contracts/{applicationId}/signature": {
       post: {
         tags: ["Contracts"], security: [{ BearerAuth: [] }], summary: "수락 지원서 계약 서명",
