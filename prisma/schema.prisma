@@ -1,0 +1,811 @@
+// ─────────────────────────────────────────────────────────────
+// 마자용 (Majayong) — 데이터 모델 v0.6.1 (확정본, 개발 착수 기준)
+// 기준 문서: PRD v0.6 (2026-10-27) / 부록 D ⑨ ⑬~⑲ / ERD v0.6 실행 검증(10/27)
+//
+// 이력
+//  - 10/22  ERD 4종 대조 통합 → 36개 테이블
+//  - 10/23  흐름 대조 · 명세 공개 · 역할 고정 · RFP 대조 → 40개
+//  - 10/26  시나리오 200건 대입 검증 → 차단 3건 · 누락 5건 반영 (v0.5)
+//  - 10/27  축소 ①~⑤ · 상황 칩 → 추천 블록 · 업종 기본 초안 → 22개 테이블
+//  - 10/27  v0.6.1 실제 DB 실행 검증 반영 — 막힘 4건(제약 SQL 컬럼명 · 동시 제출 행 잠금 2곳 ·
+//           재계약 경로) + 스키마 6건(입금 1건 부분 유니크 · price/sessionId NULL 허용 ·
+//           isAdmin · category · ProjectStatus.WITHDRAWN 삭제). 테이블 · 관계 수 변화 없음
+//  - 10/27  확정본 — 활동 시각 · 추천 거르기 · 구글 로그인 + 남은 주의 11건 규칙 확정,
+//           publishedAt NULL 허용. 시나리오 190건 실제 DB 실행에서 주의 0 · 막힘 0
+//
+// 축소 원칙 (부록 D ⑲) — 테이블이 있고 없는 이유는 모두 이 여섯 줄에서 나온다
+//  1. 같은 사실은 한 곳에만. 같은 행에 두 길로 닿는 FK, 같은 사건의 이중 기록을 두지 않는다
+//  2. 개수가 정해져 있으면 컬럼으로 (1:1, 서명자 2명, 계약당 환불 1건)
+//  3. 아무 테이블도 가리키지 않는 소량 목록은 JSON 컬럼으로.
+//     예외: 블록 ID는 언제나 행이다(D1 — 카탈로그 밖 값을 FK가 막아야 한다)
+//  4. 계산할 수 있으면 저장하지 않는다. 고정이 필요한 순간에 값을 복사한다
+//  5. 기록은 EventLog 하나에. 예외: 결제 콜백(PaymentEvent) — 중복 차단 유니크가 필요하다
+//  6. MVP에서 쓰지 않는 흐름은 만들지 않는다 (계약 후 범위 변경 · 복수 소셜 · 버전 이력 화면)
+//
+// 명명 규칙
+//  - Prisma 모델은 PascalCase, 실제 테이블은 snake_case(@@map)
+//  - 금액은 모두 원 단위 Int. 수수료 끝수는 원 단위 내림, 구간 분할 끝수는 FINAL에 더한다
+//  - 물리 삭제를 쓰지 않는다. 상태 enum 또는 플래그로 표현한다.
+//    예외: 북마크 해제는 행을 지운다(이력 가치가 없고 [공급자, 프로젝트] 유니크로 다시 저장할 수 있다)
+//
+// 설계 결정이 제약으로 들어간 자리
+//  - D1: LLM이 쓰는 컬럼은 DraftBlock.blockId 하나뿐이고 BlockCatalog FK가
+//        카탈로그 밖 값을 거부한다. 추천 블록도 같은 행으로 저장한다
+//  - D2: 가격은 SupplierRate 한 곳에만 저장한다. 절사평균은 그 자리에서 계산하고
+//        (블록당 등록 20건 안팎), 고정이 필요한 순간 DraftBlock · SpecItem에 복사한다
+//  - D3: SpecItem.blockId NULL = 미매칭 원문 항목. 원문 자체는 ClientUtterance에 보존
+//  - 7.1: 의뢰인 신원(ClientProfile)과 원문(ClientUtterance)에는 Project에서 가는 직접 FK가
+//        없다. 공급자 조회 쿼리는 이 테이블들을 거치지 않으며, 신원 접근은 수락 여부를
+//        확인하는 단일 경로로만 열린다(Project → Draft 경로는 존재하며 앱이 막는다)
+//  - ⑱: MVP에서는 계약 범위가 서명 시점에 고정된다. 리비전 · 추가 예치는 출시 후
+//
+// ── raw migration으로 걸 제약 (Prisma 스키마로 표현되지 않음) ──────────
+//  필드에 @map이 없으므로 컬럼 이름은 Prisma 필드 이름 그대로("projectId")다. 따옴표 필수.
+//  (v0.6은 snake_case로 적어 4개 모두 적용에 실패했다 — 실행 검증 막힘 ①)
+//  1) CREATE UNIQUE INDEX application_one_accepted
+//       ON applications("projectId") WHERE status = 'ACCEPTED';
+//  2) CREATE UNIQUE INDEX application_one_active
+//       ON applications("projectId", "supplierId")
+//       WHERE status IN ('SUBMITTED','STALE','ACCEPTED');
+//  3) ALTER TABLE projects ADD CONSTRAINT recruit_before_deadline
+//       CHECK ("recruitStartAt" IS NULL OR deadline IS NULL
+//              OR "recruitStartAt" < deadline);
+//  4) ALTER TABLE payment_events ADD CONSTRAINT dedupkey_required_for_callback
+//       CHECK ("eventType" NOT IN ('CALLBACK_RECEIVED','VERIFIED')
+//              OR "dedupKey" IS NOT NULL);
+//  5) CREATE UNIQUE INDEX deposit_one_open
+//       ON escrow_deposits("contractId")
+//       WHERE status IN ('PENDING','HELD','COMPLETED');
+//  ※ 1·2·4·5는 데이터가 쌓인 뒤 걸면 기존 행이 위반해 적용되지 않는다. PRD 12.2 시점에 건다
+
+// ── 애플리케이션이 지키는 규칙 (DB가 막지 않음) ─────────────────────
+//  - 계약을 취소하면 같은 트랜잭션에서 그 지원서를 REJECTED로 바꾼다.
+//    이 규칙 + application_one_accepted + Contract.applicationId 유니크가
+//    "프로젝트당 진행 중 계약 1건"을 보장한다
+//  - 명세 열람 이벤트(SPEC_LIST_VIEWED · SPEC_DETAIL_VIEWED)는 공급자에게만 남긴다
+//  - 계약 범위 = 수락된 지원서의 가능 항목 중 SpecItem.status = INCLUDED인 것.
+//    보완 요청은 이 항목만 가리킬 수 있다
+//  - 입금 시도는 직전 시도가 FAILED일 때만 새로 만든다. DB도 deposit_one_open으로 막는다
+//  - [잠금] 지원 제출 트랜잭션은 프로젝트 행을 SELECT … FOR SHARE로 읽고 상태 · 명세 버전을
+//    확인한다. 마감 배치 · 명세 수정과 겹쳐도 마감된 프로젝트나 이전 버전으로 지원이 남지 않는다
+//  - [재계약] 합의 실패로 모집 중에 돌아온 프로젝트는 새 마감일을 받는다. 자동 거절된 지원은
+//    되살리지 않고, 그 공급자는 다음 revisionNo로 다시 지원할 수 있다
+//  - [삭제] 프로젝트 삭제(deletedAt)는 수락 전(SCHEDULED · RECRUITING · EXPIRED)에만 허용한다.
+//    대기 지원(SUBMITTED · STALE)은 같은 트랜잭션에서 REJECTED + PROJECT_CLOSED 알림
+//  - 배치가 남기는 EventLog는 sessionId를 비운다(userId도 NULL)
+//  - [활동 시각] 초안의 블록 추가 · 삭제 · 추천 추가 · 확인 질문 답변 · 채팅은 같은 트랜잭션에서
+//    Draft.lastActiveAt을 갱신한다. @updatedAt은 Draft 행이 바뀔 때만 움직여서, 자식 행만 바꾸면
+//    작업 중인 초안이 30일 보관 배치에 걸린다(실행 검증 B-15)
+//  - [추천 거르기] 추천 블록(SUGGESTED)을 저장하기 전에 ① 같은 응답에서 초안 블록으로 고른 것
+//    ② 초안에 이미 행이 있는 블록(추천됨 · 추가됨 · 지움) ③ 응답 안의 중복 ID를 뺀다. 모자란 자리는
+//    BlockCatalog.recommendRank 순으로 초안에 행이 없는 블록에서 채운다. 지운 블록은 다시 추천하지
+//    않는다. 거르지 않으면 (초안, 블록) 유니크에 걸려 초안 생성 전체가 실패한다(실행 검증 B-01)
+//  - [구글 로그인] 구글이 확인한 이메일(email_verified=true)만 받는다. providerUserId는 구글 sub.
+//    같은 이메일 회원이 있으면 authProvider · providerUserId를 채워 연동하고 역할은 기존 값을 따른다.
+//    그 회원에 이미 다른 구글 계정(sub)이 연결돼 있으면 연동하지 않는다. 처음 온 사람은
+//    역할 선택 페이지를 거친 뒤 회원을 만든다(RFP 3.1.2)
+//  - User.role은 가입 후 바꾸지 않는다
+//
+//  ── 확정본에서 정한 규칙 (10/27, 실행 검증 주의 11건) ──
+//  - [다시 열기] 보관(ABANDONED)된 초안을 다시 열 때도 진행 중 3개 한도를 확인한다(O-09)
+//  - [활성 블록] LLM에 넘기는 후보 목록과 대표 추천은 isActive=true 블록만. FK는 비활성 블록을
+//    막지 못한다(B-07)
+//  - [재견적 순서] 재견적은 같은 트랜잭션에서 이전 지원을 SUPERSEDED로 먼저 바꾸고 새 지원을
+//    넣는다. 순서가 바뀌면 application_one_active에 막힌다(F-08)
+//  - [철회] 지원 철회는 SUBMITTED · STALE에서만. 수락 뒤 이탈은 계약 취소(합의 실패) 경로로(F-10)
+//  - [명세 수정] 등록 후 명세 수정은 SCHEDULED · RECRUITING · EXPIRED에서만. 수락 · 계약 단계는
+//    거부(C-11 · C-15)
+//  - [서명 초기화] 계약 조건(합의 금액 · 지급 비율 · 명세 스냅샷)이 바뀌면 같은 트랜잭션에서
+//    clientSignedAt · supplierSignedAt · contentHash를 비운다(H-09)
+//  - [서명 대기] 서명 대기(PENDING_CONSENT)에 DB 기한은 두지 않는다. 의뢰인은 언제든 "합의 실패"로
+//    계약을 취소할 수 있고([재계약] 경로), 7일 넘게 서명이 없으면 운영자가 연락한다(H-05)
+//  - [수수료 면제] 면제는 계약 생성 트랜잭션에서 판정하고 같은 트랜잭션에서 feeExemptUsedAt을
+//    기록한다. 계약이 취소되면 소진을 되돌리지 않는다(K-09)
+//  - [게시일] publishedAt은 모집이 시작될 때(RECRUITING이 되는 순간) 기록한다. 모집 예정이면
+//    NULL이고 모집 시작 배치가 채운다(C-09 · O-01)
+//  - [별점 캐시] ClientProfile · SupplierProfile.ratingAvg · reviewCount는 목록 표시용 캐시다
+//    (원칙 4 예외). 리뷰 작성 트랜잭션에서 함께 갱신한다(M-06)
+// ─────────────────────────────────────────────────────────────
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ── enum (21) ────────────────────────────────────────────────
+
+/// 가입 시 하나로 정해지고 바뀌지 않는다. 다른 역할은 별도 계정.
+enum Role {
+  CLIENT
+  SUPPLIER
+  ADMIN
+}
+
+/// MVP 소셜 로그인은 구글 1종(10/27 결정). 구글은 확인된 이메일(email_verified)을 준다.
+/// 복수 제공자 연결은 출시 후 — 그때 소셜 계정 테이블로 분리한다(원칙 2 · 6)
+enum AuthProvider {
+  GOOGLE
+}
+
+enum DraftEntryType {
+  SENTENCE // 문장 진입 — LLM 분류
+  DEFAULT_DRAFT // 업종 기본 초안 진입 — LLM 없음
+}
+
+enum DraftStatus {
+  IN_PROGRESS
+  CONFIRMED
+  ABANDONED // "처음부터" 또는 30일 무활동 보관. 다시 열 수 있다(⑭)
+}
+
+enum UtteranceKind {
+  FIRST_SENTENCE
+  CHAT
+}
+
+/// 명세 항목의 도출 출처. 여러 경로로 들어온 항목은 최초 출처를 적는다.
+enum BlockOrigin {
+  FIRST_SENTENCE
+  CHAT
+  RECOMMENDATION // 추천 블록을 눌러 추가(⑰)
+  CONFIRM_QUESTION
+  DEFAULT_DRAFT
+}
+
+/// 추천 블록도 블록 ID이므로 행으로 둔다(D1). 한 행이 추천됨 → 추가됨 → 지움으로 움직인다.
+/// 지움(REMOVED)만 "이번 범위에서 제외"에 오른다. 누르지 않은 추천은 명세에 남지 않는다.
+enum DraftBlockStatus {
+  SUGGESTED
+  ADDED
+  REMOVED
+}
+
+enum SpecItemStatus {
+  INCLUDED
+  EXCLUDED
+  NEEDS_CONFIRMATION
+}
+
+/// 외부 목록에서는 거래 단계(ACCEPTED · CONTRACTED)를 '모집 마감'으로 표시한다.
+enum ProjectStatus {
+  SCHEDULED
+  RECRUITING
+  ACCEPTED
+  CONTRACTED
+  EXPIRED
+}
+
+enum ApplicationStatus {
+  SUBMITTED
+  STALE // 명세가 바뀌어 이전 버전 기준. 수락할 수 없다
+  ACCEPTED
+  REJECTED
+  AUTO_REJECTED
+  WITHDRAWN
+  SUPERSEDED // 재견적으로 다음 revisionNo가 생김
+}
+
+enum ContractStatus {
+  PENDING_CONSENT
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+/// 입금 시도 한 건의 상태. HELD = 콜백 지연·누락·금액 불일치, 운영자 확인 전까지 완료로 보지 않는다.
+enum DepositStatus {
+  PENDING
+  HELD
+  COMPLETED
+  FAILED
+}
+
+/// 계약의 에스크로 전체 상태(Contract.paymentStatus)
+enum PaymentStatus {
+  PENDING
+  DEPOSITED
+  PARTIALLY_RELEASED
+  RELEASED
+  REFUNDED
+}
+
+/// 7절 결제 실패 4종(실패 · 중복 요청 · 콜백 지연/누락 · 금액 불일치)을 기록한다.
+enum PaymentEventType {
+  REQUESTED
+  CALLBACK_RECEIVED
+  DUPLICATE_BLOCKED
+  AMOUNT_MISMATCH
+  VERIFIED
+  FAILED
+}
+
+enum InstallmentStage {
+  INTERIM
+  FINAL
+}
+
+enum InstallmentStatus {
+  PENDING
+  DELIVERED
+  REWORK_REQUESTED
+  APPROVED
+  RELEASED
+  REFUNDED
+}
+
+enum DeliveryStatus {
+  SUBMITTED
+  PARTIALLY_APPROVED
+  APPROVED
+  REWORK_REQUESTED
+}
+
+/// 11.3 보완 요청 사유 3종
+enum InspectionReason {
+  IN_SPEC
+  NOT_IN_SPEC
+  INTERPRETATION
+}
+
+enum InspectionStatus {
+  OPEN
+  RESOLVED
+  ESCALATED
+}
+
+/// 인앱 알림 6종. PROJECT_CLOSED는 지원자와 의뢰인 모두 받으며 targetUrl이 역할별로 다르다.
+/// 추가 예치 요청 · 변경 합의 만료는 범위 변경과 함께 출시 후(⑱)
+enum NotificationType {
+  APPLICATION_RECEIVED
+  APPLICATION_ACCEPTED
+  APPLICATION_AUTO_REJECTED
+  APPLICATION_REJECTED
+  PROJECT_CLOSED
+  REQUOTE_REQUESTED
+}
+
+/// 지표 · 열람 · LLM 비용 · 운영자 행위가 모두 이 기록 하나에 남는다(원칙 5).
+enum EventType {
+  SESSION_START
+  SIGNUP_COMPLETED
+  SPACE_SWITCHED // 의뢰인 ⇄ 공급자 공간 둘러보기
+  DRAFT_INPUT_SUBMITTED
+  DRAFT_RENDERED
+  DRAFT_RESUMED
+  DRAFT_ABANDONED
+  LLM_CALLED // payload: purpose · model · 토큰 · costKrw · latencyMs · succeeded · retryCount · fellBack
+  RECOMMENDATION_ADDED
+  BLOCK_REMOVED
+  CHAT_SUBMITTED
+  QUESTION_ANSWERED
+  QUESTION_DEFERRED
+  SPEC_CONFIRMED
+  SPEC_REVISED // payload: 새 버전 번호 · 변경 사유
+  PROJECT_PUBLISHED
+  SPEC_LIST_VIEWED // 공급자만. 목록 → 상세 전환율의 분모
+  SPEC_DETAIL_VIEWED // 공급자만. 지원 진입 확인(F-05) · "N명 열람" · 비밀관리성 입증
+  SUPPLIER_RATE_STARTED
+  SUPPLIER_RATE_COMPLETED
+  APPLICATION_SUBMITTED
+  APPLICATION_ACCEPTED
+  CONTRACT_AGREED
+  PAYMENT_DEPOSITED
+  OPERATOR_DEPOSIT_REVIEWED // 운영자가 HELD 입금을 확인
+  REFUND_PROCESSED // 운영자 · 사유 · 금액
+  DELIVERY_SUBMITTED
+  INSPECTION_REQUESTED
+  REVIEW_SUBMITTED
+}
+
+// ── 계정 (3) ─────────────────────────────────────────────────
+
+model User {
+  id              String        @id @default(uuid())
+  email           String        @unique
+  passwordHash    String?
+  name            String
+  role            Role // 가입 시 고정. 변경 불가. 운영자는 ADMIN(별도 플래그 없음)
+  authProvider    AuthProvider? // 소셜 로그인 1종(구글). 동일 이메일이면 기존 계정에 연결
+  providerUserId  String?
+  profileImageUrl String?
+  bio             String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  clientProfile   ClientProfile?
+  supplierProfile SupplierProfile?
+  drafts          Draft[]
+  notifications   Notification[]
+  events          EventLog[]
+  reviewsWritten  Review[]         @relation("ReviewAuthor")
+  reviewsReceived Review[]         @relation("ReviewSubject")
+
+  @@unique([authProvider, providerUserId])
+  @@index([role])
+  @@map("users")
+}
+
+/// 7.1 수락 전 비공개. 상호 · 연락처를 User에 두면 공급자 조회 때 같은 행으로 딸려 나온다.
+model ClientProfile {
+  userId           String  @id
+  businessName     String?
+  industryField    String?
+  websiteUrl       String?
+  phone            String?
+  region           String?
+  ratingAvg        Float? // 캐시 — 리뷰 작성 트랜잭션에서 갱신([별점 캐시])
+  reviewCount      Int     @default(0)
+  profileCompleted Boolean @default(false) // 상호 · 연락처가 채워졌는지. 명세 확정 전 확인
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("client_profiles")
+}
+
+model SupplierProfile {
+  userId          String    @id
+  displayName     String
+  industryCodes   String[]
+  skills          String[] // Project.requiredSkills와 매칭
+  careerYears     Int?
+  hourlyRate      Int?
+  portfolioUrl    String?
+  ratingAvg       Float? // 캐시 — 리뷰 작성 트랜잭션에서 갱신([별점 캐시])
+  reviewCount     Int       @default(0)
+  rateCompleted   Boolean   @default(false)
+  feeExempt       Boolean   @default(false) // 초기 20명
+  feeExemptUsedAt DateTime? // 면제를 판정한 계약 생성 때 기록. 면제는 feeExempt && 이 값이 NULL일 때만(⑯ · [수수료 면제])
+  rateCheckedAt   DateTime? // 6개월 경과 시 로그인 배너
+  ndaAgreedAt     DateTime? // 명세 비밀유지 동의. 가입 완료 처리에서 반드시 채운다
+  ndaVersion      String?
+  createdAt       DateTime  @default(now())
+
+  user         User           @relation(fields: [userId], references: [id])
+  rates        SupplierRate[]
+  applications Application[]
+  bookmarks    Bookmark[]
+
+  @@map("supplier_profiles")
+}
+
+// ── 블록 · 가격 (2) ──────────────────────────────────────────
+
+/// 가격 컬럼이 없다(D2). 확인 질문은 블록마다 한두 개의 고정 문구라 JSON으로 둔다(원칙 3).
+model BlockCatalog {
+  id            String   @id @default(uuid())
+  code          String   @unique
+  name          String // 추천 블록의 화면 이름도 이것이다
+  description   String
+  industryCode  String
+  techTags      String[] // 선택된 블록에서 집계해 Project.requiredSkills를 만든다
+  rendererKey   String?
+  configSchema  Json?
+  isDrawable    Boolean  @default(true)
+  inDefaultDraft Boolean @default(false) // 업종 기본 초안에 포함(구 업종 프리셋)
+  recommendRank Int? // 대표 추천 순서. LLM이 없는 경로(기본 초안 진입 · LLM 실패)의 추천
+  /// [{ key: "q1", text, optionA, optionB }] — key는 문구를 고쳐도 바뀌지 않는다
+  questions     Json?
+  isActive      Boolean  @default(true)
+  sortOrder     Int      @default(0)
+  createdAt     DateTime @default(now())
+
+  supplierRates SupplierRate[]
+  draftBlocks   DraftBlock[]
+  specItems     SpecItem[]
+
+  @@index([industryCode, isActive])
+  @@map("block_catalog")
+}
+
+/// 가격의 유일한 원천. 블록별 절사평균(p25~p75, 평균 참고 입력 제외)은 이 테이블에서
+/// 그 자리에서 계산한다. 등록 5건 미만이면 금액을 만들지 않는다(결정 ⑥).
+model SupplierRate {
+  id             String   @id @default(uuid())
+  supplierId     String
+  blockId        String
+  price          Int? // "할 수 없음"(isCapable=false)이면 NULL. 집계는 isCapable로 거른다
+  isAvgReference Boolean  @default(false) // 평균을 그대로 채움 → 집계 제외
+  isCapable      Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  supplier SupplierProfile @relation(fields: [supplierId], references: [userId])
+  block    BlockCatalog    @relation(fields: [blockId], references: [id])
+
+  @@unique([supplierId, blockId])
+  @@index([blockId, isAvgReference, isCapable])
+  @@map("supplier_rates")
+}
+
+// ── 초안 (3) ─────────────────────────────────────────────────
+
+model Draft {
+  id            String         @id @default(uuid())
+  clientId      String
+  entryType     DraftEntryType
+  status        DraftStatus    @default(IN_PROGRESS)
+  hopeBudget    Int?
+  chatEditCount Int            @default(0) // 직접 쓴 채팅만 센다. 초안당 30회(⑧)
+  firstInputAt  DateTime?
+  renderedAt    DateTime?
+  lastActiveAt  DateTime       @updatedAt // 블록 · 답변 · 채팅 변경 때도 함께 갱신([활동 시각] 규칙)
+  createdAt     DateTime       @default(now())
+
+  client     User              @relation(fields: [clientId], references: [id])
+  utterances ClientUtterance[]
+  blocks     DraftBlock[]
+  project    Project?
+
+  @@index([clientId, status]) // 진행 중 3개 한도
+  @@index([status, lastActiveAt]) // 30일 무활동 보관(⑭)
+  @@map("drafts")
+}
+
+/// D3. 마스킹하지 않은 원문. 수락 후에만 공급자에게 열린다(7.1).
+model ClientUtterance {
+  id        String        @id @default(uuid())
+  draftId   String
+  kind      UtteranceKind
+  content   String
+  isMatched Boolean       @default(false)
+  createdAt DateTime      @default(now())
+
+  draft       Draft        @relation(fields: [draftId], references: [id])
+  draftBlocks DraftBlock[]
+
+  @@index([draftId, kind])
+  @@map("client_utterances")
+}
+
+/// 초안에 올라온 블록 한 행. 추천됨 · 추가됨 · 지움이 같은 행의 상태다.
+/// 금액은 행이 생긴 시점에 계산해 복사한다 — 보류했다 돌아와도 화면 금액이 바뀌지 않는다(B-23).
+/// utteranceId가 있으면 그 문장에서 나온 것(LLM 분류 · LLM 추천), 없으면 기본 초안 · 대표 추천.
+model DraftBlock {
+  id          String           @id @default(uuid())
+  draftId     String
+  blockId     String // LLM이 쓰는 유일한 컬럼(D1)
+  utteranceId String?
+  origin      BlockOrigin
+  status      DraftBlockStatus @default(ADDED)
+  estUnit     Int? // 행이 생긴 시점의 절사평균. 수수료 전
+  estMin      Int?
+  estMax      Int?
+  isEstimable Boolean          @default(true)
+  pricedAt    DateTime? // 금액을 계산한 시각. 30일 보관 후 다시 열면 갱신
+  /// [{ key: "q1", status: "UNANSWERED|ANSWERED|DEFERRED", selected, at }]
+  answers     Json?
+  sortOrder   Int              @default(0)
+  createdAt   DateTime         @default(now())
+
+  draft     Draft            @relation(fields: [draftId], references: [id])
+  block     BlockCatalog     @relation(fields: [blockId], references: [id])
+  utterance ClientUtterance? @relation(fields: [utteranceId], references: [id])
+
+  @@unique([draftId, blockId])
+  @@index([draftId, status])
+  @@map("draft_blocks")
+}
+
+// ── 명세 · 프로젝트 (2) ──────────────────────────────────────
+
+/// 명세가 곧 등록 글이다(F-03). 확정과 동시에 생기며 확정 정보가 여기 있다.
+/// 제목 · 요약은 업종과 블록 이름으로 자동 생성한다 — 의뢰인 문장을 쓰면 7.1이 깨진다.
+model Project {
+  id                       String        @id @default(uuid())
+  draftId                  String        @unique
+  currentVersion           Int           @default(1) // 수정 시 SpecItem을 새 번호로 전량 복사(⑬)
+  confirmedAt              DateTime // 의뢰인 확정 동의 시각
+  disclosureConsentVersion String // 동의한 공개 범위 문구의 버전
+  title                    String
+  summary                  String // 선택된 블록 이름을 잇는다. 목록 · 검색용
+  industryCode             String
+  requiredSkills           String[] // 블록 techTags에서 집계
+  hopeBudget               Int?
+  recruitStartAt           DateTime?
+  deadline                 DateTime?
+  status                   ProjectStatus @default(RECRUITING)
+  deletedAt                DateTime?
+  publishedAt              DateTime? // 모집 시작 때 기록. 모집 예정이면 NULL([게시일])
+
+  draft        Draft         @relation(fields: [draftId], references: [id])
+  items        SpecItem[]
+  applications Application[]
+  bookmarks    Bookmark[]
+
+  @@index([status, industryCode, publishedAt])
+  @@index([industryCode, status]) // 카테고리 필터 = 업종(카테고리 컬럼은 industryCode와 중복이라 삭제)
+  @@index([status, recruitStartAt]) // 모집 시작 배치
+  @@index([status, deadline]) // 마감 배치
+  @@map("projects")
+}
+
+/// 이름 · 설명 · 화면 조립 정보 · 확인 질문 · 금액을 확정 시점에 복사해 보관한다.
+/// 카탈로그를 고쳐도 확정된 명세가 흔들리지 않고, 공급자 화면이 초안을 거치지 않는다(7.1).
+model SpecItem {
+  id           String         @id @default(uuid())
+  projectId    String
+  versionNo    Int            @default(1)
+  blockId      String? // NULL이면 미매칭 원문 항목(D3)
+  title        String
+  description  String
+  rawText      String? // 미매칭 원문의 마스킹본
+  isRedacted   Boolean        @default(false)
+  rendererKey  String?
+  renderConfig Json?
+  /// [{ key, text, optionA, optionB, status, selected }] — 공급자에게 [확인 필요]로 보인다
+  questions    Json?
+  origin       BlockOrigin
+  status       SpecItemStatus @default(INCLUDED)
+  estUnit      Int? // 확정 시점 절사평균. 수수료 전(3.3 정확도 지표의 분모)
+  estMin       Int?
+  estMax       Int?
+  isEstimable  Boolean        @default(true)
+  sortOrder    Int            @default(0)
+
+  project  Project           @relation(fields: [projectId], references: [id])
+  block    BlockCatalog?     @relation(fields: [blockId], references: [id])
+  appItems ApplicationItem[]
+
+  @@index([projectId, versionNo])
+  @@index([projectId, status])
+  @@map("spec_items")
+}
+
+// ── 견적 (3) ─────────────────────────────────────────────────
+
+/// 명세가 수정되면 SUBMITTED 지원을 모두 STALE로 바꾸고 수락을 막는다.
+/// @@unique는 재견적 이력용이다. 활성 1건 · 수락 1건은 부분 인덱스(raw migration 1·2).
+model Application {
+  id            String            @id @default(uuid())
+  projectId     String
+  supplierId    String
+  revisionNo    Int               @default(1)
+  specVersionNo Int
+  status        ApplicationStatus @default(SUBMITTED)
+  totalAmount   Int
+  durationDays  Int
+  firstViewedAt DateTime // 상세 열람 시각. 성공 지표 ②의 시작점
+  submittedAt   DateTime          @default(now())
+
+  project  Project           @relation(fields: [projectId], references: [id])
+  supplier SupplierProfile   @relation(fields: [supplierId], references: [userId])
+  items    ApplicationItem[]
+  contract Contract?
+
+  @@unique([projectId, supplierId, revisionNo])
+  @@index([projectId, status])
+  @@index([supplierId, status])
+  @@map("applications")
+}
+
+/// 수락된 지원서의 가능 항목이 곧 계약 범위이고 검수 대상이다(⑱).
+model ApplicationItem {
+  id              String  @id @default(uuid())
+  applicationId   String
+  specItemId      String
+  isAvailable     Boolean @default(true)
+  amount          Int?
+  memo            String? // 저장 전 연락처 마스킹
+  isContactMasked Boolean @default(false)
+
+  application Application         @relation(fields: [applicationId], references: [id])
+  specItem    SpecItem            @relation(fields: [specItemId], references: [id])
+  inspections InspectionRequest[]
+
+  @@unique([applicationId, specItemId])
+  @@index([specItemId]) // 비교표: 항목 × 지원자
+  @@map("application_items")
+}
+
+/// 해제는 행을 지운다(물리 삭제 금지 규칙의 유일한 예외)
+model Bookmark {
+  id         String   @id @default(uuid())
+  supplierId String
+  projectId  String
+  createdAt  DateTime @default(now())
+
+  supplier SupplierProfile @relation(fields: [supplierId], references: [userId])
+  project  Project         @relation(fields: [projectId], references: [id])
+
+  @@unique([supplierId, projectId])
+  @@index([supplierId, createdAt])
+  @@map("bookmarks")
+}
+
+// ── 계약 · 결제 (4) ──────────────────────────────────────────
+
+/// 계약 한 건의 모든 조건. MVP에서는 범위가 서명 시점에 고정되므로 리비전 없이
+/// 조건 · 서명 · 에스크로 상태 · 취소 환불을 한 행에 둔다(원칙 2 · 6, ⑱).
+/// 지원서당 계약 1건. 합의가 깨지면 계약은 CANCELLED로, 지원서는 REJECTED로 남고
+/// 다른 지원서에 새 계약이 붙는다(G-11).
+model Contract {
+  id              String         @id @default(uuid())
+  applicationId   String         @unique
+  status          ContractStatus @default(PENDING_CONSENT)
+  specVersionNo   Int
+  specSnapshot    Json // 서명 시점 명세와 범위(포함 · 제외 사유) 고정
+  agreedAmount    Int // 양측 합의 금액. 예상 범위는 넣지 않는다(7.2)
+  clientFee       Int // 5%, 원 단위 내림
+  supplierFee     Int
+  interimRatio    Int            @default(50)
+  contentHash     String? // 서명한 문서의 해시
+  clientSignedAt  DateTime?
+  supplierSignedAt DateTime? // 둘 다 차면 ACTIVE
+  paymentStatus   PaymentStatus  @default(PENDING)
+  totalDeposited  Int            @default(0) // COMPLETED 입금 시도의 합
+  refundAmount    Int? // 취소 환불은 계약당 한 번(13.2 ①~③)
+  clientFeeRefund Int?
+  settledAmount   Int? // 진행분 합의 지급액. 여기에만 양측 5%
+  refundReason    String?
+  refundedAt      DateTime? // 처리한 운영자는 EventLog(REFUND_PROCESSED)
+  pdfUrl          String?
+  completedAt     DateTime? // 완료 상태에서만 리뷰 작성
+  createdAt       DateTime       @default(now())
+
+  application  Application          @relation(fields: [applicationId], references: [id])
+  deposits     EscrowDeposit[]
+  installments PaymentInstallment[]
+  reviews      Review[]
+
+  @@index([status])
+  @@map("contracts")
+}
+
+/// 입금 시도 한 건. 실패하면 새 시도를 만든다. 멱등키와 PG 키가 시도마다 따로 있다.
+model EscrowDeposit {
+  id             String        @id @default(uuid())
+  contractId     String
+  principal      Int
+  clientFee      Int
+  amount         Int // principal + clientFee
+  status         DepositStatus @default(PENDING)
+  idempotencyKey String        @unique
+  pgKey          String?
+  depositedAt    DateTime?
+  createdAt      DateTime      @default(now())
+
+  contract Contract       @relation(fields: [contractId], references: [id])
+  events   PaymentEvent[]
+
+  @@index([contractId, status])
+  @@map("escrow_deposits")
+}
+
+/// 결제 콜백 검증 기록. 중복 차단 유니크가 필요해 EventLog와 따로 둔다(원칙 5 예외).
+model PaymentEvent {
+  id         String           @id @default(uuid())
+  depositId  String
+  eventType  PaymentEventType
+  dedupKey   String? // 콜백 계열은 CHECK로 필수(raw migration 4)
+  payload    Json?
+  resultNote String?
+  occurredAt DateTime         @default(now())
+
+  deposit EscrowDeposit @relation(fields: [depositId], references: [id])
+
+  @@unique([depositId, dedupKey])
+  @@index([depositId, occurredAt])
+  @@map("payment_events")
+}
+
+/// 중간 · 최종 2구간. INTERIM을 먼저 내림으로 확정하고 FINAL = 합의 금액 − INTERIM(⑯).
+model PaymentInstallment {
+  id            String            @id @default(uuid())
+  contractId    String
+  stage         InstallmentStage
+  ratio         Int
+  amount        Int
+  supplierFee   Int
+  releaseAmount Int
+  status        InstallmentStatus @default(PENDING)
+  approvedAt    DateTime?
+  releasedAt    DateTime?
+
+  contract   Contract   @relation(fields: [contractId], references: [id])
+  deliveries Delivery[]
+
+  @@unique([contractId, stage])
+  @@map("payment_installments")
+}
+
+// ── 검수 (2) ─────────────────────────────────────────────────
+
+/// 보완 요청이 반복되면 한 구간에 납품이 여러 번. 몇 번 만에 통과했는지가 남는다.
+model Delivery {
+  id            String         @id @default(uuid())
+  installmentId String
+  attemptNo     Int            @default(1)
+  summary       String?
+  fileUrl       String?
+  status        DeliveryStatus @default(SUBMITTED)
+  submittedAt   DateTime       @default(now())
+  reviewedAt    DateTime?
+
+  installment PaymentInstallment  @relation(fields: [installmentId], references: [id])
+  inspections InspectionRequest[]
+
+  @@unique([installmentId, attemptNo])
+  @@map("deliveries")
+}
+
+/// 항목 단위 부분 승인. 대상은 계약 범위에 든 지원 항목이다.
+model InspectionRequest {
+  id                String           @id @default(uuid())
+  deliveryId        String
+  applicationItemId String
+  reason            InspectionReason
+  note              String?
+  status            InspectionStatus @default(OPEN)
+  resolvedAt        DateTime?
+  createdAt         DateTime         @default(now())
+
+  delivery        Delivery        @relation(fields: [deliveryId], references: [id])
+  applicationItem ApplicationItem @relation(fields: [applicationItemId], references: [id])
+
+  @@index([deliveryId, status])
+  @@map("inspection_requests")
+}
+
+// ── 리뷰 (1) ─────────────────────────────────────────────────
+
+/// 완료된 계약에서 한 사람이 한 번만. 수정 불가. 작성 시 상대 프로필의 평균을 갱신한다.
+model Review {
+  id           String   @id @default(uuid())
+  contractId   String
+  reviewerId   String
+  revieweeId   String
+  reviewerRole Role
+  rating       Int // 1~5
+  comment      String?
+  tags         String[]
+  createdAt    DateTime @default(now())
+
+  contract Contract @relation(fields: [contractId], references: [id])
+  reviewer User     @relation("ReviewAuthor", fields: [reviewerId], references: [id])
+  reviewee User     @relation("ReviewSubject", fields: [revieweeId], references: [id])
+
+  @@unique([contractId, reviewerId])
+  @@index([revieweeId, createdAt])
+  @@map("reviews")
+}
+
+// ── 공통 (2) ─────────────────────────────────────────────────
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  type      NotificationType
+  targetUrl String
+  targetId  String
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId, isRead, createdAt])
+  @@map("notifications")
+}
+
+/// 모든 기록의 단일 저장소(원칙 5). draftId · projectId는 기록용 참조라 FK를 걸지 않는다.
+model EventLog {
+  id         String    @id @default(uuid())
+  userId     String?
+  sessionId  String? // 배치 기록은 NULL
+  type       EventType
+  draftId    String?
+  projectId  String?
+  payload    Json?
+  occurredAt DateTime  @default(now())
+
+  user User? @relation(fields: [userId], references: [id])
+
+  @@index([type, occurredAt])
+  @@index([sessionId])
+  @@index([draftId, type])
+  @@index([projectId, type, userId]) // 지원 진입 확인 · "N명 열람"
+  @@map("event_logs")
+}
