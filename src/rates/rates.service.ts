@@ -64,17 +64,26 @@ export function computeTrimmedEstimate(blockId: string, validPrices: number[]): 
   }
 
   const sorted = [...validPrices].sort((a, b) => a - b);
-  const trimCount = Math.floor(sorted.length * 0.25);
-  const trimmed = sorted.slice(trimCount, sorted.length - trimCount);
+  const q1 = quantile(sorted, 0.25);
+  const q3 = quantile(sorted, 0.75);
+  const trimmed = sorted.filter((value) => value >= q1 && value <= q3);
   const sum = trimmed.reduce((acc, value) => acc + value, 0);
 
   return {
     blockId,
     isEstimable: true,
-    estUnit: Math.floor(sum / trimmed.length),
+    estUnit: Math.round(sum / trimmed.length),
     estMin: trimmed[0] ?? null,
     estMax: trimmed[trimmed.length - 1] ?? null,
   };
+}
+
+// 정렬된 표본의 선형 보간 분위수 (위치 = (n - 1) × p)
+function quantile(sorted: number[], p: number): number {
+  const pos = (sorted.length - 1) * p;
+  const lo = Math.floor(pos);
+  const hi = Math.ceil(pos);
+  return sorted[lo] + (sorted[hi] - sorted[lo]) * (pos - lo);
 }
 
 export function calculateClientEstimateSummary(

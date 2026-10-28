@@ -18,7 +18,23 @@ describe("F-04 공급자 단가 등록·절사평균 계산·스냅샷 보존·�
     await prisma.$disconnect();
   });
 
-  it("8건 표본에서 하위 25%·상위 25%를 잘라 25~75% 절사평균을 원 단위 내림으로 계산한다", () => {
+  it("선형 보간 Q1/Q3 경계를 포함하고 평균을 원 단위로 반올림한다", () => {
+    // 5건: Q1=200, Q3=400, 경계 포함 -> [200, 300, 400]
+    expect(computeTrimmedEstimate("b-5", [1000, 400, 300, 200, 100])).toEqual({
+      blockId: "b-5",
+      isEstimable: true,
+      estUnit: 300,
+      estMin: 200,
+      estMax: 400,
+    });
+    // 6건: Q1 위치 1.25, Q3 위치 3.75 -> 가운데 2건만 남는다(기존 floor(n×0.25) 방식은 4건)
+    const six = computeTrimmedEstimate("b-6", [100, 200, 300, 400, 500, 600]);
+    expect([six.estMin, six.estMax, six.estUnit]).toEqual([300, 400, 350]);
+    // 평균 20.67 -> 21 (내림이면 20)
+    expect(computeTrimmedEstimate("b-r", [10, 20, 21, 21, 100]).estUnit).toBe(21);
+  });
+
+  it("8건 표본에서 25~75% 구간 값으로 절사평균을 계산한다", () => {
     const est = computeTrimmedEstimate("b-8", [
       50_000,
       100_000,
@@ -29,11 +45,11 @@ describe("F-04 공급자 단가 등록·절사평균 계산·스냅샷 보존·�
       500_000,
       900_000,
     ]);
-    // 정렬 후 양쪽 2건씩 제거 -> [200_000, 210_001, 240_000, 280_000]
+    // Q1=175_000, Q3=335_000 -> [200_000, 210_001, 240_000, 280_000]
     expect(est.isEstimable).toBe(true);
     expect(est.estMin).toBe(200_000);
     expect(est.estMax).toBe(280_000);
-    expect(est.estUnit).toBe(Math.floor((200_000 + 210_001 + 240_000 + 280_000) / 4));
+    expect(est.estUnit).toBe(Math.round((200_000 + 210_001 + 240_000 + 280_000) / 4));
   });
 
   it("예상 합계에 미산출 항목을 빼고 의뢰인 수수료 끝수를 원 단위로 내린다", () => {
