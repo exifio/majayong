@@ -137,10 +137,12 @@ export function mapTradeError(error: { readonly code: string }): AppError {
       return new AppError(409, "CONFLICT", "현재 상태에서는 요청을 처리할 수 없습니다.");
     case "CONTRACT_PDF_UPLOAD_FAILED":
     case "CONTRACT_PDF_URL_FAILED":
-    case "TOSS_TEST_KEY_REQUIRED":
+      return new AppError(503, "INTERNAL_ERROR", "계약서 파일 서비스를 일시적으로 사용할 수 없습니다.");
     case "TOSS_CONFIRM_UNAVAILABLE":
     case "TOSS_CONFIRM_INVALID_RESPONSE":
-      return new AppError(503, "INTERNAL_ERROR", "계약서 파일 서비스를 일시적으로 사용할 수 없습니다.");
+      return new AppError(503, "INTERNAL_ERROR", "결제 승인 결과를 확인하는 중입니다. 잠시 후 다시 시도해 주세요.");
+    case "TOSS_TEST_KEY_REQUIRED":
+      return new AppError(503, "INTERNAL_ERROR", "결제 서비스를 일시적으로 사용할 수 없습니다.");
     case "INVALID_CONTRACT_PDF":
     case "INVALID_SIGNATURE_TIME":
     default:

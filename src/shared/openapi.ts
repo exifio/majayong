@@ -53,6 +53,30 @@ export const openApiSpec = {
           estMax: { type: "integer", nullable: true },
         },
       },
+      ClientEstimateSummary: {
+        type: "object",
+        required: ["estimableCount", "unestimableCount", "supplyAmount", "minSupplyAmount", "maxSupplyAmount", "clientFee", "totalWithFee"],
+        properties: {
+          estimableCount: { type: "integer" },
+          unestimableCount: { type: "integer" },
+          supplyAmount: { type: "integer" },
+          minSupplyAmount: { type: "integer" },
+          maxSupplyAmount: { type: "integer" },
+          clientFee: { type: "integer" },
+          totalWithFee: { type: "integer" },
+        },
+      },
+      BlockEstimatesResponse: {
+        type: "object",
+        required: ["items", "summary"],
+        properties: {
+          items: {
+            type: "array",
+            items: { $ref: "#/components/schemas/BlockEstimate" },
+          },
+          summary: { $ref: "#/components/schemas/ClientEstimateSummary" },
+        },
+      },
     },
   },
   paths: {
@@ -125,7 +149,14 @@ export const openApiSpec = {
           { name: "blockIds", in: "query", required: true, schema: { type: "string" } },
         ],
         responses: {
-          "200": { description: "블록별 예상 단가 및 합계" },
+          "200": {
+            description: "블록별 예상 단가 및 합계",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/BlockEstimatesResponse" },
+              },
+            },
+          },
           "403": { description: "공급자 접근 차단" },
         },
       },
@@ -139,7 +170,14 @@ export const openApiSpec = {
           { name: "blockId", in: "path", required: true, schema: { type: "string", format: "uuid" } },
         ],
         responses: {
-          "200": { description: "예상 단가 결과" },
+          "200": {
+            description: "예상 단가 결과",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/BlockEstimate" },
+              },
+            },
+          },
           "403": { description: "공급자 접근 차단" },
         },
       },

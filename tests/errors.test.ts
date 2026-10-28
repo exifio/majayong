@@ -80,4 +80,15 @@ describe("공통 오류 응답 매핑", () => {
       expect(mapped.message).not.toContain(code);
     },
   );
+
+  it.each(["TOSS_CONFIRM_UNAVAILABLE", "TOSS_CONFIRM_INVALID_RESPONSE", "TOSS_TEST_KEY_REQUIRED"])(
+    "%s 는 계약서 문구가 아닌 결제 전용 503 문구로 매핑한다",
+    (code) => {
+      const mapped = mapTradeError({ code });
+
+      expect(mapped.statusCode).toBe(503);
+      expect(mapped.message).toContain("결제");
+      expect(mapped.message).not.toContain("계약서");
+    },
+  );
 });
