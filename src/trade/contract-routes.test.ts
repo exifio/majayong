@@ -8,6 +8,7 @@ import {
   type ContractHttpNext,
   type ContractRequestHandler,
   type ContractRouteRegistrar,
+  type ContractWorkflowService,
 } from './contract-routes.js';
 
 type TestTransaction = { contract: ContractRecord; transitions: number };
@@ -58,20 +59,35 @@ function makeWorkflow(initialStatus: ContractRecord['status'] = 'PENDING_CONSENT
     uploadPrivateObject: async () => undefined,
     createSignedUrl: async () => 'https://storage.invalid/signed.pdf',
   };
+  const created: Parameters<ContractWorkflowService['createContract']>[0][] = [];
+  const base = createContractWorkflow(ports, storage, () => new Date('2026-10-27T12:00:00.000Z'));
   return {
-    workflow: createContractWorkflow(ports, storage, () => new Date('2026-10-27T12:00:00.000Z')),
+    workflow: {
+      ...base,
+      async createContract(input: Parameters<ContractWorkflowService['createContract']>[0]) {
+        created.push(input);
+        return { ...database.contract, id: 'contract-new', applicationId: input.applicationId };
+      },
+    },
+    created,
     state: () => database,
   };
 }
 
 function routeFixture(status: ContractRecord['status'] = 'PENDING_CONSENT') {
-  const { workflow, state } = makeWorkflow(status);
+  const { workflow, created, state } = makeWorkflow(status);
   const errors: unknown[] = [];
-  const registered: { postPath?: string; getPath?: string } = {};
+  const registered: { postPath?: string; createPath?: string; getPath?: string } = {};
   let post: ContractRequestHandler<TestRequest, TestResponse> | undefined;
+  let create: ContractRequestHandler<TestRequest, TestResponse> | undefined;
   let get: ContractRequestHandler<TestRequest, TestResponse> | undefined;
   const router: ContractRouteRegistrar<TestRequest, TestResponse> = {
     post: (path, handler) => {
+      if (path === '/:applicationId') {
+        registered.createPath = path;
+        create = handler;
+        return;
+      }
       registered.postPath = path;
       post = handler;
     },
@@ -89,8 +105,8 @@ function routeFixture(status: ContractRecord['status'] = 'PENDING_CONSENT') {
     },
     mapTradeError: (error) => ({ code: error.code }),
   });
-  if (!post || !get) throw new Error('contract handlers were not registered');
-  return { post, get, state, errors, registered };
+  if (!post || !create || !get) throw new Error('contract handlers were not registered');
+  return { post, create, get, created, state, errors, registered };
 }
 
 function response(): TestResponse {
@@ -164,4 +180,82 @@ test('인증 실패는 A의 인증 오류로 그대로 넘긴다', async () => {
 
   expect(routes.errors).toEqual([{ code: 'UNAUTHORIZED' }]);
   expect(res.redirectUrl).toBeNull();
+});
+
+test('계약 생성 라우트는 로그인 actor와 구간 배정만 넘기고 금액은 받지 않는다', async () => {
+  const routes = routeFixture();
+  const res = response();
+  const next: ContractHttpNext = (error) => { if (error !== undefined) routes.errors.push(error); };
+
+  await routes.create({
+    params: { applicationId: 'application-1' },
+    body: {
+      interimRatio: 40,
+      installmentStageBySpecItemId: { 'spec-1': 'INTERIM', 'spec-2': 'FINAL' },
+    },
+    auth: { userId: 'client-1', role: 'CLIENT' },
+  }, res, next);
+
+  expect(routes.registered.createPath).toBe('/:applicationId');
+  expect(routes.created).toEqual([{
+    applicationId: 'application-1',
+    actor: { userId: 'client-1', role: 'CLIENT' },
+    interimRatio: 40,
+    installmentStageBySpecItemId: { 'spec-1': 'INTERIM', 'spec-2': 'FINAL' },
+  }]);
+  expect(res.body).toEqual({ contractId: 'contract-new', status: 'PENDING_CONSENT' });
+  expect(routes.errors).toEqual([]);
+});
+
+test('계약 생성 배정이 잘못되면 계약을 만들지 않고 오류로 넘긴다', async () => {
+  const routes = routeFixture();
+  const res = response();
+  const next: ContractHttpNext = (error) => { if (error !== undefined) routes.errors.push(error); };
+
+  await routes.create({
+    params: { applicationId: 'application-1' },
+    body: { installmentStageBySpecItemId: { 'spec-1': 'MIDDLE' } },
+    auth: { userId: 'client-1', role: 'CLIENT' },
+  }, res, next);
+
+  await routes.create({
+    params: { applicationId: 'application-1' },
+    body: { installmentStageBySpecItemId: { 'spec-1': 'INTERIM' }, interimRatio: '40' },
+    auth: { userId: 'client-1', role: 'CLIENT' },
+  }, res, next);
+
+  await routes.create({
+    params: { applicationId: 'application-1' },
+    body: undefined,
+    auth: { userId: 'client-1', role: 'CLIENT' },
+  }, res, next);
+
+  // 금액은 서버가 정한다. body로 보내면 무시하지 않고 거부한다.
+  await routes.create({
+    params: { applicationId: 'application-1' },
+    body: { agreedAmount: 1, installmentStageBySpecItemId: { 'spec-1': 'INTERIM' } },
+    auth: { userId: 'client-1', role: 'CLIENT' },
+  }, res, next);
+
+  expect(routes.created).toEqual([]);
+  expect(routes.errors).toEqual([
+    { code: 'INVALID_INSTALLMENT_STAGE_ASSIGNMENT' },
+    { code: 'INVALID_RATIO' },
+    { code: 'INVALID_CONTRACT_CREATE_BODY' },
+    { code: 'INVALID_CONTRACT_CREATE_BODY' },
+  ]);
+});
+
+test('계약 생성은 인증 없이는 실행하지 않는다', async () => {
+  const routes = routeFixture();
+  const res = response();
+  const next: ContractHttpNext = (error) => { if (error !== undefined) routes.errors.push(error); };
+
+  await routes.create({
+    params: { applicationId: 'application-1' },
+    body: { installmentStageBySpecItemId: { 'spec-1': 'INTERIM' } },
+  }, res, next);
+
+  expect(routes.created).toEqual([]);
+  expect(routes.errors).toEqual([{ code: 'UNAUTHORIZED' }]);
 });

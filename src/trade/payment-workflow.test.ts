@@ -12,7 +12,11 @@ type TestTransaction = {
   contract: PaymentContract;
   deposits: DepositRecord[];
   paymentEvents: { depositId: string; event: PaymentEventDraft }[];
-  eventLogs: { type: 'PAYMENT_DEPOSITED'; userId: string; payload: Record<string, string | number> }[];
+  eventLogs: {
+    type: 'PAYMENT_DEPOSITED' | 'OPERATOR_DEPOSIT_REVIEWED';
+    userId: string;
+    payload: Record<string, unknown>;
+  }[];
 };
 
 const now = new Date('2026-10-28T03:00:00.000Z');
@@ -244,5 +248,77 @@ test('잘못된 주문·금액·인증은 provider 호출 전에 막고 provider
 
   await expect(workflow.confirmDeposit(input)).rejects.toThrow('provider unavailable');
   expect(state().deposits[0].status).toBe('PENDING');
+  expect(state().contract.totalDeposited).toBe(0);
+});
+
+test('7일 지난 HELD 입금은 운영자 확정으로만 예치 완료된다', async () => {
+  const { workflow, state } = fixture();
+  await workflow.startDeposit({ contractId: 'contract-1', actor: client, idempotencyKey: 'held-key' });
+  state().deposits[0].status = 'HELD';
+
+  const admin = { userId: 'admin-1', role: 'ADMIN' as const, sessionId: 'admin-session' };
+  const result = await workflow.reviewHeldDeposit({
+    contractId: 'contract-1',
+    depositId: 'deposit-1',
+    actor: admin,
+    decision: 'COMPLETE',
+    reason: 'PG 정산 내역과 입금액 일치',
+  });
+
+  expect(result).toEqual({ depositStatus: 'COMPLETED', paymentStatus: 'DEPOSITED', creditedAmount: 105_000 });
+  expect(state().contract.totalDeposited).toBe(105_000);
+  expect(state().deposits[0]).toMatchObject({ status: 'COMPLETED', depositedAt: now });
+  expect(state().eventLogs).toHaveLength(1);
+  expect(state().eventLogs[0]).toMatchObject({
+    type: 'OPERATOR_DEPOSIT_REVIEWED',
+    userId: 'admin-1',
+    payload: { decision: 'COMPLETE', reason: 'PG 정산 내역과 입금액 일치', creditedAmount: 105_000 },
+  });
+  expect(state().paymentEvents.map(({ event }) => event.eventType)).toEqual(['REQUESTED', 'VERIFIED']);
+});
+
+test('운영자 실패 확정은 예치액을 늘리지 않고 새 시도를 허용한다', async () => {
+  const { workflow, state } = fixture();
+  await workflow.startDeposit({ contractId: 'contract-1', actor: client, idempotencyKey: 'held-key' });
+  state().deposits[0].status = 'HELD';
+
+  const result = await workflow.reviewHeldDeposit({
+    contractId: 'contract-1',
+    depositId: 'deposit-1',
+    actor: { userId: 'admin-1', role: 'ADMIN' },
+    decision: 'FAIL',
+    reason: 'PG에 승인 기록 없음',
+  });
+
+  expect(result).toEqual({ depositStatus: 'FAILED', paymentStatus: 'PENDING', creditedAmount: 0 });
+  expect(state().contract.totalDeposited).toBe(0);
+  await expect(workflow.startDeposit({
+    contractId: 'contract-1', actor: client, idempotencyKey: 'retry-key',
+  })).resolves.toMatchObject({ replayed: false });
+});
+
+test('운영자 확정은 HELD 입금·관리자·사유를 모두 확인하고 취소 계약은 완료 처리하지 않는다', async () => {
+  const { workflow, state } = fixture();
+  await workflow.startDeposit({ contractId: 'contract-1', actor: client, idempotencyKey: 'held-key' });
+  const input = {
+    contractId: 'contract-1',
+    depositId: 'deposit-1',
+    actor: { userId: 'admin-1', role: 'ADMIN' as const },
+    decision: 'COMPLETE' as const,
+    reason: '확인',
+  };
+
+  await expect(workflow.reviewHeldDeposit({ ...input, actor: client }))
+    .rejects.toHaveProperty('code', 'OPERATOR_REVIEW_FORBIDDEN');
+  await expect(workflow.reviewHeldDeposit(input))
+    .rejects.toHaveProperty('code', 'DEPOSIT_NOT_HELD');
+
+  state().deposits[0].status = 'HELD';
+  await expect(workflow.reviewHeldDeposit({ ...input, reason: '   ' }))
+    .rejects.toHaveProperty('code', 'OPERATOR_REVIEW_REASON_REQUIRED');
+
+  state().contract.status = 'CANCELLED';
+  await expect(workflow.reviewHeldDeposit(input))
+    .rejects.toHaveProperty('code', 'CONTRACT_NOT_ACTIVE');
   expect(state().contract.totalDeposited).toBe(0);
 });

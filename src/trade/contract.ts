@@ -1,5 +1,8 @@
 import { TradeError } from './errors.js';
 import { computeMoney } from './money.js';
+import type { InstallmentStage } from './settlement.js';
+
+export type { InstallmentStage };
 
 export type SpecItemStatus = 'INCLUDED' | 'EXCLUDED' | 'NEEDS_CONFIRMATION';
 export type ExcludedReason = 'SPEC_EXCLUDED' | 'SPEC_NEEDS_CONFIRMATION' | 'NOT_QUOTED' | 'SUPPLIER_UNAVAILABLE';
@@ -20,7 +23,13 @@ export type AcceptedContext = {
 
 export type Scope = {
   specVersionNo: number;
-  included: { specItemId: string; title: string; description: string; amount: number | null }[];
+  included: {
+    specItemId: string;
+    title: string;
+    description: string;
+    amount: number | null;
+    installmentStage: InstallmentStage;
+  }[];
   excluded: { specItemId: string; title: string; reason: ExcludedReason }[];
 };
 
@@ -49,7 +58,14 @@ export function recordContractSignature(
 }
 
 // 계약 범위 = 명세에 INCLUDED이면서 공급자가 수행 가능한 항목(PRD F-12).
-export function buildScope({ application, specItems, appItems }: AcceptedContext): Scope {
+// 구간 배정(INTERIM/FINAL)은 A가 명세 항목별로 확정해 넘긴다. 포함 항목마다 하나씩 있어야 한다.
+export function buildScope(
+  { application, specItems, appItems }: AcceptedContext,
+  installmentStageBySpecItemId: Readonly<Record<string, InstallmentStage>>,
+): Scope {
+  if (typeof installmentStageBySpecItemId !== 'object' || installmentStageBySpecItemId === null || Array.isArray(installmentStageBySpecItemId)) {
+    throw new TradeError('INVALID_INSTALLMENT_STAGE_ASSIGNMENT');
+  }
   if (application.status !== 'ACCEPTED') throw new TradeError('APPLICATION_NOT_ACCEPTED');
   if (specItems.some((s) => s.versionNo !== application.specVersionNo)) {
     throw new TradeError('SPEC_VERSION_MISMATCH');
@@ -68,20 +84,44 @@ export function buildScope({ application, specItems, appItems }: AcceptedContext
       : !a.isAvailable ? 'SUPPLIER_UNAVAILABLE'
       : null;
     if (reason) scope.excluded.push({ specItemId: s.id, title: s.title, reason });
-    else scope.included.push({ specItemId: s.id, title: s.title, description: s.description, amount: a?.amount ?? null });
+    else {
+      const installmentStage = installmentStageBySpecItemId[s.id];
+      if (installmentStage !== 'INTERIM' && installmentStage !== 'FINAL') {
+        throw new TradeError('INVALID_INSTALLMENT_STAGE_ASSIGNMENT');
+      }
+      scope.included.push({
+        specItemId: s.id,
+        title: s.title,
+        description: s.description,
+        amount: a?.amount ?? null,
+        installmentStage,
+      });
+    }
   }
   if (scope.included.length === 0) throw new TradeError('EMPTY_SCOPE');
+  // 제외된 항목에 배정이 남아 있으면 잘못된 입력이다.
+  const includedIds = new Set(scope.included.map(({ specItemId }) => specItemId));
+  if (Object.keys(installmentStageBySpecItemId).some((specItemId) => !includedIds.has(specItemId))) {
+    throw new TradeError('INVALID_INSTALLMENT_STAGE_ASSIGNMENT');
+  }
   return scope;
 }
 
 // 합의 금액은 지원서의 제안 금액과 다를 수 있어 따로 받는다.
+// 수수료 면제는 계약 생성 때 적용하지 않는다. 첫 공급자 지급 때 planPayoutCoupon으로 처리한다.
 export function planContract(
   ctx: AcceptedContext,
-  terms: { agreedAmount: number; interimRatio?: number; supplierFeeExempt: boolean },
+  terms: {
+    agreedAmount: number;
+    interimRatio?: number;
+    installmentStageBySpecItemId: Readonly<Record<string, InstallmentStage>>;
+  },
 ) {
-  const scope = buildScope(ctx);
+  const scope = buildScope(ctx, terms.installmentStageBySpecItemId);
   const interimRatio = terms.interimRatio ?? 50;
-  const money = computeMoney(terms.agreedAmount, interimRatio, terms.supplierFeeExempt);
+  const durationDays = ctx.application.durationDays;
+  if (!Number.isInteger(durationDays) || durationDays < 1) throw new TradeError('INVALID_DURATION_DAYS');
+  const money = computeMoney(terms.agreedAmount, interimRatio, false);
   return {
     applicationId: ctx.application.id,
     status: 'PENDING_CONSENT' as const,
@@ -89,7 +129,9 @@ export function planContract(
     clientSignedAt: null,
     supplierSignedAt: null,
     specVersionNo: scope.specVersionNo,
-    specSnapshot: scope,
+    // 계약서 PDF에 표시할 작업 소요일수(달력일, 공휴일 포함)도 서명 시점 스냅샷에 고정한다.
+    specSnapshot: { ...scope, durationDays },
+    durationDays,
     agreedAmount: terms.agreedAmount,
     clientFee: money.clientFee,
     supplierFee: money.supplierFee,

@@ -4,7 +4,9 @@ import { assertWon } from './money.js';
 import {
   decideCallback,
   planDeposit,
+  planOperatorDepositReview,
   type DepositStatus,
+  type OperatorDepositDecision,
   type PaymentEventDraft,
   type PgCallback,
 } from './payment.js';
@@ -75,13 +77,27 @@ export interface PaymentWorkflowPorts<Tx> {
   ): Promise<void>;
   recordDepositEvent(
     tx: Tx,
-    event: {
-      type: 'PAYMENT_DEPOSITED';
-      userId: string;
-      sessionId: string | null;
-      projectId: string | null;
-      payload: { contractId: string; depositId: string; amount: number };
-    },
+    event:
+      | {
+          type: 'PAYMENT_DEPOSITED';
+          userId: string;
+          sessionId: string | null;
+          projectId: string | null;
+          payload: { contractId: string; depositId: string; amount: number };
+        }
+      | {
+          type: 'OPERATOR_DEPOSIT_REVIEWED';
+          userId: string;
+          sessionId: string | null;
+          projectId: string | null;
+          payload: {
+            contractId: string;
+            depositId: string;
+            decision: OperatorDepositDecision;
+            reason: string;
+            creditedAmount: number;
+          };
+        },
   ): Promise<void>;
 }
 
@@ -235,6 +251,68 @@ export function createPaymentWorkflow<Tx>(
           paymentStatus: decision.credit > 0 ? 'DEPOSITED' : current.contract.paymentStatus,
           creditedAmount: decision.credit,
           replayed: decision.events.some((event) => event.eventType === 'DUPLICATE_BLOCKED'),
+        };
+      });
+    },
+
+    // 결제 시도 후 7일이 지나 HELD가 된 입금을 운영자가 확정한다.
+    // COMPLETE는 예치액·계약 상태·EventLog를 같은 transaction에 기록하고, FAIL은 새 시도를 허용한다.
+    async reviewHeldDeposit(input: {
+      contractId: string;
+      depositId: string;
+      actor: PaymentActor;
+      decision: OperatorDepositDecision;
+      reason: string;
+    }): Promise<{
+      depositStatus: DepositStatus;
+      paymentStatus: PaymentStatus;
+      creditedAmount: number;
+    }> {
+      if (input.actor.role !== 'ADMIN') throw new TradeError('OPERATOR_REVIEW_FORBIDDEN');
+      return ports.transaction(async (tx) => {
+        const current = await ports.findDepositConfirmationContextForUpdate(tx, input.contractId, input.depositId);
+        if (!current) throw new TradeError('DEPOSIT_NOT_FOUND');
+
+        const reviewedAt = now();
+        const plan = planOperatorDepositReview({
+          actor: input.actor,
+          deposit: current.deposit,
+          contract: current.contract,
+          decision: input.decision,
+          reason: input.reason,
+          reviewedAt,
+        });
+
+        await ports.updateDeposit(tx, current.deposit.id, {
+          status: plan.depositStatus,
+          pgKey: current.deposit.pgKey,
+          depositedAt: plan.credit > 0 ? reviewedAt : current.deposit.depositedAt,
+        });
+        await ports.recordPaymentEvents(tx, current.deposit.id, plan.events);
+        if (plan.credit > 0) {
+          await ports.updateContractPayment(tx, current.contract.id, {
+            paymentStatus: 'DEPOSITED',
+            totalDeposited: current.contract.totalDeposited + plan.credit,
+          });
+        }
+        await ports.recordDepositEvent(tx, {
+          type: 'OPERATOR_DEPOSIT_REVIEWED',
+          userId: input.actor.userId,
+          sessionId: input.actor.sessionId ?? null,
+          projectId: current.contract.projectId,
+          payload: {
+            contractId: current.contract.id,
+            depositId: current.deposit.id,
+            decision: input.decision,
+            reason: input.reason,
+            creditedAmount: plan.credit,
+          },
+        });
+
+        return {
+          depositStatus: plan.depositStatus,
+          paymentStatus: plan.credit > 0 ? 'DEPOSITED' : current.contract.paymentStatus,
+          creditedAmount: plan.credit,
         };
       });
     },

@@ -1,4 +1,5 @@
 import { TradeError } from './errors.js';
+import { assertWon } from './money.js';
 
 export type DepositStatus = 'PENDING' | 'HELD' | 'COMPLETED' | 'FAILED';
 export type PaymentEventType =
@@ -82,11 +83,60 @@ export function decideCallback(
   };
 }
 
-// 콜백이 오지 않는 입금은 기한이 지나면 보류한다. 기한 값은 sandbox 확인 뒤 정한다.
+// 결제 시도 후 7일 동안 검증된 결과가 없으면 HELD로 둔다(PRD F-13).
+export const DEPOSIT_HOLD_LIMIT_MS = 7 * 24 * 60 * 60 * 1000;
+
+// 콜백이 오지 않는 입금은 기한이 지나면 보류한다.
 export function holdIfOverdue(
   deposit: { status: DepositStatus; createdAt: Date },
   now: Date,
-  limitMs: number,
+  limitMs: number = DEPOSIT_HOLD_LIMIT_MS,
 ): DepositStatus {
   return deposit.status === 'PENDING' && now.getTime() - deposit.createdAt.getTime() > limitMs ? 'HELD' : deposit.status;
+}
+
+export type OperatorDepositDecision = 'COMPLETE' | 'FAIL';
+export type OperatorDepositReview = {
+  depositStatus: DepositStatus;
+  credit: number;
+  events: PaymentEventDraft[];
+};
+
+// HELD 입금은 운영자만 확정한다. COMPLETE는 실제 입금을 대조한 뒤에만 예치액에 반영하고,
+// FAIL은 새 시도를 허용한다. 확정 전에는 계약 paymentStatus가 PENDING이라 납품이 막힌다.
+export function planOperatorDepositReview(input: {
+  actor: { userId: string; role: string };
+  deposit: { status: DepositStatus; amount: number };
+  contract: { status: string; paymentStatus: string; totalDeposited: number };
+  decision: OperatorDepositDecision;
+  reason: string;
+  reviewedAt: Date;
+}): OperatorDepositReview {
+  if (input.actor.role !== 'ADMIN') throw new TradeError('OPERATOR_REVIEW_FORBIDDEN');
+  if (input.deposit.status !== 'HELD') throw new TradeError('DEPOSIT_NOT_HELD');
+  if (!input.reason.trim()) throw new TradeError('OPERATOR_REVIEW_REASON_REQUIRED');
+  if (Number.isNaN(input.reviewedAt.getTime())) throw new TradeError('INVALID_REVIEW_TIME');
+  if (!Number.isInteger(input.deposit.amount) || input.deposit.amount <= 0) throw new TradeError('INVALID_AMOUNT');
+
+  if (input.decision === 'FAIL') {
+    return {
+      depositStatus: 'FAILED',
+      credit: 0,
+      events: [{ eventType: 'FAILED', dedupKey: null, resultNote: 'operator: ' + input.reason }],
+    };
+  }
+
+  if (input.contract.status !== 'ACTIVE') throw new TradeError('CONTRACT_NOT_ACTIVE');
+  if (input.contract.paymentStatus !== 'PENDING') throw new TradeError('DEPOSIT_ALREADY_OPEN');
+  assertWon(input.contract.totalDeposited + input.deposit.amount);
+
+  return {
+    depositStatus: 'COMPLETED',
+    credit: input.deposit.amount,
+    events: [{
+      eventType: 'VERIFIED',
+      dedupKey: 'operator:' + input.actor.userId + ':' + input.reviewedAt.toISOString(),
+      resultNote: 'operator confirmed: ' + input.reason,
+    }],
+  };
 }

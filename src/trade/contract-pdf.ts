@@ -4,6 +4,19 @@ import { TradeError } from './errors.js';
 
 export type ContractPdfArtifact = { contentHash: string; pdfUrl: string };
 
+// 계약서 PDF의 작업 소요일수는 영업일이 아니라 공휴일을 포함한 달력일이다(PRD F-12).
+export const CALENDAR_DURATION_LABEL = '작업 소요일수(달력일, 공휴일 포함)';
+
+export function assertCalendarDurationDays(days: number): void {
+  if (!Number.isInteger(days) || days < 1) throw new TradeError('INVALID_DURATION_DAYS');
+}
+
+// 승인된 계약서 템플릿이 그대로 출력할 수 있는 문구를 만든다.
+export function formatCalendarDuration(days: number): string {
+  assertCalendarDurationDays(days);
+  return `${days}일 (달력일, 공휴일 포함)`;
+}
+
 export async function prepareContractPdf<Document>(input: {
   bucket: string;
   contractId: string;

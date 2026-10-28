@@ -1,0 +1,4 @@
+{
+  "testMatch": ["<rootDir>/dist/**/*.test.js"],
+  "transform": {}
+}

@@ -223,6 +223,7 @@ export function planManualRefund(input: {
   availableAmount: number;
   refundAmount: number;
   clientFeeRefund: number;
+  supplierCompensation?: number;
   reason: string;
   refundedAt: Date;
 }) {
@@ -254,6 +255,14 @@ export function planManualRefund(input: {
   }
   if (!input.reason.trim()) throw new TradeError('REFUND_REASON_REQUIRED');
   if (Number.isNaN(input.refundedAt.getTime())) throw new TradeError('INVALID_REFUND_TIME');
+  const supplierCompensation = input.supplierCompensation ?? 0;
+  if (
+    !Number.isInteger(supplierCompensation) ||
+    supplierCompensation < 0 ||
+    supplierCompensation > input.contract.totalDeposited
+  ) {
+    throw new TradeError('INVALID_COMPENSATION_AMOUNT');
+  }
 
   return {
     contract: {
@@ -273,6 +282,7 @@ export function planManualRefund(input: {
         contractId: input.contract.id,
         amount: input.refundAmount,
         clientFeeRefund: input.clientFeeRefund,
+        supplierCompensation,
         reason: input.reason,
       },
     },

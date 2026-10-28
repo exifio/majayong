@@ -25,10 +25,8 @@ export type Money = {
   installments: [InstallmentPlan, InstallmentPlan];
 };
 
-// 면제는 feeExempt이고 아직 쓰지 않았을 때만 적용한다(스키마 주석 [수수료 면제]).
-export const isFeeExempt = (p: { feeExempt: boolean; feeExemptUsedAt: Date | null }) =>
-  p.feeExempt && p.feeExemptUsedAt === null;
-
+// 면제는 계약 생성이 아니라 첫 공급자 지급 때 쿠폰으로 적용한다(payout-coupon.ts).
+// 이 계산기는 쿠폰 전후 금액을 비교할 때만 supplierFeeExempt=true를 쓴다.
 export function computeMoney(agreedAmount: number, interimRatio: number, supplierFeeExempt: boolean): Money {
   assertWon(agreedAmount);
   if (!Number.isInteger(interimRatio) || interimRatio < 1 || interimRatio > 99) {

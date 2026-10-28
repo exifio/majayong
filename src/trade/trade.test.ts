@@ -1,6 +1,6 @@
 import { expect, test } from '@jest/globals';
 import { TradeError } from './errors.js';
-import { computeMoney, isFeeExempt } from './money.js';
+import { computeMoney } from './money.js';
 import {
   buildScope,
   planContract,
@@ -13,6 +13,7 @@ import {
 import {
   callbackKey,
   decideCallback,
+  DEPOSIT_HOLD_LIMIT_MS,
   holdIfOverdue,
   planDeposit,
   type DepositStatus,
@@ -66,20 +67,18 @@ test('어떤 금액·비율에서도 구간 합계가 계약 금액·공급자 �
   }
 });
 
-test('첫 거래 면제: 공급자 수수료 0, 의뢰인 수수료는 그대로', () => {
-  const m = computeMoney(1_000_001, 50, true);
-  expect(m.supplierFee).toBe(0);
-  expect(m.clientFee).toBe(50_000);
-  for (const i of m.installments) {
+test('computeMoney의 면제 플래그는 쿠폰 전후 비교용으로만 쓰고, 계약 생성은 면제하지 않는다', () => {
+  const exempted = computeMoney(1_000_001, 50, true);
+  expect(exempted.supplierFee).toBe(0);
+  expect(exempted.clientFee).toBe(50_000);
+  for (const i of exempted.installments) {
     expect(i.supplierFee).toBe(0);
     expect(i.releaseAmount).toBe(i.amount);
   }
-});
 
-test('면제는 feeExempt이고 아직 쓰지 않았을 때만', () => {
-  expect(isFeeExempt({ feeExempt: true, feeExemptUsedAt: null })).toBe(true);
-  expect(isFeeExempt({ feeExempt: true, feeExemptUsedAt: new Date() })).toBe(false);
-  expect(isFeeExempt({ feeExempt: false, feeExemptUsedAt: null })).toBe(false);
+  const plan = planContract(ctx(), { agreedAmount: 1_000_001, installmentStageBySpecItemId: STAGES });
+  expect(plan.supplierFee).toBe(50_000);
+  expect(plan.installments.map((i) => i.supplierFee)).toEqual([25_000, 25_000]);
 });
 
 test('잘못된 금액·비율은 거부한다', () => {
@@ -121,10 +120,19 @@ const ctx = (over: Partial<AcceptedContext> = {}): AcceptedContext => ({
   ...over,
 });
 
+// 계약 범위에 포함되는 항목(s1, s6)의 구간 배정. A가 명세 항목별로 확정해 넘긴다.
+const STAGES = { s1: 'INTERIM', s6: 'FINAL' } as const;
+
+test('구간 배정이 빠지거나 제외된 항목에 배정되면 거부한다', () => {
+  throwsCode(() => buildScope(ctx(), { s1: 'INTERIM' }), 'INVALID_INSTALLMENT_STAGE_ASSIGNMENT');
+  throwsCode(() => buildScope(ctx(), { ...STAGES, s5: 'FINAL' }), 'INVALID_INSTALLMENT_STAGE_ASSIGNMENT');
+});
+
 test('계약 범위는 INCLUDED이면서 수행 가능한 항목만, 제외 사유를 남긴다', () => {
-  const scope = buildScope(ctx());
+  const scope = buildScope(ctx(), STAGES);
   expect(scope.specVersionNo).toBe(2);
   expect(scope.included.map((s) => s.specItemId)).toEqual(['s1', 's6']);
+  expect(scope.included.map((s) => s.installmentStage)).toEqual(['INTERIM', 'FINAL']);
   expect(
     scope.excluded.map((s) => [s.specItemId, s.reason]),
   ).toEqual([
@@ -141,7 +149,7 @@ test('수행 가능한 포함 항목의 금액이 null이면 계약 범위에도
     item.specItemId === 's1' ? { ...item, amount: null } : item,
   );
 
-  const scope = buildScope(ctx({ appItems }));
+  const scope = buildScope(ctx({ appItems }), STAGES);
 
   expect(scope.included[0].specItemId).toBe('s1');
   expect(scope.included[0].amount).toBeNull();
@@ -149,17 +157,17 @@ test('수행 가능한 포함 항목의 금액이 null이면 계약 범위에도
 
 test('수락되지 않은 지원서·다른 명세 버전·다른 명세의 항목·빈 범위는 거부한다', () => {
   const base = ctx();
-  throwsCode(() => buildScope(ctx({ application: { ...base.application, status: 'SUBMITTED' } })), 'APPLICATION_NOT_ACCEPTED');
-  throwsCode(() => buildScope(ctx({ application: { ...base.application, specVersionNo: 3 } })), 'SPEC_VERSION_MISMATCH');
+  throwsCode(() => buildScope(ctx({ application: { ...base.application, status: 'SUBMITTED' } }), STAGES), 'APPLICATION_NOT_ACCEPTED');
+  throwsCode(() => buildScope(ctx({ application: { ...base.application, specVersionNo: 3 } }), STAGES), 'SPEC_VERSION_MISMATCH');
   throwsCode(
-    () => buildScope(ctx({ appItems: [...base.appItems, { specItemId: 'other', isAvailable: true, amount: 1 }] })),
+    () => buildScope(ctx({ appItems: [...base.appItems, { specItemId: 'other', isAvailable: true, amount: 1 }] }), STAGES),
     'FOREIGN_APPLICATION_ITEM',
   );
-  throwsCode(() => buildScope(ctx({ appItems: [] })), 'EMPTY_SCOPE');
+  throwsCode(() => buildScope(ctx({ appItems: [] }), STAGES), 'EMPTY_SCOPE');
 });
 
 test('계약 계획: 합의 금액은 제안 금액과 달라도 합의 금액으로 계산한다', () => {
-  const plan = planContract(ctx(), { agreedAmount: 2_500_000, supplierFeeExempt: false });
+  const plan = planContract(ctx(), { agreedAmount: 2_500_000, installmentStageBySpecItemId: STAGES });
   expect(plan.status).toBe('PENDING_CONSENT');
   expect(plan.agreedAmount).toBe(2_500_000); // 제안 금액은 3,000,000
   expect(plan.interimRatio).toBe(50);
@@ -167,10 +175,16 @@ test('계약 계획: 합의 금액은 제안 금액과 달라도 합의 금액�
   expect(plan.supplierFee).toBe(125_000);
   expect(plan.specSnapshot.included.map((s) => s.specItemId)).toEqual(['s1', 's6']);
   expect(plan.installments[0].amount + plan.installments[1].amount).toBe(2_500_000);
+  expect(plan.durationDays).toBe(30);
+  expect(plan.specSnapshot.durationDays).toBe(30);
 
-  const custom = planContract(ctx(), { agreedAmount: 2_500_000, interimRatio: 30, supplierFeeExempt: true });
+  const custom = planContract(ctx(), { agreedAmount: 2_500_000, interimRatio: 30, installmentStageBySpecItemId: STAGES });
   expect(custom.installments.map((i) => i.amount)).toEqual([750_000, 1_750_000]);
-  expect(custom.supplierFee).toBe(0);
+  expect(custom.supplierFee).toBe(125_000);
+  throwsCode(
+    () => planContract(ctx({ application: { ...ctx().application, durationDays: 0 } }), { agreedAmount: 2_500_000, installmentStageBySpecItemId: STAGES }),
+    'INVALID_DURATION_DAYS',
+  );
 });
 
 const contractHash = 'sha256:contract-v1';
@@ -178,7 +192,7 @@ const clientSignedAt = new Date('2026-10-27T12:00:00.000Z');
 const supplierSignedAt = new Date('2026-10-27T12:05:00.000Z');
 
 test('두 당사자가 같은 계약서에 서명하면 두 번째 서명에서 ACTIVE가 된다', () => {
-  const planned = planContract(ctx(), { agreedAmount: 2_500_000, supplierFeeExempt: false });
+  const planned = planContract(ctx(), { agreedAmount: 2_500_000, installmentStageBySpecItemId: STAGES });
   const clientSigned = recordContractSignature(planned, {
     party: 'CLIENT',
     contentHash: contractHash,
@@ -203,7 +217,7 @@ test('두 당사자가 같은 계약서에 서명하면 두 번째 서명에서 
 });
 
 test('공급자가 먼저 서명해도 의뢰인의 같은 문서 서명으로 ACTIVE가 된다', () => {
-  const planned = planContract(ctx(), { agreedAmount: 2_500_000, supplierFeeExempt: false });
+  const planned = planContract(ctx(), { agreedAmount: 2_500_000, installmentStageBySpecItemId: STAGES });
   const supplierSigned = recordContractSignature(planned, {
     party: 'SUPPLIER',
     contentHash: contractHash,
@@ -221,7 +235,7 @@ test('공급자가 먼저 서명해도 의뢰인의 같은 문서 서명으로 A
 });
 
 test('서명 전에 고정한 문서 해시와 같은 해시로 서명할 수 있다', () => {
-  const planned = planContract(ctx(), { agreedAmount: 2_500_000, supplierFeeExempt: false });
+  const planned = planContract(ctx(), { agreedAmount: 2_500_000, installmentStageBySpecItemId: STAGES });
   const documentReady = { ...planned, contentHash: contractHash } satisfies ContractConsent;
   const clientSigned = recordContractSignature(documentReady, {
     party: 'CLIENT',
@@ -239,7 +253,7 @@ test('서명 전에 고정한 문서 해시와 같은 해시로 서명할 수 �
 });
 
 test('문서 해시가 다르거나 이미 서명한 당사자는 서명 상태를 바꾸지 못한다', () => {
-  const planned = planContract(ctx(), { agreedAmount: 2_500_000, supplierFeeExempt: false });
+  const planned = planContract(ctx(), { agreedAmount: 2_500_000, installmentStageBySpecItemId: STAGES });
   const clientSigned = recordContractSignature(planned, {
     party: 'CLIENT',
     contentHash: contractHash,
@@ -263,7 +277,7 @@ test('문서 해시가 다르거나 이미 서명한 당사자는 서명 상태�
 });
 
 test('ACTIVE·COMPLETED·CANCELLED 계약과 잘못된 서명값은 거부한다', () => {
-  const planned = planContract(ctx(), { agreedAmount: 2_500_000, supplierFeeExempt: false });
+  const planned = planContract(ctx(), { agreedAmount: 2_500_000, installmentStageBySpecItemId: STAGES });
   const terminalStatuses: ContractStatus[] = ['ACTIVE', 'COMPLETED', 'CANCELLED'];
   for (const status of terminalStatuses) {
     const contract = { ...planned, status } satisfies ContractConsent;
@@ -413,4 +427,12 @@ test('콜백이 오지 않는 입금은 기한이 지나면 보류한다', () =>
   expect(holdIfOverdue({ status: 'PENDING', createdAt }, at(1001), 1000)).toBe('HELD');
   expect(holdIfOverdue({ status: 'COMPLETED', createdAt }, at(99_999), 1000)).toBe('COMPLETED');
   expect(holdIfOverdue({ status: 'FAILED', createdAt }, at(99_999), 1000)).toBe('FAILED');
+});
+
+test('결제 시도 후 기본 보류 기한은 7일이다', () => {
+  expect(DEPOSIT_HOLD_LIMIT_MS).toBe(7 * 24 * 60 * 60 * 1000);
+  const createdAt = new Date('2026-10-01T00:00:00.000Z');
+  const at = (ms: number) => new Date(createdAt.getTime() + ms);
+  expect(holdIfOverdue({ status: 'PENDING', createdAt }, at(DEPOSIT_HOLD_LIMIT_MS))).toBe('PENDING');
+  expect(holdIfOverdue({ status: 'PENDING', createdAt }, at(DEPOSIT_HOLD_LIMIT_MS + 1))).toBe('HELD');
 });

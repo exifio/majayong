@@ -5,10 +5,13 @@
   "scripts": {
     "build": "tsc",
     "typecheck": "tsc --noEmit",
+    "test": "npm run build && node --experimental-vm-modules ./node_modules/jest/bin/jest.js --runInBand",
     "start": "node dist/index.js"
   },
   "devDependencies": {
+    "@jest/globals": "^30.5.2",
     "@types/node": "^26.6.5",
+    "jest": "^30.5.2",
     "typescript": "^7.0.2"
   }
 }
