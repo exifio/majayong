@@ -33,6 +33,8 @@ export function mapTradeError(error: { readonly code: string }): AppError {
     case "REVIEW_FORBIDDEN":
     case "DEPOSIT_FORBIDDEN":
     case "OPERATOR_REVIEW_FORBIDDEN":
+    case "CANCELLATION_FORBIDDEN":
+    case "MUTUAL_CANCELLATION_REQUIRES_ADMIN":
       return new AppError(403, "FORBIDDEN", "해당 작업을 수행할 권한이 없습니다.");
     case "CONTRACT_NOT_FOUND":
     case "DELIVERY_NOT_FOUND":
@@ -87,6 +89,10 @@ export function mapTradeError(error: { readonly code: string }): AppError {
     case "INVALID_INSPECTION_ITEM":
     case "INVALID_INSPECTION_NOTE":
     case "INVALID_INSPECTION_REASON":
+    case "INVALID_CANCELLATION_BODY":
+    case "INVALID_CANCELLATION_PARTY":
+    case "CANCELLATION_REASON_REQUIRED":
+    case "CANCELLATION_PARTY_REQUIRED":
     case "INVALID_REVIEW_BODY":
     case "INVALID_REVIEW_COMMENT":
     case "INVALID_REVIEW_RATING":
@@ -104,6 +110,7 @@ export function mapTradeError(error: { readonly code: string }): AppError {
     case "CONTRACT_PDF_NOT_READY":
     case "CONTRACT_NOT_SIGNED":
     case "CONTRACT_NOT_ACTIVE":
+    case "CANCELLATION_ALREADY_REQUESTED":
     case "CONTRACT_ALREADY_EXISTS":
     case "DEPOSIT_NOT_HELD":
     case "PAYMENT_ORDER_ID_MISMATCH":

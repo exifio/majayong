@@ -293,6 +293,7 @@ enum EventType {
   APPLICATION_SUBMITTED
   APPLICATION_ACCEPTED
   CONTRACT_AGREED
+  CANCELLATION_REQUESTED
   PAYMENT_DEPOSITED
   OPERATOR_DEPOSIT_REVIEWED // 운영자가 HELD 입금을 확인
   REFUND_PROCESSED // 운영자 · 사유 · 금액
@@ -642,7 +643,13 @@ model Contract {
   settledAmount   Int? // 진행분 합의 지급액. 여기에만 양측 5%
   refundReason    String?
   refundedAt      DateTime? // 처리한 운영자는 EventLog(REFUND_PROCESSED)
+  cancelRequestedBy    String?
+  cancelRequestedParty String? // CLIENT | SUPPLIER | MUTUAL
+  cancelReason         String?
+  cancelRequestedAt    DateTime?
   pdfUrl          String?
+  signedPdfHash   String? // 양측 서명 기록이 포함된 완료본의 해시
+  signedPdfUrl    String? // 완료본 Storage object path
   completedAt     DateTime? // 완료 상태에서만 리뷰 작성
   createdAt       DateTime       @default(now())
 

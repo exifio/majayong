@@ -1,5 +1,6 @@
 import { afterAll, beforeEach, describe, expect, it } from "@jest/globals";
 import { createContractForAcceptedApplication } from "../src/shared/contract-workflow-adapter.ts";
+import type { ContractStorage } from "../src/trade/contract-workflow.ts";
 import { prisma } from "../src/db.ts";
 import { resetDatabase } from "./helpers.ts";
 import { createProjectFixture, createSupplierFixture } from "./project-fixtures.ts";
@@ -35,7 +36,11 @@ describe("수락 지원서의 계약 생성 트랜잭션", () => {
       },
     });
 
-    const contract = await createContractForAcceptedApplication(prisma)({
+    const storage: ContractStorage = {
+      uploadPrivateObject: async () => {},
+      createSignedUrl: async () => { throw new Error("다운로드는 호출하지 않아야 합니다."); },
+    };
+    const contract = await createContractForAcceptedApplication(prisma, { storage, bucket: "contracts" })({
       applicationId: application.id,
       agreedAmount: 200_000,
       installmentStageBySpecItemId: { [specItemId]: "INTERIM" },

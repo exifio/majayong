@@ -70,6 +70,7 @@ export type ContractProjectAction =
     }
   | {
       type: "CONTRACT_CANCELLED";
+      cancelledAt: Date;
       newDeadline?: Date;
       actorUserId?: string;
       sessionId?: string | null;
@@ -324,7 +325,7 @@ export async function transitionProjectForContract(
     where: { id: projRow.id },
     data: {
       status: ProjectStatus.RECRUITING,
-      publishedAt: projRow.publishedAt ?? new Date(),
+      publishedAt: projRow.publishedAt ?? action.cancelledAt,
       ...(action.newDeadline !== undefined ? { deadline: action.newDeadline } : {}),
     },
   });

@@ -21,6 +21,7 @@ export interface ContractPdfDocument {
   excludedItems: readonly { title: string; reason: ExcludedReason }[];
   clientSignedAt: Date | string | null;
   supplierSignedAt: Date | string | null;
+  signedContentHash?: string;
 }
 
 const excludedReasonLabels: Record<ExcludedReason, string> = {
@@ -91,6 +92,9 @@ export async function renderContractPdf(input: ContractPdfDocument): Promise<Uin
   addLine(document, font, "의뢰인 서명 시각", formatSignedAt(input.clientSignedAt));
   addLine(document, font, "공급자", input.supplierName);
   addLine(document, font, "공급자 서명 시각", formatSignedAt(input.supplierSignedAt));
+  if (input.signedContentHash !== undefined) {
+    addLine(document, font, "서명한 원본 문서 SHA-256", input.signedContentHash);
+  }
 
   document.end();
   return output;
@@ -125,6 +129,7 @@ function assertValidDocument(input: ContractPdfDocument): void {
     !Number.isSafeInteger(input.specVersionNo) || input.specVersionNo < 1 ||
     !Number.isSafeInteger(input.agreedAmount) || input.agreedAmount < 0 ||
     !Number.isSafeInteger(input.durationDays) || input.durationDays < 1 ||
+    (input.signedContentHash !== undefined && !/^sha256:[0-9a-f]{64}$/.test(input.signedContentHash)) ||
     !Array.isArray(input.includedItems) || input.includedItems.length === 0 ||
     !Array.isArray(input.excludedItems)
   ) {

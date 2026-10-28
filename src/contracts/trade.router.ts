@@ -7,6 +7,8 @@ import type { PgCallback } from "../trade/payment.ts";
 import { createPaymentWorkflowPorts } from "../shared/payment-workflow-adapter.ts";
 import { createReviewWorkflow } from "../trade/review-workflow.ts";
 import { registerReviewRoutes } from "../trade/review-routes.ts";
+import { createCancellationWorkflow } from "../trade/cancellation-workflow.ts";
+import { registerCancellationRoutes } from "../trade/cancellation-routes.ts";
 import type { InspectionReason } from "../trade/settlement.ts";
 import { TradeError } from "../trade/errors.ts";
 import {
@@ -14,6 +16,7 @@ import {
   type TradeActor,
 } from "../shared/settlement-workflow-adapter.ts";
 import { createReviewWorkflowPorts } from "../shared/review-workflow-adapter.ts";
+import { createCancellationWorkflowPorts } from "../shared/cancellation-workflow-adapter.ts";
 import { getRequiredAuth } from "../shared/auth.ts";
 import { mapTradeError } from "../shared/errors.ts";
 import { isRecord } from "../shared/events.ts";
@@ -25,6 +28,9 @@ export function createTradeApiRouter(input: {
   const apiRouter = Router();
   const contractRoutes = Router();
   const reviewWorkflow = createReviewWorkflow(createReviewWorkflowPorts(input.prismaClient));
+  const cancellationWorkflow = createCancellationWorkflow(
+    createCancellationWorkflowPorts(input.prismaClient),
+  );
   const settlement = createSettlementWorkflowAdapter(input.prismaClient);
   const paymentWorkflow = createPaymentWorkflow(
     createPaymentWorkflowPorts(input.prismaClient),
@@ -50,6 +56,12 @@ export function createTradeApiRouter(input: {
       }
       return { userId: auth.userId, role: auth.role };
     },
+    mapTradeError,
+  });
+
+  registerCancellationRoutes(contractRoutes, {
+    workflow: cancellationWorkflow,
+    getAuth: getTradeActor,
     mapTradeError,
   });
 

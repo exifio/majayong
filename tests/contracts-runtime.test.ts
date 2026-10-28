@@ -1,6 +1,7 @@
 import { Role } from "@prisma/client";
 import { describe, expect, it, afterAll, beforeEach } from "@jest/globals";
 import type { Request } from "express";
+import { createHash } from "node:crypto";
 import { createApp } from "../src/app.ts";
 import { createContractStorage } from "../src/contracts/contract-storage.ts";
 import { createContractApiRouter } from "../src/contracts/contracts.router.ts";
@@ -43,7 +44,15 @@ describe("production 계약 라우터 조립", () => {
         applicationId: application.id,
         status: "PENDING_CONSENT",
         specVersionNo: 1,
-        specSnapshot: { included: [{ specItemId }], excluded: [] },
+        specSnapshot: {
+          specVersionNo: 1,
+          projectTitle: "예약 캘린더 프로젝트",
+          clientName: "의뢰인 이름",
+          supplierName: "공급자",
+          durationDays: 5,
+          included: [{ specItemId, title: "기능", description: "기능 설명", amount: 100_000, installmentStage: "INTERIM" }],
+          excluded: [],
+        },
         agreedAmount: 100_000,
         clientFee: 5_000,
         supplierFee: 5_000,
@@ -53,6 +62,7 @@ describe("production 계약 라우터 조립", () => {
     });
 
     const storageCalls: string[] = [];
+    const uploads: Array<{ path: string; bytes: Uint8Array }> = [];
     const signedUrlRequests: Array<{
       bucket: string;
       path: string;
@@ -63,7 +73,7 @@ describe("production 계약 라우터 조립", () => {
       prismaClient: prisma,
       bucket: "contracts",
       storage: {
-        uploadPrivateObject: async () => { storageCalls.push("upload"); },
+        uploadPrivateObject: async (input) => { storageCalls.push("upload"); uploads.push(input); },
         createSignedUrl: async (input) => {
           storageCalls.push("signed-url");
           signedUrlRequests.push(input);
@@ -123,6 +133,15 @@ describe("production 계약 라우터 조립", () => {
       const signatureStatuses = signatureBodies.map((body) => assertRecord(body).status).sort();
       expect(signatureStatuses).toEqual(["ACTIVE", "PENDING_CONSENT"]);
       expect(verifiedSignatures).toBe(2);
+      expect(uploads).toHaveLength(1);
+      const finalPdf = uploads[0];
+      if (!finalPdf) throw new Error("서명 완료 PDF가 필요합니다.");
+      const finalHash = `sha256:${createHash("sha256").update(finalPdf.bytes).digest("hex")}`;
+      const saved = await prisma.contract.findUniqueOrThrow({ where: { applicationId: application.id } });
+      expect(saved).toMatchObject({ contentHash: hash, signedPdfHash: finalHash, signedPdfUrl: finalPdf.path });
+      expect(saved.signedPdfHash).not.toBe(hash);
+      expect(saved.clientSignedAt).not.toBeNull();
+      expect(saved.supplierSignedAt).not.toBeNull();
 
       const pdfResponse = await fetch(
         `http://127.0.0.1:${getServerPort(server)}/api/contracts/${application.id}/pdf`,
@@ -130,10 +149,10 @@ describe("production 계약 라우터 조립", () => {
       );
       expect(pdfResponse.status).toBe(302);
       expect(pdfResponse.headers.get("location")).toBe("https://storage.invalid/signed.pdf");
-      expect(storageCalls).toEqual(["signed-url"]);
+      expect(storageCalls).toEqual(["upload", "signed-url"]);
       expect(signedUrlRequests).toEqual([{
         bucket: "contracts",
-        path: `contracts/contract-route-integration/${"a".repeat(64)}.pdf`,
+        path: finalPdf.path,
         expiresInSeconds: 300,
         download: true,
       }]);

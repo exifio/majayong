@@ -273,6 +273,7 @@ describe("공통 서버·이벤트·알림 및 Agent B 계약 브리지 검증",
     const invalidCancellation = prisma.$transaction((tx) =>
       transitionProjectForContract(tx, acceptedApp.id, {
         type: "CONTRACT_CANCELLED",
+        cancelledAt: extendedDeadline,
         newDeadline: tStart,
       }),
     );
@@ -289,6 +290,7 @@ describe("공통 서버·이벤트·알림 및 Agent B 계약 브리지 검증",
       });
       const cancelled = await transitionProjectForContract(tx, acceptedApp.id, {
         type: "CONTRACT_CANCELLED",
+        cancelledAt: extendedDeadline,
         newDeadline: extendedDeadline,
         actorUserId: client.id,
       });

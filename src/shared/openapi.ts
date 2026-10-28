@@ -251,6 +251,22 @@ export const openApiSpec = {
         responses: { "302": { description: "5분 private signed URL로 redirect" }, "403": { description: "계약 당사자 아님" }, "409": { description: "양측 서명 전" }, "503": { description: "signed URL 발급 실패" } },
       },
     },
+    "/api/contracts/{contractId}/cancellation-requests": {
+      post: {
+        tags: ["Contracts"], security: [{ BearerAuth: [] }], summary: "계약 당사자의 취소 요청 기록",
+        parameters: [{ name: "contractId", in: "path", required: true, schema: { type: "string", format: "uuid" } }],
+        requestBody: { required: true, content: { "application/json": { schema: { type: "object", required: ["reason"], properties: { reason: { type: "string", minLength: 1 }, party: { type: "string", enum: ["CLIENT", "SUPPLIER"] } } } } } },
+        responses: { "200": { description: "취소 요청과 CANCELLATION_REQUESTED EventLog 저장" }, "400": { description: "요청 값 오류" }, "401": { description: "미인증" }, "403": { description: "계약 당사자 아님" }, "409": { description: "이미 다른 취소 요청이 있거나 계약 상태 충돌" } },
+      },
+    },
+    "/api/contracts/{contractId}/cancellation": {
+      post: {
+        tags: ["Contracts"], security: [{ BearerAuth: [] }], summary: "운영자가 합의된 취소·환불 상태를 기록",
+        parameters: [{ name: "contractId", in: "path", required: true, schema: { type: "string", format: "uuid" } }],
+        requestBody: { required: true, content: { "application/json": { schema: { type: "object", required: ["party", "reason"], properties: { party: { type: "string", enum: ["CLIENT", "SUPPLIER", "MUTUAL"] }, reason: { type: "string", minLength: 1 }, negotiatedCompensation: { type: "integer", minimum: 0 }, compensationPercent: { type: "integer", minimum: 50, maximum: 100 } } } } } },
+        responses: { "200": { description: "계약 취소·환불·구간·EventLog·지원 거절·모집 복귀를 같은 transaction에 기록" }, "400": { description: "요청 값 오류" }, "401": { description: "미인증" }, "403": { description: "운영자 역할 아님" }, "409": { description: "계약 또는 환불 상태 충돌" } },
+      },
+    },
     "/api/contracts/{contractId}/deposits": {
       post: {
         tags: ["Contracts"], security: [{ BearerAuth: [] }], summary: "의뢰인 계약 예치 시도 생성",

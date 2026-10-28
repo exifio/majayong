@@ -4,6 +4,9 @@ import { getAcceptedApplicationContext, transitionProjectForContract } from "./c
 import { AppError } from "./errors.ts";
 import { planContract, type AcceptedContext, type InstallmentStage } from "../trade/contract.ts";
 import { TradeError } from "../trade/errors.ts";
+import { prepareContractPdfForAcceptedApplication, type ContractPdfOptions } from "../contracts/contract-pdf-service.ts";
+
+export { prepareContractPdfForAcceptedApplication } from "../contracts/contract-pdf-service.ts";
 
 const CONTRACT_SELECT = {
   id: true,
@@ -72,56 +75,73 @@ export async function updateContractSignature(
   return toWorkflowContract(contract);
 }
 
-export function createContractForAcceptedApplication(prismaClient: PrismaClient) {
-  return (input: {
+export function createContractForAcceptedApplication(prismaClient: PrismaClient, pdfOptions: ContractPdfOptions) {
+  const preparePdf = prepareContractPdfForAcceptedApplication(prismaClient, pdfOptions);
+  return async (input: {
     applicationId: string;
     agreedAmount: number;
     interimRatio?: number;
     installmentStageBySpecItemId: Readonly<Record<string, InstallmentStage>>;
-  }) => prismaClient.$transaction(async (tx) => {
-    const lockedApplication = await tx.$queryRaw<Array<{ id: string; projectId: string }>>(Prisma.sql`
-      SELECT id, "projectId" FROM applications WHERE id = ${input.applicationId} FOR UPDATE
-    `);
-    if (!lockedApplication[0]) {
-      throw new AppError(404, "NOT_FOUND", "수락 지원서를 찾을 수 없습니다.");
-    }
-    await tx.$queryRaw(Prisma.sql`
-      SELECT id FROM projects WHERE id = ${lockedApplication[0].projectId} FOR UPDATE
-    `);
-    const existing = await tx.contract.findUnique({
-      where: { applicationId: input.applicationId },
-      select: { id: true },
-    });
-    if (existing) throw new TradeError("CONTRACT_ALREADY_EXISTS");
+  }) => {
+    const contract = await prismaClient.$transaction(async (tx) => {
+      const lockedApplication = await tx.$queryRaw<Array<{ id: string; projectId: string }>>(Prisma.sql`
+        SELECT id, "projectId" FROM applications WHERE id = ${input.applicationId} FOR UPDATE
+      `);
+      if (!lockedApplication[0]) {
+        throw new AppError(404, "NOT_FOUND", "수락 지원서를 찾을 수 없습니다.");
+      }
+      await tx.$queryRaw(Prisma.sql`
+        SELECT id FROM projects WHERE id = ${lockedApplication[0].projectId} FOR UPDATE
+      `);
+      const existing = await tx.contract.findUnique({
+        where: { applicationId: input.applicationId },
+        select: { id: true },
+      });
+      if (existing) throw new TradeError("CONTRACT_ALREADY_EXISTS");
 
-    const context = await getAcceptedApplicationContext(tx, input.applicationId);
-    const planningContext: AcceptedContext = {
-      application: {
-        id: context.applicationId,
-        status: "ACCEPTED",
-        specVersionNo: context.specVersionNo,
-        totalAmount: context.proposedTotalAmount,
-        durationDays: context.durationDays,
-      },
-      specItems: context.specItems,
-      appItems: context.applicationItems,
-    };
-    const plan = planContract(planningContext, input);
-    return tx.contract.create({
-      data: {
-        applicationId: plan.applicationId,
-        status: plan.status,
-        specVersionNo: plan.specVersionNo,
-        specSnapshot: plan.specSnapshot,
-        agreedAmount: plan.agreedAmount,
-        clientFee: plan.clientFee,
-        supplierFee: plan.supplierFee,
-        interimRatio: plan.interimRatio,
-        installments: { create: plan.installments },
-      },
-      include: { installments: true },
+      const context = await getAcceptedApplicationContext(tx, input.applicationId);
+      const planningContext: AcceptedContext = {
+        application: {
+          id: context.applicationId,
+          status: "ACCEPTED",
+          specVersionNo: context.specVersionNo,
+          totalAmount: context.proposedTotalAmount,
+          durationDays: context.durationDays,
+        },
+        specItems: context.specItems,
+        appItems: context.applicationItems,
+      };
+      const plan = planContract(planningContext, input);
+      const parties = await tx.application.findUniqueOrThrow({
+        where: { id: input.applicationId },
+        select: {
+          supplier: { select: { user: { select: { name: true } } } },
+          project: { select: { draft: { select: { client: { select: { name: true } } } } } },
+        },
+      });
+      const clientName = parties.project.draft.client.name;
+      const supplierName = parties.supplier.user.name;
+      if (!context.projectTitle.trim() || !clientName.trim() || !supplierName.trim()) {
+        throw new TradeError("INVALID_CONTRACT_SCOPE");
+      }
+      return tx.contract.create({
+        data: {
+          applicationId: plan.applicationId,
+          status: plan.status,
+          specVersionNo: plan.specVersionNo,
+          specSnapshot: { ...plan.specSnapshot, projectTitle: context.projectTitle, clientName, supplierName },
+          agreedAmount: plan.agreedAmount,
+          clientFee: plan.clientFee,
+          supplierFee: plan.supplierFee,
+          interimRatio: plan.interimRatio,
+          installments: { create: plan.installments },
+        },
+        include: { installments: true },
+      });
     });
-  });
+    await preparePdf(input.applicationId);
+    return prismaClient.contract.findUniqueOrThrow({ where: { id: contract.id }, include: { installments: true } });
+  };
 }
 
 export function createContractWorkflowPorts(prismaClient: PrismaClient) {

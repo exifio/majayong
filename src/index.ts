@@ -16,6 +16,7 @@ export * from "./shared/contract-workflow-adapter.ts";
 export * from "./shared/review-workflow-adapter.ts";
 export * from "./shared/settlement-workflow-adapter.ts";
 export * from "./shared/payment-workflow-adapter.ts";
+export * from "./shared/cancellation-workflow-adapter.ts";
 export * from "./rates/rates.service.ts";
 export * from "./projects/projects.service.ts";
 export * from "./applications/applications.service.ts";
