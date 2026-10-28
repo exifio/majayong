@@ -7,6 +7,7 @@ import {
 } from './payment-workflow.js';
 import type { PaymentEventDraft, PgCallback } from './payment.js';
 import type { TossConfirmationRequest } from './toss-payments.js';
+import { TradeError } from './errors.js';
 
 type TestTransaction = {
   contract: PaymentContract;
@@ -321,4 +322,42 @@ test('운영자 확정은 HELD 입금·관리자·사유를 모두 확인하고 
   await expect(workflow.reviewHeldDeposit(input))
     .rejects.toHaveProperty('code', 'CONTRACT_NOT_ACTIVE');
   expect(state().contract.totalDeposited).toBe(0);
+});
+
+test('승인 결과를 알 수 없으면 입금을 HELD로 잠그고 사유를 남기며 재시도를 막는다', async () => {
+  for (const code of ['TOSS_CONFIRM_UNAVAILABLE', 'TOSS_CONFIRM_INVALID_RESPONSE']) {
+    const { workflow, state, confirmationCalls } = fixture({ confirmError: new TradeError(code) });
+    await workflow.startDeposit({ contractId: 'contract-1', actor: client, idempotencyKey: 'uncertain-key' });
+    const input = {
+      contractId: 'contract-1', depositId: 'deposit-1', actor: client,
+      paymentKey: 'pay_test_1', orderId: 'deposit-1', returnedAmount: 105_000,
+    };
+
+    const first = await workflow.confirmDeposit(input);
+    expect(first).toEqual({ depositStatus: 'HELD', paymentStatus: 'PENDING', creditedAmount: 0, replayed: false });
+    expect(state().deposits[0].status).toBe('HELD');
+    expect(state().deposits[0].pgKey).toBe('pay_test_1');
+    expect(state().contract.totalDeposited).toBe(0);
+    const note = state().paymentEvents.find((row) => row.event.dedupKey === 'uncertain:pay_test_1');
+    expect(note?.event.resultNote).toContain('승인 결과 확인 불가');
+    expect(note?.event.resultNote).toContain(code);
+
+    const retry = await workflow.confirmDeposit(input);
+    expect(retry).toMatchObject({ depositStatus: 'HELD', creditedAmount: 0, replayed: true });
+    expect(confirmationCalls).toHaveLength(1);
+    await expect(workflow.startDeposit({
+      contractId: 'contract-1', actor: client, idempotencyKey: 'another-key',
+    })).rejects.toBeDefined();
+  }
+});
+
+test('확정 거절(4xx)은 입금을 PENDING으로 유지한다', async () => {
+  const { workflow, state } = fixture({ confirmError: new TradeError('TOSS_CONFIRM_REJECTED') });
+  await workflow.startDeposit({ contractId: 'contract-1', actor: client, idempotencyKey: 'rejected-key' });
+  await expect(workflow.confirmDeposit({
+    contractId: 'contract-1', depositId: 'deposit-1', actor: client,
+    paymentKey: 'pay_test_1', orderId: 'deposit-1', returnedAmount: 105_000,
+  })).rejects.toHaveProperty('code', 'TOSS_CONFIRM_REJECTED');
+  expect(state().deposits[0].status).toBe('PENDING');
+  expect(state().paymentEvents.map((row) => row.event.eventType)).toEqual(['REQUESTED']);
 });

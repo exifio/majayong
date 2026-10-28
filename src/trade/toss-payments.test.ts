@@ -115,3 +115,29 @@ test('요청 실패, 응답 대조 실패, 잘못된 응답을 성공 입금으�
     'TOSS_CONFIRM_UNAVAILABLE',
   );
 });
+
+test('5xx와 읽을 수 없는 응답은 승인 불확실, 4xx는 확정 거절로 구분한다', async () => {
+  const serverError = mockResponse({ code: 'FAILED_INTERNAL_SYSTEM_PROCESSING' }, 500);
+  await expect(confirmTossPayment('test_sk_unit', request, serverError.fetcher)).rejects.toHaveProperty(
+    'code',
+    'TOSS_CONFIRM_UNAVAILABLE',
+  );
+
+  const notJson: typeof fetch = async () => new Response('<html>', { status: 200 });
+  await expect(confirmTossPayment('test_sk_unit', request, notJson)).rejects.toHaveProperty(
+    'code',
+    'TOSS_CONFIRM_INVALID_RESPONSE',
+  );
+
+  const clientError = mockResponse({ code: 'ALREADY_PROCESSED_PAYMENT' }, 400);
+  await expect(confirmTossPayment('test_sk_unit', request, clientError.fetcher)).rejects.toHaveProperty(
+    'code',
+    'TOSS_CONFIRM_REJECTED',
+  );
+});
+
+test('승인 요청에는 타임아웃 signal이 붙는다', async () => {
+  const { calls, fetcher } = mockResponse(confirmed);
+  await confirmTossPayment('test_sk_unit', request, fetcher);
+  expect(calls[0].init?.signal).toBeInstanceOf(AbortSignal);
+});
