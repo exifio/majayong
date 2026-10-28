@@ -11,7 +11,7 @@ import {
   type PgCallback,
 } from './payment.ts';
 import type { PaymentStatus } from './settlement.ts';
-import type { TossConfirmationRequest } from './toss-payments.ts';
+import { UNCERTAIN_CONFIRM_CODES, type TossConfirmationRequest } from './toss-payments.ts';
 
 export type PaymentActor = {
   userId: string;
@@ -194,13 +194,44 @@ export function createPaymentWorkflow<Tx>(
         throw new TradeError('TOSS_AMOUNT_MISMATCH');
       }
 
-      const callback = await confirmPayment({
-        paymentKey: input.paymentKey,
-        orderId: initial.deposit.id,
-        amount: initial.deposit.amount,
-        returnedAmount: input.returnedAmount,
-        idempotencyKey: initial.deposit.idempotencyKey,
-      });
+      let callback: PgCallback;
+      try {
+        callback = await confirmPayment({
+          paymentKey: input.paymentKey,
+          orderId: initial.deposit.id,
+          amount: initial.deposit.amount,
+          returnedAmount: input.returnedAmount,
+          idempotencyKey: initial.deposit.idempotencyKey,
+        });
+      } catch (error: unknown) {
+        if (!(error instanceof TradeError) || !UNCERTAIN_CONFIRM_CODES.includes(error.code)) throw error;
+        // 승인 여부를 모르면 재시도하지 못하게 HELD로 잠그고, 운영자가 Toss에서 확인할 근거를 남긴다.
+        return ports.transaction(async (tx) => {
+          const current = await ports.findDepositConfirmationContextForUpdate(tx, input.contractId, input.depositId);
+          if (!current) throw new TradeError('DEPOSIT_NOT_FOUND');
+          assertClient(input.actor, current.clientId);
+          const wasPending = current.deposit.status === 'PENDING';
+          const priorStatus = current.deposit.status;
+          if (wasPending) {
+            await ports.updateDeposit(tx, current.deposit.id, {
+              status: 'HELD',
+              pgKey: current.deposit.pgKey ?? input.paymentKey,
+              depositedAt: current.deposit.depositedAt,
+            });
+            await ports.recordPaymentEvents(tx, current.deposit.id, [{
+              eventType: 'CALLBACK_RECEIVED',
+              dedupKey: 'uncertain:' + input.paymentKey,
+              resultNote: '승인 결과 확인 불가(' + error.code + '), operator review',
+            }]);
+          }
+          return {
+            depositStatus: wasPending ? 'HELD' : priorStatus,
+            paymentStatus: current.contract.paymentStatus,
+            creditedAmount: 0,
+            replayed: !wasPending,
+          };
+        });
+      }
 
       return ports.transaction(async (tx) => {
         // The adapter locks both contract and deposit rows before loading dedup keys and applying credit.

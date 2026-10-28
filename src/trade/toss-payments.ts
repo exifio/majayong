@@ -10,6 +10,14 @@ export type TossConfirmationRequest = {
   idempotencyKey: string;
 };
 
+const CONFIRM_TIMEOUT_MS = 10_000;
+
+// 승인 여부를 알 수 없는 오류. 결제가 이미 됐을 수 있으므로 호출부가 입금을 HELD로 잠근다.
+export const UNCERTAIN_CONFIRM_CODES: readonly string[] = [
+  'TOSS_CONFIRM_UNAVAILABLE',
+  'TOSS_CONFIRM_INVALID_RESPONSE',
+];
+
 export async function confirmTossPayment(
   testSecretKey: string,
   input: TossConfirmationRequest,
@@ -44,10 +52,12 @@ export async function confirmTossPayment(
         orderId: input.orderId,
         amount: input.amount,
       }),
+      signal: AbortSignal.timeout(CONFIRM_TIMEOUT_MS),
     });
   } catch {
     throw new TradeError('TOSS_CONFIRM_UNAVAILABLE');
   }
+  if (response.status >= 500) throw new TradeError('TOSS_CONFIRM_UNAVAILABLE');
   if (!response.ok) throw new TradeError('TOSS_CONFIRM_REJECTED');
 
   let payload: unknown;
