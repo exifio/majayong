@@ -1,5 +1,9 @@
 import type { ApplicationRecord } from '../../src/modules/application/dto.ts';
 import type { ApplicationRevision } from '../../src/modules/application/submission.ts';
+import type {
+  ChatApplication,
+  ChatMessage,
+} from '../../src/modules/chat/conversation.ts';
 import type { ContractStatusInput } from '../../src/modules/contract/display-status.ts';
 import type {
   PublicProjectDetail,
@@ -102,7 +106,36 @@ export function applicationRevision(
   };
 }
 
-/** 임시 계약/서명 테스트용 계약 상태 입력. */export function contractStatusInput(
+export function chatApplication(
+  overrides: Partial<ChatApplication> = {},
+): ChatApplication {
+  return {
+    id: 'app-1',
+    projectId: 'prj-1',
+    clientUserId: 'client-1',
+    supplierId: 'supplier-1',
+    status: 'SUBMITTED',
+    contractStatus: null,
+    ...overrides,
+  };
+}
+
+export function chatMessage(overrides: Partial<ChatMessage> = {}): ChatMessage {
+  return {
+    id: 'msg-1',
+    applicationId: 'app-1',
+    senderId: 'client-1',
+    kind: 'TEXT',
+    body: '안녕하세요. 일정 확인 부탁드립니다.',
+    isMasked: false,
+    readAt: null,
+    createdAt: new Date('2026-11-01T00:00:00.000Z'),
+    ...overrides,
+  };
+}
+
+/** 임시 계약/서명 테스트용 계약 상태 입력. */
+export function contractStatusInput(
   overrides: Partial<ContractStatusInput> = {},
 ): ContractStatusInput {
   return {
