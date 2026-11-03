@@ -1,4 +1,5 @@
 import type { ApplicationRecord } from '../../src/modules/application/dto.ts';
+import type { ApplicationRevision } from '../../src/modules/application/submission.ts';
 import type { ContractStatusInput } from '../../src/modules/contract/display-status.ts';
 import type {
   PublicProjectDetail,
@@ -84,8 +85,24 @@ export function applicationRecord(
   };
 }
 
-/** 임시 계약/서명 테스트용 계약 상태 입력. */
-export function contractStatusInput(
+export function applicationRevision(
+  overrides: Partial<ApplicationRevision> = {},
+): ApplicationRevision {
+  return {
+    ...applicationRecord(),
+    message: '예약 달력과 결제까지 가능합니다.',
+    questions: [],
+    isMessageMasked: false,
+    revisionReason: null,
+    items: [
+      { specItemId: 'spec-1', isAvailable: true },
+      { specItemId: 'spec-2', isAvailable: false },
+    ],
+    ...overrides,
+  };
+}
+
+/** 임시 계약/서명 테스트용 계약 상태 입력. */export function contractStatusInput(
   overrides: Partial<ContractStatusInput> = {},
 ): ContractStatusInput {
   return {

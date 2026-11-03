@@ -88,6 +88,19 @@ export interface ApplicationParties {
   readonly supplierUserId: string;
 }
 
+/** B 지원 흐름 전용 오류. 공통 봉투 동결 전까지 B 로컬에서 사용한다. */
+export class ApplicationError extends Error {
+  readonly status: number;
+  readonly code: string;
+
+  constructor(status: number, code: string, message: string) {
+    super(message);
+    this.name = 'ApplicationError';
+    this.status = status;
+    this.code = code;
+  }
+}
+
 export class ApplicationAccessError extends Error {
   readonly status = 404;
   readonly code = 'APPLICATION_NOT_FOUND';
