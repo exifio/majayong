@@ -17,7 +17,15 @@ const google = process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET 
   : undefined;
 
 const db = new PrismaClient();
-const app = createApp({ db, tokenSecret, google });
+const app = createApp({
+  db,
+  tokenSecret,
+  google,
+  profile: {
+    encryptionKey: process.env.PROFILE_DATA_KEY,
+    supplierNdaVersion: process.env.SUPPLIER_NDA_VERSION,
+  },
+});
 const server = app.listen(port);
 
 async function shutdown(): Promise<void> {

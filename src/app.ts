@@ -28,6 +28,8 @@ import {
   type SessionTokens,
 } from "./modules/identity/session.js";
 import { createPrismaWithdrawalStore } from "./modules/identity/withdrawal.js";
+import { mountProfileApi, type ProfilePorts } from "./modules/profile/api.js";
+import { ProfileError } from "./modules/profile/errors.js";
 import type { PrismaClient } from "@prisma/client";
 
 export type AppOptions = {
@@ -38,6 +40,7 @@ export type AppOptions = {
   googleFetcher?: typeof fetch;
   sendPasswordReset?: (email: string, token: string) => Promise<void>;
   sendEmailChange?: (email: string, token: string) => Promise<void>;
+  profile?: ProfilePorts;
 };
 
 class ApiError extends Error {
@@ -90,6 +93,7 @@ function sessionData(user: IdentityUser, tokens: SessionTokens) {
 
 function statusFor(error: unknown): { status: number; code: string; message: string } {
   if (error instanceof ApiError) return { status: error.status, code: error.code, message: error.status >= 500 ? "요청을 처리할 수 없습니다." : "요청을 확인해 주세요." };
+  if (error instanceof ProfileError) return { status: error.status, code: error.code, message: error.status >= 500 ? "요청을 처리할 수 없습니다." : "요청을 확인해 주세요." };
   if (error instanceof SessionError) {
     const status = error.code === "ACCOUNT_INACTIVE" ? 403 : error.code === "ACCOUNT_NOT_FOUND" ? 404 : 401;
     return { status, code: error.code, message: "인증 정보를 확인해 주세요." };
@@ -301,6 +305,8 @@ export function createApp(options: AppOptions): Express {
     await disconnectGoogle(store, actor.userId, string(body, "password", 1024));
     res.json({ data: { googleDisconnected: true } });
   }));
+
+  mountProfileApi(router, options.db, options.profile ?? {}, now, handler => authenticated(options, handler));
 
   app.use("/api/v1", router);
   app.use((_req, res) => {
