@@ -415,23 +415,30 @@ export async function autoRejectCompetingApplications(
   input: { readonly projectId: string; readonly acceptedApplicationId: string },
 ): Promise<number> {
   return uow.run(async (tx) => {
-    const rows = await tx.listByProject(input.projectId);
-    let changed = 0;
-
-    for (const row of rows) {
-      if (row.id === input.acceptedApplicationId) continue;
-      if (!REVISABLE_STATUSES.includes(row.status)) continue;
-
-      const updated = await tx.updateStatus({
-        applicationId: row.id,
-        from: REVISABLE_STATUSES,
-        to: 'AUTO_REJECTED',
-      });
-      if (updated) changed += 1;
-    }
-
-    return changed;
+    const result = await autoRejectCompetingApplicationsInTransaction(tx, input);
+    return result.rejectedCount;
   });
+}
+
+/** C의 예치 완료 트랜잭션이 제공한 tx에 참여하는 변형. */
+export async function autoRejectCompetingApplicationsInTransaction(
+  tx: Pick<ApplicationTx, 'listByProject' | 'updateStatus'>,
+  input: { readonly projectId: string; readonly acceptedApplicationId: string },
+): Promise<{ readonly rejectedCount: number }> {
+  const rows = await tx.listByProject(input.projectId);
+  let changed = 0;
+
+  for (const row of rows) {
+    if (row.id === input.acceptedApplicationId || !REVISABLE_STATUSES.includes(row.status)) continue;
+    const updated = await tx.updateStatus({
+      applicationId: row.id,
+      from: REVISABLE_STATUSES,
+      to: 'AUTO_REJECTED',
+    });
+    if (updated) changed += 1;
+  }
+
+  return { rejectedCount: changed };
 }
 
 async function closeApplication(

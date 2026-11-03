@@ -13,6 +13,7 @@ import {
   type SubmitApplicationInput,
   assertContractableRevision,
   autoRejectCompetingApplications,
+  autoRejectCompetingApplicationsInTransaction,
   compareApplicationCards,
   markApplicationsStale,
   rejectApplication,
@@ -562,6 +563,21 @@ describe('B-02 보조: 예치 완료 자동 거절 Port', () => {
         ['app-4', 'REJECTED'],
       ],
     );
+  });
+
+  it('제공된 transaction-scoped port로 다른 지원만 자동 거절한다', async () => {
+    const tx = new FakeApplicationTx([
+      applicationRevision({ id: 'app-1', status: 'ACCEPTED' }),
+      applicationRevision({ id: 'app-2', supplierId: 'supplier-2', status: 'SUBMITTED' }),
+      applicationRevision({ id: 'app-3', supplierId: 'supplier-3', status: 'STALE' }),
+    ]);
+    const result = await autoRejectCompetingApplicationsInTransaction(tx, {
+      projectId: 'prj-1',
+      acceptedApplicationId: 'app-1',
+    });
+
+    assert.deepEqual(result, { rejectedCount: 2 });
+    assert.deepEqual(tx.rows.map((row) => row.status), ['ACCEPTED', 'AUTO_REJECTED', 'AUTO_REJECTED']);
   });
 });
 

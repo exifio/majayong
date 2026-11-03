@@ -24,6 +24,11 @@ export const NOTIFICATION_TYPES = [
   'INQUIRY_ANSWERED',
 ] as const;
 
+/** C-04 계약형 createOnce(tx, ...) 포트와 호환되는 enum guard. */
+export function isNotificationType(value: unknown): value is NotificationType {
+  return NOTIFICATION_TYPES.some((type) => type === value);
+}
+
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
 
 /** 기한 안내 5종. `(userId, type, targetId)`당 한 번만 만든다. */
@@ -153,10 +158,6 @@ export interface NotificationList {
 
 function invalid(code: string, message: string): NotificationError {
   return new NotificationError(400, code, message);
-}
-
-export function isNotificationType(value: unknown): value is NotificationType {
-  return NOTIFICATION_TYPES.some((type) => type === value);
 }
 
 export function isDeadlineNotificationType(
@@ -334,6 +335,38 @@ async function deliver(
     payload: input.payload,
     createdAt: input.now,
   });
+}
+
+/** C/통합이 전달한 트랜잭션에 참여하는 1회성 기한 알림 Port. */
+export async function createNotificationOnceInTransaction(
+  tx: NotificationTx,
+  input: {
+    readonly userId: string;
+    readonly type: string;
+    readonly targetId: string;
+    readonly payload?: Readonly<Record<string, unknown>>;
+    readonly now: Date;
+  },
+): Promise<{ readonly created: boolean }> {
+  if (!isNotificationType(input.type)) {
+    throw invalid('UNKNOWN_NOTIFICATION_TYPE', '알 수 없는 알림 타입입니다.');
+  }
+  const userId = requireIdentifier(input.userId, 'INVALID_TARGET');
+  const targetId = requireIdentifier(input.targetId, 'INVALID_TARGET');
+  const payload = normalizePayload(input.type, input.payload);
+
+  const existing = await tx.findByKey({ userId, type: input.type, targetId });
+  if (existing !== null) return { created: false };
+
+  await tx.create({
+    userId,
+    type: input.type,
+    targetUrl: targetUrlFor(input.type, targetId),
+    targetId,
+    payload,
+    createdAt: input.now,
+  });
+  return { created: true };
 }
 
 export async function notify(

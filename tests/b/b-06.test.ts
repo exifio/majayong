@@ -6,6 +6,7 @@ import {
   NOTIFICATION_TYPES,
   NotificationError,
   chatRoomTargetId,
+  createNotificationOnceInTransaction,
   isDeadlineNotificationType,
   listNotifications,
   markAllNotificationsRead,
@@ -699,6 +700,32 @@ describe('B-06-T04 새 메시지 방별 한 줄', () => {
 });
 
 describe('B-06-T05 기한 알림 1회 보장', () => {
+  it('C가 넘긴 트랜잭션에서 기한 알림 1회를 만들고 재호출은 no-op이다', async () => {
+    const tx = new FakeNotificationTx();
+    const input = {
+      userId: SUPPLIER,
+      type: 'WORK_DUE',
+      targetId: 'contract-1',
+      payload: { dueAt: DUE_AT },
+      now: FIXED_NOW,
+    };
+
+    assert.deepEqual(await createNotificationOnceInTransaction(tx, input), { created: true });
+    assert.deepEqual(await createNotificationOnceInTransaction(tx, input), { created: false });
+    assert.equal(tx.rows.length, 1);
+    assert.deepEqual(tx.rows[0]?.payload, { dueAt: DUE_AT });
+
+    assert.deepEqual(await createNotificationOnceInTransaction(tx, {
+      userId: CLIENT, type: 'AUTO_APPROVED', targetId: 'contract-1', now: FIXED_NOW,
+    }), { created: true });
+    await assert.rejects(createNotificationOnceInTransaction(tx, {
+      userId: CLIENT, type: 'PAYMENT_RELEASED', targetId: 'contract-1', now: FIXED_NOW,
+    }), isNotificationError(400, 'UNKNOWN_NOTIFICATION_TYPE'));
+    await assert.rejects(createNotificationOnceInTransaction(tx, {
+      userId: CLIENT, type: 'WORK_DUE', targetId: 'contract-1', now: FIXED_NOW,
+    }), isNotificationError(400, 'INVALID_PAYLOAD'));
+  });
+
   it('배치를 다시 돌려도 같은 기한 알림은 한 번만 만든다', async () => {
     const uow = new FakeUnitOfWork();
     const firstAt = new Date('2026-11-03T00:00:00.000Z');
