@@ -385,4 +385,43 @@ describe("C-03: 항목별 납품·승인·보완 요청", () => {
       },
     );
   });
+
+  it("C-03-T02b 다른 납품 ID로 항목을 승인하지 않음", async () => {
+    const { service, contract, installment, item1, repo } = createTestSetup();
+
+    await service.submitDelivery(
+      { userId: contract.supplierUserId, role: "SUPPLIER" },
+      {
+        installmentId: installment.id,
+        items: [{ contractItemId: item1.id, links: ["https://preview.app"], files: [], howToCheck: "확인" }],
+      },
+    );
+
+    const other = await repo.createDelivery({
+      installmentId: installment.id,
+      attemptNo: 9,
+      items: [],
+      summary: null,
+      status: "SUBMITTED",
+      submittedAt: baseTime,
+      inspectionDueAt: new Date(baseTime.getTime() + 7 * 24 * 60 * 60 * 1000),
+      reviewedAt: null,
+    });
+
+    await assert.rejects(
+      () =>
+        service.approveItem(
+          { userId: contract.clientUserId, role: "CLIENT" },
+          { contractItemId: item1.id, deliveryId: other.id },
+        ),
+      (err: unknown) => {
+        if (!(err instanceof DeliveryHttpError)) return false;
+        assert.equal(err.status, 404);
+        return true;
+      },
+    );
+
+    const item = await repo.getContractItem(item1.id);
+    assert.equal(item?.approvedAt, null);
+  });
 });

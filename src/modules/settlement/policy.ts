@@ -617,7 +617,7 @@ export class SettlementService {
       );
     }
 
-    if (installment.status !== "APPROVED" && installment.status !== "PENDING") {
+    if (installment.status !== "APPROVED") {
       throw new SettlementHttpError(400, "승인 완료된 구간만 지급할 수 있습니다.");
     }
 

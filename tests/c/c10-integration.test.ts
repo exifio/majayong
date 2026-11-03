@@ -164,31 +164,57 @@ describe("C-10: 배포용 기한 작업·전영역 연결 검증·인계", () =>
 
   it("C-10-T01 배치 두 번 실행해도 결과 동일", async () => {
     const ctx = createFullContext();
-
-    // 임의의 만료 시각
     const runTime = new Date("2026-11-15T00:00:00.000Z");
+    const requestedAt = new Date("2026-11-10T00:00:00.000Z");
 
-    // runDueJobs 1회 실행
-    const res1 = await runDueJobs(
-      {
-        batchService: ctx.batchService,
-        cancellationService: ctx.cancellationService,
-      },
-      runTime,
-    );
+    ctx.cancelRepo.seedContract({
+      id: ctx.contract.id,
+      clientUserId: ctx.contract.clientUserId,
+      supplierUserId: ctx.contract.supplierUserId,
+      status: "CANCEL_REQUESTED",
+      paymentStatus: "DEPOSITED",
+      agreedAmount: ctx.contract.agreedAmount,
+      clientFee: ctx.contract.clientFee,
+      totalDeposited: 3_255_000,
+      interimRatio: 50,
+      depositedAt: t0,
+      cancelCause: "CLIENT",
+      cancelRequestedBy: ctx.contract.clientUserId,
+      cancelRequestedAt: requestedAt,
+      cancelNote: "무응답",
+      objectionNote: null,
+      objectionRate: null,
+      cancelEvidence: null,
+      cancelEscalatedAt: null,
+      compensationRate: null,
+      cancelResolution: null,
+      cancelResolvedAt: null,
+      refundAmount: null,
+      clientFeeRefund: null,
+      settledAmount: null,
+      refundReason: null,
+      refundedAt: null,
+      cancelPayoutAt: null,
+    });
 
-    // runDueJobs 2회 연속 실행 (동일 시점)
-    const res2 = await runDueJobs(
-      {
-        batchService: ctx.batchService,
-        cancellationService: ctx.cancellationService,
-      },
-      runTime,
-    );
+    const job = {
+      completionService: ctx.completionService,
+      cancellationService: ctx.cancellationService,
+      batchService: ctx.batchService,
+      depositContractIds: [ctx.contract.id],
+      cancellationContractIds: [ctx.contract.id],
+    };
+
+    const res1 = await runDueJobs(job, runTime);
+    const res2 = await runDueJobs(job, runTime);
 
     assert.equal(res1.success, true);
+    assert.equal(res1.actionsCount, 2);
     assert.equal(res2.success, true);
-    assert.equal(res2.actionsCount, 0); // 2회차에는 중복 처리 0건
+    assert.equal(res2.actionsCount, 0);
+    assert.equal(ctx.contract.status, "CANCELLED");
+    const cancel = await ctx.cancelRepo.getContract(ctx.contract.id);
+    assert.equal(cancel?.cancelEscalatedAt?.toISOString(), runTime.toISOString());
   });
 
   it("C-10-T02 수동 처리와 자동 배치 동시 충돌", async () => {
@@ -244,18 +270,16 @@ describe("C-10: 배포용 기한 작업·전영역 연결 검증·인계", () =>
     ctx.clock.set(t1);
     ctx.deliveryRepo.seedContract(ctx.contract);
     ctx.deliveryRepo.seedInstallment({ id: "inst-interim", contractId: ctx.contract.id, stage: "INTERIM", status: "DELIVERED" });
-    const interimDelivery = {
-      id: "del-interim-1",
+    const interimDelivery = await ctx.deliveryRepo.createDelivery({
       installmentId: "inst-interim",
       attemptNo: 1,
       items: [{ contractItemId: "item-1", links: ["https://app/interim"], files: [], howToCheck: "확인" }],
       summary: "중간 납품 완료",
-      status: "SUBMITTED" as const,
+      status: "SUBMITTED",
       submittedAt: t1,
       inspectionDueAt: t2,
       reviewedAt: null,
-    };
-    await ctx.deliveryRepo.createDelivery(interimDelivery);
+    });
 
     // 중간 납품 항목 직접 승인
     ctx.deliveryRepo.seedContractItems([
@@ -389,7 +413,7 @@ describe("C-10: 배포용 기한 작업·전영역 연결 검증·인계", () =>
     });
 
     // 취소 요청 중에는 일반 납품/검수 승인이 차단됨
-    assert.equal(ctx.cancellationService.isOperationsPaused(ctx.contract.id), true);
+    assert.equal(await ctx.cancellationService.isOperationsPaused(ctx.contract.id), true);
 
     // 판정 후 CANCELLED 상태 분리
     const decided = await ctx.cancellationService.decideCancellation({

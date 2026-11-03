@@ -223,6 +223,59 @@ describe("C-09: 관리자 블록/예치/분쟁/정산/감사 API", () => {
     assert.ok(logs[0].occurredAt >= logs[1].occurredAt);
   });
 
+  it("C-09-T05b 관리자 취소 판정은 역할·사유·비율을 검사하고 감사 로그를 남김", async () => {
+    const { service, repo } = createTestSetup();
+    const adminActor = { userId: "admin-1", role: "ADMIN" };
+    const clientActor = { userId: "user-client", role: "CLIENT" };
+
+    await assert.rejects(
+      () => service.decideCancellation(clientActor, "contract-cancel-1", { compensationRate: 50, reason: "판정" }),
+      (err: unknown) => {
+        if (!(err instanceof AdminHttpError)) return false;
+        assert.equal(err.status, 403);
+        return true;
+      },
+    );
+
+    await assert.rejects(
+      () => service.decideCancellation(adminActor, "contract-cancel-1", { compensationRate: 50, reason: "  " }),
+      (err: unknown) => {
+        if (!(err instanceof AdminHttpError)) return false;
+        assert.equal(err.status, 400);
+        return true;
+      },
+    );
+
+    await assert.rejects(
+      () => service.decideCancellation(adminActor, "contract-cancel-1", { compensationRate: 49, reason: "하한 위반" }),
+      (err: unknown) => {
+        if (!(err instanceof AdminHttpError)) return false;
+        assert.equal(err.status, 422);
+        return true;
+      },
+    );
+
+    const decided = await service.decideCancellation(adminActor, "contract-cancel-1", {
+      compensationRate: 50,
+      reason: "착수 보상 판정",
+    });
+    assert.equal(decided.status, "CANCELLED");
+    assert.equal(decided.compensationRate, 50);
+    assert.equal(decided.settledAmount, 736_250);
+    assert.equal(decided.refundAmount, 2_441_250);
+
+    const again = await service.decideCancellation(adminActor, "contract-cancel-1", {
+      compensationRate: 50,
+      reason: "재호출",
+    });
+    assert.equal(again.refundAmount, decided.refundAmount);
+
+    const logs = await repo.listEventLogs();
+    const decisionLogs = logs.filter((log) => log.actionType === "CANCELLATION_ADMIN_DECIDED");
+    assert.equal(decisionLogs.length, 1);
+    assert.equal(decisionLogs[0]?.reason, "착수 보상 판정");
+  });
+
   it("C-09-T08 B 관리자 경로 중복 등록 0", () => {
     const { service } = createTestSetup();
 

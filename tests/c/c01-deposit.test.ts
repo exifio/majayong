@@ -350,6 +350,39 @@ describe("C-01: Toss sandbox 예치·PG 검증·중복 방지", () => {
     assert.equal(checkDeposit.depositedAt, null);
   });
 
+  it("C-01-T07b PG 재조회 verified false는 완료하지 않음", async () => {
+    const repo = createInMemoryDepositRepository();
+    const contract = {
+      id: "contract-1",
+      clientUserId: "client-1",
+      supplierUserId: "supplier-1",
+      status: "ACTIVE" as const,
+      paymentStatus: "PENDING" as const,
+      agreedAmount: 1_000_000,
+      clientFee: 50_000,
+      depositDeadline: new Date("2026-11-07T14:59:59.000Z"),
+    };
+    const service = new DepositService({
+      repo,
+      contractsPort: { async getContract() { return contract; } },
+      webhookSecret: WEBHOOK_SECRET,
+      tossAdapter: { async verifyPayment() { return { verified: false }; } },
+      clock: { now: () => now },
+    });
+    const { deposit } = await service.createDeposit(
+      { userId: contract.clientUserId, role: "CLIENT" },
+      { contractId: contract.id, idempotencyKey: "idem-unverified", method: "CARD", amount: 1_050_000 },
+    );
+
+    const result = await service.handleTossWebhook(
+      { serverSecret: WEBHOOK_SECRET },
+      { orderId: deposit.id, paymentKey: "toss_pk_unverified", amount: 1_050_000, status: "DONE" },
+    );
+
+    assert.notEqual(result.status, "COMPLETED");
+    assert.equal(result.deposit.depositedAt, null);
+  });
+
   it("C-01-T08 /integrations가 공개 일반 토큰으로 호출되지 않음", async () => {
     const { service, contract } = createTestContext();
 

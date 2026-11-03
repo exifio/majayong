@@ -40,8 +40,12 @@ export interface AdminCancellationContract {
   totalDeposited: number;
   agreedAmount: number;
   clientFee: number;
+  compensationRate?: number | null;
+  cancelResolution?: "ADMIN_DECIDED" | null;
+  cancelResolvedAt?: Date | null;
   refundAmount?: number | null;
   settledAmount?: number | null;
+  clientFeeRefund?: number | null;
   refundedAt?: Date | null;
   cancelPayoutAt?: Date | null;
 }
@@ -307,6 +311,65 @@ export class AdminOpsService {
   async listCancellationQueue(actor: { userId: string; role: string }): Promise<AdminCancellationContract[]> {
     this.checkAdminRole(actor);
     return this.repo.listCancellationQueue();
+  }
+
+  async decideCancellation(
+    actor: { userId: string; role: string },
+    contractId: string,
+    input: { compensationRate: number; reason: string },
+  ): Promise<AdminCancellationContract> {
+    this.checkAdminRole(actor);
+    this.validateReason(input.reason);
+
+    const contract = await this.repo.getCancellationContract(contractId);
+    if (!contract) throw new AdminHttpError(404, "취소 계약을 찾을 수 없습니다.");
+
+    if (contract.status === "CANCELLED" && contract.cancelResolution === "ADMIN_DECIDED") {
+      return contract;
+    }
+
+    if (contract.cancelCause === "CLIENT" && input.compensationRate === 0) {
+      throw new AdminHttpError(
+        422,
+        "D-16 BLOCKED: 의뢰인 사정 전액 환불(0% 보상)은 D-16 승인 전까지 차단되어 있습니다.",
+      );
+    }
+    if (
+      typeof input.compensationRate !== "number" ||
+      Number.isInteger(input.compensationRate) === false ||
+      input.compensationRate < 0 ||
+      input.compensationRate > 100
+    ) {
+      throw new AdminHttpError(422, "보상 비율은 0~100 사이여야 합니다.");
+    }
+    if (contract.cancelCause === "CLIENT" && input.compensationRate < 50) {
+      throw new AdminHttpError(422, "의뢰인 사정 취소는 보상 비율이 50% 이상이어야 합니다.");
+    }
+
+    const ongoing = Math.floor(contract.agreedAmount / 2);
+    const compensationPrincipal = Math.floor((ongoing * input.compensationRate) / 100);
+    const supplierFee = Math.floor((compensationPrincipal * 5) / 100);
+    const now = this.clock.now();
+    const updated = await this.repo.updateCancellationContract(contract.id, {
+      status: "CANCELLED",
+      compensationRate: input.compensationRate,
+      cancelResolution: "ADMIN_DECIDED",
+      cancelResolvedAt: now,
+      settledAmount: compensationPrincipal - supplierFee,
+      clientFeeRefund: contract.clientFee - supplierFee,
+      refundAmount: contract.totalDeposited - compensationPrincipal - supplierFee,
+    });
+
+    await this.repo.recordEvent({
+      actorUserId: actor.userId,
+      actionType: "CANCELLATION_ADMIN_DECIDED",
+      targetType: "CONTRACT",
+      targetId: contractId,
+      reason: input.reason,
+      occurredAt: now,
+    });
+
+    return updated;
   }
 
   async markSettlementProcessed(

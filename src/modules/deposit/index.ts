@@ -398,7 +398,21 @@ export class DepositService {
     }
 
     if (this.tossAdapter?.verifyPayment) {
-      await this.tossAdapter.verifyPayment(payload.orderId, payload.paymentKey, payload.amount);
+      const verified = await this.tossAdapter.verifyPayment(payload.orderId, payload.paymentKey, payload.amount);
+      if (verified.verified === false) {
+        await this.repo.createPaymentEvent({
+          depositId: deposit.id,
+          eventType: "FAILED",
+          dedupKey,
+          payload,
+          resultNote: "PG 재조회 검증 실패",
+        });
+        const updated = await this.repo.updateDeposit(deposit.id, {
+          status: "HELD",
+          heldReason: "VERIFY_FAILED",
+        });
+        return { status: "HELD", deposit: updated, reason: "VERIFY_FAILED" };
+      }
     }
 
     await this.repo.createPaymentEvent({
@@ -568,6 +582,17 @@ export class DepositCompletionService {
 
     return { action: "NONE" };
   }
+
+  async expireDepositIfDue(contractId: string, now: Date): Promise<{ expired: boolean }> {
+    const contract = await this.contractsPort.getContract(contractId);
+    if (!contract || contract.status === "CANCELLED" || contract.paymentStatus !== "PENDING") {
+      return { expired: false };
+    }
+    const decision = await this.evaluateDepositDeadline(contractId, now);
+    if (decision.action !== "CANCEL_TIMEOUT") return { expired: false };
+    await this.contractsPort.updateContract(contractId, { status: "CANCELLED" });
+    return { expired: true };
+  }
 }
 
 export interface DueJobsContext {
@@ -577,7 +602,12 @@ export interface DueJobsContext {
   cancellationService?: {
     checkCancellationDeadlines(contractId: string, now: Date): Promise<{ escalatedToAdmin: boolean }>;
   };
-  completionService?: DepositCompletionService;
+  completionService?: {
+    expireDepositIfDue(contractId: string, now: Date): Promise<{ expired: boolean }>;
+  };
+  depositContractIds?: readonly string[];
+  cancellationContractIds?: readonly string[];
+  deliveryIds?: readonly string[];
 }
 
 export async function runDueJobs(
@@ -585,5 +615,27 @@ export async function runDueJobs(
   now: Date,
 ): Promise<{ success: boolean; actionsCount: number }> {
   let actionsCount = 0;
+
+  if (context.completionService) {
+    for (const contractId of context.depositContractIds ?? []) {
+      const result = await context.completionService.expireDepositIfDue(contractId, now);
+      if (result.expired) actionsCount += 1;
+    }
+  }
+
+  if (context.cancellationService) {
+    for (const contractId of context.cancellationContractIds ?? []) {
+      const result = await context.cancellationService.checkCancellationDeadlines(contractId, now);
+      if (result.escalatedToAdmin) actionsCount += 1;
+    }
+  }
+
+  if (context.batchService) {
+    for (const deliveryId of context.deliveryIds ?? []) {
+      const result = await context.batchService.processAutoApproval(deliveryId, now);
+      actionsCount += result.autoApprovedCount;
+    }
+  }
+
   return { success: true, actionsCount };
 }

@@ -119,6 +119,24 @@ describe("C-05: 지급 구간·정산 카드·세금 증빙", () => {
     );
   });
 
+  it("C-05-T01b 승인 전 구간은 지급하지 않음", async () => {
+    const { service, interimInstallment, repo } = createTestSetup();
+
+    await assert.rejects(
+      () => service.releaseInstallment({ installmentId: interimInstallment.id }),
+      (err: unknown) => {
+        if (!(err instanceof SettlementHttpError)) return false;
+        assert.equal(err.status, 400);
+        assert.match(err.message, /승인 완료된 구간만/);
+        return true;
+      },
+    );
+
+    const stored = await repo.getInstallment(interimInstallment.id);
+    assert.equal(stored?.status, "PENDING");
+    assert.equal(stored?.releasedAt, null);
+  });
+
   it("C-05-T02 계좌 미인증 APPROVED 보류", async () => {
     // 계좌 미인증 상태
     const { service, contract, interimInstallment, item1, item2, repo } = createTestSetup({

@@ -201,6 +201,50 @@ describe("C-06: 예치 후 계약 취소·이의·운영자 수동 처리", () =
     );
   });
 
+  it("C-06-T04b 요청자 본인 이의와 비율 범위 거부", async () => {
+    const { service, contract, repo } = createTestSetup();
+
+    await service.requestCancellation(
+      { userId: contract.clientUserId, role: "CLIENT" },
+      { contractId: contract.id, cause: "CLIENT", note: "취소 요청" },
+    );
+
+    await assert.rejects(
+      () =>
+        service.objectCancellation(
+          { userId: contract.clientUserId, role: "CLIENT" },
+          { contractId: contract.id, objectionRate: 50, note: "본인 이의" },
+        ),
+      (err: unknown) => {
+        if (!(err instanceof CancellationHttpError)) return false;
+        assert.equal(err.status, 403);
+        return true;
+      },
+    );
+
+    await assert.rejects(
+      () =>
+        service.objectCancellation(
+          { userId: contract.supplierUserId, role: "SUPPLIER" },
+          { contractId: contract.id, objectionRate: 101, note: "범위 밖" },
+        ),
+      (err: unknown) => {
+        if (!(err instanceof CancellationHttpError)) return false;
+        assert.equal(err.status, 422);
+        return true;
+      },
+    );
+
+    const objected = await service.objectCancellation(
+      { userId: contract.supplierUserId, role: "SUPPLIER" },
+      { contractId: contract.id, objectionRate: 80, note: "비율 이의" },
+    );
+    assert.equal(objected.objectionRate, 80);
+    assert.ok(objected.cancelEscalatedAt);
+    const stored = await repo.getContract(contract.id);
+    assert.equal(stored?.status, "CANCEL_REQUESTED");
+  });
+
   it("C-06-T05 비율 CHECK 경계(0/49/50/100/101)", async () => {
     const { service, contract, repo } = createTestSetup();
 
@@ -270,21 +314,28 @@ describe("C-06: 예치 후 계약 취소·이의·운영자 수동 처리", () =
       cancelNote: "취소",
     });
 
-    // 남은 잔여 예치금 1,550,000원을 초과하는 환불/보상 요구 차단
-    const calc = await service.calculateCancellationSplit(contract.id, 50);
-    assert.ok(calc.refundAmount + calc.settledAmount <= 3_255_000);
+    await assert.rejects(
+      () => service.calculateCancellationSplit(contract.id, 50),
+      (err: unknown) => {
+        if (!(err instanceof CancellationHttpError)) return false;
+        assert.equal(err.status, 422);
+        assert.match(err.message, /이미 지급된 금액/);
+        return true;
+      },
+    );
   });
 
   it("C-06-T07 취소 중 자동 승인/지급 0", async () => {
     const { service, contract } = createTestSetup();
+
+    assert.equal(await service.isOperationsPaused(contract.id), false);
 
     await service.requestCancellation(
       { userId: contract.clientUserId, role: "CLIENT" },
       { contractId: contract.id, cause: "CLIENT", note: "취소 요청" },
     );
 
-    // CANCEL_REQUESTED 상태에서 진행 작업 정지 확인
-    assert.equal(service.isOperationsPaused(contract.id), true);
+    assert.equal(await service.isOperationsPaused(contract.id), true);
   });
 
   it("C-06-T08 실제 환불 API 0", async () => {

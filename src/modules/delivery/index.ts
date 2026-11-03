@@ -304,6 +304,11 @@ export class DeliveryService {
       throw new DeliveryHttpError(403, "의뢰인만 항목을 승인할 수 있습니다.");
     }
 
+    const delivery = await this.repo.getDelivery(input.deliveryId);
+    if (!delivery || delivery.items.some((row) => row.contractItemId === item.id) === false) {
+      throw new DeliveryHttpError(404, "해당 납품의 항목이 아닙니다.");
+    }
+
     if (item.approvedAt) {
       return item;
     }
@@ -323,17 +328,14 @@ export class DeliveryService {
       }
     }
 
-    const delivery = await this.repo.getDelivery(input.deliveryId);
-    if (delivery) {
-      const itemsInStage = (await this.repo.listContractItemsByContractId(contract.id)).filter(
-        (i) => i.stage === item.stage,
-      );
-      const allApproved = itemsInStage.every((i) => i.id === item.id || i.approvedAt !== null);
-      await this.repo.updateDelivery(delivery.id, {
-        status: allApproved ? "APPROVED" : "PARTIALLY_APPROVED",
-        reviewedAt: this.clock.now(),
-      });
-    }
+    const itemsInStage = (await this.repo.listContractItemsByContractId(contract.id)).filter(
+      (i) => i.stage === item.stage,
+    );
+    const allApproved = itemsInStage.every((i) => i.id === item.id || i.approvedAt !== null);
+    await this.repo.updateDelivery(delivery.id, {
+      status: allApproved ? "APPROVED" : "PARTIALLY_APPROVED",
+      reviewedAt: this.clock.now(),
+    });
 
     return updated;
   }

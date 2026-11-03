@@ -205,6 +205,25 @@ export class CancellationService {
       throw new CancellationHttpError(409, "이미 동의 또는 판정 완료된 계약입니다.");
     }
 
+    const isCounterparty =
+      (contract.cancelRequestedBy === contract.clientUserId && actor.userId === contract.supplierUserId) ||
+      (contract.cancelRequestedBy === contract.supplierUserId && actor.userId === contract.clientUserId);
+    if (!isCounterparty) {
+      throw new CancellationHttpError(403, "취소를 요청한 상대방만 이의를 제기할 수 있습니다.");
+    }
+
+    if (
+      typeof input.objectionRate !== "number" ||
+      Number.isInteger(input.objectionRate) === false ||
+      input.objectionRate < 0 ||
+      input.objectionRate > 100
+    ) {
+      throw new CancellationHttpError(422, "보상 비율은 0~100 사이여야 합니다.");
+    }
+    if (contract.cancelCause === "CLIENT" && input.objectionRate < 50) {
+      throw new CancellationHttpError(422, "의뢰인 사정 취소는 보상 비율이 50% 이상이어야 합니다.");
+    }
+
     return this.repo.updateContract(contract.id, {
       objectionRate: input.objectionRate,
       objectionNote: input.note,
@@ -308,6 +327,12 @@ export class CancellationService {
     // 의뢰인 환불액 = (총예치액 - 보상 원금 - 공급자 보상 수수료)
     // PRD §9.6: 3,255,000 - 775,000 - 38,750 = 2,441,250원
     const refundAmount = contract.totalDeposited - compensationPrincipal - supplierFee;
+    const releasedPrincipal = installments
+      .filter((row) => row.status === "RELEASED")
+      .reduce((sum, row) => sum + row.amount, 0);
+    if (releasedPrincipal + refundAmount + settledAmount > contract.totalDeposited) {
+      throw new CancellationHttpError(422, "이미 지급된 금액을 초과하는 환불/보상은 불가합니다.");
+    }
 
     return {
       refundAmount,
@@ -317,8 +342,9 @@ export class CancellationService {
     };
   }
 
-  isOperationsPaused(contractId: string): boolean {
-    return true; // CANCEL_REQUESTED 중에는 모든 작업 일시정지
+  async isOperationsPaused(contractId: string): Promise<boolean> {
+    const contract = await this.repo.getContract(contractId);
+    return contract?.status === "CANCEL_REQUESTED";
   }
 
   async markProcessed(input: {
