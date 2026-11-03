@@ -252,10 +252,7 @@ describe("C-03: 항목별 납품·승인·보완 요청", () => {
       },
     );
 
-    // inspectionDueAt = submittedAt + 7일
-    const diffMs = delivery.inspectionDueAt.getTime() - delivery.submittedAt.getTime();
-    const diffDays = diffMs / (1000 * 60 * 60 * 24);
-    assert.equal(diffDays, 7);
+    assert.equal(delivery.inspectionDueAt.toISOString(), "2026-11-17T14:59:59.999Z");
   });
 
   it("C-03-T06 보완 대상만 재납품", async () => {

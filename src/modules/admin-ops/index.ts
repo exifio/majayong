@@ -1,3 +1,5 @@
+import { clientFullRefundStorage, isClientFullRefund } from "../settlement/policy.ts";
+
 export class AdminHttpError extends Error {
   readonly status: number;
   constructor(status: number, message: string) {
@@ -48,6 +50,9 @@ export interface AdminCancellationContract {
   clientFeeRefund?: number | null;
   refundedAt?: Date | null;
   cancelPayoutAt?: Date | null;
+  depositedAt?: Date | null;
+  cancelRequestedAt?: Date | null;
+  installmentStatuses?: readonly string[];
 }
 
 export interface EventLogEntity {
@@ -328,12 +333,34 @@ export class AdminOpsService {
       return contract;
     }
 
-    if (contract.cancelCause === "CLIENT" && input.compensationRate === 0) {
-      throw new AdminHttpError(
-        422,
-        "D-16 BLOCKED: 의뢰인 사정 전액 환불(0% 보상)은 D-16 승인 전까지 차단되어 있습니다.",
-      );
+    const now = this.clock.now();
+    if (
+      contract.installmentStatuses !== undefined &&
+      isClientFullRefund({
+        cause: contract.cancelCause,
+        depositedAt: contract.depositedAt ?? null,
+        requestedAt: contract.cancelRequestedAt ?? now,
+        installmentStatuses: contract.installmentStatuses,
+      })
+    ) {
+      const stored = clientFullRefundStorage(contract.totalDeposited, contract.clientFee);
+      const updated = await this.repo.updateCancellationContract(contract.id, {
+        status: "CANCELLED",
+        ...stored,
+        cancelResolution: "ADMIN_DECIDED",
+        cancelResolvedAt: now,
+      });
+      await this.repo.recordEvent({
+        actorUserId: actor.userId,
+        actionType: "CANCELLATION_ADMIN_DECIDED",
+        targetType: "CONTRACT",
+        targetId: contractId,
+        reason: input.reason,
+        occurredAt: now,
+      });
+      return updated;
     }
+
     if (
       typeof input.compensationRate !== "number" ||
       Number.isInteger(input.compensationRate) === false ||
@@ -349,7 +376,6 @@ export class AdminOpsService {
     const ongoing = Math.floor(contract.agreedAmount / 2);
     const compensationPrincipal = Math.floor((ongoing * input.compensationRate) / 100);
     const supplierFee = Math.floor((compensationPrincipal * 5) / 100);
-    const now = this.clock.now();
     const updated = await this.repo.updateCancellationContract(contract.id, {
       status: "CANCELLED",
       compensationRate: input.compensationRate,

@@ -35,6 +35,7 @@ describe("C-01: Toss sandbox 예치·PG 검증·중복 방지", () => {
       repo,
       contractsPort,
       webhookSecret: WEBHOOK_SECRET,
+      tossAdapter: { async verifyPayment() { return { verified: true }; } },
       clock: { now: () => now },
     });
 
@@ -324,30 +325,53 @@ describe("C-01: Toss sandbox 예치·PG 검증·중복 방지", () => {
       { contractId: contract.id, idempotencyKey: "idem-net-err", method: "CARD", amount: 1_050_000 },
     );
 
-    // 콜백 수신 중 Toss API 추가 검증에서 네트워크 에러 발생
-    await assert.rejects(
-      () =>
-        service.handleTossWebhook(
-          { serverSecret: WEBHOOK_SECRET },
-          {
-            orderId: deposit.id,
-            paymentKey: "toss_pk_net_err",
-            amount: 1_050_000,
-            status: "DONE",
-            eventType: "PAYMENT_STATUS_CHANGED",
-          },
-        ),
-      (err: unknown) => {
-        assert.ok(err instanceof Error);
-        return true;
+    const result = await service.handleTossWebhook(
+      { serverSecret: WEBHOOK_SECRET },
+      {
+        orderId: deposit.id,
+        paymentKey: "toss_pk_net_err",
+        amount: 1_050_000,
+        status: "DONE",
+        eventType: "PAYMENT_STATUS_CHANGED",
       },
     );
 
-    // 성공 처리 0건 검증: deposit 상태는 여전히 PENDING/HELD이고 결코 COMPLETED가 되지 않음
+    assert.equal(result.status, "HELD");
+    assert.equal(result.reason, "VERIFY_FAILED");
     const checkDeposit = await repo.findById(deposit.id);
     assert.ok(checkDeposit);
-    assert.notEqual(checkDeposit.status, "COMPLETED");
+    assert.equal(checkDeposit.status, "HELD");
     assert.equal(checkDeposit.depositedAt, null);
+  });
+
+  it("C-01-T07c 재조회 어댑터가 없으면 본문 DONE으로 완료하지 않음", async () => {
+    const repo = createInMemoryDepositRepository();
+    const contract = {
+      id: "contract-1",
+      clientUserId: "client-1",
+      supplierUserId: "supplier-1",
+      status: "ACTIVE" as const,
+      paymentStatus: "PENDING" as const,
+      agreedAmount: 1_000_000,
+      clientFee: 50_000,
+      depositDeadline: new Date("2026-11-07T14:59:59.000Z"),
+    };
+    const service = new DepositService({
+      repo,
+      contractsPort: { async getContract() { return contract; } },
+      webhookSecret: WEBHOOK_SECRET,
+      clock: { now: () => now },
+    });
+    const { deposit } = await service.createDeposit(
+      { userId: contract.clientUserId, role: "CLIENT" },
+      { contractId: contract.id, idempotencyKey: "idem-no-lookup", method: "CARD", amount: 1_050_000 },
+    );
+    const result = await service.handleTossWebhook(
+      { serverSecret: WEBHOOK_SECRET },
+      { orderId: deposit.id, paymentKey: "toss_pk_no_lookup", amount: 1_050_000, status: "DONE" },
+    );
+    assert.equal(result.status, "HELD");
+    assert.equal(result.reason, "VERIFY_UNAVAILABLE");
   });
 
   it("C-01-T07b PG 재조회 verified false는 완료하지 않음", async () => {

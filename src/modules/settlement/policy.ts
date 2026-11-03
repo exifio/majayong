@@ -10,26 +10,6 @@ export class MoneyError extends Error {
   }
 }
 
-export class DecisionBlockedError extends Error {
-  readonly decisionId: "D-16";
-
-  constructor() {
-    super("D-16");
-    this.name = "DecisionBlockedError";
-    this.decisionId = "D-16";
-  }
-}
-
-export class ClockPolicyBlockedError extends Error {
-  readonly decisionId: "D-02";
-
-  constructor() {
-    super("D-02");
-    this.name = "ClockPolicyBlockedError";
-    this.decisionId = "D-02";
-  }
-}
-
 export class AdapterMissingError extends Error {
   constructor() {
     super("ADAPTER_MISSING");
@@ -235,9 +215,33 @@ export function assertCompensationRate(cause: "CLIENT" | "SUPPLIER" | "MUTUAL", 
   }
 }
 
-// ponytail: D-16 blocks storing a 0% client refund. Persist only after that ADR names the column form.
-export function clientFullRefundStorage(): never {
-  throw new DecisionBlockedError();
+const DAY_MS = 24 * 60 * 60 * 1000;
+const KST_OFFSET_MS = 9 * 60 * 60 * 1000;
+
+export function isClientFullRefund(input: {
+  cause: string | null;
+  depositedAt: Date | null;
+  requestedAt: Date;
+  installmentStatuses: readonly string[];
+}): boolean {
+  if (input.cause !== "CLIENT" || input.depositedAt === null) return false;
+  const elapsed = input.requestedAt.getTime() - input.depositedAt.getTime();
+  if (elapsed < 0 || elapsed > DAY_MS) return false;
+  return input.installmentStatuses.every((status) => status === "PENDING");
+}
+
+export function clientFullRefundStorage(totalDeposited: number, clientFee: number): {
+  compensationRate: null;
+  refundAmount: number;
+  settledAmount: 0;
+  clientFeeRefund: number;
+} {
+  return {
+    compensationRate: null,
+    refundAmount: totalDeposited,
+    settledAmount: 0,
+    clientFeeRefund: clientFee,
+  };
 }
 
 export function canOpenDeposit(status: ContractStatus, paymentStatus: PaymentStatus): boolean {
@@ -291,9 +295,15 @@ export function fixedClock(epochMs: number): Clock {
   };
 }
 
-// ponytail: D-02 blocks calendar addition. Add a zoned clock after Gate 0 publishes the ISO examples.
-export function addBusinessDays(): never {
-  throw new ClockPolicyBlockedError();
+// ponytail: KST is a fixed UTC+9. Swap in a timezone database if Korea adopts daylight saving.
+export function endOfKstDayPlus(anchor: Date, days: number): Date {
+  if (Number.isInteger(days) === false || days < 0) {
+    throw new MoneyError("RATIO");
+  }
+  const local = new Date(anchor.getTime() + KST_OFFSET_MS);
+  return new Date(
+    Date.UTC(local.getUTCFullYear(), local.getUTCMonth(), local.getUTCDate() + days, 23, 59, 59, 999) - KST_OFFSET_MS,
+  );
 }
 
 export function createMemoryContractPorts(rows: readonly ContractSnapshot[]): ContractPorts {

@@ -145,11 +145,12 @@ describe("C-06: 예치 후 계약 취소·이의·운영자 수동 처리", () =
       { contractId: contract.id, cause: "CLIENT", note: "취소 요청" },
     );
 
-    // 3일(72시간) 초과 시점 (3일 1시간 후)
-    const afterThreeDays = new Date(requestTime.getTime() + 73 * 60 * 60 * 1000);
+    const deadline = new Date("2026-11-13T14:59:59.999Z");
+    const stillOpen = await service.checkCancellationDeadlines(contract.id, deadline);
+    assert.equal(stillOpen.escalatedToAdmin, false);
 
-    // 3일 무응답 배치 검사 실행 -> cancelEscalatedAt 설정되고 운영자 판정 대기
-    const checkRes = await service.checkCancellationDeadlines(contract.id, afterThreeDays);
+    const afterDeadline = new Date(deadline.getTime() + 1);
+    const checkRes = await service.checkCancellationDeadlines(contract.id, afterDeadline);
     assert.equal(checkRes.escalatedToAdmin, true);
 
     const updated = await repo.getContract(contract.id);
@@ -373,10 +374,8 @@ describe("C-06: 예치 후 계약 취소·이의·운영자 수동 처리", () =
     }
   });
 
-  it("C-06-T09 24시간 내 무납품 전액 환불 요구 시 D-16 차단", async () => {
+  it("C-06-T09 24시간 내 무납품 전액 환불은 보상 비율 null", async () => {
     const { service, contract, repo } = createTestSetup();
-
-    // 예치 후 24시간 이내 시점
     const within24h = new Date(depositTime.getTime() + 2 * 60 * 60 * 1000);
 
     await repo.updateContract(contract.id, {
@@ -387,18 +386,34 @@ describe("C-06: 예치 후 계약 취소·이의·운영자 수동 처리", () =
       cancelNote: "24시간 이내 전액 환불 요청",
     });
 
-    // D-16 미결정 상태에서 0% 보상(전액환불) 저장 시도 -> D-16 BLOCKED 오류 발생
+    const decided = await service.decideCancellation({
+      contractId: contract.id,
+      compensationRate: 0,
+      reason: "24시간 내 무납품 전액환불",
+    });
+    assert.equal(decided.compensationRate, null);
+    assert.equal(decided.refundAmount, contract.totalDeposited);
+    assert.equal(decided.settledAmount, 0);
+    assert.equal(decided.clientFeeRefund, contract.clientFee);
+
+    const delivered = createTestSetup();
+    await delivered.repo.updateInstallment(delivered.interimInstallment.id, { status: "DELIVERED" });
+    await delivered.repo.updateContract(delivered.contract.id, {
+      status: "CANCEL_REQUESTED",
+      cancelCause: "CLIENT",
+      cancelRequestedBy: delivered.contract.clientUserId,
+      cancelRequestedAt: within24h,
+    });
     await assert.rejects(
       () =>
-        service.decideCancellation({
-          contractId: contract.id,
-          compensationRate: 0, // 0% 전액환불
-          reason: "24시간 내 무납품 전액환불",
+        delivered.service.decideCancellation({
+          contractId: delivered.contract.id,
+          compensationRate: 0,
+          reason: "납품 후 0%",
         }),
       (err: unknown) => {
         if (!(err instanceof CancellationHttpError)) return false;
         assert.equal(err.status, 422);
-        assert.match(err.message, /D-16/);
         return true;
       },
     );

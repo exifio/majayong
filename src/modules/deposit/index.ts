@@ -1,3 +1,5 @@
+import { endOfKstDayPlus } from "../settlement/policy.ts";
+
 export type DepositStatus = "PENDING" | "HELD" | "COMPLETED" | "FAILED";
 
 export interface EscrowDeposit {
@@ -119,9 +121,7 @@ export class DepositHttpError extends Error {
 }
 
 export function calculateWorkDueAt(depositedAt: Date, durationDays: number): Date {
-  const d = new Date(depositedAt);
-  d.setUTCDate(d.getUTCDate() + durationDays);
-  return d;
+  return endOfKstDayPlus(depositedAt, durationDays);
 }
 
 export function createInMemoryDepositRepository(): DepositRepository {
@@ -397,22 +397,40 @@ export class DepositService {
       return { status: "HELD", deposit: updated, reason: payload.status };
     }
 
-    if (this.tossAdapter?.verifyPayment) {
-      const verified = await this.tossAdapter.verifyPayment(payload.orderId, payload.paymentKey, payload.amount);
-      if (verified.verified === false) {
-        await this.repo.createPaymentEvent({
-          depositId: deposit.id,
-          eventType: "FAILED",
-          dedupKey,
-          payload,
-          resultNote: "PG 재조회 검증 실패",
-        });
-        const updated = await this.repo.updateDeposit(deposit.id, {
-          status: "HELD",
-          heldReason: "VERIFY_FAILED",
-        });
-        return { status: "HELD", deposit: updated, reason: "VERIFY_FAILED" };
-      }
+    if (!this.tossAdapter?.verifyPayment) {
+      await this.repo.createPaymentEvent({
+        depositId: deposit.id,
+        eventType: "FAILED",
+        dedupKey,
+        payload,
+        resultNote: "PG 재조회 없음",
+      });
+      const updated = await this.repo.updateDeposit(deposit.id, {
+        status: "HELD",
+        heldReason: "VERIFY_UNAVAILABLE",
+      });
+      return { status: "HELD", deposit: updated, reason: "VERIFY_UNAVAILABLE" };
+    }
+
+    let verified: { verified: boolean };
+    try {
+      verified = await this.tossAdapter.verifyPayment(payload.orderId, payload.paymentKey, payload.amount);
+    } catch {
+      verified = { verified: false };
+    }
+    if (verified.verified === false) {
+      await this.repo.createPaymentEvent({
+        depositId: deposit.id,
+        eventType: "FAILED",
+        dedupKey,
+        payload,
+        resultNote: "PG 재조회 검증 실패",
+      });
+      const updated = await this.repo.updateDeposit(deposit.id, {
+        status: "HELD",
+        heldReason: "VERIFY_FAILED",
+      });
+      return { status: "HELD", deposit: updated, reason: "VERIFY_FAILED" };
     }
 
     await this.repo.createPaymentEvent({

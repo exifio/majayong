@@ -106,18 +106,20 @@ describe("C-04: 자동 승인·이견 3택·기한 배치", () => {
     const itemBefore = await repo.getContractItem(item1.id);
     assert.equal(itemBefore?.approvedAt, null);
 
-    // 2. 7일 정각 -> 자동 승인 1건
+    // 2. 기한 정각까지는 유효 -> 자동 승인 0건
     const resExact = await batchService.processAutoApproval(delivery.id, sevenDaysLater);
-    assert.equal(resExact.autoApprovedCount, 1);
+    assert.equal(resExact.autoApprovedCount, 0);
 
+    // 3. 기한을 넘긴 직후 -> 자동 승인 1건, 다시 실행하면 0건
+    const justAfter = new Date(sevenDaysLater.getTime() + 1);
+    const resAfter = await batchService.processAutoApproval(delivery.id, justAfter);
+    assert.equal(resAfter.autoApprovedCount, 1);
     const itemExact = await repo.getContractItem(item1.id);
     assert.ok(itemExact?.approvedAt);
     assert.equal(itemExact.autoApproved, true);
 
-    // 3. 7일 직후 -> 이미 승인되었으므로 추가 승인 0건 (멱등성)
-    const justAfter = new Date(sevenDaysLater.getTime() + 1000);
-    const resAfter = await batchService.processAutoApproval(delivery.id, justAfter);
-    assert.equal(resAfter.autoApprovedCount, 0);
+    const resAgain = await batchService.processAutoApproval(delivery.id, new Date(sevenDaysLater.getTime() + 1000));
+    assert.equal(resAgain.autoApprovedCount, 0);
   });
 
   it("C-04-T02 OPEN·ESCALATED·CANCEL_REQUESTED에서 승인·지급 0", async () => {
@@ -151,7 +153,7 @@ describe("C-04: 자동 승인·이견 3택·기한 배치", () => {
     });
 
     // 7일 경과 시점 배치 실행: item1은 OPEN 보완이 걸려있으므로 자동 승인 제외
-    const res = await batchService.processAutoApproval(delivery.id, sevenDaysLater);
+    const res = await batchService.processAutoApproval(delivery.id, new Date(sevenDaysLater.getTime() + 1));
     assert.equal(res.autoApprovedCount, 1); // item2만 자동 승인
 
     const checkItem1 = await repo.getContractItem(item1.id);
@@ -187,7 +189,7 @@ describe("C-04: 자동 승인·이견 3택·기한 배치", () => {
     });
 
     // 7일 경과 배치 실행
-    const res = await batchService.processAutoApproval(delivery.id, sevenDaysLater);
+    const res = await batchService.processAutoApproval(delivery.id, new Date(sevenDaysLater.getTime() + 1));
     assert.equal(res.autoApprovedCount, 1); // item2만 새로 자동 승인됨
 
     const item1After = await repo.getContractItem(item1.id);

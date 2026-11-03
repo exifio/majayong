@@ -2,11 +2,9 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
   AdapterMissingError,
-  ClockPolicyBlockedError,
-  DecisionBlockedError,
   MoneyError,
   PortError,
-  addBusinessDays,
+  endOfKstDayPlus,
   approvalGate,
   assertCompensationRate,
   blocksDepositDeadlineCancel,
@@ -15,6 +13,7 @@ import {
   calculateSupplierRelease,
   canOpenDeposit,
   clientFullRefundStorage,
+  isClientFullRefund,
   competingRejectOnSign,
   createMemoryAccounts,
   createMemoryContractPorts,
@@ -134,7 +133,39 @@ describe("C-00", () => {
     assert.doesNotThrow(() => assertCompensationRate("CLIENT", 100));
     assert.throws(() => assertCompensationRate("MUTUAL", 101), MoneyError);
     assert.doesNotThrow(() => assertCompensationRate("MUTUAL", 0));
-    assert.throws(() => clientFullRefundStorage(), DecisionBlockedError);
+    assert.equal(
+      isClientFullRefund({
+        cause: "CLIENT",
+        depositedAt: new Date("2026-11-04T05:20:00.000Z"),
+        requestedAt: new Date("2026-11-05T05:20:00.000Z"),
+        installmentStatuses: ["PENDING", "PENDING"],
+      }),
+      true,
+    );
+    assert.equal(
+      isClientFullRefund({
+        cause: "CLIENT",
+        depositedAt: new Date("2026-11-04T05:20:00.000Z"),
+        requestedAt: new Date("2026-11-05T05:20:00.001Z"),
+        installmentStatuses: ["PENDING"],
+      }),
+      false,
+    );
+    assert.equal(
+      isClientFullRefund({
+        cause: "CLIENT",
+        depositedAt: new Date("2026-11-04T05:20:00.000Z"),
+        requestedAt: new Date("2026-11-04T06:20:00.000Z"),
+        installmentStatuses: ["DELIVERED"],
+      }),
+      false,
+    );
+    assert.deepEqual(clientFullRefundStorage(3_255_000, 155_000), {
+      compensationRate: null,
+      refundAmount: 3_255_000,
+      settledAmount: 0,
+      clientFeeRefund: 155_000,
+    });
   });
 
   it("서명에는 타 지원을 거절하지 않고 예치 완료에만 거절", () => {
@@ -159,12 +190,16 @@ describe("C-00", () => {
     assert.equal(isInspectionBasis("UNDECIDED"), false);
   });
 
-  it("Clock은 주입 시각만 반환하고 일수 가산은 D-02", () => {
+  it("기한은 한국 달력 23:59:59.999까지", () => {
     const clock = fixedClock(Date.parse("2026-11-04T05:20:00.000Z"));
     const at = clock.now();
     assert.equal(at.toISOString(), "2026-11-04T05:20:00.000Z");
     assert.equal(clock.now().toISOString(), at.toISOString());
-    assert.throws(() => addBusinessDays(), ClockPolicyBlockedError);
+    assert.equal(endOfKstDayPlus(new Date("2026-11-03T00:00:00.000Z"), 7).toISOString(), "2026-11-10T14:59:59.999Z");
+    assert.equal(endOfKstDayPlus(new Date("2026-11-04T05:20:00.000Z"), 3).toISOString(), "2026-11-07T14:59:59.999Z");
+    assert.equal(endOfKstDayPlus(new Date("2026-11-03T15:30:00.000Z"), 3).toISOString(), "2026-11-07T14:59:59.999Z");
+    assert.equal(endOfKstDayPlus(new Date("2026-11-04T15:00:00.000Z"), 3).toISOString(), "2026-11-08T14:59:59.999Z");
+    assert.equal(endOfKstDayPlus(new Date("2026-12-12T00:00:00.000Z"), 7).toISOString(), "2026-12-19T14:59:59.999Z");
   });
 
   it("Contract·Account·Notification 포트 실패 의미", async () => {

@@ -1,3 +1,5 @@
+import { endOfKstDayPlus } from "../settlement/policy.ts";
+
 export type DeliveryStatus = "SUBMITTED" | "PARTIALLY_APPROVED" | "APPROVED" | "REWORK_REQUESTED";
 export type InspectionReason = "CONDITION_MISMATCH" | "NOT_WORKING" | "MISSING_PART" | "OTHER";
 export type InspectionStatus = "OPEN" | "RESOLVED" | "ESCALATED";
@@ -276,7 +278,7 @@ export class DeliveryService {
     }
 
     const submittedAt = this.clock.now();
-    const inspectionDueAt = new Date(submittedAt.getTime() + 7 * 24 * 60 * 60 * 1000);
+    const inspectionDueAt = endOfKstDayPlus(submittedAt, 7);
 
     return this.repo.createDelivery({
       installmentId: installment.id,
@@ -432,7 +434,7 @@ export class InspectionBatchService {
       return { autoApprovedCount: 0 };
     }
 
-    if (now < delivery.inspectionDueAt) {
+    if (now.getTime() <= delivery.inspectionDueAt.getTime()) {
       return { autoApprovedCount: 0 };
     }
 

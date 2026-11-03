@@ -270,8 +270,6 @@ describe("C-02: 예치 확정·2구간 생성·보류 지원 처리", () => {
     const depositedAt = new Date("2026-11-04T05:20:00.000Z"); // 14:20 KST
     const workDueAt = calculateWorkDueAt(depositedAt, 42);
 
-    assert.equal(workDueAt.getUTCFullYear(), 2026);
-    assert.equal(workDueAt.getUTCMonth(), 11); // 11 = December (0-indexed)
-    assert.equal(workDueAt.getUTCDate(), 16); // 16일
+    assert.equal(workDueAt.toISOString(), "2026-12-16T14:59:59.999Z");
   });
 });

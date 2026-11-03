@@ -1,3 +1,5 @@
+import { clientFullRefundStorage, endOfKstDayPlus, isClientFullRefund } from "../settlement/policy.ts";
+
 export class CancellationHttpError extends Error {
   readonly status: number;
   constructor(status: number, message: string) {
@@ -176,6 +178,16 @@ export class CancellationService {
       throw new CancellationHttpError(403, "취소를 요청한 상대방만 동의할 수 있습니다.");
     }
 
+    const fullRefund = await this.fullRefundIfEligible(contract);
+    if (fullRefund) {
+      return this.repo.updateContract(contract.id, {
+        ...fullRefund,
+        cancelResolution: "AGREED",
+        cancelResolvedAt: this.clock.now(),
+        status: "CANCELLED",
+      });
+    }
+
     const defaultRate = contract.cancelCause === "CLIENT" ? 50 : 0;
     const split = await this.calculateCancellationSplit(contract.id, defaultRate);
 
@@ -239,9 +251,8 @@ export class CancellationService {
     if (!contract || contract.status !== "CANCEL_REQUESTED") return { escalatedToAdmin: false };
 
     if (!contract.cancelResolvedAt && !contract.cancelEscalatedAt && contract.cancelRequestedAt) {
-      const diffMs = now.getTime() - contract.cancelRequestedAt.getTime();
-      const threeDaysMs = 3 * 24 * 60 * 60 * 1000;
-      if (diffMs >= threeDaysMs) {
+      const deadline = endOfKstDayPlus(contract.cancelRequestedAt, 3);
+      if (now.getTime() > deadline.getTime()) {
         await this.repo.updateContract(contract.id, {
           cancelEscalatedAt: now,
         });
@@ -260,12 +271,15 @@ export class CancellationService {
     const contract = await this.repo.getContract(input.contractId);
     if (!contract) throw new CancellationHttpError(404, "계약을 찾을 수 없습니다.");
 
-    // D-16 가드레일: 의뢰인 사정 24시간 이내 무납품 전액 환불(0% 보상)은 DB 제약 충돌로 차단
-    if (contract.cancelCause === "CLIENT" && input.compensationRate === 0) {
-      throw new CancellationHttpError(
-        422,
-        "D-16 BLOCKED: 의뢰인 사정 전액 환불(0% 보상)은 DB 제약 충돌로 인해 D-16 승인 전까지 차단되어 있습니다.",
-      );
+    const fullRefund = await this.fullRefundIfEligible(contract);
+    if (fullRefund) {
+      return this.repo.updateContract(contract.id, {
+        ...fullRefund,
+        refundReason: input.reason,
+        cancelResolution: "ADMIN_DECIDED",
+        cancelResolvedAt: this.clock.now(),
+        status: "CANCELLED",
+      });
     }
 
     if (input.compensationRate < 0 || input.compensationRate > 100) {
@@ -340,6 +354,22 @@ export class CancellationService {
       clientFeeRefund,
       ongoingStagePaidFull,
     };
+  }
+
+  private async fullRefundIfEligible(contract: CancellationContractEntity) {
+    const installments = await this.repo.listInstallments(contract.id);
+    const requestedAt = contract.cancelRequestedAt ?? this.clock.now();
+    if (
+      isClientFullRefund({
+        cause: contract.cancelCause,
+        depositedAt: contract.depositedAt,
+        requestedAt,
+        installmentStatuses: installments.map((row) => row.status),
+      }) === false
+    ) {
+      return null;
+    }
+    return clientFullRefundStorage(contract.totalDeposited, contract.clientFee);
   }
 
   async isOperationsPaused(contractId: string): Promise<boolean> {

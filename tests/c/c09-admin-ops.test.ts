@@ -276,6 +276,53 @@ describe("C-09: 관리자 블록/예치/분쟁/정산/감사 API", () => {
     assert.equal(decisionLogs[0]?.reason, "착수 보상 판정");
   });
 
+  it("C-09-T05c 24시간 내 무납품은 관리자 판정도 보상 비율 null", async () => {
+    const { service, repo } = createTestSetup();
+    const depositedAt = new Date(baseTime.getTime() - 2 * 60 * 60 * 1000);
+    repo.seedCancellationQueueContract({
+      id: "contract-cancel-24h",
+      status: "CANCEL_REQUESTED",
+      cancelCause: "CLIENT",
+      totalDeposited: 3_255_000,
+      agreedAmount: 3_100_000,
+      clientFee: 155_000,
+      depositedAt,
+      cancelRequestedAt: baseTime,
+      installmentStatuses: ["PENDING", "PENDING"],
+    });
+
+    const decided = await service.decideCancellation(
+      { userId: "admin-1", role: "ADMIN" },
+      "contract-cancel-24h",
+      { compensationRate: 0, reason: "24시간 내 무납품" },
+    );
+    assert.equal(decided.compensationRate, null);
+    assert.equal(decided.refundAmount, 3_255_000);
+    assert.equal(decided.settledAmount, 0);
+    assert.equal(decided.clientFeeRefund, 155_000);
+
+    repo.seedCancellationQueueContract({
+      id: "contract-cancel-delivered",
+      status: "CANCEL_REQUESTED",
+      cancelCause: "CLIENT",
+      totalDeposited: 3_255_000,
+      agreedAmount: 3_100_000,
+      clientFee: 155_000,
+      depositedAt,
+      cancelRequestedAt: baseTime,
+      installmentStatuses: ["DELIVERED", "PENDING"],
+    });
+    await assert.rejects(
+      () =>
+        service.decideCancellation(
+          { userId: "admin-1", role: "ADMIN" },
+          "contract-cancel-delivered",
+          { compensationRate: 0, reason: "납품 후" },
+        ),
+      (err: unknown) => err instanceof AdminHttpError && err.status === 422,
+    );
+  });
+
   it("C-09-T08 B 관리자 경로 중복 등록 0", () => {
     const { service } = createTestSetup();
 
