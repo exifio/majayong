@@ -126,6 +126,17 @@ export interface ApplicationCard {
   readonly submittedAt: Date;
 }
 
+export interface SupplierProfileSummary {
+  readonly supplierId: string;
+  readonly careerYears: number | null;
+  readonly ratingAvg: number | null;
+  readonly reviewCount: number;
+  readonly completedContractCount: number;
+  readonly portfolioSummary: string | null;
+}
+
+export type SupplierApplicationCard = ApplicationCard & SupplierProfileSummary;
+
 export const ACTIVE_STATUSES: readonly ApplicationStatus[] = [
   'SUBMITTED',
   'STALE',
@@ -570,6 +581,25 @@ export function compareApplicationCards(
       revisionCount: revisionCountBySupplier.get(revision.supplierId) ?? revision.revisionNo,
       submittedAt: revision.submittedAt,
     }));
+}
+
+/** A의 공개 프로필 projection만 결합한다. 제공되지 않은 프로필은 비어 있는 값으로 둔다. */
+export function attachSupplierProfileSummaries(
+  cards: readonly ApplicationCard[],
+  profiles: readonly SupplierProfileSummary[],
+): readonly SupplierApplicationCard[] {
+  const bySupplier = new Map(profiles.map((profile) => [profile.supplierId, profile]));
+  return cards.map((card) => {
+    const profile = bySupplier.get(card.supplierId);
+    return {
+      ...card,
+      careerYears: profile === undefined ? null : profile.careerYears,
+      ratingAvg: profile === undefined ? null : profile.ratingAvg,
+      reviewCount: profile === undefined ? 0 : profile.reviewCount,
+      completedContractCount: profile === undefined ? 0 : profile.completedContractCount,
+      portfolioSummary: profile === undefined ? null : profile.portfolioSummary,
+    };
+  });
 }
 
 export { ApplicationError };

@@ -85,6 +85,14 @@ export interface ChatRepository {
   }): Promise<number>;
 }
 
+export interface ChatEventPort {
+  recordInquiryOpenedOnce(input: {
+    readonly projectId: string;
+    readonly clientUserId: string;
+    readonly openedAt: Date;
+  }): Promise<boolean>;
+}
+
 export interface ConversationView {
   readonly messages: readonly ChatMessage[];
   readonly unreadCount: number;
@@ -114,6 +122,31 @@ export function countUnread(
 ): number {
   return messages.filter((message) => message.senderId !== readerId && message.readAt === null)
     .length;
+}
+
+/** First client open only: the repository's atomic result gates the metric event. */
+export async function openConversation(
+  repository: ChatRepository,
+  input: {
+    readonly actor: ChatActor;
+    readonly applicationId: string;
+    readonly now: Date;
+    readonly events: ChatEventPort;
+  },
+): Promise<{ readonly opened: boolean }> {
+  const application = await repository.findApplication(input.applicationId);
+  if (application === null) throw chatNotFound();
+  requireParty(input.actor, application);
+  if (input.actor.role !== 'CLIENT' || input.actor.userId !== application.clientUserId) {
+    throw new ChatError(403, 'CLIENT_ONLY', '의뢰인만 문의 대화를 열 수 있습니다.');
+  }
+
+  const opened = await input.events.recordInquiryOpenedOnce({
+    projectId: application.projectId,
+    clientUserId: application.clientUserId,
+    openedAt: input.now,
+  });
+  return { opened };
 }
 
 export async function sendMessage(

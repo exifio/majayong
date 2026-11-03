@@ -14,6 +14,7 @@ import {
   assertContractableRevision,
   autoRejectCompetingApplications,
   autoRejectCompetingApplicationsInTransaction,
+  attachSupplierProfileSummaries,
   compareApplicationCards,
   markApplicationsStale,
   rejectApplication,
@@ -622,5 +623,31 @@ describe('B-02 보조: 지원 비교 카드', () => {
       assert.equal('recommended' in card, false);
       assert.equal('rank' in card, false);
     }
+  });
+
+  it('A의 공개 프로필에서 경력·리뷰·완료 계약·요약만 카드에 붙인다', () => {
+    const cards = compareApplicationCards([
+      applicationRevision({ id: 'app-1', supplierId: 'supplier-1' }),
+      applicationRevision({ id: 'app-2', supplierId: 'supplier-2' }),
+    ]);
+    const enriched = attachSupplierProfileSummaries(cards, [
+      {
+        supplierId: 'supplier-1', careerYears: 6, ratingAvg: 4.5,
+        reviewCount: 2, completedContractCount: 3, portfolioSummary: '예약 서비스 구축 경험',
+      },
+    ]);
+
+    assert.deepEqual(enriched[0], {
+      ...cards[0], careerYears: 6, ratingAvg: 4.5, reviewCount: 2,
+      completedContractCount: 3, portfolioSummary: '예약 서비스 구축 경험',
+    });
+    assert.deepEqual(enriched[1], {
+      ...cards[1], careerYears: null, ratingAvg: null, reviewCount: 0,
+      completedContractCount: 0, portfolioSummary: null,
+    });
+    const serialized = JSON.stringify(enriched);
+    assert.equal(serialized.includes('email'), false);
+    assert.equal(serialized.includes('unitPrice'), false);
+    assert.equal(serialized.includes('payout'), false);
   });
 });

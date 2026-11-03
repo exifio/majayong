@@ -4,6 +4,7 @@ import { describe, it } from 'node:test';
 import {
   ChatError,
   countUnread,
+  openConversation,
   listConversation,
   markConversationRead,
   sendMessage,
@@ -115,9 +116,45 @@ class FakeChatRepository implements ChatRepository {
     }
     return changed;
   }
+
 }
 
 describe('B-03-T01 공급자 선시작 금지', () => {
+  it('문의방은 의뢰인만 열고 최초 INQUIRY_OPENED 기록은 한 번만 남긴다', async () => {
+    const repository = new FakeChatRepository([chatApplication()]);
+    const recorded: { projectId: string; clientUserId: string; openedAt: Date }[] = [];
+    const openedProjects = new Set<string>();
+    const port = {
+      async recordInquiryOpenedOnce(input: (typeof recorded)[number]) {
+        if (openedProjects.has(input.projectId)) return false;
+        openedProjects.add(input.projectId);
+        recorded.push(input);
+        return true;
+      },
+    };
+
+    await assert.rejects(
+      openConversation(repository, {
+        actor: SUPPLIER, applicationId: 'app-1', now: FIXED_NOW, events: port,
+      }),
+      isChatError(403, 'CLIENT_ONLY'),
+    );
+    assert.equal(recorded.length, 0);
+    await assert.rejects(openConversation(repository, {
+      actor: INTRUDER, applicationId: 'app-1', now: FIXED_NOW, events: port,
+    }), isChatError(404, 'CHAT_NOT_FOUND'));
+
+    assert.deepEqual(await openConversation(repository, {
+      actor: CLIENT, applicationId: 'app-1', now: FIXED_NOW, events: port,
+    }), { opened: true });
+    assert.deepEqual(await openConversation(repository, {
+      actor: CLIENT, applicationId: 'app-1', now: new Date(FIXED_NOW.getTime() + 1000), events: port,
+    }), { opened: false });
+    assert.deepEqual(recorded, [{
+      projectId: 'prj-1', clientUserId: 'client-1', openedAt: FIXED_NOW,
+    }]);
+  });
+
   it('의뢰인 메시지가 없으면 공급자 발신은 403 CHAT_NOT_STARTED다', async () => {
     const repository = new FakeChatRepository([chatApplication()]);
 
