@@ -1,2 +1,23 @@
 node_modules/
 dist/
+.DS_Store
+.code-review-graph
+
+# Local-only backend instructions, plans, audit records, and source materials.
+/docs/ARCHITECTURE.md
+/docs/CODE_STANDARDS.md
+/docs/DATA_MIGRATION.md
+/docs/SOURCE_AUDIT.md
+/docs/TESTING.md
+/docs/DOC_VALIDATION.md
+/docs/VERIFICATION_TEMPLATE.md
+/docs/SOURCES_SHA256.txt
+/docs/PROMPTS.md
+/docs/TASKS*.md
+/docs/BE_TASKS_original.md
+/docs/API_CONTRACT.md
+/docs/API_INDEX.md
+/docs/PLAN.md
+/docs/DECISIONS.md
+/docs/sources/
+/docs/superpowers/plans/

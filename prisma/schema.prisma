@@ -391,6 +391,7 @@ model User {
   notifications    Notification[]
   events           EventLog[]
   messages         ApplicationMessage[]
+  refreshSessions  RefreshSession[]
   reviewsWritten   Review[]             @relation("ReviewAuthor")
   reviewsReceived  Review[]             @relation("ReviewSubject")
   reportsFiled     Report[]             @relation("ReportReporter")
@@ -402,6 +403,25 @@ model User {
   @@unique([authProvider, providerUserId])
   @@index([role])
   @@map("users")
+}
+
+model RefreshSession {
+  id           String          @id @default(uuid())
+  userId       String
+  familyId     String          @default(uuid())
+  tokenHash    String          @unique
+  expiresAt    DateTime
+  revokedAt    DateTime?
+  replacedById String?         @unique
+  createdAt    DateTime        @default(now())
+
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  replacedBy  RefreshSession?  @relation("RefreshRotation", fields: [replacedById], references: [id], onDelete: Restrict)
+  replaces    RefreshSession?  @relation("RefreshRotation")
+
+  @@index([familyId, revokedAt])
+  @@index([userId, expiresAt])
+  @@map("refresh_sessions")
 }
 
 /// 연락처 컬럼 없음. 상세 공개에서 이름(User) · 상호 · 업종 · 가게 주소 · 자기소개(User) · 웹사이트

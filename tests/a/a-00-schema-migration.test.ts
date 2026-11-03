@@ -12,7 +12,7 @@ const prisma = new PrismaClient();
 afterAll(async () => prisma.$disconnect());
 
 describe("v0.7 PostgreSQL migration", () => {
-  it("creates all 25 schema tables and 33 enums", async () => {
+  it("creates the 25 v0.7 tables, A-01 refresh sessions, and 33 enums", async () => {
     const tables = await prisma.$queryRaw<Array<{ tablename: string }>>`
       SELECT tablename FROM pg_tables
       WHERE schemaname = 'public' AND tablename <> '_prisma_migrations'
@@ -43,6 +43,7 @@ describe("v0.7 PostgreSQL migration", () => {
       "payment_events",
       "payment_installments",
       "projects",
+      "refresh_sessions",
       "reports",
       "reviews",
       "spec_items",
