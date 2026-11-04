@@ -1,5 +1,3 @@
-import { clientFullRefundStorage, isClientFullRefund } from "../settlement/policy.ts";
-
 export class AdminHttpError extends Error {
   readonly status: number;
   constructor(status: number, message: string) {
@@ -8,6 +6,13 @@ export class AdminHttpError extends Error {
     this.status = status;
   }
 }
+
+const ADMIN_BLOCK_ACTIONS: Record<string, true> = {
+  UPDATE_PRICE: true,
+  MERGE: true,
+  DISABLE: true,
+  ENABLE: true,
+};
 
 export interface AdminBlock {
   id: string;
@@ -178,18 +183,70 @@ export function createInMemoryAdminRepository(): AdminRepository {
 export interface AdminOpsServiceOptions {
   repo: AdminRepository;
   catalogPort: CatalogAdminPort;
+  depositPort?: {
+    resolveHeldDeposit(input: {
+      depositId: string;
+      decision: "OPERATOR_CONFIRMED" | "OPERATOR_VOIDED";
+      reason: string;
+      actorUserId: string;
+      paymentKey?: string;
+    }): Promise<{ deposit: { id: string; status: string } }>;
+  };
+  inspectionPort?: {
+    decideDispute(input: {
+      inspectionRequestId: string;
+      decision: "REWORK_VALID" | "APPROVE" | "UNDECIDED_CONDITION";
+      reason: string;
+      decisionNotes: { client: string; supplier: string };
+    }): Promise<{ id: string; status: string; decision?: string | null }>;
+  };
+  cancellationPort?: {
+    decideCancellation(input: {
+      contractId: string;
+      compensationRate: number;
+      reason: string;
+    }): Promise<{
+      status: string;
+      compensationRate: number | null;
+      refundAmount: number | null;
+      settledAmount: number | null;
+      clientFeeRefund: number | null;
+      cancelResolution: string | null;
+      cancelResolvedAt: Date | null;
+    }>;
+    markProcessed?(input: {
+      contractId: string;
+      operatorId: string;
+      refunded: boolean;
+      cancelPayout: boolean;
+    }): Promise<{ refundedAt: Date | null; cancelPayoutAt: Date | null }>;
+  };
   clock?: { now(): Date };
 }
 
 export class AdminOpsService {
   private readonly repo: AdminRepository;
   private readonly catalogPort: CatalogAdminPort;
+  private readonly depositPort?: AdminOpsServiceOptions["depositPort"];
+  private readonly inspectionPort?: AdminOpsServiceOptions["inspectionPort"];
+  private readonly cancellationPort?: AdminOpsServiceOptions["cancellationPort"];
   private readonly clock: { now(): Date };
 
   constructor(options: AdminOpsServiceOptions) {
     this.repo = options.repo;
     this.catalogPort = options.catalogPort;
+    this.depositPort = options.depositPort;
+    this.inspectionPort = options.inspectionPort;
+    this.cancellationPort = options.cancellationPort;
     this.clock = options.clock ?? { now: () => new Date() };
+  }
+
+  private rethrowAsAdmin(err: unknown): never {
+    const status = (err as { status?: unknown } | null)?.status;
+    if (typeof status === "number" && err instanceof Error) {
+      throw new AdminHttpError(status, err.message);
+    }
+    throw err;
   }
 
   private checkAdminRole(actor: { userId: string; role: string }): void {
@@ -216,10 +273,26 @@ export class AdminOpsService {
   ): Promise<{ success: boolean; blockId: string; action: string }> {
     this.checkAdminRole(actor);
     this.validateReason(input.reason);
+    const action = input.action?.trim();
+    if (!action || !ADMIN_BLOCK_ACTIONS[action]) {
+      throw new AdminHttpError(400, "허용되지 않은 블록 액션입니다. (UPDATE_PRICE|MERGE|DISABLE|ENABLE)");
+    }
+    if (action === "UPDATE_PRICE") {
+      if (
+        typeof input.unitPrice !== "number" ||
+        Number.isSafeInteger(input.unitPrice) === false ||
+        input.unitPrice <= 0
+      ) {
+        throw new AdminHttpError(400, "단가 수정은 양의 정수 unitPrice가 필요합니다.");
+      }
+    }
+    if (action === "MERGE" && (!input.mergedIntoId || input.mergedIntoId.trim().length === 0)) {
+      throw new AdminHttpError(400, "블록 병합은 mergedIntoId가 필요합니다.");
+    }
 
     const result = await this.catalogPort.executeBlockAction({
       blockId,
-      action: input.action,
+      action,
       reason: input.reason,
       unitPrice: input.unitPrice,
       mergedIntoId: input.mergedIntoId,
@@ -245,32 +318,44 @@ export class AdminOpsService {
   async resolveHeldDeposit(
     actor: { userId: string; role: string },
     depositId: string,
-    input: { decision: "OPERATOR_CONFIRMED" | "OPERATOR_VOIDED"; reason: string },
+    input: { decision: "OPERATOR_CONFIRMED" | "OPERATOR_VOIDED"; reason: string; paymentKey?: string },
   ): Promise<AdminHeldDeposit> {
     this.checkAdminRole(actor);
     this.validateReason(input.reason);
 
     const deposit = await this.repo.getHeldDeposit(depositId);
     if (!deposit) throw new AdminHttpError(404, "보류된 예치 건을 찾을 수 없습니다.");
-
-    // 이미 처리된 경우 멱등 반환
-    if (deposit.status !== "HELD") {
-      return deposit;
+    if (!this.depositPort) {
+      throw new AdminHttpError(503, "예치 서비스가 연결되지 않아 판정할 수 없습니다.");
     }
 
-    const nextStatus = input.decision === "OPERATOR_CONFIRMED" ? "COMPLETED" : "FAILED";
-    const updated = await this.repo.updateHeldDeposit(deposit.id, {
-      status: nextStatus,
-    });
+    let resolved: { deposit: { id: string; status: string } };
+    try {
+      resolved = await this.depositPort.resolveHeldDeposit({
+        depositId,
+        decision: input.decision,
+        reason: input.reason,
+        actorUserId: actor.userId,
+        paymentKey: input.paymentKey,
+      });
+    } catch (err) {
+      this.rethrowAsAdmin(err);
+    }
 
-    await this.repo.recordEvent({
-      actorUserId: actor.userId,
-      actionType: input.decision,
-      targetType: "DEPOSIT",
-      targetId: depositId,
-      reason: input.reason,
-      occurredAt: this.clock.now(),
-    });
+    const nextStatus = resolved.deposit.status === "COMPLETED" ? "COMPLETED" : "FAILED";
+    const wasTerminal = deposit.status !== "HELD";
+    const updated = await this.repo.updateHeldDeposit(deposit.id, { status: nextStatus });
+
+    if (!wasTerminal) {
+      await this.repo.recordEvent({
+        actorUserId: actor.userId,
+        actionType: input.decision,
+        targetType: "DEPOSIT",
+        targetId: depositId,
+        reason: input.reason,
+        occurredAt: this.clock.now(),
+      });
+    }
 
     return updated;
   }
@@ -294,21 +379,38 @@ export class AdminOpsService {
 
     const inspection = await this.repo.getInspection(inspectionRequestId);
     if (!inspection) throw new AdminHttpError(404, "검수 요청을 찾을 수 없습니다.");
+    if (!this.inspectionPort) {
+      throw new AdminHttpError(503, "검수 서비스가 연결되지 않아 판정할 수 없습니다.");
+    }
 
+    try {
+      await this.inspectionPort.decideDispute({
+        inspectionRequestId,
+        decision: input.decision,
+        reason: input.reason,
+        decisionNotes: input.decisionNotes,
+      });
+    } catch (err) {
+      this.rethrowAsAdmin(err);
+    }
+
+    const wasResolved = inspection.status === "RESOLVED";
     const updated = await this.repo.updateInspection(inspection.id, {
       status: "RESOLVED",
       decision: input.decision,
       decisionNotes: input.decisionNotes,
     });
 
-    await this.repo.recordEvent({
-      actorUserId: actor.userId,
-      actionType: `DISPUTE_${input.decision}`,
-      targetType: "INSPECTION",
-      targetId: inspectionRequestId,
-      reason: input.reason,
-      occurredAt: this.clock.now(),
-    });
+    if (!wasResolved) {
+      await this.repo.recordEvent({
+        actorUserId: actor.userId,
+        actionType: `DISPUTE_${input.decision}`,
+        targetType: "INSPECTION",
+        targetId: inspectionRequestId,
+        reason: input.reason,
+        occurredAt: this.clock.now(),
+      });
+    }
 
     return updated;
   }
@@ -328,72 +430,50 @@ export class AdminOpsService {
 
     const contract = await this.repo.getCancellationContract(contractId);
     if (!contract) throw new AdminHttpError(404, "취소 계약을 찾을 수 없습니다.");
-
-    if (contract.status === "CANCELLED" && contract.cancelResolution === "ADMIN_DECIDED") {
-      return contract;
+    if (!this.cancellationPort) {
+      throw new AdminHttpError(503, "취소 서비스가 연결되지 않아 판정할 수 없습니다.");
     }
 
-    const now = this.clock.now();
-    if (
-      contract.installmentStatuses !== undefined &&
-      isClientFullRefund({
-        cause: contract.cancelCause,
-        depositedAt: contract.depositedAt ?? null,
-        requestedAt: contract.cancelRequestedAt ?? now,
-        installmentStatuses: contract.installmentStatuses,
-      })
-    ) {
-      const stored = clientFullRefundStorage(contract.totalDeposited, contract.clientFee);
-      const updated = await this.repo.updateCancellationContract(contract.id, {
-        status: "CANCELLED",
-        ...stored,
-        cancelResolution: "ADMIN_DECIDED",
-        cancelResolvedAt: now,
+    let decided: {
+      status: string;
+      compensationRate: number | null;
+      refundAmount: number | null;
+      settledAmount: number | null;
+      clientFeeRefund: number | null;
+      cancelResolution: string | null;
+      cancelResolvedAt: Date | null;
+    };
+    try {
+      decided = await this.cancellationPort.decideCancellation({
+        contractId,
+        compensationRate: input.compensationRate,
+        reason: input.reason,
       });
+    } catch (err) {
+      this.rethrowAsAdmin(err);
+    }
+
+    const wasResolved = contract.status === "CANCELLED" && contract.cancelResolution === "ADMIN_DECIDED";
+    const updated = await this.repo.updateCancellationContract(contract.id, {
+      status: decided.status,
+      compensationRate: decided.compensationRate,
+      refundAmount: decided.refundAmount,
+      settledAmount: decided.settledAmount,
+      clientFeeRefund: decided.clientFeeRefund,
+      cancelResolution: decided.cancelResolution === "ADMIN_DECIDED" ? "ADMIN_DECIDED" : null,
+      cancelResolvedAt: decided.cancelResolvedAt,
+    });
+
+    if (!wasResolved) {
       await this.repo.recordEvent({
         actorUserId: actor.userId,
         actionType: "CANCELLATION_ADMIN_DECIDED",
         targetType: "CONTRACT",
         targetId: contractId,
         reason: input.reason,
-        occurredAt: now,
+        occurredAt: this.clock.now(),
       });
-      return updated;
     }
-
-    if (
-      typeof input.compensationRate !== "number" ||
-      Number.isInteger(input.compensationRate) === false ||
-      input.compensationRate < 0 ||
-      input.compensationRate > 100
-    ) {
-      throw new AdminHttpError(422, "보상 비율은 0~100 사이여야 합니다.");
-    }
-    if (contract.cancelCause === "CLIENT" && input.compensationRate < 50) {
-      throw new AdminHttpError(422, "의뢰인 사정 취소는 보상 비율이 50% 이상이어야 합니다.");
-    }
-
-    const ongoing = Math.floor(contract.agreedAmount / 2);
-    const compensationPrincipal = Math.floor((ongoing * input.compensationRate) / 100);
-    const supplierFee = Math.floor((compensationPrincipal * 5) / 100);
-    const updated = await this.repo.updateCancellationContract(contract.id, {
-      status: "CANCELLED",
-      compensationRate: input.compensationRate,
-      cancelResolution: "ADMIN_DECIDED",
-      cancelResolvedAt: now,
-      settledAmount: compensationPrincipal - supplierFee,
-      clientFeeRefund: contract.clientFee - supplierFee,
-      refundAmount: contract.totalDeposited - compensationPrincipal - supplierFee,
-    });
-
-    await this.repo.recordEvent({
-      actorUserId: actor.userId,
-      actionType: "CANCELLATION_ADMIN_DECIDED",
-      targetType: "CONTRACT",
-      targetId: contractId,
-      reason: input.reason,
-      occurredAt: now,
-    });
 
     return updated;
   }
@@ -409,10 +489,30 @@ export class AdminOpsService {
     const contract = await this.repo.getCancellationContract(contractId);
     if (!contract) throw new AdminHttpError(404, "취소 계약을 찾을 수 없습니다.");
 
-    const now = this.clock.now();
+    let refundedAt: Date | null = contract.refundedAt ?? null;
+    let cancelPayoutAt: Date | null = contract.cancelPayoutAt ?? null;
+    if (this.cancellationPort?.markProcessed) {
+      try {
+        const processed = await this.cancellationPort.markProcessed({
+          contractId,
+          operatorId: actor.userId,
+          refunded: input.refunded,
+          cancelPayout: input.cancelPayout,
+        });
+        refundedAt = processed.refundedAt;
+        cancelPayoutAt = processed.cancelPayoutAt;
+      } catch (err) {
+        this.rethrowAsAdmin(err);
+      }
+    } else {
+      const now = this.clock.now();
+      refundedAt = input.refunded ? (contract.refundedAt ?? now) : (contract.refundedAt ?? null);
+      cancelPayoutAt = input.cancelPayout ? (contract.cancelPayoutAt ?? now) : (contract.cancelPayoutAt ?? null);
+    }
+
     const updated = await this.repo.updateCancellationContract(contract.id, {
-      refundedAt: input.refunded ? (contract.refundedAt ?? now) : contract.refundedAt,
-      cancelPayoutAt: input.cancelPayout ? (contract.cancelPayoutAt ?? now) : contract.cancelPayoutAt,
+      refundedAt,
+      cancelPayoutAt,
     });
 
     await this.repo.recordEvent({
@@ -421,14 +521,34 @@ export class AdminOpsService {
       targetType: "CONTRACT",
       targetId: contractId,
       reason: input.reason,
-      occurredAt: now,
+      occurredAt: this.clock.now(),
     });
 
     return updated;
   }
 
-  async listEventLogs(actor: { userId: string; role: string }): Promise<EventLogEntity[]> {
+  async listEventLogs(
+    actor: { userId: string; role: string },
+    filter?: {
+      actorUserId?: string;
+      actionType?: string;
+      targetType?: string;
+      targetId?: string;
+      from?: Date;
+      to?: Date;
+    },
+  ): Promise<EventLogEntity[]> {
     this.checkAdminRole(actor);
-    return this.repo.listEventLogs();
+    const logs = await this.repo.listEventLogs();
+    if (!filter) return logs;
+    return logs.filter((log) => {
+      if (filter.actorUserId && log.actorUserId !== filter.actorUserId) return false;
+      if (filter.actionType && log.actionType !== filter.actionType) return false;
+      if (filter.targetType && log.targetType !== filter.targetType) return false;
+      if (filter.targetId && log.targetId !== filter.targetId) return false;
+      if (filter.from && log.occurredAt.getTime() < filter.from.getTime()) return false;
+      if (filter.to && log.occurredAt.getTime() > filter.to.getTime()) return false;
+      return true;
+    });
   }
 }
