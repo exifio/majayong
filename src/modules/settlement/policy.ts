@@ -27,6 +27,21 @@ export class PortError extends Error {
   }
 }
 
+export class ContractTermsError extends Error {
+  readonly code: "MISSING_INTERIM_RATIO" | "MISSING_DURATION_DAYS";
+
+  constructor(code: ContractTermsError["code"]) {
+    super(code);
+    this.name = "ContractTermsError";
+    this.code = code;
+  }
+}
+
+export interface ContractTerms {
+  interimRatio: number;
+  durationDays: number;
+}
+
 export interface ClientDeposit {
   principal: number;
   clientFee: number;
@@ -70,6 +85,11 @@ export interface ContractSnapshot {
   interimRatio: number;
   durationDays: number;
 }
+
+export type ContractPortSeed = Omit<ContractSnapshot, "interimRatio" | "durationDays"> & {
+  interimRatio?: number | null;
+  durationDays?: number | null;
+};
 
 export interface ContractPorts {
   getDepositable(contractId: string): Promise<ContractSnapshot>;
@@ -145,8 +165,7 @@ export function calculateClientDeposit(principal: number): ClientDeposit {
   return { principal, clientFee, depositAmount };
 }
 
-export function splitInstallments(principal: number, interimRatio: number): InstallmentSplit {
-  assertPositiveKrw(principal);
+function assertInterimRatio(interimRatio: number): void {
   if (
     typeof interimRatio !== "number" ||
     Number.isInteger(interimRatio) === false ||
@@ -155,6 +174,11 @@ export function splitInstallments(principal: number, interimRatio: number): Inst
   ) {
     throw new MoneyError("RATIO");
   }
+}
+
+export function splitInstallments(principal: number, interimRatio: number): InstallmentSplit {
+  assertPositiveKrw(principal);
+  assertInterimRatio(interimRatio);
   const interimAmount = floorPart(principal, interimRatio, 100);
   return { interimAmount, finalAmount: principal - interimAmount };
 }
@@ -306,7 +330,41 @@ export function endOfKstDayPlus(anchor: Date, days: number): Date {
   );
 }
 
-export function createMemoryContractPorts(rows: readonly ContractSnapshot[]): ContractPorts {
+function assertDurationDays(durationDays: number): void {
+  if (typeof durationDays !== "number" || Number.isInteger(durationDays) === false || durationDays < 0) {
+    throw new MoneyError("RATIO");
+  }
+}
+
+export function requireDepositContractTerms(input: {
+  interimRatio?: number | null;
+  durationDays?: number | null;
+}): ContractTerms {
+  if (input.interimRatio === undefined || input.interimRatio === null) {
+    throw new ContractTermsError("MISSING_INTERIM_RATIO");
+  }
+  if (input.durationDays === undefined || input.durationDays === null) {
+    throw new ContractTermsError("MISSING_DURATION_DAYS");
+  }
+  assertDurationDays(input.durationDays);
+  assertInterimRatio(input.interimRatio);
+  return { interimRatio: input.interimRatio, durationDays: input.durationDays };
+}
+
+export function freezeAgreementTerms(input: {
+  interimRatio?: number | null;
+  durationDays?: number | null;
+}): ContractTerms {
+  if (input.durationDays === undefined || input.durationDays === null) {
+    throw new ContractTermsError("MISSING_DURATION_DAYS");
+  }
+  assertDurationDays(input.durationDays);
+  const interimRatio = input.interimRatio === undefined || input.interimRatio === null ? 50 : input.interimRatio;
+  assertInterimRatio(interimRatio);
+  return { interimRatio, durationDays: input.durationDays };
+}
+
+export function createMemoryContractPorts(rows: readonly ContractPortSeed[]): ContractPorts {
   return {
     async getDepositable(contractId) {
       const row = rows.find((item) => item.id === contractId);
@@ -316,7 +374,16 @@ export function createMemoryContractPorts(rows: readonly ContractSnapshot[]): Co
       if (canOpenDeposit(row.status, row.paymentStatus) === false) {
         throw new PortError("CONFLICT");
       }
-      return row;
+      const terms = requireDepositContractTerms(row);
+      return {
+        id: row.id,
+        status: row.status,
+        paymentStatus: row.paymentStatus,
+        agreedAmount: row.agreedAmount,
+        clientFee: row.clientFee,
+        interimRatio: terms.interimRatio,
+        durationDays: terms.durationDays,
+      };
     },
   };
 }

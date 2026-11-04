@@ -1,4 +1,4 @@
-import { endOfKstDayPlus } from "../settlement/policy.ts";
+import { endOfKstDayPlus, requireDepositContractTerms, splitInstallments } from "../settlement/policy.ts";
 
 export type DepositStatus = "PENDING" | "HELD" | "COMPLETED" | "FAILED";
 
@@ -74,8 +74,8 @@ export interface DepositContractInfo {
   paymentStatus: "PENDING" | "DEPOSITED" | "PARTIALLY_RELEASED" | "RELEASED" | "REFUNDED";
   agreedAmount: number;
   clientFee: number;
-  interimRatio?: number;
-  durationDays?: number;
+  interimRatio?: number | null;
+  durationDays?: number | null;
   depositDeadline: Date | null;
   totalDeposited?: number;
   workDueAt?: Date | null;
@@ -499,13 +499,15 @@ export class DepositCompletionService {
     const originalWorkDueAt = contract.workDueAt ?? null;
 
     const completionTime = this.clock.now();
-    const durationDays = contract.durationDays ?? 42;
+    const terms = requireDepositContractTerms(contract);
+    const durationDays = terms.durationDays;
     const workDueAt = calculateWorkDueAt(completionTime, durationDays);
 
-    const interimRatio = contract.interimRatio ?? 50;
+    const interimRatio = terms.interimRatio;
+    const split = splitInstallments(contract.agreedAmount, interimRatio);
     const finalRatio = 100 - interimRatio;
-    const interimAmount = Math.floor((contract.agreedAmount * interimRatio) / 100);
-    const finalAmount = contract.agreedAmount - interimAmount;
+    const interimAmount = split.interimAmount;
+    const finalAmount = split.finalAmount;
 
     const interimSupplierFee = Math.floor((interimAmount * 5) / 100);
     const finalSupplierFee = Math.floor((finalAmount * 5) / 100);

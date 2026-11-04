@@ -1,6 +1,11 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
+  DepositCompletionService,
+  createInMemoryDepositRepository,
+  type DepositContractInfo,
+} from "../../src/modules/deposit/index.ts";
+import {
   AdapterMissingError,
   MoneyError,
   PortError,
@@ -22,11 +27,71 @@ import {
   createMockStorage,
   createMockToss,
   fixedClock,
+  freezeAgreementTerms,
   isInspectionBasis,
   onDepositCompleted,
+  requireDepositContractTerms,
   requireExternalAdapters,
   splitInstallments,
 } from "../../src/modules/settlement/policy.ts";
+
+function readErrorCode(error: unknown): string | undefined {
+  if (typeof error === "object" && error !== null && "code" in error) {
+    const code = error.code;
+    return typeof code === "string" ? code : undefined;
+  }
+  return undefined;
+}
+
+const depositClock = new Date("2026-11-04T05:20:00.000Z");
+
+function depositFixture(patch: Partial<DepositContractInfo> = {}): DepositContractInfo {
+  return {
+    id: "deposit-terms",
+    projectId: "proj-1",
+    applicationId: "app-1",
+    clientUserId: "client-1",
+    supplierUserId: "supplier-1",
+    status: "ACTIVE",
+    paymentStatus: "PENDING",
+    agreedAmount: 1_000_000,
+    clientFee: 50_000,
+    interimRatio: 40,
+    durationDays: 35,
+    depositDeadline: new Date("2026-11-07T14:59:59.999Z"),
+    totalDeposited: 0,
+    workDueAt: null,
+    ...patch,
+  };
+}
+
+function completionHarness(contract: DepositContractInfo) {
+  const repo = createInMemoryDepositRepository();
+  let rejected = 0;
+  const service = new DepositCompletionService({
+    repo,
+    contractsPort: {
+      async getContract(id) {
+        return id === contract.id ? contract : null;
+      },
+      async updateContract(id, patch) {
+        if (id !== contract.id) {
+          throw new Error("missing contract");
+        }
+        Object.assign(contract, patch);
+        return contract;
+      },
+    },
+    marketplacePort: {
+      async autoRejectCompetingApplications() {
+        rejected += 1;
+        return { rejectedCount: 1 };
+      },
+    },
+    clock: { now: () => depositClock },
+  });
+  return { repo, service, rejectedCount: () => rejected };
+}
 
 describe("C-00", () => {
   it("C-00-T01 합의금 1,000,000원의 의뢰인 수수료와 예치액", () => {
@@ -259,5 +324,170 @@ describe("C-00", () => {
       await notifications.createOnce({ userId: "u", type: "DEPOSIT_DUE", targetId: "other", targetUrl: "/a" }),
       { created: true },
     );
+  });
+
+  it("C-00-T09 예치 확정은 durationDays 누락을 42일로 채우지 않는다", async () => {
+    const contract = depositFixture();
+    delete contract.durationDays;
+    const { repo, service, rejectedCount } = completionHarness(contract);
+    const deposit = await repo.createDeposit({
+      contractId: contract.id,
+      principal: contract.agreedAmount,
+      clientFee: contract.clientFee,
+      amount: 1_050_000,
+      method: "CARD",
+      status: "PENDING",
+      idempotencyKey: "c00-t09",
+      pgKey: null,
+      depositedAt: null,
+    });
+
+    await assert.rejects(() => service.completeDeposit({ depositId: deposit.id, pgKey: "pg-t09" }), (error: unknown) => {
+      assert.equal(readErrorCode(error), "MISSING_DURATION_DAYS");
+      return true;
+    });
+
+    assert.equal(contract.paymentStatus, "PENDING");
+    assert.equal(contract.workDueAt ?? null, null);
+    assert.notEqual(contract.workDueAt?.toISOString(), endOfKstDayPlus(depositClock, 42).toISOString());
+    assert.equal((await repo.listInstallments(contract.id)).length, 0);
+    assert.equal(rejectedCount(), 0);
+    assert.equal((await repo.findById(deposit.id))?.status, "PENDING");
+  });
+
+  it("C-00-T10 예치 확정은 interimRatio 누락을 50으로 채우지 않는다", async () => {
+    const contract = depositFixture();
+    delete contract.interimRatio;
+    const { repo, service, rejectedCount } = completionHarness(contract);
+    const deposit = await repo.createDeposit({
+      contractId: contract.id,
+      principal: contract.agreedAmount,
+      clientFee: contract.clientFee,
+      amount: 1_050_000,
+      method: "CARD",
+      status: "PENDING",
+      idempotencyKey: "c00-t10",
+      pgKey: null,
+      depositedAt: null,
+    });
+
+    await assert.rejects(() => service.completeDeposit({ depositId: deposit.id, pgKey: "pg-t10" }), (error: unknown) => {
+      assert.equal(readErrorCode(error), "MISSING_INTERIM_RATIO");
+      return true;
+    });
+
+    const installments = await repo.listInstallments(contract.id);
+    assert.equal(installments.length, 0);
+    assert.equal(contract.paymentStatus, "PENDING");
+    assert.equal(rejectedCount(), 0);
+  });
+
+  it("C-00-T11 예치 가능 포트는 비어 있는 비율·기간을 기본값으로 바꾸지 않는다", async () => {
+    const missingDays = {
+      id: "missing-days",
+      status: "ACTIVE" as const,
+      paymentStatus: "PENDING" as const,
+      agreedAmount: 1_000_000,
+      clientFee: 50_000,
+      interimRatio: 40,
+      durationDays: 35,
+    };
+    delete missingDays.durationDays;
+    const missingRatio = {
+      id: "missing-ratio",
+      status: "ACTIVE" as const,
+      paymentStatus: "PENDING" as const,
+      agreedAmount: 1_000_000,
+      clientFee: 50_000,
+      interimRatio: 40,
+      durationDays: 35,
+    };
+    delete missingRatio.interimRatio;
+    const ports = createMemoryContractPorts([
+      missingDays,
+      missingRatio,
+      {
+        id: "frozen",
+        status: "ACTIVE",
+        paymentStatus: "PENDING",
+        agreedAmount: 1_000_000,
+        clientFee: 50_000,
+        interimRatio: 40,
+        durationDays: 35,
+      },
+    ]);
+
+    await assert.rejects(() => ports.getDepositable("missing-days"), (error: unknown) => {
+      assert.equal(readErrorCode(error), "MISSING_DURATION_DAYS");
+      return true;
+    });
+    await assert.rejects(() => ports.getDepositable("missing-ratio"), (error: unknown) => {
+      assert.equal(readErrorCode(error), "MISSING_INTERIM_RATIO");
+      return true;
+    });
+    const frozen = await ports.getDepositable("frozen");
+    assert.equal(frozen.interimRatio, 40);
+    assert.equal(frozen.durationDays, 35);
+  });
+
+  it("C-00-T12 계약 체결은 미정 비율만 50으로 고정하고 기간 42일을 만들지 않는다", () => {
+    assert.deepEqual(freezeAgreementTerms({ interimRatio: undefined, durationDays: 35 }), {
+      interimRatio: 50,
+      durationDays: 35,
+    });
+    assert.deepEqual(freezeAgreementTerms({ interimRatio: null, durationDays: 35 }), {
+      interimRatio: 50,
+      durationDays: 35,
+    });
+    assert.deepEqual(freezeAgreementTerms({ interimRatio: 40, durationDays: 35 }), {
+      interimRatio: 40,
+      durationDays: 35,
+    });
+    assert.throws(() => freezeAgreementTerms({ interimRatio: undefined, durationDays: undefined }), (error: unknown) => {
+      assert.equal(readErrorCode(error), "MISSING_DURATION_DAYS");
+      return true;
+    });
+    assert.throws(() => freezeAgreementTerms({ interimRatio: undefined, durationDays: null }), (error: unknown) => {
+      assert.equal(readErrorCode(error), "MISSING_DURATION_DAYS");
+      return true;
+    });
+    assert.throws(() => freezeAgreementTerms({ interimRatio: 9, durationDays: 35 }), MoneyError);
+    assert.throws(() => requireDepositContractTerms({ interimRatio: undefined, durationDays: 35 }), (error: unknown) => {
+      assert.equal(readErrorCode(error), "MISSING_INTERIM_RATIO");
+      return true;
+    });
+    assert.throws(() => requireDepositContractTerms({ interimRatio: null, durationDays: 35 }), (error: unknown) => {
+      assert.equal(readErrorCode(error), "MISSING_INTERIM_RATIO");
+      return true;
+    });
+    assert.deepEqual(requireDepositContractTerms({ interimRatio: 40, durationDays: 35 }), {
+      interimRatio: 40,
+      durationDays: 35,
+    });
+  });
+
+  it("C-00-T13 예치 확정은 계약에 적힌 35일·40%만 사용한다", async () => {
+    const contract = depositFixture();
+    const { repo, service } = completionHarness(contract);
+    const deposit = await repo.createDeposit({
+      contractId: contract.id,
+      principal: contract.agreedAmount,
+      clientFee: contract.clientFee,
+      amount: 1_050_000,
+      method: "CARD",
+      status: "PENDING",
+      idempotencyKey: "c00-t13",
+      pgKey: null,
+      depositedAt: null,
+    });
+    const result = await service.completeDeposit({ depositId: deposit.id, pgKey: "pg-t13" });
+    assert.equal(result.contract.workDueAt?.toISOString(), endOfKstDayPlus(depositClock, 35).toISOString());
+    assert.notEqual(result.contract.workDueAt?.toISOString(), endOfKstDayPlus(depositClock, 42).toISOString());
+    const interim = result.installments.find((row) => row.stage === "INTERIM");
+    const finalInstallment = result.installments.find((row) => row.stage === "FINAL");
+    assert.equal(interim?.ratio, 40);
+    assert.equal(interim?.amount, splitInstallments(1_000_000, 40).interimAmount);
+    assert.equal(finalInstallment?.ratio, 60);
+    assert.equal(finalInstallment?.amount, splitInstallments(1_000_000, 40).finalAmount);
   });
 });
