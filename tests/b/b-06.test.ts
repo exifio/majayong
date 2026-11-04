@@ -25,6 +25,7 @@ import {
   type NotificationUnitOfWork,
 } from '../../src/modules/notification/notifications.ts';
 import { FIXED_NOW } from './fixtures.ts';
+import { createNotificationBridge } from '../../src/modules/notification/c-bridge.ts';
 import {
   createPrismaNotificationUnitOfWork,
   type NotificationDbRow,
@@ -1219,6 +1220,50 @@ describe('B-06-T09 Prisma 어댑터', () => {
     assert.equal(
       (await listNotifications(uow, { userId: CLIENT, now: FIXED_NOW })).unreadCount,
       1,
+    );
+  });
+});
+
+describe('B-06-T10 C 알림 포트 bridge', () => {
+  it('C createOnce를 같은 tx 멱등 함수로 연결하고 targetUrl은 B 고정 경로를 쓴다', async () => {
+    const tx = new FakeNotificationTx();
+    const bridge = createNotificationBridge(tx, { now: () => FIXED_NOW });
+
+    const first = await bridge.createOnce({
+      userId: CLIENT,
+      type: 'AUTO_APPROVED',
+      targetId: 'contract-1',
+      targetUrl: 'https://evil.example/steal',
+    });
+    assert.deepEqual(first, { created: true });
+    assert.equal(tx.rows.length, 1);
+    assert.equal(tx.rows[0]?.targetUrl, '/contracts/contract-1/settlement');
+
+    const second = await bridge.createOnce({
+      userId: CLIENT,
+      type: 'AUTO_APPROVED',
+      targetId: 'contract-1',
+    });
+    assert.deepEqual(second, { created: false });
+    assert.equal(tx.rows.length, 1);
+  });
+
+  it('알 수 없는 타입은 거부한다', async () => {
+    const bridge = createNotificationBridge(new FakeNotificationTx(), { now: () => FIXED_NOW });
+
+    await assert.rejects(
+      bridge.createOnce({ userId: CLIENT, type: 'NOT_A_TYPE', targetId: 'contract-1' }),
+      (error: unknown) =>
+        error instanceof NotificationError && error.code === 'UNKNOWN_NOTIFICATION_TYPE',
+    );
+  });
+
+  it('dueAt이 필요한 기한 알림은 C 계약에 payload가 없어 생성되지 않는다', async () => {
+    const bridge = createNotificationBridge(new FakeNotificationTx(), { now: () => FIXED_NOW });
+
+    await assert.rejects(
+      bridge.createOnce({ userId: CLIENT, type: 'DEPOSIT_DUE', targetId: 'contract-1' }),
+      (error: unknown) => error instanceof NotificationError && error.code === 'INVALID_PAYLOAD',
     );
   });
 });

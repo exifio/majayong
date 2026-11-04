@@ -5,6 +5,7 @@ import type { ApplicationStatus } from '../../src/modules/application/dto.ts';
 import {
   ApplicationError,
   ApplicationUniqueViolation,
+  createApplicationNotificationPort,
   type ApplicationRevision,
   type ApplicationTx,
   type ApplicationUnitOfWork,
@@ -22,7 +23,15 @@ import {
   submitApplication,
   withdrawApplication,
 } from '../../src/modules/application/submission.ts';
+import { createMarketplaceAutoRejectPort } from '../../src/modules/application/marketplace-port.ts';
 import { CONTACT_PLACEHOLDER, maskContacts } from '../../src/modules/chat/masking.ts';
+import {
+  createNotificationOnceInTransaction,
+  type NewNotification,
+  type NotificationRecord,
+  type NotificationType,
+  type NotificationTx,
+} from '../../src/modules/notification/notifications.ts';
 import { FIXED_NOW, applicationRevision } from './fixtures.ts';
 
 const SPEC_ITEM_IDS = ['spec-1', 'spec-2', 'spec-3', 'spec-4'];
@@ -35,6 +44,8 @@ function isAppError(status: number, code: string) {
 class FakeApplicationTx implements ApplicationTx {
   rows: ApplicationRevision[];
   systemMessages: { applicationId: string; body: string }[] = [];
+  readonly notificationTx = new FakeNotificationTx();
+  notifications = createApplicationNotificationPort(this.notificationTx);
   viewedAt: Date | null;
   private forceUnique = false;
 
@@ -126,6 +137,27 @@ class FakeApplicationTx implements ApplicationTx {
   }): Promise<void> {
     this.systemMessages.push({ applicationId: input.applicationId, body: input.body });
   }
+
+}
+
+class FakeNotificationTx implements NotificationTx {
+  readonly rows: { readonly userId: string; readonly type: NotificationType; readonly targetId: string }[] = [];
+  failCreate: Error | null = null;
+  async findByKey(input: { readonly userId: string; readonly type: NotificationType; readonly targetId: string }): Promise<NotificationRecord | null> {
+    return this.rows.some((row) => row.userId === input.userId && row.type === input.type && row.targetId === input.targetId)
+      ? { id: 'notification-1', userId: input.userId, type: input.type, targetUrl: '/projects/prj-1/applications', targetId: input.targetId, payload: null, isRead: false, createdAt: FIXED_NOW }
+      : null;
+  }
+  async create(input: NewNotification): Promise<NotificationRecord> {
+    if (this.failCreate !== null) throw this.failCreate;
+    this.rows.push({ userId: input.userId, type: input.type, targetId: input.targetId });
+    return { ...input, id: `notification-${this.rows.length}`, isRead: false };
+  }
+  async refreshBundled(): Promise<NotificationRecord> { throw new Error('not a chat notification'); }
+  async listRecent() { return []; }
+  async countUnread() { return 0; }
+  async markRead() { return false; }
+  async markAllRead() { return 0; }
 }
 
 class FakeUnitOfWork implements ApplicationUnitOfWork {
@@ -137,7 +169,21 @@ class FakeUnitOfWork implements ApplicationUnitOfWork {
   }
 
   run<T>(work: (tx: ApplicationTx) => Promise<T>): Promise<T> {
-    const next = this.tail.then(() => work(this.tx));
+    const next = this.tail.then(async () => {
+      const before = {
+        rows: structuredClone(this.tx.rows),
+        systemMessages: structuredClone(this.tx.systemMessages),
+        notificationRows: structuredClone(this.tx.notificationTx.rows),
+      };
+      try {
+        return await work(this.tx);
+      } catch (error) {
+        this.tx.rows = before.rows;
+        this.tx.systemMessages = before.systemMessages;
+        this.tx.notificationTx.rows.splice(0, this.tx.notificationTx.rows.length, ...before.notificationRows);
+        throw error;
+      }
+    });
     this.tail = next.then(
       () => undefined,
       () => undefined,
@@ -372,7 +418,7 @@ describe('B-02-T04 명세 변경 → STALE', () => {
       }),
     ]);
 
-    const count = await markApplicationsStale(new FakeUnitOfWork(tx), { projectId: 'prj-1' });
+    const count = await markApplicationsStale(new FakeUnitOfWork(tx), { projectId: 'prj-1', now: FIXED_NOW });
 
     assert.equal(count, 1);
     assert.deepEqual(
@@ -533,7 +579,7 @@ describe('B-02-T07 철회·직접 거절', () => {
     const uow = new FakeUnitOfWork(tx);
 
     assert.deepEqual(
-      await rejectApplication(uow, { applicationId: 'app-1', clientUserId: 'client-1' }),
+      await rejectApplication(uow, { applicationId: 'app-1', clientUserId: 'client-1', now: FIXED_NOW }),
       { status: 'REJECTED' },
     );
     assert.equal(tx.rows[0]?.status, 'REJECTED');
@@ -649,5 +695,127 @@ describe('B-02 보조: 지원 비교 카드', () => {
     assert.equal(serialized.includes('email'), false);
     assert.equal(serialized.includes('unitPrice'), false);
     assert.equal(serialized.includes('payout'), false);
+  });
+});
+
+describe('B-02 보조: C 예치 완료 자동 거절 adapter', () => {
+  it('C MarketplacePorts 모양으로 같은 도메인 함수에 위임한다', async () => {
+    const tx = new FakeApplicationTx([
+      applicationRevision({ id: 'app-2', supplierId: 'supplier-2', status: 'SUBMITTED' }),
+      applicationRevision({ id: 'app-3', supplierId: 'supplier-3', status: 'STALE' }),
+      applicationRevision({ id: 'app-4', supplierId: 'supplier-4', status: 'ACCEPTED' }),
+    ]);
+    const port = createMarketplaceAutoRejectPort(new FakeUnitOfWork(tx));
+
+    const result = await port.autoRejectCompetingApplications({
+      projectId: 'prj-1',
+      acceptedApplicationId: 'app-1',
+    });
+
+    assert.deepEqual(result, { rejectedCount: 2 });
+    assert.deepEqual(
+      tx.rows.map((row) => [row.id, row.status]),
+      [
+        ['app-2', 'AUTO_REJECTED'],
+        ['app-3', 'AUTO_REJECTED'],
+        ['app-4', 'ACCEPTED'],
+      ],
+    );
+  });
+
+  it('자동 거절 실패는 C 트랜잭션에 그대로 전파한다', async () => {
+    const failing: ApplicationUnitOfWork = {
+      run: async () => {
+        throw new Error('deposit tx failed');
+      },
+    };
+    const port = createMarketplaceAutoRejectPort(failing);
+
+    await assert.rejects(
+      port.autoRejectCompetingApplications({ projectId: 'prj-1', acceptedApplicationId: 'app-1' }),
+      /deposit tx failed/,
+    );
+  });
+});
+
+describe('B-02-T08 지원·거절·재견적 알림 발행', () => {
+  it('지원 제출은 의뢰인에게 APPLICATION_RECEIVED를 프로젝트 대상으로 1회 보낸다', async () => {
+    const tx = new FakeApplicationTx([], { viewedAt: FIXED_NOW });
+
+    await submitApplication(
+      new FakeUnitOfWork(tx),
+      submitInput(),
+    );
+
+    assert.equal(tx.notificationTx.rows.length, 1);
+    assert.equal(tx.notificationTx.rows[0]?.type, 'APPLICATION_RECEIVED');
+    assert.equal(tx.notificationTx.rows[0]?.userId, 'client-1');
+    assert.equal(tx.notificationTx.rows[0]?.targetId, 'prj-1');
+  });
+
+  it('거부된 지원 제출은 알림을 보내지 않는다', async () => {
+    const tx = new FakeApplicationTx([], { viewedAt: null });
+    await assert.rejects(
+      submitApplication(new FakeUnitOfWork(tx), submitInput()),
+      isAppError(403, 'DETAIL_VIEW_REQUIRED'),
+    );
+    assert.equal(tx.notificationTx.rows.length, 0);
+  });
+
+  it('견적 수정도 의뢰인에게 APPLICATION_RECEIVED를 보낸다', async () => {
+    const previous = applicationRevision();
+    const tx = new FakeApplicationTx([previous], { viewedAt: previous.firstViewedAt });
+    const result = await reviseApplication(
+      new FakeUnitOfWork(tx),
+      reviseInput(),
+    );
+
+    assert.equal(tx.notificationTx.rows.length, 1);
+    assert.equal(tx.notificationTx.rows[0]?.type, 'APPLICATION_RECEIVED');
+    assert.equal(tx.notificationTx.rows[0]?.targetId, result.current.projectId);
+  });
+
+  it('의뢰인 직접 거절은 공급자에게 APPLICATION_REJECTED를 지원 대상으로 보낸다', async () => {
+    const tx = new FakeApplicationTx([applicationRevision()]);
+    await rejectApplication(new FakeUnitOfWork(tx), {
+      applicationId: 'app-1',
+      clientUserId: 'client-1',
+      now: FIXED_NOW,
+    });
+
+    assert.equal(tx.notificationTx.rows.length, 1);
+    assert.equal(tx.notificationTx.rows[0]?.type, 'APPLICATION_REJECTED');
+    assert.equal(tx.notificationTx.rows[0]?.userId, 'supplier-1');
+    assert.equal(tx.notificationTx.rows[0]?.targetId, 'app-1');
+  });
+
+  it('명세 변경으로 STALE이 된 지원에만 REQUOTE_REQUESTED를 보낸다', async () => {
+    const tx = new FakeApplicationTx([
+      applicationRevision({ id: 'app-1', supplierId: 'supplier-1', status: 'SUBMITTED' }),
+      applicationRevision({ id: 'app-2', supplierId: 'supplier-2', status: 'STALE' }),
+      applicationRevision({ id: 'app-3', supplierId: 'supplier-3', status: 'ACCEPTED' }),
+    ]);
+    const count = await markApplicationsStale(new FakeUnitOfWork(tx), {
+      projectId: 'prj-1',
+      now: FIXED_NOW,
+    });
+
+    assert.equal(count, 1);
+    assert.equal(tx.notificationTx.rows.length, 1);
+    assert.equal(tx.notificationTx.rows[0]?.type, 'REQUOTE_REQUESTED');
+    assert.equal(tx.notificationTx.rows[0]?.userId, 'supplier-1');
+    assert.equal(tx.notificationTx.rows[0]?.targetId, 'app-1');
+  });
+
+  it('알림 발행 실패는 지원 쓰기 실패로 전파된다(실제 롤백은 PG 통합)', async () => {
+    const tx = new FakeApplicationTx([], { viewedAt: FIXED_NOW });
+    tx.notificationTx.failCreate = new Error('notify down');
+
+    await assert.rejects(
+      submitApplication(new FakeUnitOfWork(tx), submitInput()),
+      /notify down/,
+    );
+    assert.equal(tx.rows.length, 0);
+    assert.equal(tx.notificationTx.rows.length, 0);
   });
 });

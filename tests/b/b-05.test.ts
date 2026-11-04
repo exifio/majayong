@@ -4,6 +4,7 @@ import { describe, it } from 'node:test';
 import type { AgreementCondition, AgreementDraft } from '../../src/modules/agreement/draft.ts';
 import type { ApplicationRecord, ApplicationStatus } from '../../src/modules/application/dto.ts';
 import {
+  createContractNotificationPort,
   ContractError,
   assertScopeMutable,
   breakContract,
@@ -25,6 +26,13 @@ import {
   type ContractUnitOfWork,
   type NewContractRecord,
 } from '../../src/modules/contract/lifecycle.ts';
+import {
+  createNotificationOnceInTransaction,
+  type NewNotification,
+  type NotificationRecord,
+  type NotificationType,
+  type NotificationTx,
+} from '../../src/modules/notification/notifications.ts';
 import type { ProjectStatus } from '../../src/modules/market/public-project.ts';
 import { FIXED_NOW, applicationRecord } from './fixtures.ts';
 
@@ -111,15 +119,46 @@ interface FakeProject extends ContractProjectState {
 
 interface NotificationRow {
   readonly userId: string;
-  readonly type: string;
+  readonly type: 'APPLICATION_ACCEPTED' | 'CONTRACT_BROKEN';
   readonly targetId: string;
   readonly payload: Readonly<Record<string, unknown>>;
 }
 
 interface EventRow {
   readonly userId: string;
-  readonly type: string;
+  readonly type: 'APPLICATION_ACCEPTED' | 'CONTRACT_SIGNED' | 'CONTRACT_AGREED' | 'CONTRACT_BROKEN';
   readonly payload: Readonly<Record<string, unknown>>;
+}
+
+class FakeNotificationTx implements NotificationTx {
+  readonly rows: { readonly id: string; readonly userId: string; readonly type: NotificationType; readonly targetId: string }[] = [];
+  failCreate: Error | null = null;
+  async findByKey(input: { readonly userId: string; readonly type: NotificationType; readonly targetId: string }): Promise<NotificationRecord | null> {
+    const row = this.rows.find((candidate) =>
+      candidate.userId === input.userId && candidate.type === input.type && candidate.targetId === input.targetId,
+    );
+    return row === undefined ? null : {
+      id: row.id,
+      userId: row.userId,
+      type: row.type,
+      targetUrl: `/contracts/${input.targetId}/sign`,
+      targetId: input.targetId,
+      payload: null,
+      isRead: false,
+      createdAt: FIXED_NOW,
+    };
+  }
+  async create(input: NewNotification): Promise<NotificationRecord> {
+    if (this.failCreate !== null) throw this.failCreate;
+    const id = `notification-${this.rows.length + 1}`;
+    this.rows.push({ id, userId: input.userId, type: input.type, targetId: input.targetId });
+    return { id, ...input, isRead: false };
+  }
+  async refreshBundled(): Promise<NotificationRecord> { throw new Error('not a chat notification'); }
+  async listRecent() { return []; }
+  async countUnread() { return 0; }
+  async markRead() { return false; }
+  async markAllRead() { return 0; }
 }
 
 class FakeContractTx implements ContractTx {
@@ -130,6 +169,9 @@ class FakeContractTx implements ContractTx {
   notifications: NotificationRow[] = [];
   events: EventRow[] = [];
   lastCancelReason: ContractBreakReason | null = null;
+  readonly notificationTx = new FakeNotificationTx();
+  readonly notificationPort = createContractNotificationPort(this.notificationTx);
+  failNotificationInsert = false;
 
   constructor(input: {
     readonly applications: readonly ApplicationRecord[];
@@ -299,16 +341,19 @@ class FakeContractTx implements ContractTx {
 
   async notify(input: {
     readonly userId: string;
-    readonly type: string;
+    readonly type: 'APPLICATION_ACCEPTED' | 'CONTRACT_BROKEN';
     readonly targetId: string;
     readonly payload: Readonly<Record<string, unknown>>;
+    readonly now: Date;
   }): Promise<void> {
+    if (this.failNotificationInsert) this.notificationTx.failCreate = new Error('simulated notification insert failure');
+    await this.notificationPort.notify(input);
     this.notifications.push(input);
   }
 
   async logEvent(input: {
     readonly userId: string;
-    readonly type: string;
+    readonly type: 'APPLICATION_ACCEPTED' | 'CONTRACT_SIGNED' | 'CONTRACT_AGREED' | 'CONTRACT_BROKEN';
     readonly payload: Readonly<Record<string, unknown>>;
   }): Promise<void> {
     this.events.push(input);
@@ -323,7 +368,29 @@ class FakeUnitOfWork implements ContractUnitOfWork {
   }
 
   async run<T>(work: (tx: ContractTx) => Promise<T>): Promise<T> {
-    return work(this.tx);
+    const before = {
+      applications: structuredClone(this.tx.applications),
+      projects: structuredClone(this.tx.projects),
+      contracts: structuredClone(this.tx.contracts),
+      systemMessages: structuredClone(this.tx.systemMessages),
+      notifications: structuredClone(this.tx.notifications),
+      notificationRows: structuredClone(this.tx.notificationTx.rows),
+      events: structuredClone(this.tx.events),
+      lastCancelReason: this.tx.lastCancelReason,
+    };
+    try {
+      return await work(this.tx);
+    } catch (error) {
+      this.tx.applications = before.applications;
+      this.tx.projects = before.projects;
+      this.tx.contracts = before.contracts;
+      this.tx.systemMessages = before.systemMessages;
+      this.tx.notifications = before.notifications;
+      this.tx.notificationTx.rows.splice(0, this.tx.notificationTx.rows.length, ...before.notificationRows);
+      this.tx.events = before.events;
+      this.tx.lastCancelReason = before.lastCancelReason;
+      throw error;
+    }
   }
 }
 
@@ -488,6 +555,38 @@ describe('B-05-T01 동시 2명 합의 → 1명만', () => {
       () => calculateContractFees(0),
       isContractError(400, 'INVALID_AMOUNT'),
     );
+  });
+});
+
+describe('B-05-T09 계약 알림 브리지', () => {
+  it('합의 완료 알림을 B-06 멱등 함수에 연결하고 동일 키는 중복 생성하지 않는다', async () => {
+    const { tx, uow } = setup();
+    const contract = await accept(tx, uow);
+
+    assert.equal(tx.notifications.length, 1);
+    assert.equal(tx.notifications[0]?.type, 'APPLICATION_ACCEPTED');
+    assert.equal(tx.notifications[0]?.targetId, contract.id);
+    assert.equal(tx.notificationTx.rows.length, 1);
+
+    await createNotificationOnceInTransaction(tx.notificationTx, {
+      userId: SUPPLIER.userId,
+      type: 'APPLICATION_ACCEPTED',
+      targetId: contract.id,
+      payload: { applicationId: 'app-1' },
+      now: FIXED_NOW,
+    });
+    assert.equal(tx.notificationTx.rows.length, 1);
+  });
+
+  it('알림 저장 실패는 합의·계약 쓰기를 실패시킨다(실제 DB 롤백은 PG 통합)', async () => {
+    const { tx, uow } = setup();
+    tx.failNotificationInsert = true;
+
+    await assert.rejects(accept(tx, uow), /simulated notification insert failure/);
+    assert.equal(tx.contracts.length, 0);
+    assert.equal(tx.projects[0]?.status, 'RECRUITING');
+    assert.equal(tx.applications[0]?.status, 'SUBMITTED');
+    assert.equal(tx.notificationTx.rows.length, 0);
   });
 });
 

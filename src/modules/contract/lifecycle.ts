@@ -13,6 +13,7 @@ import type { AgreementCondition, AgreementDraft } from '../agreement/draft.js';
 import { ApplicationError, type ApplicationRecord, type ApplicationStatus } from '../application/dto.js';
 import type { PaymentStatus } from './display-status.js';
 import type { ProjectStatus } from '../market/public-project.js';
+import { createNotificationOnceInTransaction, type NotificationTx } from '../notification/notifications.js';
 
 export type ContractDbStatus =
   | 'PENDING_CONSENT'
@@ -166,6 +167,7 @@ export interface ContractTx {
     readonly type: 'APPLICATION_ACCEPTED' | 'CONTRACT_BROKEN';
     readonly targetId: string;
     readonly payload: Readonly<Record<string, unknown>>;
+    readonly now: Date;
   }): Promise<void>;
   logEvent(input: {
     readonly userId: string;
@@ -176,6 +178,29 @@ export interface ContractTx {
 
 export interface ContractUnitOfWork {
   run<T>(work: (tx: ContractTx) => Promise<T>): Promise<T>;
+}
+
+/** Structural bridge for an owner transaction; notification insert shares its tx. */
+export function createContractNotificationPort(notificationTx: NotificationTx): {
+  notify(input: {
+    readonly userId: string;
+    readonly type: 'APPLICATION_ACCEPTED' | 'CONTRACT_BROKEN';
+    readonly targetId: string;
+    readonly payload: Readonly<Record<string, unknown>>;
+    readonly now: Date;
+  }): Promise<void>;
+} {
+  return {
+    async notify(input) {
+      await createNotificationOnceInTransaction(notificationTx, {
+        userId: input.userId,
+        type: input.type,
+        targetId: input.targetId,
+        payload: input.payload,
+        now: input.now,
+      });
+    },
+  };
 }
 
 export const CLIENT_FEE_RATE = 5;
@@ -500,6 +525,7 @@ export async function acceptAgreement(
       type: 'APPLICATION_ACCEPTED',
       targetId: contract.id,
       payload: { applicationId: plan.applicationId },
+      now: input.now,
     });
     await tx.logEvent({
       userId: input.application.clientUserId,
@@ -745,6 +771,7 @@ export async function breakContract(
         type: 'CONTRACT_BROKEN',
         targetId: contract.id,
         payload: { reason: input.reason },
+        now: input.now,
       });
       await tx.logEvent({
         userId,

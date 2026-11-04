@@ -429,8 +429,22 @@ export async function notify(
   );
 }
 
-export async function notifyRecipients(
+export function notifyRecipients(
   uow: NotificationUnitOfWork,
+  input: {
+    readonly type: NotificationType;
+    readonly parties: NotificationParties;
+    readonly targetId: string;
+    readonly payload?: Readonly<Record<string, unknown>>;
+    readonly now: Date;
+  },
+): Promise<readonly NotificationRecord[]> {
+  return uow.run((tx) => notifyRecipientsInTransaction(tx, input));
+}
+
+/** Existing owner transaction version; callers keep notification writes atomic with their work. */
+export async function notifyRecipientsInTransaction(
+  tx: NotificationTx,
   input: {
     readonly type: NotificationType;
     readonly parties: NotificationParties;
@@ -445,16 +459,13 @@ export async function notifyRecipients(
   const targetId = requireIdentifier(input.targetId, 'INVALID_TARGET');
   const payload = normalizePayload(input.type, input.payload);
   const recipients = recipientsFor(input.type, input.parties);
-
-  return uow.run(async (tx) => {
-    const created: NotificationRecord[] = [];
-    for (const userId of recipients) {
-      created.push(
-        await deliver(tx, { userId, type: input.type, targetId, payload, now: input.now }),
-      );
-    }
-    return created;
-  });
+  const created: NotificationRecord[] = [];
+  for (const userId of recipients) {
+    created.push(
+      await deliver(tx, { userId, type: input.type, targetId, payload, now: input.now }),
+    );
+  }
+  return created;
 }
 
 export async function notifyNewMessage(

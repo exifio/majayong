@@ -8,6 +8,7 @@
  * - 한 프로젝트·공급자에게 SUBMITTED/STALE/ACCEPTED는 1건뿐이다(raw 제약 2).
  */
 import { maskContacts } from '../chat/masking.js';
+import { notifyRecipientsInTransaction, type NotificationTx } from '../notification/notifications.js';
 import type { ProjectStatus } from '../market/public-project.js';
 import { ApplicationError, type ApplicationRecord, type ApplicationStatus } from './dto.js';
 
@@ -45,6 +46,36 @@ export interface NewApplicationRevision {
   readonly items: readonly ApplicationItemSnapshot[];
 }
 
+/** B-02 업무 액션의 알림 발행 Port. B-06 어댑터가 연결한다. */
+export interface ApplicationNotificationPort {
+  notifyApplication(input: {
+    readonly type: 'APPLICATION_RECEIVED' | 'APPLICATION_REJECTED' | 'REQUOTE_REQUESTED';
+    readonly clientUserId: string;
+    readonly supplierUserId: string;
+    readonly targetId: string;
+    readonly now: Date;
+  }): Promise<void>;
+}
+
+/** Application 쓰기와 같은 DB transaction의 NotificationTx에 연결한다. */
+export function createApplicationNotificationPort(
+  notificationTx: NotificationTx,
+): ApplicationNotificationPort {
+  return {
+    async notifyApplication(input) {
+      await notifyRecipientsInTransaction(notificationTx, {
+        type: input.type,
+        parties: {
+          clientUserId: input.clientUserId,
+          supplierUserId: input.supplierUserId,
+        },
+        targetId: input.targetId,
+        now: input.now,
+      });
+    },
+  };
+}
+
 /** B가 C/통합에 넘기는 원자적 쓰기 Port. 실제 구현은 PostgreSQL 트랜잭션. */
 export interface ApplicationTx {
   findFirstDetailView(input: {
@@ -67,6 +98,7 @@ export interface ApplicationTx {
     readonly applicationId: string;
     readonly body: string;
   }): Promise<void>;
+  readonly notifications: ApplicationNotificationPort;
 }
 
 export interface ApplicationUnitOfWork {
@@ -274,8 +306,9 @@ export async function submitApplication(
       );
     }
 
+    let created: ApplicationRevision;
     try {
-      return await tx.createRevision({
+      created = await tx.createRevision({
         projectId: input.projectId,
         clientUserId: input.clientUserId,
         supplierId: input.supplierId,
@@ -301,6 +334,15 @@ export async function submitApplication(
       }
       throw error;
     }
+
+    await tx.notifications.notifyApplication({
+      type: 'APPLICATION_RECEIVED',
+      clientUserId: created.clientUserId,
+      supplierUserId: created.supplierId,
+      targetId: created.projectId,
+      now: input.now,
+    });
+    return created;
   });
 }
 
@@ -390,17 +432,26 @@ export async function reviseApplication(
       body: SYSTEM_REVISION_MESSAGE,
     });
 
+    await tx.notifications.notifyApplication({
+      type: 'APPLICATION_RECEIVED',
+      clientUserId: current.clientUserId,
+      supplierUserId: current.supplierId,
+      targetId: current.projectId,
+      now: input.now,
+    });
+
     return { previous: { ...previous, status: 'SUPERSEDED' }, current };
   });
 }
 
 export async function markApplicationsStale(
   uow: ApplicationUnitOfWork,
-  input: { readonly projectId: string },
+  input: { readonly projectId: string; readonly now: Date },
 ): Promise<number> {
   return uow.run(async (tx) => {
     const rows = await tx.listByProject(input.projectId);
     let changed = 0;
+    const staleRows: ApplicationRevision[] = [];
 
     for (const row of rows) {
       if (row.status !== 'SUBMITTED') continue;
@@ -410,7 +461,20 @@ export async function markApplicationsStale(
         from: ['SUBMITTED'],
         to: 'STALE',
       });
-      if (updated) changed += 1;
+      if (updated) {
+        changed += 1;
+        staleRows.push(row);
+      }
+    }
+
+    for (const row of staleRows) {
+      await tx.notifications.notifyApplication({
+        type: 'REQUOTE_REQUESTED',
+        clientUserId: row.clientUserId,
+        supplierUserId: row.supplierId,
+        targetId: row.id,
+        now: input.now,
+      });
     }
 
     return changed;
@@ -459,7 +523,7 @@ async function closeApplication(
     readonly actorId: string;
     readonly owner: 'supplier' | 'client';
   },
-  target: 'WITHDRAWN' | 'REJECTED',
+  target: { readonly status: 'WITHDRAWN' } | { readonly status: 'REJECTED'; readonly now: Date },
 ): Promise<{ readonly status: ApplicationStatus }> {
   return uow.run(async (tx) => {
     const row = await tx.findById(input.applicationId);
@@ -483,7 +547,7 @@ async function closeApplication(
     const updated = await tx.updateStatus({
       applicationId: row.id,
       from: REVISABLE_STATUSES,
-      to: target,
+      to: target.status,
     });
     if (!updated) {
       throw new ApplicationError(
@@ -493,7 +557,17 @@ async function closeApplication(
       );
     }
 
-    return { status: target };
+    if (target.status === 'REJECTED') {
+      await tx.notifications.notifyApplication({
+        type: 'APPLICATION_REJECTED',
+        clientUserId: row.clientUserId,
+        supplierUserId: row.supplierId,
+        targetId: row.id,
+        now: target.now,
+      });
+    }
+
+    return { status: target.status };
   });
 }
 
@@ -504,18 +578,22 @@ export async function withdrawApplication(
   return closeApplication(
     uow,
     { applicationId: input.applicationId, actorId: input.supplierId, owner: 'supplier' },
-    'WITHDRAWN',
+    { status: 'WITHDRAWN' },
   );
 }
 
 export async function rejectApplication(
   uow: ApplicationUnitOfWork,
-  input: { readonly applicationId: string; readonly clientUserId: string },
+  input: {
+    readonly applicationId: string;
+    readonly clientUserId: string;
+    readonly now: Date;
+  },
 ): Promise<{ readonly status: ApplicationStatus }> {
   return closeApplication(
     uow,
     { applicationId: input.applicationId, actorId: input.clientUserId, owner: 'client' },
-    'REJECTED',
+    { status: 'REJECTED', now: input.now },
   );
 }
 
