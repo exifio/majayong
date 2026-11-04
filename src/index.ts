@@ -170,6 +170,7 @@ const cHandler = createHttpHandler(
 
 const WEB_MIME: Record<string, string> = {
   ".css": "text/css; charset=utf-8",
+  ".js": "text/javascript; charset=utf-8",
   ".woff2": "font/woff2",
   ".svg": "image/svg+xml",
   ".png": "image/png",
@@ -196,7 +197,7 @@ const webHandler: RequestHandler = (request, response, next) => {
         return;
       }
       response.setHeader("content-type", WEB_MIME[extname(pathname)] ?? "application/octet-stream");
-      response.setHeader("cache-control", "public, max-age=3600");
+      response.setHeader("cache-control", /\.(?:js|css)$/i.test(pathname) ? "no-cache" : "public, max-age=3600");
       response.send(file);
       return;
     }
