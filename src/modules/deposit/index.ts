@@ -89,6 +89,11 @@ export interface DepositContractsPort {
     patch: Partial<DepositContractInfo>,
     tx?: DepositTransaction,
   ): Promise<DepositContractInfo>;
+  /**
+   * 예치 기한 만료 시 조건부 취소. 예치 완료가 먼저 커밋됐으면 false를 돌려준다.
+   * 미구현 어댑터는 `updateContract`로 폴백한다(기존 동작).
+   */
+  cancelIfUnpaid?(contractId: string, tx?: DepositTransaction): Promise<boolean>;
 }
 
 export interface MarketplacePorts {
@@ -574,6 +579,7 @@ export interface DepositCompletionOptions {
       patch: Partial<DepositContractInfo>,
       tx?: DepositTransaction,
     ): Promise<DepositContractInfo>;
+    cancelIfUnpaid?(id: string, tx?: DepositTransaction): Promise<boolean>;
   };
   marketplacePort: MarketplacePorts;
   transactionRunner?: DepositTransactionRunner;
@@ -901,6 +907,10 @@ export class DepositCompletionService {
     }
     const decision = await this.evaluateDepositDeadline(contractId, now);
     if (decision.action !== "CANCEL_TIMEOUT") return { expired: false };
+    // 예치 완료가 먼저 커밋됐으면 paymentStatus 조건부 갱신이 0행이 되어 취소하지 않는다.
+    if (this.contractsPort.cancelIfUnpaid !== undefined) {
+      return { expired: await this.contractsPort.cancelIfUnpaid(contractId) };
+    }
     await this.contractsPort.updateContract(contractId, { status: "CANCELLED" });
     return { expired: true };
   }

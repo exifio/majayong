@@ -5,7 +5,12 @@ import type { AddressInfo } from "node:net";
 import { afterEach, describe, it } from "node:test";
 import { PrismaClient } from "@prisma/client";
 import { createAppHandler } from "../../src/composition.ts";
-import { createPrismaPorts } from "../../src/integration/prisma-wiring.ts";
+import { createPrismaRepositories } from "../../src/infrastructure/prisma-store.ts";
+import { createIntegrationPorts } from "../../src/integration/external-ports.ts";
+import { createPrismaContractUnitOfWork } from "../../src/modules/contract/prisma-adapter.ts";
+import { signContract } from "../../src/modules/contract/lifecycle.ts";
+import { DepositCompletionService } from "../../src/modules/deposit/index.ts";
+import { createPrismaIntegrationDb, createPrismaPorts } from "../../src/integration/prisma-wiring.ts";
 import {
   createApplicationTx,
   createPrismaApplicationUnitOfWork,
@@ -357,6 +362,119 @@ describe("INT-G2-03: C HTTP 예치 확정 원자성", { skip: hasDatabase ? fals
       );
     } finally {
       await running.close();
+      await cleanup(prisma, ids);
+      await prisma.$disconnect();
+    }
+  });
+
+  it("예치 완료와 기한 만료가 겹쳐도 완료된 계약을 취소하지 않는다", async () => {
+    const prisma = new PrismaClient();
+    const ids = await seed(prisma);
+    try {
+      const repos = createPrismaRepositories(prisma);
+      const stale = await repos.contractsPort.getContract(ids.contractId);
+      assert.ok(stale !== null);
+
+      await prisma.escrowDeposit.create({
+        data: {
+          contractId: ids.contractId,
+          principal: 3_100_000,
+          clientFee: 155_000,
+          amount: 3_255_000,
+          method: "CARD",
+          status: "COMPLETED",
+          idempotencyKey: `idem-race-${randomUUID()}`,
+          pgKey: "pk-race",
+          depositedAt: NOW,
+        },
+      });
+      await prisma.contract.update({
+        where: { id: ids.contractId },
+        data: { paymentStatus: "DEPOSITED", totalDeposited: 3_255_000 },
+      });
+
+      const service = new DepositCompletionService({
+        repo: repos.depositRepository,
+        // 예치 완료 직전에 읽은 PENDING 스냅샷을 그대로 들고 있는 경합 상황을 재현한다.
+        contractsPort: {
+          async getContract() {
+            return stale;
+          },
+          async updateContract(id, patch) {
+            return repos.contractsPort.updateContract(id, patch);
+          },
+          async cancelIfUnpaid(id) {
+            return repos.contractsPort.cancelIfUnpaid(id);
+          },
+        },
+        marketplacePort: {
+          async autoRejectCompetingApplications() {
+            return { rejectedCount: 0 };
+          },
+        },
+        clock: { now: () => new Date("2026-11-08T00:00:00.000Z") },
+      });
+
+      const result = await service.expireDepositIfDue(ids.contractId, new Date("2026-11-08T00:00:00.000Z"));
+      assert.equal(result.expired, false);
+      const contract = await prisma.contract.findUniqueOrThrow({ where: { id: ids.contractId } });
+      assert.equal(contract.status, "ACTIVE");
+      assert.equal(contract.paymentStatus, "DEPOSITED");
+    } finally {
+      await cleanup(prisma, ids);
+      await prisma.$disconnect();
+    }
+  });
+
+  it("계약 서명은 타 지원을 자동 거절하지 않는다", async () => {
+    const prisma = new PrismaClient();
+    const ids = await seed(prisma);
+    try {
+      await prisma.contract.update({
+        where: { id: ids.contractId },
+        data: {
+          status: "PENDING_CONSENT",
+          consentDeadline: new Date("2026-11-11T00:00:00.000Z"),
+          paymentStatus: "PENDING",
+        },
+      });
+      await prisma.project.update({ where: { id: ids.projectId }, data: { status: "ACCEPTED" } });
+
+      const prismaPorts = createPrismaPorts(prisma);
+      const uow = createPrismaContractUnitOfWork(
+        prismaPorts.contract,
+        createIntegrationPorts(createPrismaIntegrationDb(prisma), { now: () => NOW }).depositAttempts,
+      );
+      await signContract(uow, {
+        contractId: ids.contractId,
+        actor: { userId: ids.clientId, role: "CLIENT" },
+        expectedContentHash: "hash-g203",
+        now: NOW,
+      });
+      const signed = await signContract(uow, {
+        contractId: ids.contractId,
+        actor: { userId: ids.supplierAId, role: "SUPPLIER" },
+        expectedContentHash: "hash-g203",
+        now: NOW,
+      });
+
+      assert.equal(signed.activated, true);
+      assert.equal(
+        (await prisma.project.findUniqueOrThrow({ where: { id: ids.projectId } })).status,
+        "CONTRACTED",
+      );
+      assert.equal(
+        (await prisma.application.findUniqueOrThrow({ where: { id: ids.rivalApplicationId } })).status,
+        "SUBMITTED",
+      );
+      assert.equal(
+        await prisma.notification.count({
+          where: { type: "APPLICATION_AUTO_REJECTED", targetId: ids.rivalApplicationId },
+        }),
+        0,
+      );
+      assert.equal(await prisma.paymentInstallment.count({ where: { contractId: ids.contractId } }), 0);
+    } finally {
       await cleanup(prisma, ids);
       await prisma.$disconnect();
     }

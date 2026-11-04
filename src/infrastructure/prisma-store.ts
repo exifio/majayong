@@ -973,6 +973,18 @@ export function createPrismaRepositories(prisma: PrismaClient, options: PrismaSt
       if (!updated) throw new Error(`contract not found: ${id}`);
       return updated;
     },
+    async cancelIfUnpaid(id: string, tx?: unknown) {
+      // 예치 완료(paymentStatus=DEPOSITED)가 먼저 커밋됐으면 한 행도 바뀌지 않는다.
+      const result = await db(tx).contract.updateMany({
+        where: {
+          id,
+          status: { in: ['PENDING_CONSENT', 'ACTIVE'] },
+          paymentStatus: 'PENDING',
+        },
+        data: { status: 'CANCELLED' },
+      });
+      return result.count === 1;
+    },
   };
 
   const fileRepository: FileRepository = {
