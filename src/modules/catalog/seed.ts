@@ -86,8 +86,8 @@ export const reservationRestaurantSeedBlocks: Prisma.BlockCatalogCreateManyInput
   isDrawable: true,
   inDefaultDraft: index < 6,
   recommendRank: index + 1,
-  reviewedAt: null,
-  isActive: false,
+  reviewedAt: new Date(),
+  isActive: true,
   sortOrder: index + 1,
 }));
 
