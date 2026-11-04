@@ -78,6 +78,12 @@ const ROUTES: Route[] = [
   route("GET", "/contracts/:contractId/deposits", "user", async ({ actor, params }, s) => ({
     body: await s.deposits.getDeposits(actor, params.contractId),
   })),
+  route("POST", "/contracts/:contractId/deposits/:depositId/sandbox-confirm", "user", async ({ actor, params }, s) => ({
+    body: await s.deposits.confirmSandboxDeposit(actor, {
+      contractId: params.contractId,
+      depositId: params.depositId,
+    }),
+  })),
   route("GET", "/me/payment-statements", "user", async ({ actor }, s) => ({
     body: await s.settlement.getMyPaymentStatements(actor),
   })),

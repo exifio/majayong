@@ -21,7 +21,10 @@ const ROUTE_FILES = [
 ];
 
 // 원본 118 인벤토리 밖에서 승인된 추가(D-11 파일 다운로드).
-const APPROVED_ADDITIONS = new Set(["GET /uploads/:param/download"]);
+const APPROVED_ADDITIONS = new Set([
+  "GET /uploads/:param/download",
+  "POST /contracts/:param/deposits/:param/sandbox-confirm",
+]);
 
 const normalize = (operation: string): string => {
   const [method] = operation.split(" ");
@@ -65,6 +68,6 @@ describe("API 인벤토리: 118 operation 단일 mount", () => {
     const document = new Set(documentOperations().map(normalize));
     const code = new Set(codeOperations().map(normalize));
     assert.deepEqual([...document].filter((operation) => !code.has(operation)), []);
-    assert.deepEqual([...code].filter((operation) => !document.has(operation)), [...APPROVED_ADDITIONS]);
+    assert.deepEqual([...code].filter((operation) => !document.has(operation)).sort(), [...APPROVED_ADDITIONS].sort());
   });
 });

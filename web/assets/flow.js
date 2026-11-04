@@ -156,6 +156,89 @@
     return next;
   }
 
+  if (screen === 'Escrow-Client') {
+    const contractId = new URLSearchParams(location.search).get('contractId');
+    if (!contractId) return;
+    if (!MJ.requireLogin(location.pathname + location.search)) return;
+
+    void (async () => {
+      try {
+        const [contract, deposits] = await Promise.all([
+          MJ.request(`/contracts/${encodeURIComponent(contractId)}`),
+          MJ.request(`/contracts/${encodeURIComponent(contractId)}/deposits`),
+        ]);
+        const amount = Number(contract.agreedAmount);
+        const fee = Number(contract.clientFee);
+        const total = amount + fee;
+        replaceAllText('3,100,000', amount.toLocaleString('ko-KR'));
+        replaceAllText('3,255,000', total.toLocaleString('ko-KR'));
+        replaceAllText('155,000', fee.toLocaleString('ko-KR'));
+        replaceAllText('42일', `${Number(contract.durationDays)}일`);
+
+        const pay = document.querySelector('.pay');
+        if (!pay) return;
+        const list = Array.isArray(deposits) ? deposits : [];
+        const completed = list.find((deposit) => deposit.status === 'COMPLETED');
+        const pending = list.find((deposit) => deposit.status === 'PENDING' || deposit.status === 'HELD');
+
+        if (completed) {
+          pay.querySelectorAll('.cbx, a.btn').forEach((element) => element.remove());
+          const banner = document.createElement('div');
+          banner.className = 'rc';
+          banner.style.cssText = 'margin:12px 0;padding:12px 14px;border:1px solid #cfe8dc;border-radius:10px;background:#f2fbf7';
+          banner.innerHTML = `<b>예치가 완료되었습니다</b><p style="margin:6px 0 0">예치금 ${won(Number(completed.amount))} · 작업 기간 ${Number(contract.durationDays)}일</p>
+            <a class="btn sm gh" style="margin-top:8px" href="/Contract-Client?contractId=${encodeURIComponent(contractId)}">계약서 보기</a>`;
+          pay.appendChild(banner);
+          return;
+        }
+
+        const button = pay.querySelector('a.btn');
+        if (!button) return;
+        button.textContent = `${won(total)} 예치하기`;
+        button.removeAttribute('href');
+        button.addEventListener('click', async (event) => {
+          event.preventDefault();
+          clearError();
+          if (!document.querySelector('#agree1')?.checked) {
+            showError(button, '계약서와 정산 규칙을 확인해 주세요.');
+            return;
+          }
+          busy(button, true, '예치 처리 중…');
+          try {
+            let deposit = pending;
+            if (!deposit) {
+              const created = await MJ.request(`/contracts/${encodeURIComponent(contractId)}/deposits`, {
+                method: 'POST',
+                body: {
+                  idempotencyKey: `deposit:${contractId}`,
+                  method: document.querySelector('input[name="pm"]')?.checked === false ? 'BANK_TRANSFER' : 'CARD',
+                  amount: total,
+                },
+              });
+              deposit = created?.deposit;
+            }
+            if (!deposit?.id) throw new Error('예치 건을 만들지 못했습니다.');
+            await MJ.request(`/contracts/${encodeURIComponent(contractId)}/deposits/${encodeURIComponent(deposit.id)}/sandbox-confirm`, {
+              method: 'POST',
+              body: {},
+            });
+            location.assign(`/Escrow-Client?contractId=${encodeURIComponent(contractId)}&view=${encodeURIComponent('예치 완료')}`);
+          } catch (error) {
+            busy(button, false);
+            if (error.status === 404) {
+              showError(button, 'sandbox 예치 확인이 비활성화되어 있습니다. 운영자 확인이 필요합니다.');
+              return;
+            }
+            showError(button, error.message);
+          }
+        });
+      } catch (error) {
+        showError(document.body, error.message);
+      }
+    })();
+    return;
+  }
+
   if (screen === 'Agreement-Client') {
     const applicationId = new URLSearchParams(location.search).get('applicationId');
     if (!applicationId) return;
