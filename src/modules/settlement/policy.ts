@@ -105,8 +105,12 @@ export interface NotificationPorts {
     userId: string;
     type: string;
     targetId: string;
-    targetUrl: string;
-  }): Promise<{ created: boolean }>;
+    targetUrl?: string;
+    /** 기한 알림(DEPOSIT_DUE/INSPECTION_DUE/WORK_DUE/WORK_OVERDUE)은 dueAt을 payload로 넘긴다. */
+    dueAt?: Date;
+    /** B bridge가 tx-scoped NotificationTx로 변환할 때 쓰는 트랜잭션 핸들. */
+    tx?: unknown;
+  }, tx?: unknown): Promise<{ created: boolean }>;
 }
 
 export interface TossSandboxAdapter {
@@ -399,7 +403,7 @@ export function createMemoryAccounts(
 export function createMemoryNotifications(): NotificationPorts {
   const seen = new Set<string>();
   return {
-    async createOnce(input) {
+    async createOnce(input, _tx) {
       const key = `${input.userId}\u0000${input.type}\u0000${input.targetId}`;
       if (seen.has(key)) {
         return { created: false };

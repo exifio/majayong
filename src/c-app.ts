@@ -282,6 +282,14 @@ function matchRoute(method: string, pathname: string): { route: Route; params: R
 }
 
 async function readJsonBody(req: IncomingMessage, maxBytes: number): Promise<Record<string, unknown>> {
+  const reqBody = (req as unknown as { body?: unknown }).body;
+  if (typeof reqBody === "object" && reqBody !== null) {
+    const body = reqBody;
+    if (typeof body !== "object" || body === null || Array.isArray(body)) {
+      throw Object.assign(new Error("not object"), { status: 400 });
+    }
+    return body as Record<string, unknown>;
+  }
   const chunks: Buffer[] = [];
   let size = 0;
   for await (const chunk of req) {

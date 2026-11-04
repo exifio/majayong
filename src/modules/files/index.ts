@@ -30,6 +30,9 @@ export interface FileContractEntity {
   supplierUserId: string;
 }
 
+/** Gate 0 공통 StoragePort 이름. C FileService는 이 Port만 사용한다. */
+export type StoragePort = FileStorageAdapter;
+
 export interface FileStorageAdapter {
   createUploadUrl(
     bucket: string,
