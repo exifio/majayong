@@ -163,6 +163,26 @@ describe("A-02 profile and disclosure API", () => {
     });
   });
 
+  it("rejects payout-account changes from non-suppliers and mismatched holders", async () => {
+    const client = await user(Role.CLIENT, "Some Client");
+    const vendor = await supplier("Supplier Name");
+    await withServer({ encryptionKey }, async baseUrl => {
+      const crossRole = await request(baseUrl, "PATCH", "/me/payout-account", client.token, { bank: "KB", accountNo: "12345678", holder: "Some Client" });
+      expect(crossRole.status).toBe(403);
+
+      const mismatch = await request(baseUrl, "PATCH", "/me/payout-account", vendor.token, { bank: "KB", accountNo: "12345678", holder: "Someone Else" });
+      expect(mismatch.status).toBe(422);
+      expect((await mismatch.json() as { error: { code: string } }).error.code).toBe("PAYOUT_HOLDER_MISMATCH");
+
+      const invalidAccount = await request(baseUrl, "PATCH", "/me/payout-account", vendor.token, { bank: "KB", accountNo: "abc", holder: "Supplier Name" });
+      expect(invalidAccount.status).toBe(400);
+
+      const accepted = await request(baseUrl, "PATCH", "/me/payout-account", vendor.token, { bank: "KB", accountNo: "12345678", holder: "Supplier Name" });
+      expect(accepted.status).toBe(200);
+      expect(await prisma.supplierProfile.findUniqueOrThrow({ where: { userId: vendor.id } })).toMatchObject({ payoutVerifiedAt: null });
+    });
+  });
+
   it("requires consent and enforces five daily summary generations under concurrent requests", async () => {
     const vendor = await supplier();
     const sourceText = "private source text that must not enter event logs";
