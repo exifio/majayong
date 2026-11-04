@@ -188,6 +188,113 @@
     return next;
   }
 
+  if (screen === 'Review-Client' || screen === 'Review-Supplier') {
+    if (!MJ.requireLogin(location.pathname + location.search)) return;
+    const isClient = screen === 'Review-Client';
+    const params = new URLSearchParams(location.search);
+
+    void (async () => {
+      try {
+        let contract = null;
+        if (params.get('contractId')) {
+          contract = await MJ.request(`/contracts/${encodeURIComponent(params.get('contractId'))}`);
+        } else {
+          const rows = await MJ.request('/me/contracts');
+          contract = (Array.isArray(rows) ? rows : []).find((row) => row.status === 'COMPLETED');
+        }
+        if (!contract) throw new Error('완료된 계약이 없습니다.');
+        if (contract.status !== 'COMPLETED') throw new Error('완료된 계약만 리뷰를 작성할 수 있습니다.');
+
+        const reviews = await MJ.request(`/contracts/${encodeURIComponent(contract.id)}/reviews`);
+        const list = Array.isArray(reviews) ? reviews : [];
+        const role = isClient ? 'CLIENT' : 'SUPPLIER';
+        const mine = list.find((review) => review.reviewerRole === role);
+        const theirs = list.find((review) => review.reviewerRole !== role);
+        const counterpart = isClient
+          ? await MJ.request(`/profiles/suppliers/${encodeURIComponent(contract.supplierId)}`).catch(() => null)
+          : await MJ.request(`/projects/${encodeURIComponent(contract.projectId)}/client-profile`).catch(() => null);
+        const name = counterpart?.displayName || counterpart?.businessName || counterpart?.name || (isClient ? '공급자' : '의뢰인');
+        const tags = isClient
+          ? ['일정을 지켰어요', '설명이 쉬웠어요', '조건대로 만들었어요', '보완 요청에 빨리 답했어요', '다시 맡기고 싶어요']
+          : ['조건을 분명히 정해 줬어요', '검수가 빨랐어요', '답장이 빨랐어요', '요청 범위를 지켰어요', '다시 일하고 싶어요'];
+
+        const host = document.createElement('section');
+        host.className = 'card';
+        host.id = 'live-review';
+        host.style.marginBottom = '16px';
+        host.innerHTML = `<h2 class="ct">${isClient ? '공급자 평가하기' : '의뢰인 평가하기'}</h2>
+          <p class="sec">${escapeHtml(name)}님과의 계약 리뷰 · 완료된 계약</p>
+          ${mine ? `
+            <div class="done2" style="margin-top:14px"><b>리뷰를 제출했습니다</b><p>제출한 리뷰는 수정할 수 없습니다.</p></div>
+            <div class="st2">${'★'.repeat(Number(mine.rating))}${'☆'.repeat(5 - Number(mine.rating))} <em>${Number(mine.rating)}점</em></div>
+            <div class="tg3">${(mine.tags || []).map((tag) => `<span>${escapeHtml(tag)}</span>`).join('')}</div>
+            <p class="tx2">${escapeHtml(mine.comment || '')}</p>
+            ${theirs ? `<p class="sh3" style="margin-top:14px">상대가 쓴 리뷰</p><div class="st2">${'★'.repeat(Number(theirs.rating))}${'☆'.repeat(5 - Number(theirs.rating))} <em>${Number(theirs.rating)}점</em></div><p class="tx2">${escapeHtml(theirs.comment || '')}</p>` : ''}
+          ` : `
+            <div class="blk" style="margin-top:14px"><h2>별점</h2>
+              <div class="stars" id="live-stars">${[1, 2, 3, 4, 5].map((n) => `<button type="button" data-rating="${n}" class="${n <= 5 ? 'on' : 'off'}" aria-label="${n}점">★</button>`).join('')}</div>
+              <span class="lbl2" id="live-score">5점</span>
+            </div>
+            <div class="blk"><h2>어땠나요?</h2><div class="chips2" id="live-tags">${tags.map((tag) => `<button type="button" data-tag="${escapeHtml(tag)}">${escapeHtml(tag)}</button>`).join('')}</div></div>
+            <div class="blk last"><h2>하고 싶은 말</h2><textarea class="inp tx" id="live-comment" maxlength="500" placeholder="좋았던 점이나 아쉬웠던 점을 적어 주세요"></textarea>
+              <div class="cnt2"><span>연락처는 적어도 가려집니다</span><span id="live-count">0 / 500자</span></div></div>
+            <button type="button" class="btn" id="live-review-submit">리뷰 제출</button>
+          `}`;
+        const head = document.querySelector('.head') || document.querySelector('main .wrap');
+        head?.parentElement?.insertBefore(host, head.nextSibling);
+        document.querySelectorAll('.fm, .warn3, .acts2, .done2, .rcard, .sh3').forEach((element) => { element.style.display = 'none'; });
+
+        if (mine) return;
+
+        let rating = 5;
+        const words = ['', '별로였어요', '아쉬웠어요', '보통이에요', '좋았어요', '아주 좋았어요'];
+        const stars = [...host.querySelectorAll('#live-stars [data-rating]')];
+        const score = host.querySelector('#live-score');
+        stars.forEach((button) => {
+          button.addEventListener('click', () => {
+            rating = Number(button.dataset.rating);
+            stars.forEach((star) => { star.className = Number(star.dataset.rating) <= rating ? 'on' : 'off'; });
+            if (score) score.innerHTML = `${rating}점<span>${words[rating]}</span>`;
+          });
+        });
+        host.querySelectorAll('#live-tags [data-tag]').forEach((button) => {
+          button.addEventListener('click', () => {
+            button.className = button.className === 'on' ? '' : 'on';
+          });
+        });
+        const comment = host.querySelector('#live-comment');
+        const count = host.querySelector('#live-count');
+        comment?.addEventListener('input', () => {
+          if (count) count.textContent = `${comment.value.length} / 500자`;
+        });
+        const submit = host.querySelector('#live-review-submit');
+        submit?.addEventListener('click', async (event) => {
+          event.preventDefault();
+          clearError();
+          const selectedTags = [...host.querySelectorAll('#live-tags .on')].map((button) => button.dataset.tag);
+          busy(submit, true, '제출하는 중…');
+          try {
+            await MJ.request(`/contracts/${encodeURIComponent(contract.id)}/reviews`, {
+              method: 'POST',
+              body: {
+                rating,
+                ...(comment?.value.trim() ? { comment: comment.value.trim() } : {}),
+                ...(selectedTags.length ? { tags: selectedTags } : {}),
+              },
+            });
+            location.reload();
+          } catch (error) {
+            busy(submit, false);
+            showError(submit, error.message);
+          }
+        });
+      } catch (error) {
+        showError(document.body, error.message);
+      }
+    })();
+    return;
+  }
+
   if (screen === 'Deliver-Supplier') {
     if (!MJ.requireLogin(location.pathname + location.search)) return;
     const params = new URLSearchParams(location.search);
@@ -195,6 +302,17 @@
     void (async () => {
       try {
         const contract = await activeContract(params.get('contractId'));
+        if (contract.status === 'COMPLETED') {
+          const completed = document.createElement('section');
+          completed.className = 'card';
+          completed.style.marginBottom = '16px';
+          completed.innerHTML = `<h2 class="ct">계약 완료</h2><p class="sec">납품과 검수가 끝난 계약입니다.</p>
+            <a class="btn tint" href="/Review-Supplier?contractId=${encodeURIComponent(contract.id)}">의뢰인 리뷰 쓰기</a>`;
+          const head = document.querySelector('.head');
+          head?.parentElement?.insertBefore(completed, head.nextSibling);
+          document.querySelector('.lay')?.style.setProperty('display', 'none');
+          return;
+        }
         if (contract.status !== 'ACTIVE' || contract.paymentStatus !== 'DEPOSITED') {
           throw new Error('예치가 완료된 진행 계약이 필요합니다.');
         }
@@ -598,7 +716,10 @@
         const clientSigned = Boolean(contract.clientSignedAt);
         const signbox = document.querySelector('.signbox');
         if (signbox) {
-          if (contract.status === 'ACTIVE') {
+          if (contract.status === 'COMPLETED') {
+            signbox.innerHTML = `<p class="done">계약이 완료되었습니다.</p>
+              <a class="btn full" href="/Review-Client?contractId=${encodeURIComponent(contractId)}">리뷰 쓰기</a>`;
+          } else if (contract.status === 'ACTIVE') {
             const deposited = contract.paymentStatus !== 'PENDING';
             signbox.innerHTML = `<p class="done">${deposited ? '예치가 완료되어 작업이 진행 중입니다.' : '계약이 체결되었습니다. 3일 안에 예치해 주세요.'}</p>
               <a class="btn full" href="${deposited
