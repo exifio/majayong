@@ -179,6 +179,11 @@ function createNotificationTx(db: NotificationDbClient): NotificationTx {
   };
 }
 
+/** 같은 DB 트랜잭션에서 알림 Tx를 얻는다(지원·계약 어댑터 조립용). */
+export function createPrismaNotificationTx(db: NotificationDbClient): NotificationTx {
+  return createNotificationTx(db);
+}
+
 export function createPrismaNotificationUnitOfWork(
   prisma: NotificationPrismaClient,
 ): NotificationUnitOfWork {
