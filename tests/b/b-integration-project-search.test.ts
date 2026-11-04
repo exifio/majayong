@@ -73,11 +73,11 @@ describe('G2-01: A 공개 검색 Port (후보 → 필터 → id 목록)', () => 
 
   it('후보 변환 결과에 정확 예산이 없고 구간 경계만 있다', async () => {
     const candidates = (await createProjectCandidatePort(
-      fakeDb([row({ id: 'prj-a', hopeBudget: 4_000_000 })]),
+      fakeDb([row({ id: 'prj-a', hopeBudget: 4_500_000 })]),
     ).listPublicProjectCandidates()) as Array<Record<string, unknown>>;
 
     assert.equal(candidates[0]?.hopeBudget, undefined);
-    assert.deepEqual(candidates[0]?.hopeBudgetRange, { minKrw: 3_000_000, maxKrw: 4_999_999 });
-    assert.equal(JSON.stringify(candidates).includes('4000000'), false);
+    assert.deepEqual(candidates[0]?.hopeBudgetRange, { minKrw: 4_000_000, maxKrw: 4_999_999 });
+    assert.equal(JSON.stringify(candidates).includes('4500000'), false);
   });
 });

@@ -153,7 +153,7 @@ describe("A-06 project HTTP API", () => {
     const body = (await response.json() as { data: Array<Record<string, unknown>>; meta: { page: number; pageSize: number; total: number } });
     expect(searchPublicProjects).toHaveBeenCalledTimes(1);
     expect(body.meta).toEqual({ page: 1, pageSize: 10, total: 1 });
-    expect(body.data[0]).toMatchObject({ projectId, itemCount: 1, hopeBudgetBand: "300만원~500만원" });
+    expect(body.data[0]).toMatchObject({ projectId, itemCount: 1, hopeBudgetBand: "400~500만원" });
     expect(JSON.stringify(body.data)).not.toContain("4000000");
     expect(body.data[0]).not.toHaveProperty("hopeBudget");
   });

@@ -91,15 +91,16 @@ export type HopeBudgetBand = {
 /** 공개 희망 예산 구간. 전체 공개 카드(라벨)와 검색 필터(숫자)가 같은 경계를 쓰도록 단일 원천으로 둔다. */
 export const HOPE_BUDGET_BANDS: readonly HopeBudgetBand[] = [
   { below: 1_000_000, label: "100만원 미만", minKrw: 0, maxKrw: 999_999 },
-  { below: 3_000_000, label: "100만원~300만원", minKrw: 1_000_000, maxKrw: 2_999_999 },
-  { below: 5_000_000, label: "300만원~500만원", minKrw: 3_000_000, maxKrw: 4_999_999 },
-  { below: 10_000_000, label: "500만원~1000만원", minKrw: 5_000_000, maxKrw: 9_999_999 },
+  { below: 2_000_000, label: "100~200만원", minKrw: 1_000_000, maxKrw: 1_999_999 },
+  { below: 3_000_000, label: "200~300만원", minKrw: 2_000_000, maxKrw: 2_999_999 },
+  { below: 4_000_000, label: "300~400만원", minKrw: 3_000_000, maxKrw: 3_999_999 },
+  { below: 5_000_000, label: "400~500만원", minKrw: 4_000_000, maxKrw: 4_999_999 },
 ];
 
 const HOPE_BUDGET_TOP: HopeBudgetBand = {
   below: Number.POSITIVE_INFINITY,
-  label: "1000만원 이상",
-  minKrw: 10_000_000,
+  label: "500만원 이상",
+  minKrw: 5_000_000,
   maxKrw: Number.MAX_SAFE_INTEGER,
 };
 

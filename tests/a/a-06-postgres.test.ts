@@ -242,7 +242,7 @@ describe("A-06 read surfaces", () => {
     expect(searchPublicProjects).toHaveBeenCalledTimes(1);
     expect(page.total).toBe(1);
     expect(page.items).toHaveLength(1);
-    expect(page.items[0]).toMatchObject({ projectId, itemCount: 2, hopeBudgetBand: "300만원~500만원" });
+    expect(page.items[0]).toMatchObject({ projectId, itemCount: 2, hopeBudgetBand: "400~500만원" });
     expect(page.items[0]).not.toHaveProperty("hopeBudget");
     expect(JSON.stringify(page.items)).not.toContain("4000000");
   });

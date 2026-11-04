@@ -130,7 +130,7 @@ describe("A-06-G2-01: real public-project ports against PostgreSQL", () => {
 
     const page = await listPublicProjects(db, realProjectPorts(db).search, { filters: { industryCode: projectIndustryCode(projectId) }, page: 1, pageSize: 10 });
     const card = page.items.find(item => item.projectId === projectId);
-    expect(card).toMatchObject({ projectId, itemCount: 1, hopeBudgetBand: "300만원~500만원" });
+    expect(card).toMatchObject({ projectId, itemCount: 1, hopeBudgetBand: "400~500만원" });
     expect(card).not.toHaveProperty("hopeBudget");
     expect(JSON.stringify(page.items)).not.toContain("4000000");
   });
@@ -186,7 +186,7 @@ describe("A-06-G2-01: real public-project ports against PostgreSQL", () => {
     });
     expect(response.status).toBe(200);
     const body = (await response.json()) as { data: Array<Record<string, unknown>> };
-    expect(body.data.find(item => item.projectId === projectId)).toMatchObject({ projectId, hopeBudgetBand: "300만원~500만원" });
+    expect(body.data.find(item => item.projectId === projectId)).toMatchObject({ projectId, hopeBudgetBand: "400~500만원" });
     expect(JSON.stringify(body.data)).not.toContain("4000000");
   });
 
@@ -212,7 +212,7 @@ describe("A-06-G2-01: real public-project ports against PostgreSQL", () => {
     const listBody = await listed.json() as { data: Array<Record<string, unknown>> };
     expect(listBody.data.find(row => row.projectId === projectId)).toMatchObject({
       projectId,
-      hopeBudgetBand: "300만원~500만원",
+      hopeBudgetBand: "400~500만원",
     });
     expect(JSON.stringify(listBody.data)).not.toContain("4000000");
 

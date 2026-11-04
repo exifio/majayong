@@ -60,8 +60,8 @@ describe("A-06 project policy", () => {
   it("bands the hope budget so the exact amount never leaves the server", () => {
     expect(hopeBudgetBand(null)).toBeNull();
     expect(hopeBudgetBand(900_000)).toBe("100만원 미만");
-    expect(hopeBudgetBand(4_000_000)).toBe("300만원~500만원");
-    expect(hopeBudgetBand(12_000_000)).toBe("1000만원 이상");
+    expect(hopeBudgetBand(4_000_000)).toBe("400~500만원");
+    expect(hopeBudgetBand(12_000_000)).toBe("500만원 이상");
   });
 
   it("returns only allowlisted public summary fields", () => {
@@ -69,7 +69,7 @@ describe("A-06 project policy", () => {
     expect(Object.keys(summary).sort()).toEqual([
       "deadline", "hopeBudgetBand", "industryCode", "itemCount", "projectId", "requiredSkills", "status", "title",
     ]);
-    expect(summary.hopeBudgetBand).toBe("300만원~500만원");
+    expect(summary.hopeBudgetBand).toBe("400~500만원");
     expect(summary).not.toHaveProperty("hopeBudget");
     expect(JSON.stringify(summary)).not.toContain("4000000");
   });
