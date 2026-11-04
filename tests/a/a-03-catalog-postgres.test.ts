@@ -312,4 +312,32 @@ describe("A-03 catalog admin mutations", () => {
     expect(await prisma.specItem.findFirstOrThrow({ where: { projectId, blockId: source.id } })).toMatchObject({ unitPrice: 7000 });
     expect(await prisma.eventLog.count({ where: { userId: admin.id, type: { in: ["BLOCK_PRICE_UPDATED", "BLOCK_MERGED", "BLOCK_DEACTIVATED"] } } })).toBe(4);
   });
+
+  it("guards operator price, merge, and activation invariants", async () => {
+    const admin = await createAdmin();
+    const industry = testIndustryCode();
+    const foreignIndustry = testIndustryCode();
+    const source = await createExistingBlock(industry, 7000, "merge source");
+    const target = await createExistingBlock(industry, 9000, "merge target");
+    const foreign = await createExistingBlock(foreignIndustry, 8000, "foreign industry");
+
+    await expect(updateCatalogBlockPrice(prisma, { actorId: admin.id, blockId: source.id, unitPrice: -1, reason: "negative" }))
+      .rejects.toMatchObject({ code: "INVALID_UNIT_PRICE", status: 400 });
+    await expect(updateCatalogBlockPrice(prisma, { actorId: admin.id, blockId: source.id, unitPrice: 1.5, reason: "fractional" }))
+      .rejects.toMatchObject({ code: "INVALID_UNIT_PRICE", status: 400 });
+
+    await expect(mergeCatalogBlock(prisma, { actorId: admin.id, sourceId: source.id, targetId: source.id, reason: "self" }))
+      .rejects.toMatchObject({ code: "INVALID_CATALOG_MERGE", status: 409 });
+    await expect(mergeCatalogBlock(prisma, { actorId: admin.id, sourceId: source.id, targetId: foreign.id, reason: "cross industry" }))
+      .rejects.toMatchObject({ code: "INVALID_CATALOG_MERGE", status: 409 });
+
+    await mergeCatalogBlock(prisma, { actorId: admin.id, sourceId: source.id, targetId: target.id, reason: "duplicate" });
+    await expect(mergeCatalogBlock(prisma, { actorId: admin.id, sourceId: source.id, targetId: target.id, reason: "again" }))
+      .rejects.toMatchObject({ code: "INVALID_CATALOG_MERGE", status: 409 });
+    await expect(setCatalogBlockActive(prisma, { actorId: admin.id, blockId: source.id, isActive: true, reason: "reactivate" }))
+      .rejects.toMatchObject({ code: "MERGED_BLOCK_CANNOT_BE_ACTIVATED", status: 409 });
+
+    expect(await prisma.blockCatalog.findUniqueOrThrow({ where: { id: source.id } })).toMatchObject({ unitPrice: 7000, isActive: false, mergedIntoId: target.id });
+    expect(await prisma.blockCatalog.findUniqueOrThrow({ where: { id: target.id } })).toMatchObject({ isActive: true });
+  });
 });
