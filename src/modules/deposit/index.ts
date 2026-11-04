@@ -904,9 +904,30 @@ export class DepositCompletionService {
   }
 }
 
+export interface DueJobTargets {
+  depositContractIds?(now: Date): Promise<readonly string[]>;
+  cancellationContractIds?(now: Date): Promise<readonly string[]>;
+  deliveryIds?(now: Date): Promise<readonly string[]>;
+  notificationContractIds?(now: Date): Promise<readonly string[]>;
+}
+
+export interface DueJobFailure {
+  job: "DEPOSIT_DEADLINE" | "CANCELLATION_DEADLINE" | "AUTO_APPROVAL" | "DUE_NOTIFICATION";
+  targetId: string;
+  attempts: number;
+  error: string;
+}
+
+export interface DueJobResult {
+  success: boolean;
+  actionsCount: number;
+  failures: DueJobFailure[];
+}
+
 export interface DueJobsContext {
   batchService?: {
     processAutoApproval(deliveryId: string, now: Date): Promise<{ autoApprovedCount: number }>;
+    sendDueNotifications?(contractId: string, now: Date): Promise<void>;
   };
   cancellationService?: {
     checkCancellationDeadlines(contractId: string, now: Date): Promise<{ escalatedToAdmin: boolean }>;
@@ -917,34 +938,103 @@ export interface DueJobsContext {
   depositContractIds?: readonly string[];
   cancellationContractIds?: readonly string[];
   deliveryIds?: readonly string[];
+  notificationContractIds?: readonly string[];
+  targets?: DueJobTargets;
+  /** 첫 실패 후 추가 재시도 횟수. 기본 1회. */
+  retries?: number;
 }
 
-export async function runDueJobs(
-  context: DueJobsContext,
-  now: Date,
-): Promise<{ success: boolean; actionsCount: number }> {
+async function withRetry<T>(
+  job: DueJobFailure["job"],
+  targetId: string,
+  work: () => Promise<T>,
+  retries: number,
+  failures: DueJobFailure[],
+): Promise<T | null> {
+  let lastError: unknown;
+  for (let attempt = 1; attempt <= retries + 1; attempt += 1) {
+    try {
+      return await work();
+    } catch (err) {
+      lastError = err;
+    }
+  }
+  failures.push({
+    job,
+    targetId,
+    attempts: retries + 1,
+    error: lastError instanceof Error ? lastError.message : String(lastError),
+  });
+  return null;
+}
+
+export async function runDueJobs(context: DueJobsContext, now: Date): Promise<DueJobResult> {
   let actionsCount = 0;
+  const failures: DueJobFailure[] = [];
+  const retries = context.retries ?? 1;
+
+  const depositIds =
+    context.depositContractIds ?? (await context.targets?.depositContractIds?.(now)) ?? [];
+  const cancellationIds =
+    context.cancellationContractIds ??
+    (await context.targets?.cancellationContractIds?.(now)) ??
+    [];
+  const deliveryIds = context.deliveryIds ?? (await context.targets?.deliveryIds?.(now)) ?? [];
+  const notificationIds =
+    context.notificationContractIds ??
+    (await context.targets?.notificationContractIds?.(now)) ??
+    [];
 
   if (context.completionService) {
-    for (const contractId of context.depositContractIds ?? []) {
-      const result = await context.completionService.expireDepositIfDue(contractId, now);
-      if (result.expired) actionsCount += 1;
+    for (const contractId of depositIds) {
+      const result = await withRetry(
+        "DEPOSIT_DEADLINE",
+        contractId,
+        () => context.completionService!.expireDepositIfDue(contractId, now),
+        retries,
+        failures,
+      );
+      if (result?.expired) actionsCount += 1;
     }
   }
 
   if (context.cancellationService) {
-    for (const contractId of context.cancellationContractIds ?? []) {
-      const result = await context.cancellationService.checkCancellationDeadlines(contractId, now);
-      if (result.escalatedToAdmin) actionsCount += 1;
+    for (const contractId of cancellationIds) {
+      const result = await withRetry(
+        "CANCELLATION_DEADLINE",
+        contractId,
+        () => context.cancellationService!.checkCancellationDeadlines(contractId, now),
+        retries,
+        failures,
+      );
+      if (result?.escalatedToAdmin) actionsCount += 1;
     }
   }
 
   if (context.batchService) {
-    for (const deliveryId of context.deliveryIds ?? []) {
-      const result = await context.batchService.processAutoApproval(deliveryId, now);
-      actionsCount += result.autoApprovedCount;
+    for (const deliveryId of deliveryIds) {
+      const result = await withRetry(
+        "AUTO_APPROVAL",
+        deliveryId,
+        () => context.batchService!.processAutoApproval(deliveryId, now),
+        retries,
+        failures,
+      );
+      if (result) actionsCount += result.autoApprovedCount;
+    }
+
+    if (context.batchService.sendDueNotifications) {
+      for (const contractId of notificationIds) {
+        await withRetry(
+          "DUE_NOTIFICATION",
+          contractId,
+          () => context.batchService!.sendDueNotifications!(contractId, now),
+          retries,
+          failures,
+        );
+      }
     }
   }
 
-  return { success: true, actionsCount };
+  return { success: failures.length === 0, actionsCount, failures };
 }

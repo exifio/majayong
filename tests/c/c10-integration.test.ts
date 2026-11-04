@@ -23,6 +23,8 @@ import {
   ReviewService,
   createInMemoryReviewRepository,
 } from "../../src/modules/review/index.ts";
+import { AdminOpsService } from "../../src/modules/admin-ops/index.ts";
+import { createSharedStore } from "./fixtures/shared-store.ts";
 
 describe("C-10: 배포용 기한 작업·전영역 연결 검증·인계", () => {
   const t0 = new Date("2026-11-04T05:20:00.000Z"); // 14:20 KST 체결 & 예치
@@ -168,6 +170,174 @@ describe("C-10: 배포용 기한 작업·전영역 연결 검증·인계", () =>
     };
   }
 
+  function createSharedContext() {
+    const store = createSharedStore({
+      id: "contract-e2e-10",
+      projectId: "proj-10",
+      applicationId: "app-10",
+      clientUserId: "client-10",
+      supplierUserId: "supplier-10",
+      status: "ACTIVE",
+      paymentStatus: "PENDING",
+      agreedAmount: 3_100_000,
+      clientFee: 155_000,
+      interimRatio: 50,
+      durationDays: 42,
+      depositDeadline: new Date("2026-11-07T14:59:59.000Z"),
+      supplierKind: "INDIVIDUAL",
+      payoutVerifiedAt: new Date("2026-11-01T00:00:00.000Z"),
+    });
+
+    const notificationsSent: Array<{ userId: string; type: string; targetId: string }> = [];
+    const notificationPorts = {
+      async createOnce(input: { userId: string; type: string; targetId: string }) {
+        const key = `${input.userId}:${input.type}:${input.targetId}`;
+        if (!notificationsSent.some((n) => `${n.userId}:${n.type}:${n.targetId}` === key)) {
+          notificationsSent.push(input);
+          return { created: true };
+        }
+        return { created: false };
+      },
+    };
+
+    let competingRejected = false;
+    const marketplacePort = {
+      async autoRejectCompetingApplications() {
+        competingRejected = true;
+        return { rejectedCount: 2 };
+      },
+    };
+
+    let profileReviewStatsUpdated = false;
+    const profilePorts = {
+      async updateProfileReviewStats() {
+        profileReviewStatsUpdated = true;
+        return { success: true };
+      },
+    };
+
+    let currentTime = t0;
+    const clock = {
+      now: () => currentTime,
+      set: (date: Date) => {
+        currentTime = date;
+      },
+    };
+
+    const settlementService = new SettlementService({ repo: store.settlementRepository, clock });
+    const completionService = new DepositCompletionService({
+      repo: store.depositRepository,
+      contractsPort: store.contractsPort,
+      marketplacePort,
+      clock,
+    });
+    const depositService = new DepositService({
+      repo: store.depositRepository,
+      contractsPort: store.contractsPort,
+      webhookSecret: "wh_secret_c10",
+      tossAdapter: {
+        async verifyPayment(orderId, paymentKey, amount) {
+          return { verified: true, orderId, paymentKey, amount, status: "DONE" };
+        },
+      },
+      completionPort: completionService,
+      clock,
+    });
+    const deliveryService = new DeliveryService({
+      repo: store.deliveryRepository,
+      clock,
+      settlementPort: settlementService,
+    });
+    const batchService = new InspectionBatchService({
+      repo: store.deliveryRepository,
+      notificationPorts,
+      clock,
+      settlementPort: settlementService,
+    });
+    const cancellationService = new CancellationService({ repo: store.cancellationRepository, clock });
+    const reviewService = new ReviewService({ repo: store.reviewRepository, profilePorts, clock });
+    const adminService = new AdminOpsService({
+      repo: store.adminRepository,
+      catalogPort: {
+        async executeBlockAction(input) {
+          return { success: true, blockId: input.blockId, action: input.action };
+        },
+      },
+      depositPort: completionService,
+      inspectionPort: batchService,
+      cancellationPort: cancellationService,
+      clock,
+    });
+
+    return {
+      store,
+      contract: store.contract,
+      clock,
+      depositService,
+      completionService,
+      deliveryService,
+      batchService,
+      settlementService,
+      cancellationService,
+      reviewService,
+      adminService,
+      notificationsSent,
+      getCompetingRejected: () => competingRejected,
+      getProfileReviewStatsUpdated: () => profileReviewStatsUpdated,
+    };
+  }
+
+  async function completeDeposit(ctx: ReturnType<typeof createSharedContext>) {
+    const { deposit } = await ctx.depositService.createDeposit(
+      { userId: ctx.contract.clientUserId, role: "CLIENT" },
+      {
+        contractId: ctx.contract.id,
+        idempotencyKey: `idem-${Math.random()}`,
+        method: "CARD",
+        amount: 3_255_000,
+      },
+    );
+    await ctx.depositService.handleTossWebhook(
+      { serverSecret: "wh_secret_c10" },
+      {
+        orderId: deposit.id,
+        paymentKey: "toss_pk_shared",
+        amount: 3_255_000,
+        status: "DONE",
+      },
+    );
+    const installments = (await ctx.store.depositRepository.listInstallments(ctx.contract.id)) as Array<{
+      id: string;
+      stage: "INTERIM" | "FINAL";
+    }>;
+    return { deposit, installments };
+  }
+
+  function seedItems(ctx: ReturnType<typeof createSharedContext>) {
+    ctx.store.seedContractItems([
+      {
+        id: "item-1",
+        contractId: ctx.contract.id,
+        stage: "INTERIM",
+        title: "중간 기능",
+        description: "기능",
+        conditions: [],
+        approvedAt: null,
+        autoApproved: false,
+      },
+      {
+        id: "item-2",
+        contractId: ctx.contract.id,
+        stage: "FINAL",
+        title: "최종 기능",
+        description: "기능",
+        conditions: [],
+        approvedAt: null,
+        autoApproved: false,
+      },
+    ]);
+  }
+
   it("C-10-T01 배치 두 번 실행해도 결과 동일", async () => {
     const ctx = createFullContext();
     const runTime = new Date("2026-11-15T00:00:00.000Z");
@@ -243,192 +413,237 @@ describe("C-10: 배포용 기한 작업·전영역 연결 검증·인계", () =>
     assert.equal(completeRes.deposit.status, "COMPLETED"); // 예치는 안전하게 정상 확정
   });
 
-  it("C-10-T03 전체 임시 계약→예치→중간 승인→최종 승인→리뷰 연계 포트", async () => {
-    const ctx = createFullContext();
-
-    // 1. 의뢰인 예치 생성 (합의금 3,100,000 + 5% 수수료 155,000 = 3,255,000원)
+  it("C-10-T03 공유 저장소로 예치→중간승인→최종승인→완료→리뷰 연결", async () => {
+    const ctx = createSharedContext();
     ctx.clock.set(t0);
-    const { deposit } = await ctx.depositService.createDeposit(
-      { userId: ctx.contract.clientUserId, role: "CLIENT" },
-      { contractId: ctx.contract.id, idempotencyKey: "idem-e2e-happy", method: "CARD", amount: 3_255_000 },
-    );
+    const { installments } = await completeDeposit(ctx);
+    assert.equal(ctx.getCompetingRejected(), true);
+    assert.equal(installments.length, 2);
+    const interim = installments.find((row) => row.stage === "INTERIM")!;
+    const final = installments.find((row) => row.stage === "FINAL")!;
+    seedItems(ctx);
 
-    // 2. PG 결제 검증 및 완료 트랜잭션 (타 지원 자동 거절 포트 연동)
-    await ctx.depositService.handleTossWebhook(
-      { serverSecret: "wh_secret_c10" },
-      {
-        orderId: deposit.id,
-        paymentKey: "toss_pk_e2e_happy",
-        amount: 3_255_000,
-        status: "DONE",
-      },
-    );
-
-    const completion = await ctx.completionService.completeDeposit({
-      depositId: deposit.id,
-      pgKey: "toss_pk_e2e_happy",
-    });
-    assert.equal(completion.deposit.status, "COMPLETED");
-    assert.equal(completion.contract.paymentStatus, "DEPOSITED");
-    assert.equal(ctx.getCompetingRejected(), true); // 타 지원 자동 거절됨
-
-    // 3. 중간 구간 납품 및 승인
+    // 중간 납품 → 항목 승인 → 정산 승인·지급 (구간·항목은 예치 때 생성된 같은 행을 재사용)
     ctx.clock.set(t1);
-    ctx.deliveryRepo.seedContract(ctx.contract);
-    ctx.deliveryRepo.seedInstallment({ id: "inst-interim", contractId: ctx.contract.id, stage: "INTERIM", status: "DELIVERED" });
-    const interimDelivery = await ctx.deliveryRepo.createDelivery({
-      installmentId: "inst-interim",
-      attemptNo: 1,
-      items: [{ contractItemId: "item-1", links: ["https://app/interim"], files: [], howToCheck: "확인" }],
-      summary: "중간 납품 완료",
-      status: "SUBMITTED",
-      submittedAt: t1,
-      inspectionDueAt: t2,
-      reviewedAt: null,
-    });
-
-    // 중간 납품 항목 직접 승인
-    ctx.deliveryRepo.seedContractItems([
+    const d1 = await ctx.deliveryService.submitDelivery(
+      { userId: ctx.contract.supplierUserId, role: "SUPPLIER" },
       {
-        id: "item-1",
-        contractId: ctx.contract.id,
-        stage: "INTERIM",
-        title: "중간 기능",
-        description: "기능",
-        conditions: [],
-        approvedAt: null,
-        autoApproved: false,
+        installmentId: interim.id,
+        items: [{ contractItemId: "item-1", links: ["https://app/interim"], files: [], howToCheck: "확인" }],
+        summary: "중간 납품",
       },
-    ]);
+    );
     await ctx.deliveryService.approveItem(
       { userId: ctx.contract.clientUserId, role: "CLIENT" },
-      { contractItemId: "item-1", deliveryId: interimDelivery.id },
+      { contractItemId: "item-1", deliveryId: d1.id },
     );
-
-    // 4. 중간 구간 지급 승인 및 방출 (개인 공급자 3.3% 내림 적용)
-    ctx.settlementRepo.seedContract({
-      ...ctx.contract,
-      status: "ACTIVE",
-      paymentStatus: "DEPOSITED",
-      totalDeposited: 3_255_000,
-    });
-    ctx.settlementRepo.seedInstallments([
-      {
-        id: "inst-interim",
-        contractId: ctx.contract.id,
-        stage: "INTERIM",
-        ratio: 50,
-        amount: 1_550_000,
-        supplierFee: 77_500,
-        withholdingTax: 51_150,
-        releaseAmount: 1_421_350,
-        status: "PENDING",
-        approvedAt: null,
-        releasedAt: null,
-        taxInvoiceIssuedAt: null,
-      },
-      {
-        id: "inst-final",
-        contractId: ctx.contract.id,
-        stage: "FINAL",
-        ratio: 50,
-        amount: 1_550_000,
-        supplierFee: 77_500,
-        withholdingTax: 51_150,
-        releaseAmount: 1_421_350,
-        status: "PENDING",
-        approvedAt: null,
-        releasedAt: null,
-        taxInvoiceIssuedAt: null,
-      },
-    ]);
-    ctx.settlementRepo.seedContractItems([
-      { id: "item-1", contractId: ctx.contract.id, stage: "INTERIM", title: "중간", approvedAt: t1 },
-      { id: "item-2", contractId: ctx.contract.id, stage: "FINAL", title: "최종", approvedAt: null },
-    ]);
-
-    await ctx.settlementService.approveInstallment({
-      contractId: ctx.contract.id,
-      installmentId: "inst-interim",
-    });
-    const r1 = await ctx.settlementService.releaseInstallment({ installmentId: "inst-interim" });
+    const approvedInterim = (await ctx.store.settlementRepository.listInstallments(ctx.contract.id)).find(
+      (row) => row.stage === "INTERIM",
+    );
+    assert.equal(approvedInterim?.status, "APPROVED");
+    const r1 = await ctx.settlementService.releaseInstallment({ installmentId: interim.id });
     assert.equal(r1.status, "RELEASED");
     assert.equal(r1.releaseAmount, 1_421_350);
 
-    // 5. 최종 구간 승인 및 방출 -> 계약 COMPLETED 전이
+    // 최종 납품 → 승인 → 지급 → 계약 완료
     ctx.clock.set(t4);
-    await ctx.settlementRepo.updateContractItem("item-2", { approvedAt: t4 });
-    await ctx.settlementService.approveInstallment({
-      contractId: ctx.contract.id,
-      installmentId: "inst-final",
-    });
-    const r2 = await ctx.settlementService.releaseInstallment({ installmentId: "inst-final" });
+    const d2 = await ctx.deliveryService.submitDelivery(
+      { userId: ctx.contract.supplierUserId, role: "SUPPLIER" },
+      {
+        installmentId: final.id,
+        items: [{ contractItemId: "item-2", links: ["https://app/final"], files: [], howToCheck: "확인" }],
+        summary: "최종 납품",
+      },
+    );
+    await ctx.deliveryService.approveItem(
+      { userId: ctx.contract.clientUserId, role: "CLIENT" },
+      { contractItemId: "item-2", deliveryId: d2.id },
+    );
+    const r2 = await ctx.settlementService.releaseInstallment({ installmentId: final.id });
     assert.equal(r2.status, "RELEASED");
 
-    const finishedContract = await ctx.settlementRepo.getContract(ctx.contract.id);
-    assert.equal(finishedContract?.status, "COMPLETED");
+    const finished = await ctx.store.getContract(ctx.contract.id);
+    assert.equal(finished?.status, "COMPLETED");
+    assert.equal(finished?.paymentStatus, "RELEASED");
 
-    // 6. 상호 리뷰 작성 (A 평점 포트 연동)
+    // 완료된 같은 계약으로 리뷰 작성 (재시드 없음)
     ctx.clock.set(t5);
-    ctx.reviewRepo.seedContract({
-      id: ctx.contract.id,
-      clientUserId: ctx.contract.clientUserId,
-      supplierUserId: ctx.contract.supplierUserId,
-      status: "COMPLETED",
-    });
-
     const review = await ctx.reviewService.createReview(
       { userId: ctx.contract.clientUserId, role: "CLIENT" },
       { contractId: ctx.contract.id, rating: 5, comment: "만족스러운 프로젝트였습니다.", tags: ["신속해요"] },
     );
     assert.equal(review.rating, 5);
-    assert.equal(ctx.getProfileReviewStatsUpdated(), true); // 평점 캐시 갱신 포트 호출됨
+    assert.equal(ctx.getProfileReviewStatsUpdated(), true);
   });
 
-  it("C-10-T04 취소 흐름 분리", async () => {
-    const ctx = createFullContext();
+  it("C-10-T04 취소 요청 중 승인·지급·자동승인·알림 실제 차단", async () => {
+    const ctx = createSharedContext();
+    ctx.clock.set(t0);
+    const { installments } = await completeDeposit(ctx);
+    const interim = installments.find((row) => row.stage === "INTERIM")!;
+    seedItems(ctx);
 
-    ctx.cancelRepo.seedContract({
-      id: ctx.contract.id,
-      clientUserId: ctx.contract.clientUserId,
-      supplierUserId: ctx.contract.supplierUserId,
-      status: "CANCEL_REQUESTED",
-      paymentStatus: "DEPOSITED",
-      agreedAmount: 3_100_000,
-      clientFee: 155_000,
-      totalDeposited: 3_255_000,
-      interimRatio: 50,
-      depositedAt: t0,
-      cancelCause: "CLIENT",
-      cancelRequestedBy: ctx.contract.clientUserId,
-      cancelRequestedAt: t1,
-      cancelNote: "취소",
-      objectionNote: null,
-      objectionRate: null,
-      cancelEvidence: null,
-      cancelEscalatedAt: null,
-      compensationRate: null,
-      cancelResolution: null,
-      cancelResolvedAt: null,
-      refundAmount: null,
-      clientFeeRefund: null,
-      settledAmount: null,
-      refundReason: null,
-      refundedAt: null,
-      cancelPayoutAt: null,
-    });
+    ctx.clock.set(t1);
+    const delivery = await ctx.deliveryService.submitDelivery(
+      { userId: ctx.contract.supplierUserId, role: "SUPPLIER" },
+      {
+        installmentId: interim.id,
+        items: [{ contractItemId: "item-1", links: ["https://app/interim"], files: [], howToCheck: "확인" }],
+      },
+    );
 
-    // 취소 요청 중에는 일반 납품/검수 승인이 차단됨
+    await ctx.cancellationService.requestCancellation(
+      { userId: ctx.contract.clientUserId, role: "CLIENT" },
+      { contractId: ctx.contract.id, cause: "CLIENT", note: "개인 사정" },
+    );
     assert.equal(await ctx.cancellationService.isOperationsPaused(ctx.contract.id), true);
 
-    // 판정 후 CANCELLED 상태 분리
-    const decided = await ctx.cancellationService.decideCancellation({
-      contractId: ctx.contract.id,
+    const client = { userId: ctx.contract.clientUserId, role: "CLIENT" };
+    const admin = { userId: "admin-1", role: "ADMIN" };
+
+    await assert.rejects(
+      () => ctx.deliveryService.approveItem(client, { contractItemId: "item-1", deliveryId: delivery.id }),
+      /진행 중\(ACTIVE\) 계약만/,
+    );
+    await assert.rejects(
+      () =>
+        ctx.deliveryService.requestRework(client, {
+          deliveryId: delivery.id,
+          contractItemId: "item-1",
+          reason: "NOT_WORKING",
+          note: "미작동",
+        }),
+      /진행 중\(ACTIVE\) 계약만/,
+    );
+    await assert.rejects(
+      () => ctx.settlementService.approveInstallment({ contractId: ctx.contract.id, installmentId: interim.id }),
+      /취소 중에는/,
+    );
+    await assert.rejects(
+      () => ctx.settlementService.releaseInstallment({ installmentId: interim.id }),
+      /취소 중에는/,
+    );
+
+    const batch = await ctx.batchService.processAutoApproval(
+      delivery.id,
+      new Date(t1.getTime() + 8 * 24 * 60 * 60 * 1000),
+    );
+    assert.equal(batch.autoApprovedCount, 0);
+    await ctx.batchService.sendDueNotifications(ctx.contract.id, t1);
+    assert.equal(ctx.notificationsSent.filter((n) => n.type === "INSPECTION_DUE").length, 0);
+
+    assert.equal((await ctx.store.deliveryRepository.getContractItem("item-1"))?.approvedAt, null);
+    const unchanged = (await ctx.store.settlementRepository.listInstallments(ctx.contract.id)).find(
+      (row) => row.stage === "INTERIM",
+    );
+    assert.equal(unchanged?.status, "DELIVERED");
+    assert.equal((await ctx.store.deliveryRepository.getDelivery(delivery.id))?.status, "SUBMITTED");
+
+    // 이의 → 관리자 판정도 같은 공유 계약/구간을 사용한다.
+    await ctx.cancellationService.objectCancellation(
+      { userId: ctx.contract.supplierUserId, role: "SUPPLIER" },
+      { contractId: ctx.contract.id, objectionRate: 50, note: "보상 비율 이의" },
+    );
+    ctx.store.adminRepository.seedCancellationQueueContract({
+      id: ctx.contract.id,
+      status: "CANCEL_REQUESTED",
+      cancelCause: "CLIENT",
+      totalDeposited: 3_255_000,
+      agreedAmount: 3_100_000,
+      clientFee: 155_000,
+      cancelEscalatedAt: t1,
+    });
+    const decided = await ctx.adminService.decideCancellation(admin, ctx.contract.id, {
       compensationRate: 50,
       reason: "착수 보상 판정",
     });
     assert.equal(decided.status, "CANCELLED");
-    assert.equal(decided.settledAmount, 736_250);
+    const cancelled = await ctx.store.getContract(ctx.contract.id);
+    assert.equal(cancelled?.status, "CANCELLED");
+    assert.equal(cancelled?.settledAmount, 1_472_500);
+    assert.equal(
+      (await ctx.store.adminRepository.listEventLogs()).filter(
+        (log) => log.actionType === "CANCELLATION_ADMIN_DECIDED",
+      ).length,
+      1,
+    );
+  });
+
+  it("C-10-F01 기한 대상 조회·재시도·중복 방지", async () => {
+    let depositAttempts = 0;
+    let secondRun = false;
+    const notified: string[] = [];
+    const context = {
+      targets: {
+        async depositContractIds() {
+          return ["contract-dep"];
+        },
+        async cancellationContractIds() {
+          return ["contract-cancel"];
+        },
+        async deliveryIds() {
+          return ["delivery-1"];
+        },
+        async notificationContractIds() {
+          return ["contract-noti"];
+        },
+      },
+      completionService: {
+        async expireDepositIfDue() {
+          depositAttempts += 1;
+          if (depositAttempts === 1) throw new Error("TRANSIENT_DB");
+          return { expired: !secondRun };
+        },
+      },
+      cancellationService: {
+        async checkCancellationDeadlines() {
+          return { escalatedToAdmin: !secondRun };
+        },
+      },
+      batchService: {
+        async processAutoApproval() {
+          return { autoApprovedCount: secondRun ? 0 : 1 };
+        },
+        async sendDueNotifications(contractId: string) {
+          notified.push(contractId);
+        },
+      },
+      retries: 1,
+    };
+
+    const first = await runDueJobs(context, t0);
+    assert.equal(first.success, true);
+    assert.equal(depositAttempts, 2); // 일시 실패 후 1회 재시도
+    assert.equal(first.actionsCount, 3);
+    assert.deepEqual(notified, ["contract-noti"]);
+
+    secondRun = true;
+    const second = await runDueJobs(context, t0);
+    assert.equal(second.success, true);
+    assert.equal(second.actionsCount, 0); // 재실행 멱등
+  });
+
+  it("C-10-F01b 일부 작업이 계속 실패해도 나머지는 처리하고 실패를 드러냄", async () => {
+    const result = await runDueJobs(
+      {
+        depositContractIds: ["c-fail", "c-ok"],
+        completionService: {
+          async expireDepositIfDue(contractId) {
+            if (contractId === "c-fail") throw new Error("PERSISTENT");
+            return { expired: true };
+          },
+        },
+        retries: 1,
+      },
+      t0,
+    );
+    assert.equal(result.success, false);
+    assert.equal(result.actionsCount, 1);
+    assert.equal(result.failures.length, 1);
+    assert.equal(result.failures[0].job, "DEPOSIT_DEADLINE");
+    assert.equal(result.failures[0].targetId, "c-fail");
+    assert.equal(result.failures[0].attempts, 2);
+    assert.match(result.failures[0].error, /PERSISTENT/);
   });
 
   it("C-10-T05 비밀정보 로깅 0", async () => {

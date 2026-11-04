@@ -368,7 +368,10 @@ export class DeliveryService {
       throw new DeliveryHttpError(403, "공급자만 납품을 제출할 수 있습니다.");
     }
 
-    if (contract.status !== "ACTIVE" || contract.paymentStatus !== "DEPOSITED") {
+    if (
+      contract.status !== "ACTIVE" ||
+      (contract.paymentStatus !== "DEPOSITED" && contract.paymentStatus !== "PARTIALLY_RELEASED")
+    ) {
       throw new DeliveryHttpError(409, "예치 완료된 계약만 납품할 수 있습니다.");
     }
 
