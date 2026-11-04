@@ -1,0 +1,88 @@
+import { Prisma, ProjectStatus, type PrismaClient } from "@prisma/client";
+import { DraftError } from "../draft/rules.js";
+
+export type ProjectTx = Prisma.TransactionClient;
+
+const selectionWindowMs = 7 * 24 * 60 * 60 * 1000;
+
+// ── Input ports (B/C provide, A calls) — Gate 0 must freeze these ──────────────
+export type ProjectSearchQuery = {
+  filters: {
+    industryCode?: string;
+    skill?: string;
+    status?: ProjectStatus;
+    minBudget?: number;
+    maxBudget?: number;
+    deadlineBefore?: Date;
+  };
+  page: number;
+  pageSize: 10;
+};
+
+export interface ProjectSearchPort {
+  searchPublicProjects(query: ProjectSearchQuery): Promise<{ projectIds: string[]; total: number }>;
+}
+
+export interface ProjectViewPort {
+  recordFirstView(input: { projectId: string; supplierId: string; at: Date }): Promise<void>;
+}
+
+export interface ProjectApplicationPort {
+  countPending(tx: ProjectTx, projectId: string): Promise<number>;
+  markSpecStale(tx: ProjectTx, input: { projectId: string; newVersionNo: number; at: Date }): Promise<number>;
+  rejectPendingOnDelete(tx: ProjectTx, input: { projectId: string; at: Date }): Promise<number>;
+}
+
+export interface ProjectNotificationPort {
+  enqueue(tx: ProjectTx, input: { userId: string; type: "DEADLINE_EXTENDED" | "PROJECT_CLOSED"; projectId: string; at: Date }): Promise<void>;
+}
+
+export type ProjectPorts = {
+  supplierNdaVersion?: string;
+  search?: ProjectSearchPort;
+  view?: ProjectViewPort;
+  application?: ProjectApplicationPort;
+  notification?: ProjectNotificationPort;
+};
+
+// ── Output ports (A provides, B/C call) ──────────────────────────────────────
+export interface TransitionProjectInput {
+  projectId: string;
+  to: ProjectStatus;
+  at: Date;
+  reason?: string;
+}
+
+export interface ProjectOutputPorts {
+  transitionProject(tx: ProjectTx, input: TransitionProjectInput): Promise<void>;
+  readSpecVersion(projectId: string): Promise<{ currentVersion: number; status: ProjectStatus } | null>;
+}
+
+const allowedTransitions: Partial<Record<ProjectStatus, ProjectStatus[]>> = {
+  [ProjectStatus.RECRUITING]: [ProjectStatus.ACCEPTED],
+  [ProjectStatus.SELECTING]: [ProjectStatus.ACCEPTED],
+  [ProjectStatus.ACCEPTED]: [ProjectStatus.CONTRACTED, ProjectStatus.RECRUITING, ProjectStatus.SELECTING, ProjectStatus.EXPIRED],
+  [ProjectStatus.CONTRACTED]: [ProjectStatus.RECRUITING, ProjectStatus.SELECTING, ProjectStatus.EXPIRED],
+};
+
+export function createProjectOutputPorts(db: PrismaClient): ProjectOutputPorts {
+  return {
+    async transitionProject(tx, input) {
+      const project = await tx.project.findUnique({ where: { id: input.projectId }, select: { status: true } });
+      if (!project) throw new DraftError("PROJECT_NOT_FOUND", 404);
+      const allowed = allowedTransitions[project.status] ?? [];
+      if (!allowed.includes(input.to)) throw new DraftError("INVALID_PROJECT_TRANSITION", 409);
+      await tx.project.update({
+        where: { id: input.projectId },
+        data: {
+          status: input.to,
+          selectionEndsAt: input.to === ProjectStatus.SELECTING ? new Date(input.at.getTime() + selectionWindowMs) : null,
+        },
+      });
+    },
+    async readSpecVersion(projectId) {
+      const project = await db.project.findUnique({ where: { id: projectId }, select: { currentVersion: true, status: true } });
+      return project ?? null;
+    },
+  };
+}

@@ -6,17 +6,24 @@
     "build": "tsc",
     "typecheck": "tsc --noEmit",
     "start": "node dist/index.js",
-    "test": "node --import ./tests/b/resolve-ts.mjs --test tests/b",
+    "test": "npm run test:b && npm run test:a",
     "db:validate": "prisma validate --schema prisma/schema.prisma",
     "db:generate": "prisma generate --schema prisma/schema.prisma",
     "db:migrate": "prisma migrate deploy --schema prisma/schema.prisma",
-    "db:verify:b": "node scripts/verify-b-pg.mjs"
+    "db:verify:b": "node scripts/verify-b-pg.mjs",
+    "test:a": "jest --runInBand tests/a",
+    "test:b": "node --import ./tests/b/resolve-ts.mjs --test tests/b",
+    "test:c": "jest --runInBand tests/c"
   },
   "devDependencies": {
     "@types/express": "^5.0.6",
     "@types/node": "^26.6.5",
     "prisma": "^6.19.3",
-    "typescript": "^7.0.2"
+    "typescript": "^7.0.2",
+    "@swc/core": "^1.16.20",
+    "@swc/jest": "^0.2.39",
+    "@types/jest": "^30.0.0",
+    "jest": "^30.5.2"
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",
