@@ -1,15 +1,16 @@
 {
   "version": 2,
   "buildCommand": "npm run build",
-  "functions": {
-    "dist/index.js": {
-      "includeFiles": "web/**"
-    }
-  },
-  "routes": [
+  "builds": [
     {
-      "src": "/(.*)",
-      "dest": "dist/index.js"
+      "src": "dist/index.js",
+      "use": "@vercel/node",
+      "config": {
+        "includeFiles": ["web/**"]
+      }
     }
+  ],
+  "routes": [
+    { "src": "/(.*)", "dest": "dist/index.js" }
   ]
 }
