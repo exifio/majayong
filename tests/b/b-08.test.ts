@@ -6,8 +6,15 @@ import {
   ApplicationAccessError,
   ApplicationError,
   requireApplicationParty,
+  type Actor,
+  type ApplicationRecord,
 } from '../../src/modules/application/dto.ts';
 import { summarizeBMetrics, type BMetricSource } from '../../src/modules/application/metrics.ts';
+import {
+  getApplicationDetail,
+  listMyApplications,
+  type ApplicationReadPort,
+} from '../../src/modules/application/queries.ts';
 import {
   assertContractableRevision,
   compareApplicationCards,
@@ -21,6 +28,22 @@ import {
   type ContractTx,
   type ContractUnitOfWork,
 } from '../../src/modules/contract/lifecycle.ts';
+import {
+  getContractDetail,
+  listMyContracts,
+  type ContractReadPort,
+} from '../../src/modules/contract/queries.ts';
+import {
+  listChatRooms,
+  type ChatMessage,
+  type ChatRoomListPort,
+  type ChatRoomRecord,
+} from '../../src/modules/chat/conversation.ts';
+import {
+  listMyReports,
+  type MyReportQueryPort,
+  type ReportRecord,
+} from '../../src/modules/report/reports.ts';
 import { applicationRecord, applicationRevision, chatMessage, FIXED_NOW } from './fixtures.ts';
 
 function buildMetricSource(): BMetricSource {
@@ -243,5 +266,237 @@ describe('B-08-T03 transaction rollback·대화 메시지 불변', () => {
     }), /simulated event persistence failure/);
     assert.deepEqual(uow.state, before);
     assert.deepEqual(uow.state.messages, [{ applicationId: 'app-1', body: chatMessage().body }]);
+  });
+});
+
+function contractRecord(overrides: Partial<ContractRecord> = {}): ContractRecord {
+  return {
+    id: 'contract-1',
+    applicationId: 'app-1',
+    projectId: 'prj-1',
+    clientUserId: 'client-1',
+    supplierId: 'supplier-1',
+    status: 'PENDING_CONSENT',
+    specVersionNo: 1,
+    agreedAmount: 3_100_000,
+    durationDays: 42,
+    clientFee: 155_000,
+    supplierFee: 155_000,
+    interimRatio: 50,
+    consentDeadline: new Date('2026-11-10T14:59:59.999Z'),
+    contentHash: 'hash-1',
+    clientSignedAt: null,
+    supplierSignedAt: null,
+    depositDeadline: null,
+    paymentStatus: 'PENDING',
+    totalDeposited: 0,
+    items: [],
+    ...overrides,
+  };
+}
+
+function chatRoom(overrides: Partial<ChatRoomRecord> = {}): ChatRoomRecord {
+  return {
+    id: 'app-1',
+    projectId: 'prj-1',
+    clientUserId: 'client-1',
+    supplierId: 'supplier-1',
+    status: 'SUBMITTED',
+    contractStatus: null,
+    messages: [],
+    ...overrides,
+  };
+}
+
+function reportRecord(overrides: Partial<ReportRecord> = {}): ReportRecord {
+  return {
+    id: 'report-1',
+    messageId: 'msg-1',
+    reporterId: 'client-1',
+    targetUserId: 'supplier-1',
+    reason: 'CONTACT_OR_OFFSITE',
+    detail: null,
+    status: 'OPEN',
+    action: null,
+    actionNote: null,
+    resolvedById: null,
+    resolvedAt: null,
+    createdAt: new Date('2026-11-01T00:00:00.000Z'),
+    ...overrides,
+  };
+}
+
+describe('B-08-T04 내 목록·상세 읽기 서비스', () => {
+  const CLIENT: Actor = { userId: 'client-1', role: 'CLIENT' };
+  const SUPPLIER: Actor = { userId: 'supplier-1', role: 'SUPPLIER' };
+  const INTRUDER: Actor = { userId: 'intruder', role: 'CLIENT' };
+
+  it('내 지원 목록은 역할별 본인 것만 최신 제출 순으로, 상세는 당사자만 연다', async () => {
+    const older = applicationRecord({
+      id: 'app-1',
+      submittedAt: new Date('2026-11-02T00:00:00.000Z'),
+    });
+    const newer = applicationRecord({
+      id: 'app-2',
+      projectId: 'prj-2',
+      submittedAt: new Date('2026-11-03T00:00:00.000Z'),
+    });
+    const others = applicationRecord({
+      id: 'app-3',
+      clientUserId: 'client-2',
+      supplierId: 'supplier-2',
+    });
+    const port: ApplicationReadPort = {
+      async listForUser() {
+        return [older, others, newer];
+      },
+      async findRevision(applicationId) {
+        return applicationId === 'app-1' ? applicationRevision() : null;
+      },
+    };
+
+    assert.deepEqual(
+      (await listMyApplications(port, { actor: CLIENT })).map((row) => row.id),
+      ['app-2', 'app-1'],
+    );
+    assert.deepEqual(
+      (await listMyApplications(port, { actor: SUPPLIER })).map((row) => row.id),
+      ['app-2', 'app-1'],
+    );
+    assert.deepEqual(
+      await listMyApplications(port, { actor: { userId: 'admin-1', role: 'ADMIN' } }),
+      [],
+    );
+
+    assert.equal(
+      (await getApplicationDetail(port, { actor: SUPPLIER, applicationId: 'app-1' })).id,
+      'app-1',
+    );
+    await assert.rejects(
+      getApplicationDetail(port, { actor: INTRUDER, applicationId: 'app-1' }),
+      (error: unknown) => error instanceof ApplicationAccessError,
+    );
+    await assert.rejects(
+      getApplicationDetail(port, { actor: CLIENT, applicationId: 'missing' }),
+      (error: unknown) => error instanceof ApplicationAccessError,
+    );
+  });
+
+  it('채팅방 목록은 회차를 하나로 합치고 상대 메시지의 안 읽은 수만 센다', async () => {
+    const messages: readonly ChatMessage[] = [
+      chatMessage({ id: 'm1', senderId: 'client-1' }),
+      chatMessage({
+        id: 'm2',
+        senderId: 'supplier-1',
+        createdAt: new Date('2026-11-01T00:01:00.000Z'),
+      }),
+      chatMessage({
+        id: 'm3',
+        senderId: 'client-1',
+        createdAt: new Date('2026-11-01T00:02:00.000Z'),
+      }),
+    ];
+    const port: ChatRoomListPort = {
+      async listRoomsForUser() {
+        return [
+          chatRoom({ id: 'app-old', messages: messages.slice(0, 2) }),
+          chatRoom({ messages }),
+          chatRoom({ projectId: 'prj-2', id: 'app-2' }),
+          chatRoom({
+            projectId: 'prj-3',
+            id: 'app-3',
+            clientUserId: 'client-2',
+            supplierId: 'supplier-2',
+            messages: [chatMessage()],
+          }),
+        ];
+      },
+    };
+
+    const rooms = await listChatRooms(port, { actor: SUPPLIER });
+
+    assert.deepEqual(
+      rooms.map((room) => room.id),
+      ['app-1', 'app-2'],
+    );
+    assert.equal(rooms[0]?.unreadCount, 2);
+    assert.equal(rooms[0]?.lastMessage?.id, 'm3');
+    assert.equal(rooms[1]?.lastMessage, null);
+    assert.equal(rooms[1]?.unreadCount, 0);
+    assert.deepEqual(
+      await listChatRooms(port, { actor: { userId: 'admin-1', role: 'ADMIN' } }),
+      [],
+    );
+  });
+
+  it('내 계약 목록은 당사자 것만, 상세는 비당사자와 없는 계약 모두 404다', async () => {
+    const older = contractRecord();
+    const newer = contractRecord({
+      id: 'contract-2',
+      consentDeadline: new Date('2026-11-12T00:00:00.000Z'),
+    });
+    const others = contractRecord({
+      id: 'contract-3',
+      clientUserId: 'client-2',
+      supplierId: 'supplier-2',
+    });
+    const port: ContractReadPort = {
+      async listForUser() {
+        return [older, others, newer];
+      },
+      async findById(contractId) {
+        return [older, newer, others].find((row) => row.id === contractId) ?? null;
+      },
+    };
+
+    assert.deepEqual(
+      (await listMyContracts(port, { actor: CLIENT })).map((row) => row.id),
+      ['contract-2', 'contract-1'],
+    );
+    assert.equal(
+      (await getContractDetail(port, { actor: SUPPLIER, contractId: 'contract-2' })).id,
+      'contract-2',
+    );
+    await assert.rejects(
+      getContractDetail(port, { actor: INTRUDER, contractId: 'contract-2' }),
+      isError('CONTRACT_NOT_FOUND'),
+    );
+    await assert.rejects(
+      getContractDetail(port, { actor: CLIENT, contractId: 'missing' }),
+      isError('CONTRACT_NOT_FOUND'),
+    );
+  });
+
+  it('내 신고 목록은 본인 것만 최신 순으로, 상태로 거른다', async () => {
+    const older = reportRecord();
+    const newer = reportRecord({
+      id: 'report-2',
+      status: 'RESOLVED',
+      action: 'WARNING',
+      createdAt: new Date('2026-11-02T00:00:00.000Z'),
+    });
+    const others = reportRecord({ id: 'report-3', reporterId: 'client-2' });
+    const port: MyReportQueryPort = {
+      async listByReporter(input) {
+        return [older, others, newer].filter(
+          (row) =>
+            row.reporterId === input.reporterId &&
+            (input.status === undefined || row.status === input.status),
+        );
+      },
+    };
+
+    assert.deepEqual(
+      (await listMyReports(port, { actor: CLIENT })).map((row) => row.id),
+      ['report-2', 'report-1'],
+    );
+    assert.deepEqual(
+      (await listMyReports(port, { actor: CLIENT, status: 'RESOLVED' })).map((row) => row.id),
+      ['report-2'],
+    );
+    assert.deepEqual(
+      await listMyReports(port, { actor: { userId: 'admin-1', role: 'ADMIN' } }),
+      [],
+    );
   });
 });

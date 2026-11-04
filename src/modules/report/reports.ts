@@ -108,6 +108,27 @@ export interface ResolveReportResult {
   readonly warningReviewRecommended: boolean;
 }
 
+/** `GET /me/reports` 조회 Port. 신고자 본인 것만 돌려준다. */
+export interface MyReportQueryPort {
+  listByReporter(input: {
+    readonly reporterId: string;
+    readonly status?: ReportStatus;
+  }): Promise<readonly ReportRecord[]>;
+}
+
+export async function listMyReports(
+  port: MyReportQueryPort,
+  input: { readonly actor: ReportActor; readonly status?: ReportStatus },
+): Promise<readonly ReportRecord[]> {
+  const rows = await port.listByReporter({
+    reporterId: input.actor.userId,
+    status: input.status,
+  });
+  return [...rows].sort(
+    (a, b) => b.createdAt.getTime() - a.createdAt.getTime() || a.id.localeCompare(b.id),
+  );
+}
+
 export function submitReport(uow: ReportUnitOfWork, input: SubmitReportInput): Promise<ReportRecord> {
   return submitReportImpl(uow, input);
 }

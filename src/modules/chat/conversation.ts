@@ -110,6 +110,20 @@ export interface ConversationView {
   readonly unreadCount: number;
 }
 
+/** 채팅방 목록 Port. 회차가 여러 개여도 방(project+supplier) 단위 record를 준다. */
+export interface ChatRoomRecord extends ChatApplication {
+  readonly messages: readonly ChatMessage[];
+}
+
+export interface ChatRoomListPort {
+  listRoomsForUser(userId: string): Promise<readonly ChatRoomRecord[]>;
+}
+
+export interface ChatRoomSummary extends ChatApplication {
+  readonly lastMessage: ChatMessage | null;
+  readonly unreadCount: number;
+}
+
 const WRITABLE_STATUSES: readonly ApplicationStatus[] = ['SUBMITTED', 'STALE', 'ACCEPTED'];
 
 function chatNotFound(): ChatError {
@@ -231,6 +245,60 @@ export async function sendMessage(
   });
 
   return created;
+}
+
+/**
+ * `GET /me/chats`: 내가 당사자인 방만, 최근 메시지 순으로. 회차 중복은 최신 방 record로 합친다.
+ */
+export async function listChatRooms(
+  port: ChatRoomListPort,
+  input: { readonly actor: ChatActor },
+): Promise<readonly ChatRoomSummary[]> {
+  if (input.actor.role === 'ADMIN') return [];
+
+  const rooms = await port.listRoomsForUser(input.actor.userId);
+  const byRoom = new Map<string, { summary: ChatRoomSummary; lastAt: number }>();
+
+  for (const room of rooms) {
+    if (
+      room.clientUserId !== input.actor.userId &&
+      room.supplierId !== input.actor.userId
+    ) {
+      continue;
+    }
+
+    const ordered = [...room.messages].sort(
+      (a, b) => a.createdAt.getTime() - b.createdAt.getTime() || a.id.localeCompare(b.id),
+    );
+    const lastMessage = ordered.at(-1) ?? null;
+    const summary: ChatRoomSummary = {
+      id: room.id,
+      projectId: room.projectId,
+      clientUserId: room.clientUserId,
+      supplierId: room.supplierId,
+      status: room.status,
+      contractStatus: room.contractStatus,
+      lastMessage,
+      unreadCount: countUnread(room.messages, input.actor.userId),
+    };
+
+    const key = `${room.projectId}\u0000${room.supplierId}`;
+    const existing = byRoom.get(key);
+    const lastAt = lastMessage?.createdAt.getTime() ?? Number.NEGATIVE_INFINITY;
+    if (existing === undefined || lastAt > existing.lastAt) {
+      byRoom.set(key, { summary, lastAt });
+    }
+  }
+
+  return [...byRoom.values()]
+    .map((entry) => entry.summary)
+    .sort(
+      (a, b) =>
+        (b.lastMessage?.createdAt.getTime() ?? Number.NEGATIVE_INFINITY) -
+          (a.lastMessage?.createdAt.getTime() ?? Number.NEGATIVE_INFINITY) ||
+        a.projectId.localeCompare(b.projectId) ||
+        a.supplierId.localeCompare(b.supplierId),
+    );
 }
 
 export async function listConversation(
