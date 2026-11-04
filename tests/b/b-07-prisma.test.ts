@@ -43,7 +43,7 @@ function reportDb(rows: ReportRow[]) {
     applicationMessage: {
       async findUnique(input) {
         return input.where.id === 'msg-1'
-          ? { id: 'msg-1', senderId: 'client-1', application: { supplierId: 'supplier-1', project: { clientId: 'client-1' } } }
+          ? { id: 'msg-1', senderId: 'client-1', application: { supplierId: 'supplier-1', project: { draft: { clientId: 'client-1' } } } }
           : null;
       },
     },

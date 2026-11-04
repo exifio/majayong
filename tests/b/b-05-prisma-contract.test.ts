@@ -47,7 +47,7 @@ function contractRow(overrides: Partial<ContractRow> = {}): ContractRow {
     application: {
       projectId: 'prj-1',
       supplierId: 'supplier-1',
-      project: { clientId: 'client-1' },
+      project: { draft: { clientId: 'client-1' } },
     },
     ...overrides,
   };

@@ -86,7 +86,7 @@ export interface AProjectDb {
       readonly where: Readonly<Record<string, unknown>>;
       readonly include: {
         readonly items: true;
-        readonly project: { readonly select: { readonly clientId: true } };
+        readonly project: { readonly select: { readonly draft: { readonly select: { readonly clientId: true } } } };
       };
     }): Promise<readonly ApplicationRow[]>;
     updateMany(input: {
@@ -108,7 +108,7 @@ export interface AProjectDb {
 
 const INCLUDE = {
   items: true,
-  project: { select: { clientId: true } },
+  project: { select: { draft: { select: { clientId: true } } } },
 } as const;
 
 function applicationDelegates(

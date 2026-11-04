@@ -33,7 +33,7 @@ function row(overrides: Partial<ApplicationRow> = {}): ApplicationRow {
     firstViewedAt: FIXED_NOW,
     submittedAt: FIXED_NOW,
     items: [],
-    project: { clientId: 'client-1' },
+    project: { draft: { clientId: 'client-1' } },
     ...overrides,
   };
 }

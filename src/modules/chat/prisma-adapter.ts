@@ -31,7 +31,7 @@ export interface ChatApplicationRow {
   readonly projectId: string;
   readonly supplierId: string;
   readonly status: ApplicationStatus;
-  readonly project: { readonly clientId: string };
+  readonly project: { readonly draft: { readonly clientId: string } };
   readonly contract: { readonly status: ContractDbStatus } | null;
   readonly messages?: readonly ChatMessageRow[];
 }
@@ -41,7 +41,7 @@ const APPLICATION_SELECT = {
   projectId: true,
   supplierId: true,
   status: true,
-  project: { select: { clientId: true } },
+  project: { select: { draft: { select: { clientId: true } } } },
   contract: { select: { status: true } },
 } as const;
 
@@ -54,7 +54,11 @@ export interface ChatDbClient {
     findMany(input: {
       readonly where: Readonly<Record<string, unknown>>;
       readonly select?: typeof APPLICATION_SELECT;
-      readonly include?: { readonly messages: true };
+      readonly include?: {
+        readonly messages: true;
+        readonly project: { readonly select: { readonly draft: { readonly select: { readonly clientId: true } } } };
+        readonly contract: { readonly select: { readonly status: true } };
+      };
       readonly orderBy?: readonly Readonly<Record<string, 'asc' | 'desc'>>[];
     }): Promise<readonly ChatApplicationRow[]>;
   };
@@ -79,7 +83,7 @@ export function toChatApplication(row: ChatApplicationRow): ChatApplication {
   return {
     id: row.id,
     projectId: row.projectId,
-    clientUserId: row.project.clientId,
+    clientUserId: row.project.draft.clientId,
     supplierId: row.supplierId,
     status: row.status,
     contractStatus: row.contract?.status ?? null,
@@ -112,7 +116,7 @@ export function createPrismaChatRepository(db: ChatDbClient): ChatRepository {
     async findThreadMessages(input) {
       const rows = await db.applicationMessage.findMany({
         where: {
-          application: { projectId: input.projectId, supplierId: input.supplierId },
+          application: { is: { projectId: input.projectId, supplierId: input.supplierId } },
         },
         orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
       });
@@ -123,7 +127,7 @@ export function createPrismaChatRepository(db: ChatDbClient): ChatRepository {
       const row = await db.applicationMessage.findFirst({
         where: {
           senderId: input.senderId,
-          application: { projectId: input.projectId, supplierId: input.supplierId },
+          application: { is: { projectId: input.projectId, supplierId: input.supplierId } },
         },
         select: { id: true },
       });
@@ -164,11 +168,14 @@ export function createPrismaChatRoomListPort(db: ChatDbClient): ChatRoomListPort
     async listRoomsForUser(userId) {
       const rows = await db.application.findMany({
         where: {
-          OR: [{ supplierId: userId }, { project: { clientId: userId } }],
+          OR: [{ supplierId: userId }, { project: { is: { draft: { is: { clientId: userId } } } } }],
           messages: { some: {} },
         },
-        select: APPLICATION_SELECT,
-        include: { messages: true },
+        include: {
+          messages: true,
+          project: { select: { draft: { select: { clientId: true } } } },
+          contract: { select: { status: true } },
+        },
         orderBy: [{ submittedAt: 'desc' }, { id: 'asc' }],
       });
       return rows.map(

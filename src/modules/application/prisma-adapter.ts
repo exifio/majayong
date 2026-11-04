@@ -41,18 +41,18 @@ export interface ApplicationRow {
   readonly firstViewedAt: Date;
   readonly submittedAt: Date;
   readonly items: readonly ApplicationItemRow[];
-  readonly project: { readonly clientId: string };
+  readonly project: { readonly draft: { readonly clientId: string } };
 }
 
 export interface ApplicationReadDelegate {
   findMany(input: {
     readonly where: Readonly<Record<string, unknown>>;
-    readonly include: { readonly items: true; readonly project: { readonly select: { readonly clientId: true } } };
+    readonly include: { readonly items: true; readonly project: { readonly select: { readonly draft: { readonly select: { readonly clientId: true } } } } };
     readonly orderBy?: readonly Readonly<Record<string, 'asc' | 'desc'>>[];
   }): Promise<readonly ApplicationRow[]>;
   findUnique(input: {
     readonly where: { readonly id: string };
-    readonly include: { readonly items: true; readonly project: { readonly select: { readonly clientId: true } } };
+    readonly include: { readonly items: true; readonly project: { readonly select: { readonly draft: { readonly select: { readonly clientId: true } } } } };
   }): Promise<ApplicationRow | null>;
 }
 
@@ -61,14 +61,14 @@ export interface ApplicationReadDbClient {
   readonly project: {
     findUnique(input: {
       readonly where: { readonly id: string };
-      readonly select: { readonly clientId: true };
-    }): Promise<{ readonly clientId: string } | null>;
+      readonly select: { readonly draft: { readonly select: { readonly clientId: true } } };
+    }): Promise<{ readonly draft: { readonly clientId: string } } | null>;
   };
 }
 
 const INCLUDE = {
   items: true,
-  project: { select: { clientId: true } },
+  project: { select: { draft: { select: { clientId: true } } } },
 } as const;
 
 function readQuestions(value: unknown): readonly ApplicationQuestion[] {
@@ -90,7 +90,7 @@ export function toApplicationRevision(row: ApplicationRow): ApplicationRevision 
   return {
     id: row.id,
     projectId: row.projectId,
-    clientUserId: row.project.clientId,
+    clientUserId: row.project.draft.clientId,
     supplierId: row.supplierId,
     revisionNo: row.revisionNo,
     specVersionNo: row.specVersionNo,
@@ -118,7 +118,7 @@ export function createPrismaApplicationReadPort(
       const rows = await db.application.findMany({
         where:
           input.role === 'CLIENT'
-            ? { project: { clientId: input.userId } }
+            ? { project: { is: { draft: { is: { clientId: input.userId } } } } }
             : { supplierId: input.userId },
         include: INCLUDE,
       });
@@ -136,9 +136,9 @@ export function createPrismaApplicationReadPort(
     async findProjectClientId(projectId) {
       const project = await db.project.findUnique({
         where: { id: projectId },
-        select: { clientId: true },
+        select: { draft: { select: { clientId: true } } },
       });
-      return project?.clientId ?? null;
+      return project?.draft.clientId ?? null;
     },
 
     async listRevisionsByProject(projectId) {

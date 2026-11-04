@@ -62,7 +62,7 @@ export interface ContractRow {
   readonly application: {
     readonly projectId: string;
     readonly supplierId: string;
-    readonly project: { readonly clientId: string };
+    readonly project: { readonly draft: { readonly clientId: string } };
   };
 }
 
@@ -72,7 +72,7 @@ const CONTRACT_INCLUDE = {
     select: {
       projectId: true,
       supplierId: true,
-      project: { select: { clientId: true } },
+      project: { select: { draft: { select: { clientId: true } } } },
     },
   },
 } as const;
@@ -116,7 +116,7 @@ export function toContractRecord(row: ContractRow): ContractRecord {
     id: row.id,
     applicationId: row.applicationId,
     projectId: row.application.projectId,
-    clientUserId: row.application.project.clientId,
+    clientUserId: row.application.project.draft.clientId,
     supplierId: row.application.supplierId,
     status: row.status,
     specVersionNo: row.specVersionNo,
@@ -172,12 +172,12 @@ export interface ContractDbClient extends NotificationDbClient {
   readonly application: {
     findFirst(input: {
       readonly where: Readonly<Record<string, unknown>>;
-      readonly include: { readonly items: true; readonly project: { readonly select: { readonly clientId: true } } };
+      readonly include: { readonly items: true; readonly project: { readonly select: { readonly draft: { readonly select: { readonly clientId: true } } } } };
       readonly orderBy?: readonly Readonly<Record<string, 'asc' | 'desc'>>[];
     }): Promise<ApplicationRow | null>;
     findMany(input: {
       readonly where: Readonly<Record<string, unknown>>;
-      readonly include: { readonly items: true; readonly project: { readonly select: { readonly clientId: true } } };
+      readonly include: { readonly items: true; readonly project: { readonly select: { readonly draft: { readonly select: { readonly clientId: true } } } } };
     }): Promise<readonly ApplicationRow[]>;
     updateMany(input: {
       readonly where: Readonly<Record<string, unknown>>;
@@ -221,7 +221,7 @@ export function createContractTx(
     async findLatestRevision(input) {
       const row = await db.application.findFirst({
         where: { projectId: input.projectId, supplierId: input.supplierId },
-        include: { items: true, project: { select: { clientId: true } } },
+        include: { items: true, project: { select: { draft: { select: { clientId: true } } } } },
         orderBy: [{ revisionNo: 'desc' }],
       });
       return row === null ? null : toApplicationRevision(row);
@@ -263,7 +263,7 @@ export function createContractTx(
     async listProjectApplications(projectId) {
       const rows = await db.application.findMany({
         where: { projectId },
-        include: { items: true, project: { select: { clientId: true } } },
+        include: { items: true, project: { select: { draft: { select: { clientId: true } } } } },
       });
       return rows.map((row): ApplicationRecord => toApplicationRevision(row));
     },
@@ -391,10 +391,12 @@ export function createPrismaContractReadPort(db: ContractDbClient): ContractRead
     async listForUser(input) {
       const rows = await db.contract.findMany({
         where: {
-          application:
-            input.role === 'CLIENT'
-              ? { project: { clientId: input.userId } }
-              : { supplierId: input.userId },
+          application: {
+            is:
+              input.role === 'CLIENT'
+                ? { project: { is: { draft: { is: { clientId: input.userId } } } } }
+                : { supplierId: input.userId },
+          },
         },
         include: CONTRACT_INCLUDE,
         orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],

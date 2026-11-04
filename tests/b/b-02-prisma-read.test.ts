@@ -25,7 +25,7 @@ function row(overrides: Partial<ApplicationRow> = {}): ApplicationRow {
     firstViewedAt: FIXED_NOW,
     submittedAt: FIXED_NOW,
     items: [{ specItemId: 'spec-1', isAvailable: true }],
-    project: { clientId: 'client-1' },
+    project: { draft: { clientId: 'client-1' } },
     ...overrides,
   };
 }
@@ -39,11 +39,12 @@ function db(rows: readonly ApplicationRow[]) {
         const where = input.where as {
           projectId?: string;
           supplierId?: string;
-          project?: { clientId?: string };
+          project?: { is?: { draft?: { is?: { clientId?: string } } } };
         };
         if (where.projectId !== undefined && candidate.projectId !== where.projectId) return false;
         if (where.supplierId !== undefined && candidate.supplierId !== where.supplierId) return false;
-        if (where.project?.clientId !== undefined && candidate.project.clientId !== where.project.clientId) {
+        const owner = where.project?.is?.draft?.is?.clientId;
+        if (owner !== undefined && candidate.project.draft.clientId !== owner) {
           return false;
         }
         return true;
@@ -59,7 +60,7 @@ function db(rows: readonly ApplicationRow[]) {
       application: delegate,
       project: {
         async findUnique(input: { where: { id: string } }) {
-          return input.where.id === 'prj-1' ? { clientId: 'client-1' } : null;
+          return input.where.id === 'prj-1' ? { draft: { clientId: 'client-1' } } : null;
         },
       },
     },
@@ -67,7 +68,7 @@ function db(rows: readonly ApplicationRow[]) {
 }
 
 describe('B-02 Prisma 읽기 어댑터', () => {
-  it('Project.clientId를 Application.clientUserId로 매핑한다', async () => {
+  it('Project.draft.clientId를 Application.clientUserId로 매핑한다', async () => {
     const port = createPrismaApplicationReadPort(db([row()]).client);
 
     const revision = await port.findRevision('app-1');
@@ -86,7 +87,9 @@ describe('B-02 Prisma 읽기 어댑터', () => {
 
     assert.deepEqual(mine.map((item) => item.id), ['app-1', 'app-2']);
     assert.deepEqual(supplier.map((item) => item.id), ['app-2']);
-    assert.deepEqual(fixture.calls[0], { project: { clientId: 'client-1' } });
+    assert.deepEqual(fixture.calls[0], {
+      project: { is: { draft: { is: { clientId: 'client-1' } } } },
+    });
     assert.deepEqual(fixture.calls[1], { supplierId: 'supplier-2' });
   });
 

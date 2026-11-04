@@ -30,7 +30,7 @@ function application(overrides: Partial<ChatApplicationRow> = {}): ChatApplicati
     projectId: 'prj-1',
     supplierId: 'supplier-1',
     status: 'SUBMITTED',
-    project: { clientId: 'client-1' },
+    project: { draft: { clientId: 'client-1' } },
     contract: null,
     ...overrides,
   };
@@ -53,8 +53,10 @@ function makeDb(applications: readonly ChatApplicationRow[], messages: ChatMessa
           where.OR?.some((condition) => {
             const supplierId = condition.supplierId;
             if (typeof supplierId === 'string') return candidate.supplierId === supplierId;
-            const project = condition.project as { clientId?: string } | undefined;
-            return project?.clientId === candidate.project.clientId;
+            const project = condition.project as
+              | { is?: { draft?: { is?: { clientId?: string } } } }
+              | undefined;
+            return project?.is?.draft?.is?.clientId === candidate.project.draft.clientId;
           }),
         );
       },
@@ -147,7 +149,7 @@ describe('B-03 Prisma 채팅 어댑터', () => {
     const fixture = makeDb(
       [
         application({ id: 'app-1', messages: [message()] }),
-        application({ id: 'app-2', supplierId: 'supplier-2', project: { clientId: 'client-2' }, messages: [] }),
+        application({ id: 'app-2', supplierId: 'supplier-2', project: { draft: { clientId: 'client-2' } }, messages: [] }),
       ],
       [message()],
     );

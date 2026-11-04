@@ -92,5 +92,8 @@ export function errorHandler(
   }
   const body = toErrorBody(error, requestIdOf(response));
   const status = isDomainError(error) ? error.status : 500;
+  if (!isDomainError(error) && process.env.NODE_ENV !== 'production') {
+    console.error(`[${requestIdOf(response)}]`, error);
+  }
   response.status(status).json(body);
 }

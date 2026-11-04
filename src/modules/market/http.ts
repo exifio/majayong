@@ -49,6 +49,10 @@ export function createMarketRouter(ports: MarketHttpPorts): Router {
   router.get('/me/bookmarks', async (request, response) => {
     const actor = requireSupplier(request);
     const records = await ports.bookmarks.listBySupplier(actor.userId);
+    if (records.length === 0) {
+      sendData(response, []);
+      return;
+    }
     const projects = await ports.projects.listPublicProjectsByIds(
       records.map((record) => record.projectId),
     );

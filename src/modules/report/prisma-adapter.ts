@@ -38,7 +38,7 @@ export interface ReportMessageRow {
   readonly senderId: string | null;
   readonly application: {
     readonly supplierId: string;
-    readonly project: { readonly clientId: string };
+    readonly project: { readonly draft: { readonly clientId: string } };
   };
 }
 
@@ -50,7 +50,9 @@ export interface ReportDbClient {
         readonly application: {
           readonly select: {
             readonly supplierId: true;
-            readonly project: { readonly select: { readonly clientId: true } };
+            readonly project: {
+              readonly select: { readonly draft: { readonly select: { readonly clientId: true } } };
+            };
           };
         };
       };
@@ -121,7 +123,10 @@ export function createReportTx(
         where: { id: messageId },
         include: {
           application: {
-            select: { supplierId: true, project: { select: { clientId: true } } },
+            select: {
+              supplierId: true,
+              project: { select: { draft: { select: { clientId: true } } } },
+            },
           },
         },
       });
@@ -129,7 +134,7 @@ export function createReportTx(
       return {
         id: row.id,
         senderId: row.senderId,
-        participantIds: [row.application.project.clientId, row.application.supplierId],
+        participantIds: [row.application.project.draft.clientId, row.application.supplierId],
       };
     },
 
