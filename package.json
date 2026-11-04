@@ -12,10 +12,11 @@
     "db:migrate": "prisma migrate deploy --schema prisma/schema.prisma",
     "db:verify:b": "node scripts/verify-b-pg.mjs",
     "test:a": "jest --runInBand tests/a",
-    "test:b": "node --import ./tests/b/resolve-ts.mjs --test tests/b",
-    "test:c": "node --test tests/c/*.test.ts",
-    "test:integration": "node --test tests/integration/*.test.ts",
-    "test:typecheck": "tsc -p tsconfig.test.json"
+    "test:b": "DATABASE_URL=\"${DATABASE_URL:-}\" node --import ./tests/b/resolve-ts.mjs --test tests/b",
+    "test:c": "DATABASE_URL=\"${DATABASE_URL:-}\" node --test tests/c/*.test.ts",
+    "test:integration": "DATABASE_URL=\"${DATABASE_URL:-}\" node --import ./tests/b/resolve-ts.mjs --test tests/integration/*.test.ts",
+    "test:typecheck": "tsc -p tsconfig.test.json",
+    "check:rules": "node scripts/check-rules.mjs"
   },
   "devDependencies": {
     "@types/express": "^5.0.6",

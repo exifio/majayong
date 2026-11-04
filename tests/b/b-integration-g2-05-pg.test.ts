@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { describe, it } from "node:test";
 import { PrismaClient, type Prisma } from "@prisma/client";
+import { testDatabaseUrl } from "../test-db.ts";
 import { createApp } from "../../src/http/create-app.ts";
 import { createDevAuthVerifier } from "../../src/http/auth.ts";
 import { createIntegrationPorts, createReportAccountActionPort } from "../../src/integration/external-ports.ts";
@@ -14,7 +15,7 @@ import { withServer } from "./http-helpers.ts";
 
 // G2-05: 리뷰→평점 동일 tx와 신고 제재→B 채팅 쓰기 차단을 실제 PostgreSQL/HTTP로 확인한다.
 // DATABASE_URL이 없으면 skip한다(전용 테스트 DB에서만 실행, 실제/공유 DB 금지).
-const hasDatabase = Boolean(process.env.DATABASE_URL);
+const hasDatabase = Boolean(testDatabaseUrl());
 const NOW = new Date("2026-11-04T05:20:00.000Z");
 
 type Ids = {

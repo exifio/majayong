@@ -4,6 +4,7 @@ import { createServer, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
 import { afterEach, describe, it } from "node:test";
 import { PrismaClient } from "@prisma/client";
+import { testDatabaseUrl } from "../test-db.ts";
 import { createAppHandler } from "../../src/composition.ts";
 import { createPrismaRepositories } from "../../src/infrastructure/prisma-store.ts";
 import { createIntegrationPorts } from "../../src/integration/external-ports.ts";
@@ -23,7 +24,7 @@ import { createPrismaNotificationTx } from "../../src/modules/notification/prism
 
 // G2-03: C HTTP 웹훅 → 예치 확정 → B 자동 거절·알림이 한 PostgreSQL 트랜잭션인지 확인한다.
 // DATABASE_URL이 없으면 skip한다(전용 테스트 DB에서만 실행, 실제/공유 DB 금지).
-const hasDatabase = Boolean(process.env.DATABASE_URL);
+const hasDatabase = Boolean(testDatabaseUrl());
 const WEBHOOK_SECRET = "g203-webhook-secret";
 const NOW = new Date("2026-11-04T05:20:00.000Z");
 const servers: Server[] = [];

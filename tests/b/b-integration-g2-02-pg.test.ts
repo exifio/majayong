@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { describe, it } from "node:test";
 import { PrismaClient } from "@prisma/client";
+import { testDatabaseUrl } from "../test-db.ts";
 import { createApp } from "../../src/http/create-app.ts";
 import { createDevAuthVerifier } from "../../src/http/auth.ts";
 import {
@@ -27,7 +28,7 @@ import { withServer } from "./http-helpers.ts";
 
 // G2-02: B→A 읽기·합의·상태 경계를 실제 PostgreSQL과 HTTP로 확인한다.
 // DATABASE_URL이 없으면 skip한다(전용 테스트 DB에서만 실행, 실제/공유 DB 금지).
-const hasDatabase = Boolean(process.env.DATABASE_URL);
+const hasDatabase = Boolean(testDatabaseUrl());
 const NOW = new Date("2026-11-04T00:00:00.000Z");
 
 type Ids = {

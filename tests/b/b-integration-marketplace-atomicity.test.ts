@@ -7,6 +7,7 @@ import {
   type ApplicationDbClient,
   type ApplicationRow,
 } from '../../src/modules/application/prisma-adapter.ts';
+import type { NewNotification } from '../../src/modules/notification/notifications.ts';
 import type { ApplicationUnitOfWork } from '../../src/modules/application/submission.ts';
 
 const FIXED_NOW = new Date('2026-11-04T00:00:00.000Z');
@@ -64,13 +65,11 @@ function fakeApplicationDb(rows: ApplicationRow[]): ApplicationDbClient {
     eventLog: { findFirst: async () => null },
     notification: {
       findUnique: async () => null,
-      create: async (input: { data: Record<string, unknown> }) =>
+      create: async (input: { readonly data: NewNotification }) =>
         ({
-          id: 'notification-1',
-          targetUrl: '/x',
-          isRead: false,
-          createdAt: FIXED_NOW,
           ...input.data,
+          id: 'notification-1',
+          isRead: false,
         }) as never,
       update: async () => ({}) as never,
       findMany: async () => [],

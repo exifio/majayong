@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { describe, it } from "node:test";
 import { PrismaClient } from "@prisma/client";
+import { testDatabaseUrl } from "../test-db.ts";
 import {
   createPrismaNotificationTx,
 } from "../../src/modules/notification/prisma-adapter.ts";
@@ -15,7 +16,7 @@ import {
 // 알려진 한계(D-10): 같은 키에 동시 삽입이 겹치면 unique 제약으로 중복 행은 생기지 않지만,
 // 진 쪽 트랜잭션은 P2002로 중단되어 같은 트랜잭션 안 재조회 복구가 실패할 수 있다(요청 재시도 필요).
 // 여기서는 수용 기준인 "중복 0"만 단언한다.
-const hasDatabase = Boolean(process.env.DATABASE_URL);
+const hasDatabase = Boolean(testDatabaseUrl());
 const NOW = new Date("2026-11-04T00:00:00.000Z");
 
 describe("INT-G2-04: 알림 unique 재현", { skip: hasDatabase ? false : "DATABASE_URL 없음" }, () => {

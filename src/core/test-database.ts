@@ -18,8 +18,9 @@ export function assertTestDatabase(url: string | undefined): string {
   if (!localHosts.has(hostname)) {
     throw new Error("Database tests refuse to run outside a local database");
   }
-  if (!parsed.pathname.replace(/^\//, "").endsWith("_test")) {
-    throw new Error("Database tests require a dedicated *_test database");
+  // `_check`는 INTEGRATION_GATE2 런북의 일회용 검증 DB 이름이다.
+  if (!/(_test|_check)$/.test(parsed.pathname.replace(/^\//, ""))) {
+    throw new Error("Database tests require a dedicated *_test or *_check database");
   }
   return candidate;
 }

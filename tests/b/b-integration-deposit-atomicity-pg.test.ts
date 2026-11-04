@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { describe, it } from "node:test";
 import { PrismaClient } from "@prisma/client";
+import { testDatabaseUrl } from "../test-db.ts";
 import { createPrismaRepositories } from "../../src/infrastructure/prisma-store.ts";
 import { createPrismaPorts } from "../../src/integration/prisma-wiring.ts";
 import { DepositCompletionService } from "../../src/modules/deposit/index.ts";
@@ -14,7 +15,7 @@ import {
 
 // G2-03: 실제 PostgreSQL에서 예치 확정과 자동 거절이 같은 DB 트랜잭션에 묶이는지 확인한다.
 // DATABASE_URL이 없으면 skip한다(전용 테스트 DB에서만 실행, 실제/공유 DB 금지).
-const hasDatabase = Boolean(process.env.DATABASE_URL);
+const hasDatabase = Boolean(testDatabaseUrl());
 const CLOCK = { now: () => new Date("2026-11-04T05:20:00.000Z") };
 
 type Ids = {

@@ -118,16 +118,19 @@ afterAll(async () => {
 });
 
 describe("A-03 catalog generation and reuse", () => {
-  it("seeds all proposed restaurant blocks once and leaves them inactive", async () => {
+  it("seeds all reviewed restaurant blocks once and activates them", async () => {
     const codes = reservationRestaurantSeedBlocks.map(block => block.code);
+    const existing = await prisma.blockCatalog.count({ where: { code: { in: codes } } });
     try {
-      expect(await seedReservationRestaurantCatalog(prisma)).toBe(36);
+      const created = await seedReservationRestaurantCatalog(prisma);
+      expect(created).toBe(36 - existing);
       expect(await seedReservationRestaurantCatalog(prisma)).toBe(0);
       const seeded = await prisma.blockCatalog.findMany({ where: { code: { in: codes } } });
       expect(seeded).toHaveLength(36);
-      expect(seeded.every(block => !block.isActive && block.reviewedAt === null)).toBe(true);
+      expect(seeded.every(block => block.isActive && block.reviewedAt instanceof Date)).toBe(true);
     } finally {
-      await prisma.blockCatalog.deleteMany({ where: { code: { in: codes } } });
+      // 다른 테스트가 먼저 만든 시드 행에는 그 테스트의 draft_blocks/spec_items가 걸려 있다.
+      if (existing === 0) await prisma.blockCatalog.deleteMany({ where: { code: { in: codes } } });
     }
   });
 

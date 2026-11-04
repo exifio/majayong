@@ -4,6 +4,7 @@ import { createServer, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
 import { afterEach, describe, it } from "node:test";
 import { PrismaClient } from "@prisma/client";
+import { testDatabaseUrl } from "../test-db.ts";
 import { createAppHandler } from "../../src/composition.ts";
 import { createCatalogAdminPort } from "../../src/integration/catalog-admin-port.ts";
 import { createPrismaPorts } from "../../src/integration/prisma-wiring.ts";
@@ -13,7 +14,7 @@ import { createPrismaNotificationTx } from "../../src/modules/notification/prism
 
 // G2-05: 파일 presign 권한과 문의 첨부 소유자 검사를 실제 PostgreSQL/HTTP로 확인한다.
 // 스토리지는 고정 URL fake를 쓴다(실제 서명 URL은 INT-D11에서 별도 검증).
-const hasDatabase = Boolean(process.env.DATABASE_URL);
+const hasDatabase = Boolean(testDatabaseUrl());
 const NOW = new Date("2026-11-04T05:20:00.000Z");
 const servers: Server[] = [];
 

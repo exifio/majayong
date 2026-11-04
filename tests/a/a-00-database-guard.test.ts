@@ -7,6 +7,7 @@ describe("A-00 database test isolation", () => {
       .toBe("postgresql://tester@localhost:5432/majayong_a00_test");
     expect(() => assertTestDatabase("postgresql://tester@127.0.0.1:5432/majayong_a00_test")).not.toThrow();
     expect(() => assertTestDatabase("postgresql://tester@[::1]:5432/majayong_a00_test")).not.toThrow();
+    expect(() => assertTestDatabase("postgresql://tester@localhost:5432/majayong_gate2_check")).not.toThrow();
   });
 
   it("rejects a missing or empty test database URL", () => {

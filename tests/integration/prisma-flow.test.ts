@@ -2,13 +2,14 @@ import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { describe, it } from "node:test";
 import { PrismaClient } from "@prisma/client";
+import { testDatabaseUrl } from "../test-db.ts";
 import { createPrismaRepositories } from "../../src/infrastructure/prisma-store.ts";
 import { CancellationService } from "../../src/modules/cancellation/index.ts";
 import { DepositCompletionService } from "../../src/modules/deposit/index.ts";
 import { DeliveryService } from "../../src/modules/delivery/index.ts";
 import { SettlementService } from "../../src/modules/settlement/policy.ts";
 
-const hasDatabase = Boolean(process.env.DATABASE_URL);
+const hasDatabase = Boolean(testDatabaseUrl());
 
 describe("INT-C-02: Prisma 저장소 골든 패스", { skip: hasDatabase ? false : "DATABASE_URL 없음" }, () => {
   it("예치 확정→구간→납품→검수→지급→완료를 같은 계약으로 연결", async () => {

@@ -8,6 +8,7 @@ import {
   type PaymentStatus,
   type ProjectStatus,
 } from "@prisma/client";
+import { testDatabaseUrl } from "../test-db.ts";
 import { createIntegrationServices } from "../../src/composition.ts";
 import { createPrismaRepositories } from "../../src/infrastructure/prisma-store.ts";
 import { createContractItemSourcePort, createIntegrationPorts } from "../../src/integration/external-ports.ts";
@@ -24,7 +25,7 @@ import type { FileStorageAdapter } from "../../src/modules/files/index.ts";
 
 // G2-04: 기한 알림·검수/지급 보류·이벤트/SYSTEM 메시지를 실제 PostgreSQL로 확인한다.
 // DATABASE_URL이 없으면 skip한다(전용 테스트 DB에서만 실행, 실제/공유 DB 금지).
-const hasDatabase = Boolean(process.env.DATABASE_URL);
+const hasDatabase = Boolean(testDatabaseUrl());
 const NOW = new Date("2026-11-04T05:20:00.000Z");
 const DEPOSIT_DUE_AT = new Date("2026-11-05T05:20:00.000Z");
 const WORK_DUE_AT = new Date("2026-11-05T03:20:00.000Z");

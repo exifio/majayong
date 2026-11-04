@@ -4,6 +4,7 @@ import { createServer, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
 import { afterEach, describe, it } from "node:test";
 import { PrismaClient } from "@prisma/client";
+import { testDatabaseUrl } from "../test-db.ts";
 import { createAppHandler } from "../../src/composition.ts";
 import { createPrismaRepositories } from "../../src/infrastructure/prisma-store.ts";
 import { createCatalogAdminPort } from "../../src/integration/catalog-admin-port.ts";
@@ -15,7 +16,7 @@ import { createPrismaPorts } from "../../src/integration/prisma-wiring.ts";
 
 // G2-05: C 관리자 블록 action이 A 카탈로그 변경과 C 감사 로그를 같은 tx로 남기는지 확인한다.
 // DATABASE_URL이 없으면 skip한다(전용 테스트 DB에서만 실행, 실제/공유 DB 금지).
-const hasDatabase = Boolean(process.env.DATABASE_URL);
+const hasDatabase = Boolean(testDatabaseUrl());
 const NOW = new Date("2026-11-04T05:20:00.000Z");
 const servers: Server[] = [];
 
