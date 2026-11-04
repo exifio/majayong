@@ -13,6 +13,7 @@ import {
 import { createDraftCatalogAdapter } from "./integration/draft-catalog-adapter.js";
 import { createCatalogAdminPort } from "./integration/catalog-admin-port.js";
 import { createSupabaseStorageAdapter } from "./integration/supabase-storage.js";
+import { createTossSandboxVerifier } from "./integration/toss-verifier.js";
 import { createOpenAiCatalogBlockGenerator, createOpenAiCatalogFeatureExtractor } from "./modules/catalog/index.js";
 import { createProjectSearchPort } from "./modules/market/project-search.js";
 import type { ProjectPorts } from "./modules/project/ports.js";
@@ -62,6 +63,12 @@ const storageAdapter =
   supabaseUrl && supabaseKey && storageBucket
     ? createSupabaseStorageAdapter({ url: supabaseUrl, serviceRoleKey: supabaseKey })
     : undefined;
+const tossVerifier = process.env.TOSS_SECRET_KEY
+  ? createTossSandboxVerifier({
+      secretKey: process.env.TOSS_SECRET_KEY,
+      baseUrl: process.env.TOSS_SANDBOX_BASE_URL,
+    })
+  : undefined;
 const integrationDb = createPrismaIntegrationDb(db);
 const publicPorts = createPublicProjectPorts(
   integrationDb,
@@ -111,6 +118,7 @@ const cHandler = createAppHandler(
         async createUploadUrl() { return pending("Storage"); },
         async createDownloadUrl() { return pending("Storage"); },
       },
+      ...(tossVerifier === undefined ? {} : { tossVerifier }),
       catalogAdmin: {
         ...createCatalogAdminPort(db),
       },
