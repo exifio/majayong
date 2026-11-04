@@ -40,9 +40,9 @@ describe("INT-C-01: HTTP 라우트", () => {
     };
   }
 
-  it("33개 operation 경로가 중복 없이 매핑됨", () => {
-    assert.equal(ROUTE_PATHS.length, 33);
-    assert.equal(new Set(ROUTE_PATHS).size, 33);
+  it("34개 operation 경로가 중복 없이 매핑됨", () => {
+    assert.equal(ROUTE_PATHS.length, 34);
+    assert.equal(new Set(ROUTE_PATHS).size, 34);
   });
 
   it("인증·404·오류 status 매핑", async () => {

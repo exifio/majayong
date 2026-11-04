@@ -12,6 +12,7 @@ import {
 } from "./integration/a-ports.js";
 import { createDraftCatalogAdapter } from "./integration/draft-catalog-adapter.js";
 import { createCatalogAdminPort } from "./integration/catalog-admin-port.js";
+import { createSupabaseStorageAdapter } from "./integration/supabase-storage.js";
 import { createOpenAiCatalogBlockGenerator, createOpenAiCatalogFeatureExtractor } from "./modules/catalog/index.js";
 import { createProjectSearchPort } from "./modules/market/project-search.js";
 import type { ProjectPorts } from "./modules/project/ports.js";
@@ -54,6 +55,13 @@ const google = process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET 
 
 const db = new PrismaClient();
 const now = () => new Date();
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const storageBucket = process.env.SUPABASE_STORAGE_BUCKET;
+const storageAdapter =
+  supabaseUrl && supabaseKey && storageBucket
+    ? createSupabaseStorageAdapter({ url: supabaseUrl, serviceRoleKey: supabaseKey })
+    : undefined;
 const integrationDb = createPrismaIntegrationDb(db);
 const publicPorts = createPublicProjectPorts(
   integrationDb,
@@ -78,6 +86,7 @@ const cHandler = createAppHandler(
   {
     prisma: db,
     webhookSecret: process.env.TOSS_WEBHOOK_SECRET ?? "",
+    ...(storageBucket === undefined ? {} : { bucket: storageBucket }),
     clock: { now },
     ports: {
       marketplace: createMarketplaceAutoRejectPort(
@@ -98,7 +107,7 @@ const cHandler = createAppHandler(
           return { success: true };
         },
       },
-      storage: {
+      storage: storageAdapter ?? {
         async createUploadUrl() { return pending("Storage"); },
         async createDownloadUrl() { return pending("Storage"); },
       },

@@ -93,6 +93,11 @@ export function createIntegrationServices(config: IntegrationConfig) {
     storageAdapter: config.ports.storage,
     bucket: config.bucket,
     clock,
+    inquiryOwner: async (inquiryId) =>
+      (await config.prisma.supportInquiry.findUnique({
+        where: { id: inquiryId },
+        select: { userId: true },
+      }))?.userId ?? null,
   });
   const admin = new AdminOpsService({
     repo: repos.adminRepository,

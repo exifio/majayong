@@ -190,6 +190,9 @@ const ROUTES: Route[] = [
     status: 201,
     body: await s.files.createPresignedUpload(actor, body as never),
   })),
+  route("GET", "/uploads/:fileId/download", "user", async ({ actor, params }, s) => ({
+    body: await s.files.createPresignedDownload(actor, params.fileId),
+  })),
   route("GET", "/admin/blocks", "user", async ({ actor }, s) => ({
     body: await s.admin.listBlocks(actor),
   })),

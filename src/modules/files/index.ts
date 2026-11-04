@@ -121,6 +121,8 @@ export interface FileServiceOptions {
   storageAdapter: FileStorageAdapter;
   bucket?: string;
   clock?: { now(): Date };
+  /** 문의 첨부 권한 확인. 미주입 시 기존 동작(권한 확인 없음)을 유지한다. */
+  inquiryOwner?: (inquiryId: string) => Promise<string | null>;
 }
 
 export class FileService {
@@ -128,12 +130,14 @@ export class FileService {
   private readonly storageAdapter: FileStorageAdapter;
   private readonly bucket: string;
   private readonly clock: { now(): Date };
+  private readonly inquiryOwner?: FileServiceOptions["inquiryOwner"];
 
   constructor(options: FileServiceOptions) {
     this.repo = options.repo;
     this.storageAdapter = options.storageAdapter;
     this.bucket = options.bucket ?? "private-assets";
     this.clock = options.clock ?? { now: () => new Date() };
+    this.inquiryOwner = options.inquiryOwner;
   }
 
   async createPresignedUpload(
@@ -211,6 +215,12 @@ export class FileService {
     }
 
     if (isSupportInquiry && input.inquiryId) {
+      if (this.inquiryOwner !== undefined) {
+        const owner = await this.inquiryOwner(input.inquiryId);
+        if (owner !== actor.userId) {
+          throw new FileHttpError(403, "문의 작성자만 첨부파일을 올릴 수 있습니다.");
+        }
+      }
       const count = await this.repo.countFilesInquiry(input.inquiryId);
       if (count >= 3) {
         throw new FileHttpError(400, "1:1 문의 첨부파일은 최대 3개까지만 업로드할 수 있습니다.");
@@ -239,7 +249,7 @@ export class FileService {
       fileId: file.id,
       uploadUrl: presign.uploadUrl,
       objectKey,
-      expiresInSec,
+      expiresInSec: presign.expiresInSec,
     };
   }
 
