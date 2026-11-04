@@ -255,4 +255,173 @@ describe("C-08: 파일 presign·권한 관리", () => {
       },
     );
   });
+
+  it("C-08-F01 목적별 필수 ID·역할·MIME 검증", async () => {
+    const { service, contract } = createTestSetup();
+    const supplier = { userId: contract.supplierUserId, role: "SUPPLIER" };
+    const client = { userId: contract.clientUserId, role: "CLIENT" };
+
+    // 전달 목적에 contractId가 없으면 권한 검사를 우회하지 못한다.
+    await assert.rejects(
+      () =>
+        service.createPresignedUpload(supplier, {
+          purpose: "DELIVERY",
+          fileName: "result.pdf",
+          fileSize: 1024,
+          mimeType: "application/pdf",
+        }),
+      (err: unknown) => err instanceof FileHttpError && err.status === 400,
+    );
+
+    await assert.rejects(
+      () =>
+        service.createPresignedUpload(client, {
+          purpose: "SUPPORT_INQUIRY",
+          fileName: "log.txt",
+          fileSize: 1024,
+          mimeType: "text/plain",
+        }),
+      (err: unknown) => err instanceof FileHttpError && err.status === 400,
+    );
+
+    // 포트폴리오는 공급자만.
+    await assert.rejects(
+      () =>
+        service.createPresignedUpload(client, {
+          purpose: "PORTFOLIO",
+          fileName: "portfolio.pdf",
+          fileSize: 1024,
+          mimeType: "application/pdf",
+        }),
+      (err: unknown) => err instanceof FileHttpError && err.status === 403,
+    );
+    const portfolio = await service.createPresignedUpload(supplier, {
+      purpose: "PORTFOLIO",
+      fileName: "portfolio.pdf",
+      fileSize: 1024,
+      mimeType: "application/pdf",
+    });
+    assert.ok(portfolio.fileId);
+
+    // 계약 문서도 대상 계약과 당사자 확인이 필요하다.
+    await assert.rejects(
+      () =>
+        service.createPresignedUpload(client, {
+          purpose: "CONTRACT_DOCUMENT",
+          fileName: "contract.pdf",
+          fileSize: 1024,
+          mimeType: "application/pdf",
+        }),
+      (err: unknown) => err instanceof FileHttpError && err.status === 400,
+    );
+    const document = await service.createPresignedUpload(client, {
+      purpose: "CONTRACT_DOCUMENT",
+      contractId: contract.id,
+      fileName: "contract.pdf",
+      fileSize: 1024,
+      mimeType: "application/pdf",
+    });
+    assert.ok(document.fileId);
+
+    // 확장자와 MIME이 다르거나 빈 MIME은 거부.
+    await assert.rejects(
+      () =>
+        service.createPresignedUpload(supplier, {
+          purpose: "DELIVERY",
+          contractId: contract.id,
+          fileName: "fake.pdf",
+          fileSize: 1024,
+          mimeType: "image/png",
+        }),
+      (err: unknown) => err instanceof FileHttpError && err.status === 400,
+    );
+    await assert.rejects(
+      () =>
+        service.createPresignedUpload(supplier, {
+          purpose: "DELIVERY",
+          contractId: contract.id,
+          fileName: "empty.pdf",
+          fileSize: 1024,
+          mimeType: "",
+        }),
+      (err: unknown) => err instanceof FileHttpError && err.status === 400,
+    );
+
+    await assert.rejects(
+      () =>
+        service.createPresignedUpload(supplier, {
+          purpose: "UNKNOWN" as never,
+          fileName: "file.pdf",
+          fileSize: 1024,
+          mimeType: "application/pdf",
+        }),
+      (err: unknown) => err instanceof FileHttpError && err.status === 400,
+    );
+  });
+
+  it("C-08-F02 presign이 메타데이터를 저장하고 저장 내역으로 제한·다운로드 권한을 강제", async () => {
+    const { service, repo, contract } = createTestSetup();
+    const supplier = { userId: contract.supplierUserId, role: "SUPPLIER" };
+    const inquiryUser = { userId: "inquiry-user-2", role: "CLIENT" };
+
+    const presigned = await service.createPresignedUpload(supplier, {
+      purpose: "DELIVERY",
+      contractId: contract.id,
+      fileName: "result.pdf",
+      fileSize: 1024,
+      mimeType: "application/pdf",
+    });
+    const stored = await repo.getFileMetadata(presigned.fileId);
+    assert.ok(stored);
+    assert.equal(stored.objectKey, presigned.objectKey);
+    assert.equal(stored.uploaderId, contract.supplierUserId);
+    assert.equal(stored.fileSize, 1024);
+
+    // 메타데이터가 있는 본인/당사자 다운로드는 허용.
+    const ownerDownload = await service.createPresignedDownload(supplier, presigned.fileId);
+    assert.ok(ownerDownload.downloadUrl);
+    const clientDownload = await service.createPresignedDownload(
+      { userId: contract.clientUserId, role: "CLIENT" },
+      presigned.fileId,
+    );
+    assert.ok(clientDownload.downloadUrl);
+
+    await assert.rejects(
+      () => service.createPresignedDownload({ userId: "alien", role: "CLIENT" }, "missing-file"),
+      (err: unknown) => err instanceof FileHttpError && err.status === 404,
+    );
+
+    // presign 재요청도 실제 저장 건수에 누적되어 4번째 문의 첨부는 차단.
+    const inquiryFileIds: string[] = [];
+    for (let i = 1; i <= 3; i += 1) {
+      const res = await service.createPresignedUpload(inquiryUser, {
+        purpose: "SUPPORT_INQUIRY",
+        inquiryId: "inq-f02",
+        fileName: `inquiry-${i}.png`,
+        fileSize: 1024,
+        mimeType: "image/png",
+      });
+      assert.ok(res.fileId);
+      inquiryFileIds.push(res.fileId);
+    }
+    await assert.rejects(
+      () =>
+        service.createPresignedUpload(inquiryUser, {
+          purpose: "SUPPORT_INQUIRY",
+          inquiryId: "inq-f02",
+          fileName: "inquiry-4.png",
+          fileSize: 1024,
+          mimeType: "image/png",
+        }),
+      (err: unknown) => err instanceof FileHttpError && err.status === 400,
+    );
+
+    // 문의 파일은 업로더 본인만 다운로드.
+    await assert.rejects(
+      () => service.createPresignedDownload({ userId: "alien", role: "CLIENT" }, inquiryFileIds[0]),
+      (err: unknown) => err instanceof FileHttpError && err.status === 403,
+    );
+    const ownInquiryFile = await service.createPresignedDownload(inquiryUser, inquiryFileIds[0]);
+    assert.ok(ownInquiryFile.downloadUrl);
+  });
 });
