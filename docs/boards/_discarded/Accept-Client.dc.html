@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>의뢰인 — 수락 확인</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="/_blob/a8316b816fb987eb4a5af50ab874b7d1">
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+.crumb{font-size:14px;color:var(--s600);margin:0 0 10px}
+.crumb a{color:var(--s600)}
+.head{margin:0 0 22px}
+.head h1.t{margin:0 0 6px}
+.head .sub{margin:0}
+.sec-card{padding:24px 28px}
+.sec-card h2.ct{margin:0 0 6px}
+.sec-card>.sec{margin:0 0 16px}
+/* 공급자 요약 */
+.who2{display:flex;align-items:center;gap:14px}
+.who2 .av{width:44px;height:44px;border-radius:50%;background:var(--navy-900);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:16px;flex:none}
+.who2 .nm{font-size:18px;font-weight:600;margin:0 0 2px}
+.who2 .mt{font-size:14px;color:var(--s600);margin:0}
+.who2 .lk{margin-left:auto;font-size:14px}
+/* 첫 문장 항목 경고 */
+.warn{margin:0 0 18px}
+.warn .q{display:block;margin:8px 0 0;font-size:14px;color:#7A5A1C}
+.warn .cbx{margin:12px 0 0}
+.warn .cbx label{font-size:15px;color:var(--s900);font-weight:500}
+/* 범위 */
+.grp{font-size:14px;font-weight:600;color:var(--s600);margin:18px 0 6px}
+.grp:first-of-type{margin-top:0}
+.it{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:11px 0;border-top:1px solid var(--s200)}
+.it.first{border-top:0}
+.it .nm{font-size:16px;font-weight:500}
+.it .ds{font-size:14px;color:var(--s600);margin-top:2px}
+.it .am{font-size:16px;font-weight:500;white-space:nowrap;font-variant-numeric:tabular-nums}
+.it.out .nm{color:var(--s600);text-decoration:line-through;font-weight:400}
+.it.out .why{font-size:14px;color:var(--s600);white-space:nowrap}
+.it.out .why.amb{color:var(--amber-700);font-weight:600}
+.asknote{margin:12px 0 0;font-size:14px;color:var(--s600)}
+.tot{background:var(--navy-900);border-radius:12px;padding:18px 20px;margin-top:18px;color:#fff}
+.tot .r1{display:flex;justify-content:space-between;font-size:15px;color:var(--on-sub);padding:2px 0}
+.tot .r1 b{font-weight:500;color:#fff;font-variant-numeric:tabular-nums}
+.tot hr{height:1px;background:var(--on-line);border:0;margin:12px 0}
+.tot .r2{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+.tot .r2 .l{font-size:15px;color:var(--on-sub)}
+.tot .r2 .v{font-size:28px;font-weight:600;letter-spacing:-0.5px;font-variant-numeric:tabular-nums}
+/* 수락하면 */
+.flow{list-style:none;margin:0;padding:0}
+.flow li{display:flex;gap:12px;padding:12px 0;border-top:1px solid var(--s200);font-size:15px;line-height:1.6}
+.flow li:first-child{border-top:0;padding-top:4px}
+.flow .no{width:24px;height:24px;border-radius:50%;background:var(--s100);color:var(--s600);font-size:13px;font-weight:600;display:flex;align-items:center;justify-content:center;flex:none;margin-top:1px}
+.flow b{font-weight:600}
+.flow .sec{display:block}
+/* 하단 */
+.foot2{display:flex;justify-content:flex-end;align-items:center;gap:10px;margin-top:6px}
+.hint2{font-size:14px;color:var(--s600);margin:10px 0 0;text-align:right}
+</style>
+</helmet>
+
+<div class="pg">
+
+  <header class="gnb">
+    <div class="wrap">
+      <div class="gnbin">
+        <a class="brand" href="Main.dc.html"><span class="mark" aria-hidden="true"><i style="height:9px"></i><i style="height:17px"></i><i style="height:12px;opacity:.55"></i></span>마자용</a>
+        <nav class="nav" aria-label="주요 메뉴">
+          <a href="Home-Client.dc.html">홈</a><a href="Input-Client.dc.html">프로젝트 시작</a><a class="on" href="My-Client.dc.html">내 프로젝트</a><a href="#contract">내 계약</a><a href="#settle">정산 내역</a>
+        </nav>
+        <div class="gright">
+          <span class="tg" role="group" aria-label="공간 전환"><span class="on">의뢰인</span><a href="Supplier-Landing.dc.html">공급자</a></span>
+          <span class="bell" role="img" aria-label="알림"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg></span>
+          <span class="who"><span class="ava">민</span><span class="uname">정민재</span></span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="pad">
+    <div class="narrow">
+
+      <p class="crumb"><a href="My-Client.dc.html">내 프로젝트</a> › <a href="Compare-Client.dc.html">제안 비교</a> › 수락 확인</p>
+      <div class="head">
+        <h1 class="t">{{name}}님의 제안을 수락할까요?</h1>
+        <p class="sub">예약 기반 음식점 · 예약 달력 외 3건</p>
+      </div>
+
+      <!-- 첫 문장에서 나온 항목이 빠질 때만 -->
+      <sc-if value="{{hasWarn}}" hint-placeholder-val="{{ true }}">
+        <div class="note warn" role="alert">
+          <b>처음 말씀하신 불편에서 나온 ‘노쇼 기록’이 빠집니다</b>
+          <p>{{name}}님은 이 항목을 할 수 없다고 답했습니다. 수락하면 이번 계약에서 빠지고, 계약 뒤에는 범위를 넓힐 수 없어 나중에 새 프로젝트로 맡기셔야 합니다.<span class="q">처음 적으신 문장 — “예약 앱이랑 전화를 같이 받는데 노쇼 나면 재료를 다 버려요.”</span></p>
+          <div class="cbx">
+            <sc-if value="{{confirmed}}" hint-placeholder-val="{{ false }}"><input type="checkbox" id="ok1" checked></sc-if>
+            <sc-if value="{{notConfirmed}}" hint-placeholder-val="{{ true }}"><input type="checkbox" id="ok1"></sc-if>
+            <label for="ok1">노쇼 기록이 이번 범위에서 빠지는 것을 확인했습니다.</label>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- 공급자 -->
+      <section class="card sec-card" aria-label="수락할 공급자">
+        <div class="who2">
+          <span class="av" aria-hidden="true">{{initial}}</span>
+          <div>
+            <p class="nm">{{name}}</p>
+            <p class="mt">{{career}} · <span class="star">★</span>{{rating}} · 리뷰 {{reviews}} · 작업 기간 {{days}}일</p>
+          </div>
+          <a class="ft lk" href="#profile">프로필 보기</a>
+        </div>
+      </section>
+
+      <!-- 계약할 범위 -->
+      <section class="card sec-card" aria-labelledby="s1">
+        <h2 class="ct" id="s1">계약할 범위</h2>
+        <p class="sec">이 항목이 계약 범위가 됩니다. 금액은 지금 제안 기준이며, 다음 합의 단계에서 조정할 수 있습니다.</p>
+
+        <p class="grp">포함 · {{nIn}}건</p>
+        <sc-for list="{{inc}}" as="r" hint-placeholder-count="3">
+          <div class="it {{r.cls}}"><div><div class="nm">{{r.name}}</div><div class="ds">{{r.desc}}</div></div><span class="am">{{r.amt}}</span></div>
+        </sc-for>
+
+        <p class="grp">이번 범위에서 빠짐 · {{nOut}}건</p>
+        <sc-for list="{{out}}" as="r" hint-placeholder-count="1">
+          <div class="it out {{r.cls}}"><div class="nm">{{r.name}}</div><span class="why {{r.whyCls}}">{{r.why}}</span></div>
+        </sc-for>
+
+        <p class="asknote">확인 필요 2건(예약금 금액 · 전날 취소 시 환불)은 다음 합의 단계에서 답을 정합니다.</p>
+
+        <div class="tot" aria-label="예치할 금액">
+          <div class="r1"><span>제안 합계 · {{nIn}}건</span><b>{{sub}}원</b></div>
+          <div class="r1"><span>의뢰인 수수료 5%</span><b>{{fee}}원</b></div>
+          <hr>
+          <div class="r2"><span class="l">지금 제안대로라면 예치할 금액</span><span class="v">{{total}}원</span></div>
+        </div>
+      </section>
+
+      <!-- 수락하면 -->
+      <section class="card sec-card" aria-labelledby="s2">
+        <h2 class="ct" id="s2">수락하면 이렇게 됩니다</h2>
+        <ol class="flow">
+          <li><span class="no">1</span><span><b>나머지 지원은 자동으로 거절됩니다.</b><span class="sec">선택하지 않은 공급자에게 알림이 갑니다. 계약이 깨져도 거절된 지원은 되살아나지 않습니다.</span></span></li>
+          <li><span class="no">2</span><span><b>선택한 공급자에게 프로필 상세 정보와 채팅 기록 원문이 공개됩니다.</b><span class="sec">모집 중에는 가려 두었던 정보입니다. 다른 공급자에게는 계속 보이지 않습니다.</span></span></li>
+          <li><span class="no">3</span><span><b>합의를 시작합니다.</b><span class="sec">확인 필요 답, 항목 금액, 지급 비율을 함께 정하면 계약서가 만들어집니다. 끝내 합의가 안 되면 모집으로 돌아갈 수 있습니다.</span></span></li>
+        </ol>
+      </section>
+
+      <div class="foot2">
+        <a class="btn gh" href="Compare-Client.dc.html">비교로 돌아가기</a>
+        <sc-if value="{{canAccept}}" hint-placeholder-val="{{ false }}"><a class="btn" href="Agree.dc.html">수락하고 합의 시작하기</a></sc-if>
+        <sc-if value="{{blocked}}" hint-placeholder-val="{{ true }}"><button type="button" class="btn off" disabled>수락하고 합의 시작하기</button></sc-if>
+      </div>
+      <sc-if value="{{blocked}}" hint-placeholder-val="{{ true }}"><p class="hint2">위에서 빠지는 항목을 확인해 주세요.</p></sc-if>
+
+    </div>
+  </main>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;supplier&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;최준호 — 노쇼 기록 불가&quot;,&quot;김세라 — 모든 항목 가능&quot;],&quot;default&quot;:&quot;최준호 — 노쇼 기록 불가&quot;,&quot;section&quot;:&quot;상태&quot;},&quot;confirmed&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;section&quot;:&quot;상태&quot;},&quot;$preview&quot;:{&quot;width&quot;:1280,&quot;height&quot;:1500}}">
+class Component extends DCLogic {
+  renderVals() {
+    const pick = this.props.supplier ?? '최준호 — 노쇼 기록 불가';
+    const confirmed = this.props.confirmed ?? false;
+    const won = (n) => n.toLocaleString('ko-KR');
+    const spec = [
+      ['예약 달력', '회차별로 예약받고 정원이 차면 마감'],
+      ['예약금 결제', '예약할 때 예약금을 받고 환불 규정 안내'],
+      ['노쇼 기록', '노쇼 손님을 기록해 다음 예약 때 표시'],
+      ['리마인드 알림', '예약 전날 손님에게 안내 문자 자동 발송']];
+    const sups = {
+      '최준호 — 노쇼 기록 불가': { name: '최준호', initial: '최', career: '경력 5년', rating: '4.8', reviews: 12, days: 42,
+        a: [1300000, 1150000, null, 550000], others: '김세라 · 스튜디오 넛' },
+      '김세라 — 모든 항목 가능': { name: '김세라', initial: '김', career: '경력 7년', rating: '4.6', reviews: 21, days: 35,
+        a: [1500000, 1250000, 1000000, 650000], others: '최준호 · 스튜디오 넛' }
+    };
+    const s = sups[pick];
+    const inc = [], out = [];
+    spec.forEach((it, i) => {
+      if (s.a[i] != null) inc.push({ name: it[0], desc: it[1], amt: won(s.a[i]) + '원', cls: inc.length === 0 ? 'first' : '' });
+      else out.push({ name: it[0], why: '공급자 불가 · 첫 문장에서 도출', whyCls: 'amb', cls: out.length === 0 ? 'first' : '' });
+    });
+    out.push({ name: '단골 등급 관리', why: '명세에서 직접 삭제', whyCls: '', cls: out.length === 0 ? 'first' : '' });
+    const sub = s.a.reduce((t, v) => t + (v || 0), 0);
+    const fee = Math.floor(sub * 0.05);
+    const hasWarn = s.a.some(v => v == null);
+    const can = !hasWarn || confirmed;
+    return {
+      name: s.name, initial: s.initial, career: s.career, rating: s.rating, reviews: s.reviews, days: s.days, others: s.others,
+      hasWarn: hasWarn, confirmed: confirmed, notConfirmed: !confirmed,
+      inc: inc, out: out, nIn: inc.length, nOut: out.length,
+      sub: won(sub), fee: won(fee), total: won(sub + fee),
+      canAccept: can, blocked: !can
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,245 @@
+<helmet>
+<style>
+.pg{word-break:keep-all}
+.ad sc-for,.ad sc-if{display:contents}
+.ad{position:relative;background:var(--s50);min-height:100%}
+.ad-top{height:64px;background:#fff;border-bottom:1px solid var(--s200);display:flex;align-items:center;justify-content:space-between;padding:0 28px;box-sizing:border-box}
+.ad-top .lg{display:flex;align-items:center;gap:10px;font-size:19px;font-weight:600;color:var(--s900);text-decoration:none;letter-spacing:-0.4px}
+.ad-top .lg .mark{margin-right:0}
+.ad-top .cp{font-size:12px;font-weight:500;color:var(--s600);background:var(--s100);border:1px solid var(--s200);border-radius:6px;padding:2px 8px;letter-spacing:0}
+.ad-top .me{display:flex;align-items:center;gap:10px;font-size:14px;color:var(--s600)}
+.ad-top .me b{color:var(--s900);font-weight:600}
+.ad-top .me .av{width:32px;height:32px;border-radius:50%;background:var(--navy-900);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600}
+.ad-body{display:grid;grid-template-columns:232px minmax(0,1fr);align-items:stretch}
+.ad-nav{background:var(--navy-900);padding:20px 12px;display:flex;flex-direction:column;gap:2px;min-height:calc(100% - 0px)}
+.ad-nav .h{font-size:12px;color:var(--on-sub);padding:0 12px 8px;letter-spacing:0.2px}
+.ad-nav a{display:flex;justify-content:space-between;align-items:center;font-size:15px;color:#fff;text-decoration:none;padding:10px 12px;border-radius:8px;border-left:3px solid transparent}
+.ad-nav a.on{background:rgba(255,255,255,.10);border-left-color:var(--blue-600);font-weight:600}
+.ad-nav a .bd{font-size:12px;font-weight:600;min-width:20px;height:20px;border-radius:10px;background:rgba(255,255,255,.16);color:#fff;display:inline-flex;align-items:center;justify-content:center;padding:0 6px;box-sizing:border-box}
+.ad-nav .sp{height:1px;background:var(--on-line);margin:12px 8px}
+.ad-nav a.mut{color:var(--on-sub);font-size:14px}
+.ad-nav .ft2{margin-top:auto;font-size:12px;color:var(--on-sub);line-height:1.6;padding:24px 12px 4px}
+.ad-main{padding:28px 32px 40px;min-width:0}
+.ad-main h1.t{margin:0 0 6px}
+.ad-main .sub{margin:0 0 20px;color:var(--s600);font-size:15px}
+.ad-tabs{display:flex;gap:6px;margin:0 0 14px;flex-wrap:wrap}
+.ad-tabs a{font-size:14px;padding:6px 13px;border-radius:16px;border:1px solid var(--s200);background:#fff;color:var(--s600);text-decoration:none}
+.ad-tabs a.on{background:var(--navy-900);border-color:var(--navy-900);color:#fff;font-weight:600}
+.ad-tabs a .n{margin-left:5px;font-weight:600}
+.ad-scrim{position:absolute;inset:0;background:rgba(11,37,69,.55);z-index:30}
+.ad-mdl{position:absolute;top:120px;left:50%;transform:translateX(-50%);width:600px;z-index:31;background:#fff;border-radius:16px;box-shadow:0 24px 60px rgba(11,37,69,.35);overflow:hidden}
+.ad-mdl .mh{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:22px 26px 14px;border-bottom:1px solid var(--s200)}
+.ad-mdl .mh h2{font-size:19px;font-weight:600;margin:0 0 4px;letter-spacing:-0.3px}
+.ad-mdl .mh p{margin:0;font-size:14px;color:var(--s600)}
+.ad-mdl .x{font-family:inherit;font-size:22px;line-height:1;color:var(--s600);background:none;border:0;cursor:pointer;padding:2px 4px}
+.ad-mdl .mb{padding:18px 26px}
+.ad-mdl .mf{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 26px;border-top:1px solid var(--s200);background:var(--s50)}
+.ad-mdl .mf p{margin:0;font-size:13px;color:var(--s600)}
+.ad-mdl .mf .bt{display:flex;gap:10px;flex:none}
+.ad-lbl{display:block;font-size:14px;font-weight:600;color:var(--s900);margin:14px 0 6px}
+.ad-lbl i{font-style:normal;font-weight:400;color:var(--amber-700);font-size:13px;margin-left:6px}
+.ad-in{width:100%;box-sizing:border-box;font-family:inherit;font-size:15px;color:var(--s900);background:#fff;border:1px solid var(--s300);border-radius:8px;padding:10px 12px}
+textarea.ad-in{min-height:76px;resize:vertical;line-height:1.6}
+.ad-log{font-size:13px;color:var(--s600);display:flex;align-items:center;gap:6px}
+.ad-log::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--s400)}
+
+.bl-grid{display:grid;grid-template-columns:minmax(0,1fr) 430px;gap:20px;align-items:start}
+.bl-list{background:#fff;border:1px solid var(--s200);border-radius:12px;overflow:hidden}
+.bl-lh{display:grid;grid-template-columns:minmax(0,1fr) 120px 118px;gap:12px;padding:10px 18px;background:var(--s50);border-bottom:1px solid var(--s200);font-size:12px;font-weight:600;color:var(--s600)}
+.bl-row{display:grid;grid-template-columns:minmax(0,1fr) 120px 118px;gap:12px;padding:14px 18px;border-top:1px solid var(--s200);text-decoration:none;color:inherit;align-items:start}
+.bl-row.first{border-top:0}
+.bl-row.sel{background:#EEF4FF;box-shadow:inset 3px 0 0 var(--blue-600)}
+.bl-row .nm{font-size:16px;font-weight:600;color:var(--s900);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.bl-row .nm .chip{font-size:11px;padding:1px 7px;font-weight:600}
+.bl-row .why{font-size:13px;color:var(--s600);margin-top:4px;line-height:1.5}
+.bl-row .mt2{font-size:12px;color:var(--s400);margin-top:3px}
+.bl-row .pr{font-size:15px;font-weight:600;text-align:right;font-variant-numeric:tabular-nums;color:var(--navy-900)}
+.bl-row .pr span{display:block;font-size:12px;font-weight:400;color:var(--s600);margin-top:2px}
+.bl-row .sm2{font-size:13px;color:var(--s600);text-align:right;line-height:1.5}
+.bl-row .sm2 b{display:block;font-size:14px;color:var(--s900);font-weight:600}
+.bl-row .sm2 b.hi{color:var(--amber-700)}
+.bl-dt{background:#fff;border:1px solid var(--s200);border-radius:12px;padding:20px 22px}
+.bl-dt .hd{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin:0 0 4px}
+.bl-dt .hd h2{font-size:20px;font-weight:600;margin:0;letter-spacing:-0.3px}
+.bl-dt .mt3{font-size:13px;color:var(--s600);margin:0 0 14px}
+.bl-dt .sec2{border-top:1px solid var(--s200);padding:14px 0 0;margin:14px 0 0}
+.bl-dt .k3{font-size:12px;font-weight:600;color:var(--s600);margin:0 0 6px}
+.bl-dt .tx3{font-size:14px;color:var(--s900);margin:0;line-height:1.6}
+.bl-dt .tg4{display:flex;gap:6px;flex-wrap:wrap}
+.bl-dt .tg4 span{font-size:13px;background:var(--s50);border:1px solid var(--s200);border-radius:6px;padding:3px 9px}
+.bl-wf{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.bl-wf div{height:74px;border:1px solid var(--s200);border-radius:8px;background:repeating-linear-gradient(0deg,var(--s50),var(--s50) 10px,#fff 10px,#fff 20px);position:relative}
+.bl-wf div span{position:absolute;left:8px;bottom:6px;font-size:11px;color:var(--s600);background:#fff;padding:0 4px;border-radius:3px}
+.bl-amt{display:flex;justify-content:space-between;align-items:baseline;margin:0 0 8px}
+.bl-amt b{font-size:22px;font-weight:600;color:var(--navy-900);font-variant-numeric:tabular-nums}
+.bl-amt span{font-size:12px;color:var(--s600)}
+.bl-bs{margin:0;padding:0;list-style:none}
+.bl-bs li{display:grid;grid-template-columns:96px minmax(0,1fr);gap:8px;font-size:13px;padding:4px 0;color:var(--s900);line-height:1.5}
+.bl-bs li span{color:var(--s600)}
+table.bl-cmp{width:100%;border-collapse:collapse;font-size:13px}
+table.bl-cmp th{text-align:left;font-weight:600;color:var(--s600);padding:6px 6px;border-bottom:1px solid var(--s200);font-size:12px}
+table.bl-cmp td{padding:7px 6px;border-top:1px solid var(--s100);vertical-align:top;line-height:1.5}
+table.bl-cmp td.k{color:var(--s600);white-space:nowrap;width:64px}
+.bl-acts{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0 8px}
+.bl-done{background:#EAF6F4;border:1px solid #C7E6E0;border-radius:12px;padding:14px 18px;margin:0 0 16px}
+.bl-done b{display:block;color:var(--teal-700);font-size:15px;margin:0 0 2px}
+.bl-done p{margin:0;font-size:14px;color:var(--s600);line-height:1.6}
+.bl-res{background:var(--s50);border:1px solid var(--s200);border-radius:10px;padding:12px 14px;margin:16px 0 8px}
+.bl-res b{display:block;font-size:14px;font-weight:600;color:var(--s900);margin:0 0 3px}
+.bl-res p{margin:0;font-size:13px;color:var(--s600);line-height:1.55}
+.bl-res .bt{display:flex;gap:8px;margin:10px 0 0}
+.bl-amt s{font-size:14px;color:var(--s400);font-weight:400;margin-right:8px}
+.bl-acts .btn{white-space:nowrap;flex:none;padding-left:12px;padding-right:12px}
+.bl-rule{background:#fff;border:1px solid var(--s200);border-radius:12px;padding:14px 18px;margin:16px 0 0}
+.bl-rule b{display:block;font-size:14px;margin:0 0 4px}
+.bl-rule ul{margin:0;padding-left:18px}
+.bl-rule li{font-size:13px;color:var(--s600);line-height:1.7}
+.bl-imp{background:var(--s50);border:1px solid var(--s200);border-radius:10px;padding:12px 16px;margin:4px 0 0}
+.bl-imp li{font-size:14px;color:var(--s900);line-height:1.7}
+.bl-imp ul{margin:0;padding-left:18px}
+.bl-pr2{display:grid;grid-template-columns:1fr 32px 1fr;gap:8px;align-items:end}
+.bl-pr2 .arw{font-size:18px;color:var(--s400);text-align:center;padding-bottom:10px}
+.bl-pr2 .cur{font-size:15px;padding:10px 12px;border:1px solid var(--s200);border-radius:8px;background:var(--s50);color:var(--s600);font-variant-numeric:tabular-nums}
+.bl-sel{display:flex;justify-content:space-between;align-items:center;font-size:15px;padding:10px 12px;border:1px solid var(--s300);border-radius:8px;background:#fff}
+.bl-sel span{font-size:13px;color:var(--s600)}
+.btn.warn{background:#fff;color:var(--amber-700);border:1px solid #E6C68A}
+
+</style>
+</helmet>
+
+<div class="pg ad">
+  <header class="ad-top">
+    <a class="lg" href="Admin-Blocks.dc.html"><span class="mark" aria-hidden="true"><i style="height:9px"></i><i style="height:17px"></i><i style="height:12px;opacity:.55"></i></span>마자용 운영<span class="cp">운영자 콘솔</span></a>
+    <div class="me"><span>운영자</span><b>김하늘</b><span class="av" aria-hidden="true">하</span></div>
+  </header>
+  <div class="ad-body">
+    <nav class="ad-nav" aria-label="운영 메뉴">
+      <p class="h">처리할 일</p>
+      <a class="on" aria-current="page" href="Admin-Blocks.dc.html">블록 검토<span class="bd">{{nNew}}</span></a><a href="Admin-Payments.dc.html">보류된 결제<span class="bd">2</span></a><a href="Admin-Refunds.dc.html">환불 처리<span class="bd">1</span></a><a href="Admin-Disputes.dc.html">이견 개입<span class="bd">1</span></a><a href="Admin-Reports.dc.html">신고 처리<span class="bd">2</span></a><a href="Admin-Inquiries.dc.html">1:1 문의<span class="bd">4</span></a>
+      <div class="sp"></div>
+      <a class="mut" href="Admin-Events.dc.html">이벤트 기록</a>
+      <p class="ft2">운영자 행위는 모두 이벤트 기록에 남습니다</p>
+    </nav>
+    <main class="ad-main">
+      <h1 class="t">블록 검토</h1>
+      <p class="sub">AI가 새로 만든 블록을 확인합니다. 중복이면 기존 블록에 병합하고, 단가가 맞지 않으면 고칩니다. 화면은 근거만 보여 주고 판단은 운영자가 합니다.</p>
+      <sc-if value="{{done}}" hint-placeholder-val="{{ false }}"><div class="bl-done" role="status"><b>{{dn.t}}</b><p>{{dn.p}} <a class="ft" href="Admin-Events.dc.html">이벤트 기록에서 보기</a></p></div></sc-if>
+      <nav class="ad-tabs" aria-label="블록 보기"><a class="{{tabNew}}" href="?tab=새+블록">새 블록<span class="n">{{nNew}}</span></a><a class="{{tabCand}}" href="?tab=병합+후보">병합 후보<span class="n">{{nCand}}</span></a><a href="Admin-Events.dc.html?type=단가+수정">단가 수정 기록<span class="n">{{nLog}}</span></a><a class="{{tabAll}}" href="?tab=전체+블록">전체 블록<span class="n">46</span></a></nav>
+      <div class="bl-grid">
+        <div>
+          <section class="bl-list" aria-label="새 블록 목록">
+            <div class="bl-lh"><span>블록 · 생성 계기</span><span style="text-align:right">AI 단가 · 사용 중</span><span style="text-align:right">비슷한 기존 블록</span></div>
+            <sc-for list="{{rows}}" as="r" hint-placeholder-count="7">
+              <a class="{{r.cls}}" href="{{r.href}}">
+                <div>
+                  <div class="nm">{{r.name}}<sc-if value="{{r.cand}}" hint-placeholder-val="{{ false }}"><span class="chip amber">병합 후보</span></sc-if></div>
+                  <div class="why">계기: {{r.why}}</div>
+                  <div class="mt2">{{r.when}} · {{r.ind}}</div>
+                </div>
+                <div class="pr">{{r.price}}<span>{{r.use}}</span></div>
+                <div class="sm2"><b class="{{r.simCls}}">{{r.sim}}</b>{{r.simName}}</div>
+              </a>
+            </sc-for>
+          </section>
+          <div class="bl-rule">
+            <b>처리하면 이렇게 됩니다</b>
+            <ul>
+              <li><b style="display:inline;font-size:13px">병합 · 비활성화</b> — 합쳐지거나 꺼진 블록은 이후 매칭 · 추천에서 빠집니다. 이미 쓰인 초안 · 명세 · 계약은 그대로 둡니다.</li>
+              <li><b style="display:inline;font-size:13px">단가 수정</b> — 고친 값은 그 뒤에 만들어지는 초안부터 쓰입니다. 기존 초안 · 명세 · 계약의 금액은 바뀌지 않습니다.</li>
+              <li>수정 전후 값과 사유는 이벤트 기록에 남습니다. 공급자 화면에는 단가가 보이지 않습니다.</li>
+            </ul>
+          </div>
+        </div>
+        <aside class="bl-dt" aria-label="블록 상세">
+          <div class="hd"><h2>{{d.name}}</h2><span class="{{d.chipCls}}">{{d.chip}}</span></div>
+          <p class="mt3">{{d.when}} 생성 · {{d.ind}} · {{d.use}}</p>
+          <p class="k3">기능 요약</p>
+          <p class="tx3">{{d.sum}}</p>
+          <div class="sec2"><p class="k3">공급자와 정할 것</p><div class="tg4"><sc-for list="{{d.decs}}" as="t" hint-placeholder-count="2"><span>{{t}}</span></sc-for></div></div>
+          <div class="sec2"><p class="k3">와이어프레임</p><div class="bl-wf"><div><span>{{d.wf1}}</span></div><div><span>{{d.wf2}}</span></div></div></div>
+          <div class="sec2">
+            <div class="bl-amt"><span class="k3" style="margin:0">{{d.amtK}}</span><b><sc-if value="{{d.old}}" hint-placeholder-val="{{ false }}"><s>{{d.old}}</s></sc-if>{{d.price}}</b></div>
+            <ul class="bl-bs"><li><span>들어간 작업</span>{{d.work}}</li><li><span>작업량 기준</span>{{d.days}}</li><li><span>달라질 수 있는 것</span>{{d.vary}}</li></ul>
+          </div>
+          <div class="sec2">
+            <p class="k3">비슷한 기존 블록 · {{d.simName}} {{d.sim}}</p>
+            <table class="bl-cmp"><thead><tr><th></th><th>이 블록</th><th>{{d.simName}}</th></tr></thead><tbody>
+              <sc-for list="{{d.cmp}}" as="c" hint-placeholder-count="4"><tr><td class="k">{{c.k}}</td><td>{{c.a}}</td><td>{{c.b}}</td></tr></sc-for>
+            </tbody></table>
+          </div>
+          <sc-if value="{{notDone}}" hint-placeholder-val="{{ true }}">
+          <div class="bl-acts">
+            <a class="btn sm gh" href="#keep">그대로 두기</a>
+            <a class="btn sm tint" href="?view=병합">기존 블록에 병합</a>
+            <a class="btn sm gh" href="?view=단가+수정">단가 수정</a>
+            <a class="btn sm warn" href="?view=비활성화">비활성화</a>
+          </div>
+          <p class="ad-log">처리하면 사유와 함께 이벤트 기록에 남습니다</p>
+          </sc-if>
+          <sc-if value="{{done}}" hint-placeholder-val="{{ false }}">
+          <div class="bl-res"><b>{{rs.t}}</b><p>사유 · {{rs.why}}</p><div class="bt"><a class="btn sm gh" href="{{rs.href}}" style="white-space:nowrap">{{rs.btn}}</a></div></div>
+          <p class="ad-log">처리한 블록은 새 블록 목록에서 빠집니다</p>
+          </sc-if>
+        </aside>
+      </div>
+    </main>
+  </div>
+  <sc-if value="{{isMerge}}" hint-placeholder-val="{{ false }}">
+    <div class="ad-scrim" aria-hidden="true"></div>
+    <section class="ad-mdl" role="dialog" aria-modal="true" aria-label="블록 병합">
+      <div class="mh"><div><h2>‘노쇼 관리’를 기존 블록에 병합</h2><p>새 블록 · 11월 2일 09:14 생성 · AI 단가 950,000원</p></div><button type="button" class="x" aria-label="닫기" data-action-href="?view=새+블록+목록">×</button></div>
+      <div class="mb">
+        <span class="ad-lbl" style="margin-top:0">합칠 기존 블록</span>
+        <div class="bl-sel">노쇼 기록<span>유사도 92% · AI 단가 1,000,000원 · 사용 중 12건 ▾</span></div>
+        <span class="ad-lbl">병합하면</span>
+        <div class="bl-imp"><ul>
+          <li>‘노쇼 관리’는 비활성이 되어 이후 매칭 · 추천에서 빠집니다. 같은 기능은 앞으로 ‘노쇼 기록’으로 분류됩니다.</li>
+          <li>이미 ‘노쇼 관리’를 쓴 초안 2건은 그대로 둡니다. 금액도 바뀌지 않습니다.</li>
+          <li>공급자와 정할 것 중 ‘노쇼 횟수 기준’은 ‘노쇼 기록’의 ‘노쇼 판정 기준’과 같아 따로 옮기지 않습니다.</li>
+        </ul></div>
+        <label class="ad-lbl" for="mg-why">사유<i>필수</i></label>
+        <textarea id="mg-why" class="ad-in">기능 요약과 정할 것이 ‘노쇼 기록’과 같고 이름만 다릅니다.</textarea>
+      </div>
+      <div class="mf"><p>병합 전후 블록과 사유가 이벤트 기록에 남습니다</p><div class="bt"><a class="btn sm gh" href="?view=새+블록+목록" style="white-space:nowrap">취소</a><a class="btn sm" href="?view=병합+완료" style="white-space:nowrap">병합하기</a></div></div>
+    </section>
+  </sc-if>
+  <sc-if value="{{isPrice}}" hint-placeholder-val="{{ false }}">
+    <div class="ad-scrim" aria-hidden="true"></div>
+    <section class="ad-mdl" role="dialog" aria-modal="true" aria-label="단가 수정">
+      <div class="mh"><div><h2>‘주차 안내’ 단가 수정</h2><p>새 블록 · 10월 31일 16:40 생성 · 음식점(한식)</p></div><button type="button" class="x" aria-label="닫기" data-action-href="?view=새+블록+목록">×</button></div>
+      <div class="mb">
+        <div class="bl-pr2">
+          <div><span class="ad-lbl" style="margin-top:0">지금 단가</span><div class="cur">800,000원</div></div>
+          <div class="arw" aria-hidden="true">→</div>
+          <div><label class="ad-lbl" for="pr-new" style="margin-top:0">새 단가</label><input id="pr-new" class="ad-in" value="950,000원"></div>
+        </div>
+        <label class="ad-lbl" for="pr-why">사유<i>필수</i></label>
+        <textarea id="pr-why" class="ad-in">제휴 주차장 요금 계산과 주차권 안내 문자 발송이 근거에서 빠져 작업량이 적게 잡혔습니다. 발송 연동 1건(약 1일)을 더합니다.</textarea>
+        <span class="ad-lbl">고치면</span>
+        <div class="bl-imp"><ul>
+          <li>이미 쓰인 초안 3건 · 명세 1건은 바뀌지 않습니다.</li>
+          <li>고친 값은 이 시각 뒤에 만들어지는 초안부터 쓰입니다. 단가 분석 리포트의 근거에도 고친 내용이 붙습니다.</li>
+          <li>공급자 화면에는 단가가 보이지 않습니다.</li>
+        </ul></div>
+      </div>
+      <div class="mf"><p>수정 전후 값과 사유가 이벤트 기록에 남습니다</p><div class="bt"><a class="btn sm gh" href="?view=새+블록+목록" style="white-space:nowrap">취소</a><a class="btn sm" href="?view=단가+수정+완료" style="white-space:nowrap">단가 수정</a></div></div>
+    </section>
+  </sc-if>
+  <sc-if value="{{isDeact}}" hint-placeholder-val="{{ false }}">
+    <div class="ad-scrim" aria-hidden="true"></div>
+    <section class="ad-mdl" role="dialog" aria-modal="true" aria-label="블록 비활성화">
+      <div class="mh"><div><h2>‘방문 후 리뷰 요청’ 비활성화</h2><p>새 블록 · 10월 30일 10:05 생성 · AI 단가 450,000원 · 사용 중 0건</p></div><button type="button" class="x" aria-label="닫기" data-action-href="?view=새+블록+목록">×</button></div>
+      <div class="mb">
+        <span class="ad-lbl" style="margin-top:0">비활성화하면</span>
+        <div class="bl-imp"><ul>
+          <li>이후 매칭 · 추천에서 빠집니다. 같은 기능이 다시 들어오면 새로 만들지 않고 가장 가까운 블록으로 분류됩니다.</li>
+          <li>이미 쓰인 초안 · 명세 · 계약은 그대로 둡니다. 이 블록은 지금 쓰인 곳이 없습니다.</li>
+          <li>블록은 지우지 않고 남깁니다. 전체 블록 탭에서 다시 켤 수 있습니다.</li>
+        </ul></div>
+        <label class="ad-lbl" for="da-why">사유<i>필수</i></label>
+        <textarea id="da-why" class="ad-in">방문 다음 날 안내는 ‘리마인드 알림’의 발송 시점 조건으로 다룰 수 있어 따로 둘 블록이 아닙니다. 쓰인 초안이 없어 병합 대신 끕니다.</textarea>
+      </div>
+      <div class="mf"><p>비활성화와 사유가 이벤트 기록에 남습니다</p><div class="bt"><a class="btn sm gh" href="?view=새+블록+목록" style="white-space:nowrap">취소</a><a class="btn sm warn" href="?view=비활성화+완료" style="white-space:nowrap">비활성화</a></div></div>
+    </section>
+  </sc-if>
+</div>

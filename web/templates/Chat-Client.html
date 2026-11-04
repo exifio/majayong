@@ -1,0 +1,307 @@
+<helmet>
+<style>
+.ch sc-for,.ch sc-if{display:contents}
+.ch{display:grid;grid-template-columns:330px minmax(0,1fr);border:1px solid var(--s200);border-radius:12px;background:#fff;overflow:hidden;min-height:900px}
+/* 왼쪽: 대화 목록 */
+.ls{border-right:1px solid var(--s200);background:#fff}
+.ls .lh{padding:18px 20px 12px;font-size:18px;font-weight:600}
+.ls .pj{padding:10px 20px;font-size:13px;font-weight:600;color:var(--s600);background:var(--s50);border-top:1px solid var(--s200);border-bottom:1px solid var(--s200)}
+.it{display:flex;gap:12px;padding:14px 20px;border-bottom:1px solid var(--s200);text-decoration:none;color:var(--s900)}
+.it.on{background:var(--blue-50);box-shadow:inset 3px 0 0 var(--blue-600)}
+.it .av{flex:none;width:38px;height:38px;border-radius:50%;background:var(--s100);border:1px solid var(--s200);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:600;color:var(--navy-900)}
+.it .bd{min-width:0;flex:1 1 auto}
+.it .r1{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.it .nm{font-size:15px;font-weight:600}
+.it .tm{font-size:12px;color:var(--s600);flex:none}
+.it .pv{font-size:14px;color:var(--s600);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+.it .r3{display:flex;justify-content:space-between;align-items:center;margin-top:6px}
+.it .chip{font-size:12px;padding:2px 8px}
+.ub{display:inline-block;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--blue-600);color:#fff;font-size:12px;font-weight:600;line-height:18px;text-align:center}
+.ls .foot3{padding:14px 20px;font-size:13px;color:var(--s600);line-height:1.6}
+/* 오른쪽: 대화 */
+.cv{display:flex;flex-direction:column;min-width:0;background:var(--s50)}
+.cvh{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:16px 22px;background:#fff;border-bottom:1px solid var(--s200)}
+.cvh .who3{display:flex;gap:12px;align-items:center;min-width:0}
+.cvh .av{flex:none;width:42px;height:42px;border-radius:50%;background:var(--s100);border:1px solid var(--s200);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:600;color:var(--navy-900)}
+.cvh .nm{font-size:18px;font-weight:600;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.cvh .mt{font-size:13px;color:var(--s600);margin-top:2px}
+.cvh .mt .sep{color:var(--s300);margin:0 6px}
+.cvh .acts{display:flex;gap:8px;flex:none}
+.qbar{display:flex;gap:22px;align-items:center;flex-wrap:wrap;padding:10px 22px;background:#fff;border-bottom:1px solid var(--s200);font-size:14px;color:var(--s600)}
+.qbar b{color:var(--s900);font-weight:600;font-variant-numeric:tabular-nums}
+.cond{padding:12px 22px;background:#fff;border-bottom:1px solid var(--s200)}
+.cond .k{font-size:13px;font-weight:600;color:var(--s600);margin:0 0 6px}
+.cond .tags{display:flex;flex-wrap:wrap;gap:6px}
+.cond .tags span{font-size:13px;background:var(--s50);border:1px solid var(--s200);border-radius:6px;padding:3px 9px;color:var(--s900)}
+.cond .tags span i{font-style:normal;color:var(--s600);margin-left:6px;font-size:12px;font-variant-numeric:tabular-nums}
+.cond sc-for{display:contents}
+.cond .tags span b{font-weight:700;margin-right:4px}
+.cond .tags span.ok{background:#EAF6F4;border-color:#C7E6E0;color:var(--teal-700)}
+.cond .tags span.ok i{color:var(--teal-700)}
+.cond .tags span.pr{background:#fff;border-color:var(--s400)}
+.cond .tags span.pr b{color:var(--navy-900)}
+.cond .tags span.no b{display:none}
+.cond .ch2{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;margin:0 0 6px}
+.cond .ch2 .k{margin:0}
+.cond .lg{display:flex;gap:12px;font-size:13px;color:var(--s600);margin:0}
+.cond .lg .ok2{color:var(--teal-700);font-weight:600}
+.cond .lg .pr2{color:var(--navy-900);font-weight:600}
+.cond .lg .ts{color:var(--s400)}
+.cond .k2{font-size:13px;color:var(--s600);margin:8px 0 0}
+.msgs{flex:1 1 auto;padding:20px 22px;display:flex;flex-direction:column;gap:12px}
+.day{text-align:center;font-size:12px;color:var(--s600);margin:4px 0}
+.m{max-width:82%}
+.m .by{font-size:12px;color:var(--s600);margin:0 0 4px}
+.m .bb{font-size:15px;line-height:1.6;padding:11px 14px;border-radius:12px;background:#fff;border:1px solid var(--s200)}
+.m.me{align-self:flex-end;text-align:left}
+.m.me .by{text-align:right}
+.m.me .bb{background:var(--blue-50);border-color:#D7E5FF}
+.hid{display:inline-block;background:var(--s200);color:var(--s600);border-radius:4px;padding:0 6px;font-size:14px}
+.sys{align-self:center;text-align:center;font-size:13px;color:var(--s600);max-width:560px;line-height:1.6;word-break:keep-all}
+.sys.chg{color:var(--amber-700)}
+.sys.ok{color:var(--teal-700)}
+.sys b{font-weight:600}
+.sys a{color:inherit}
+.stl{display:flex;gap:12px;align-items:flex-start;padding:12px 22px;background:var(--amber-50);border-bottom:1px solid #F2E0BE;font-size:14px;color:#7A5A1C;line-height:1.6;word-break:keep-all}
+.stl b{color:var(--amber-700);font-weight:600;display:block}
+.offr{font-size:12px;color:var(--s600);text-align:right;margin:4px 0 0;max-width:260px;word-break:keep-all}
+.bb .tel{font-weight:600;color:var(--navy-900)}
+.newline{display:flex;align-items:center;gap:10px;font-size:12px;font-weight:600;color:var(--blue-600)}
+.newline::before,.newline::after{content:"";flex:1 1 auto;height:1px;background:#D7E5FF}
+.starter{align-self:center;max-width:560px;text-align:center}
+.starter p{font-size:14px;color:var(--s600);margin:0 0 12px;line-height:1.6}
+.starter .sugg{display:flex;flex-direction:column;gap:8px;align-items:center}
+.starter .sugg button{font-family:inherit;font-size:14px;color:var(--navy-900);background:#fff;border:1px solid var(--s300);border-radius:18px;padding:7px 14px;cursor:pointer}
+/* 입력 */
+.in{padding:14px 22px 16px;background:#fff;border-top:1px solid var(--s200)}
+.in .row{display:flex;gap:8px}
+.in .row .inp{flex:1 1 auto;min-width:0}
+.in .row .btn{flex:none;white-space:nowrap}
+.in .hint2{font-size:13px;color:var(--s600);margin:8px 0 0}
+.in.ro{font-size:14px;color:var(--s600);text-align:center}
+.qrev{font-family:inherit;font-size:14px;color:var(--s600);background:none;border:0;text-decoration:underline;cursor:pointer;padding:0}
+.pg{position:relative}
+.btn.warn{background:#fff;color:var(--amber-700);border:1px solid #E6C68A}
+.m .by .rp{margin-left:8px;font-size:12px;color:var(--s400);text-decoration:none}
+.m .by .rp:hover{color:var(--s600);text-decoration:underline}
+.m.flag .bb{border-color:#E6C68A;box-shadow:0 0 0 3px #FBF1DC}
+.rp-scrim{position:absolute;inset:0;background:rgba(11,37,69,.55);z-index:40}
+.rp-mdl{position:absolute;top:150px;left:50%;transform:translateX(-50%);width:560px;z-index:41;background:#fff;border-radius:16px;box-shadow:0 24px 60px rgba(11,37,69,.35);overflow:hidden;word-break:keep-all;text-align:left}
+.rp-mdl .rph{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;padding:22px 26px 12px}
+.rp-mdl .rph h2{font-size:20px;font-weight:600;letter-spacing:-0.3px;margin:0}
+.rp-mdl .rph .x{font-family:inherit;font-size:22px;line-height:1;color:var(--s600);background:none;border:0;padding:2px 4px;cursor:pointer}
+.rp-mdl .rpb{padding:0 26px 18px}
+.rp-mdl .lb{font-size:14px;font-weight:600;color:var(--s600);margin:0 0 6px}
+.rp-mdl .lb span{font-weight:400}
+.rp-mdl .q{background:var(--s50);border:1px solid var(--s200);border-radius:10px;padding:10px 14px;font-size:14px;line-height:1.6;color:var(--s900);margin:0 0 16px}
+.rp-mdl .q i{display:block;font-style:normal;font-size:12px;color:var(--s600);margin:0 0 2px}
+.rp-mdl .rs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 0 16px}
+.rp-mdl .rs label{display:flex;gap:8px;align-items:center;border:1px solid var(--s300);border-radius:8px;padding:9px 12px;font-size:15px;color:var(--s900);cursor:pointer}
+.rp-mdl .rs label.on{border-color:var(--navy-900);box-shadow:inset 0 0 0 1px var(--navy-900)}
+.rp-mdl .rs input{margin:0;accent-color:var(--navy-900)}
+.rp-mdl textarea{width:100%;box-sizing:border-box;min-height:76px;font-family:inherit;font-size:15px;border:1px solid var(--s300);border-radius:8px;padding:10px 12px;resize:none}
+.rp-mdl .nt{font-size:13px;color:var(--s600);margin:8px 0 0;line-height:1.6}
+.rp-mdl .rpf{display:flex;justify-content:flex-end;gap:10px;padding:14px 26px;border-top:1px solid var(--s200);background:var(--s50)}
+.rp-mdl .rpf .btn{white-space:nowrap}
+</style>
+<style>
+.pg{min-height:100vh;position:relative;padding-bottom:256px;box-sizing:border-box}
+.gf{position:absolute;left:0;right:0;bottom:0;background:var(--navy-900);padding:34px 0 30px;font-size:14px;color:#A9BDD6;word-break:keep-all}
+.gf a{color:#A9BDD6;text-decoration:none}
+.gf-top{display:flex;justify-content:space-between;align-items:center;gap:12px 32px;flex-wrap:wrap}
+.gf-brand{display:flex;align-items:center;gap:16px;flex-wrap:wrap;min-width:0}
+.gf-logo{display:inline-flex;align-items:center;font-size:19px;font-weight:600;letter-spacing:-0.4px;color:#fff}
+.gf-brand p{margin:0}
+.gf-cs{display:flex;align-items:baseline;gap:4px 16px;flex-wrap:wrap}
+.gf-cs b{color:#fff;font-weight:600;font-size:15px}
+.gf-nav{display:flex;flex-wrap:wrap;gap:10px 44px;margin:18px 0 0;padding:0 0 24px;border-bottom:1px solid rgba(255,255,255,.14)}
+.gf-nav>div{display:flex;align-items:baseline;gap:18px;flex-wrap:wrap}
+.gf-nav b{color:#fff;font-weight:600}
+.gf-nav a.em{color:#fff;font-weight:600}
+.gf-bot{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:24px;padding-top:20px;font-size:13px;line-height:1.75;color:#8FA6C2}
+.gf-bot p{margin:0}
+.gf-biz i{display:inline-block;width:1px;height:10px;background:rgba(255,255,255,.28);margin:0 9px;vertical-align:-1px}
+.gf-copy{align-self:end;text-align:right;white-space:nowrap}
+.gf-note{grid-column:1 / -1;margin-top:8px !important}
+</style>
+</helmet>
+
+<div class="pg">
+
+  <header class="gnb">
+    <div class="wrap">
+      <div class="gnbin">
+        <a class="brand" href="Home-Client.dc.html"><span class="mark" aria-hidden="true"><i style="height:9px"></i><i style="height:17px"></i><i style="height:12px;opacity:.55"></i></span>마자용</a>
+        <nav class="nav" aria-label="주요 메뉴">
+          <a href="Home-Client.dc.html">홈</a><a href="Input-Client.dc.html">프로젝트 시작</a><a href="My-Client.dc.html">내 프로젝트</a><a href="Contracts-Client.dc.html">내 계약</a><a href="Settle-Client.dc.html">정산 내역</a>
+        </nav>
+        <div class="gright">
+          <a class="bell on" href="Chat-Client.dc.html" aria-label="채팅" style="color:var(--navy-900)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"></path></svg></a>
+          <a class="bell dot" href="Notify-Client.dc.html" aria-label="알림 — 안 읽은 알림 3건"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"></path><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"></path></svg></a>
+          <span class="who"><span class="ava">민</span><span class="uname">정민재</span></span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="pad">
+    <div class="wrap">
+
+      <div class="ch">
+        <!-- 대화 목록 -->
+        <aside class="ls" aria-label="대화 목록">
+          <div class="lh">채팅</div>
+          <div class="pj">예약 달력, 예약금 결제 외 2개 기능</div>
+          <sc-for list="{{list}}" as="c" hint-placeholder-count="3">
+            <a class="{{c.cls}}" href="#chat-{{c.id}}">
+              <span class="av" aria-hidden="true">{{c.ini}}</span>
+              <span class="bd">
+                <span class="r1"><span class="nm">{{c.name}}</span><span class="tm">{{c.time}}</span></span>
+                <span class="pv" style="display:block">{{c.preview}}</span>
+                <span class="r3"><span class="{{c.chipCls}}">{{c.chip}}</span><sc-if value="{{c.unread}}" hint-placeholder-val="{{ false }}"><span class="ub">{{c.unread}}</span></sc-if></span>
+              </span>
+            </a>
+          </sc-for>
+          <p class="foot3">문의는 의뢰인만 시작할 수 있습니다. 제안 비교에서 공급자마다 '문의하기'를 누르면 대화가 열립니다.</p>
+        </aside>
+
+        <!-- 대화 -->
+        <section class="cv" aria-label="{{cur.name}}님과의 대화">
+          <div class="cvh">
+            <div class="who3">
+              <span class="av" aria-hidden="true">{{cur.ini}}</span>
+              <div>
+                <div class="nm">{{cur.name}} <span class="{{cur.chipCls}}">{{cur.chip}}</span></div>
+                <div class="mt">{{cur.meta}}<span class="sep">|</span><a class="ft" href="Compare-Client.dc.html">예약 달력, 예약금 결제 외 2개 기능</a></div>
+              </div>
+            </div>
+            <div class="acts">
+              <a class="btn sm gh" href="Quote-Client.dc.html">견적서 보기</a>
+              <sc-if value="{{canPick}}" hint-placeholder-val="{{ true }}"><a class="btn sm tint" href="Agreement-Client.dc.html">이 사람과 계약하기</a></sc-if>
+              <sc-if value="{{stale}}" hint-placeholder-val="{{ false }}"><button type="button" class="btn sm off" disabled title="새 견적이 오면 계약할 수 있습니다">이 사람과 계약하기</button></sc-if>
+              <sc-if value="{{showContract}}" hint-placeholder-val="{{ false }}"><a class="btn sm tint" href="Contract-Client.dc.html">계약서 보기</a></sc-if>
+            </div>
+          </div>
+          <sc-if value="{{stale}}" hint-placeholder-val="{{ false }}">
+            <div class="stl" role="status"><div><b>명세를 고쳐서 이 견적으로는 계약할 수 없습니다</b>11월 2일 명세를 고쳤습니다. 최준호님에게 재견적을 요청했고, 새 견적이 오면 이 대화에 기록되고 '이 사람과 계약하기'가 다시 켜집니다. 대화는 그대로 이어집니다.</div></div>
+          </sc-if>
+          <div class="qbar">
+            <span>지금 견적 <b>{{cur.amt}}</b></span><span>작업 기간 <b>{{cur.days}}</b></span><span>할 수 있는 항목 <b>{{cur.ok}}</b></span>
+          </div>
+          <div class="cond">
+            <div class="ch2"><p class="k">공급자와 정할 것 · 조건 {{nAll}}건 중 {{nDone}}건 정해짐</p><p class="lg"><span class="ok2">✓ 모두 정해짐 {{nOk}}</span><span class="pr2">● 정하는 중 {{nPr}}</span><span>아직 안 정함 {{nNo}}</span><span class="ts">{{stamp}}</span></p></div>
+            <div class="tags">
+              <sc-for list="{{tags}}" as="t" hint-placeholder-count="5"><span class="{{t.cls}}" title="{{t.tip}}"><b>{{t.mark}}</b>{{t.fn}}<i>{{t.done}}/{{t.total}}</i></span></sc-for>
+            </div>
+            <p class="k2">AI가 이 대화를 읽고 어떤 조건이 정해졌는지 표시합니다. 확인용이며, 모두 정해지지 않아도 '이 사람과 계약하기'로 진행할 수 있습니다.</p>
+          </div>
+
+          <div class="msgs">
+            <sc-if value="{{isNew}}" hint-placeholder-val="{{ false }}">
+              <div class="starter">
+                <p><b style="color:var(--s900)">스튜디오 넛님에게 아직 문의하지 않았습니다.</b><br>첫 메시지를 보내면 대화가 열리고 공급자가 답할 수 있습니다. 공급자는 먼저 채팅을 걸 수 없습니다.</p>
+                <div class="sugg">
+                  <button type="button">리마인드 알림을 빼신 이유가 궁금해요</button>
+                  <button type="button">예약금 환불 기준은 어떻게 정하면 좋을까요?</button>
+                  <button type="button">작업 기간 56일을 줄일 수 있을까요?</button>
+                </div>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{roThread}}" hint-placeholder-val="{{ false }}">
+              <div class="day">11월 2일 (월)</div>
+              <div class="m me"><p class="by">나 · 10:15</p><div class="bb">안녕하세요, 견적 잘 봤습니다. 예약금 환불은 어떻게 두는 게 좋을까요? 손님이 헷갈리지 않았으면 해요.</div></div>
+              <div class="m"><p class="by">김세라 · 10:42 <a class="rp" href="?view=신고" title="이 메시지 신고">신고</a></p><div class="bb">전날 취소는 전액 환불로 두는 게 좋겠습니다. 당일 취소만 환불하지 않으면 손님 안내도 간단하고, 노쇼도 줄어듭니다.</div></div>
+              <div class="m me"><p class="by">나 · 11:05</p><div class="bb">좋네요. 리마인드는 문자로도 보낼 수 있나요?</div></div>
+              <div class="m"><p class="by">김세라 · 11:20 <a class="rp" href="?view=신고" title="이 메시지 신고">신고</a></p><div class="bb">네, 문자 알림 연동은 여러 번 해 봤습니다. 방문 전날 오후에 보내는 걸 권합니다.</div></div>
+              <p class="sys">11월 4일 다른 공급자와의 계약에 대금이 예치되어 이 지원은 자동으로 거절되었습니다.</p>
+            </sc-if>
+            <sc-if value="{{mainThread}}" hint-placeholder-val="{{ true }}">
+              <div class="day">11월 1일 (일)</div>
+              <div class="m me"><p class="by">나 · 14:02</p><div class="bb">안녕하세요, 견적 잘 봤습니다. 예약금 환불 기준을 어떻게 정하면 좋을지 여쭤보고 싶어요. 전날 취소면 돌려주고 싶은데, 회차마다 다르게도 할 수 있나요?</div></div>
+              <div class="m"><p class="by">{{cur.name}} · 14:20 <a class="rp" href="?view=신고" title="이 메시지 신고">신고</a></p><div class="bb">네, 가능합니다. 점심과 저녁 회차마다 마감 시각을 따로 두고, 그 전에 취소하면 전액 환불, 이후는 환불 없음으로 설정하실 수 있게 만들 수 있습니다.</div></div>
+              <sc-if value="{{showRev}}" hint-placeholder-val="{{ true }}"><div class="m"><p class="by">{{cur.name}} · 14:21 <a class="rp" href="?view=신고" title="이 메시지 신고">신고</a></p><div class="bb">다만 회차별로 기준을 다르게 두면 관리 화면 작업이 늘어서 견적을 조금 올려야 할 것 같습니다.</div></div>
+              <p class="sys chg">{{cur.name}}님이 견적을 고쳤습니다 · <b>3,000,000원 → 3,100,000원</b> · 기간 42일 그대로<br>사유: 환불 기준을 회차별로 다르게 두려면 작업이 늘어납니다 · <a href="Quote-Client.dc.html">견적서 보기</a></p></sc-if>
+              <div class="m me"><p class="by">나 · 14:35</p><div class="bb">좋아요. 예약금은 1인당 3만 원으로 생각하고 있어요. 리마인드는 어떤 방식이 좋을까요?</div></div>
+              <div class="m"><p class="by">{{cur.name}} · 14:48 <a class="rp" href="?view=신고" title="이 메시지 신고">신고</a></p><div class="bb">알림톡을 권합니다. 실패하면 문자로 다시 보내게 해 두겠습니다. 방문 전날 18시에 보내는 걸로 할까요?</div></div>
+              <div class="m me"><p class="by">나 · 15:02</p><div class="bb">네, 그렇게 해 주세요. 진행 상황은 전화로도 여쭤봐도 될까요? 제 번호는 <span class="hid">연락처 가림</span> 입니다.</div></div>
+              <p class="sys">계약이 체결되기 전에는 전화번호 · 이메일 · 메신저 아이디가 자동으로 가려집니다.</p>
+              <div class="day">11월 3일 (화)</div>
+              <sc-if value="{{showNew}}" hint-placeholder-val="{{ true }}"><div class="newline">새 메시지</div></sc-if>
+              <sc-if value="{{report}}" hint-placeholder-val="{{ false }}"><div class="m flag"><p class="by">{{cur.name}} · 09:12 <a class="rp" href="?view=신고" title="이 메시지 신고">신고</a></p><div class="bb">마자용 밖에서 직접 계약하시면 수수료 없이 해 드릴 수 있어요. 편하실 때 <span class="hid">연락처 가림</span> 으로 연락 주세요.</div></div></sc-if>
+              <sc-if value="{{noReport}}" hint-placeholder-val="{{ true }}"><div class="m"><p class="by">{{cur.name}} · 09:12 <a class="rp" href="?view=신고" title="이 메시지 신고">신고</a></p><div class="bb">노쇼 판정 기준도 정해 두면 좋겠습니다. 예약 시각 30분이 지나도 연락이 없으면 노쇼로 볼까요?</div></div></sc-if>
+              <sc-if value="{{isHeld}}" hint-placeholder-val="{{ false }}">
+                <div class="m me"><p class="by">나 · 09:30</p><div class="bb">네, 30분으로 해 주세요. 노쇼 표시 방식은 따로 정하지 않고 진행할게요. 합의 마칠게요.</div></div>
+                <p class="sys ok"><b>최종 합의 내용으로 임시 계약이 되었습니다</b> · 서명 기한 11월 10일<br><a href="Contract-Client.dc.html">계약서 보기</a></p>
+              </sc-if>
+              <sc-if value="{{signed}}" hint-placeholder-val="{{ false }}">
+                <div class="day">11월 4일 (수)</div>
+                <p class="sys ok"><b>계약이 체결되었습니다</b> · 이제 연락처를 주고받을 수 있습니다. 계약 전에 가려진 연락처는 그대로 가려져 있습니다.</p>
+                <div class="m me"><p class="by">나 · 14:30</p><div class="bb">예치까지 마쳤어요. 급한 일은 전화 주셔도 됩니다. 제 번호는 <span class="tel">010-0000-1234</span> 입니다.</div></div>
+                <div class="m"><p class="by">{{cur.name}} · 14:41 <a class="rp" href="?view=신고" title="이 메시지 신고">신고</a></p><div class="bb">감사합니다. 중간 납품은 11월 25일로 맞추겠습니다. 진행 상황은 여기에도 계속 남기겠습니다.</div></div>
+              </sc-if>
+            </sc-if>
+          </div>
+
+          <sc-if value="{{canWrite}}" hint-placeholder-val="{{ true }}">
+            <div class="in">
+              <div class="row">
+                <input class="inp" type="text" placeholder="{{ph}}" aria-label="메시지 입력">
+                <button type="button" class="btn tint">보내기</button>
+              </div>
+              <p class="hint2">{{hint}}</p>
+            </div>
+          </sc-if>
+          <sc-if value="{{readOnly}}" hint-placeholder-val="{{ false }}">
+            <div class="in ro">다른 공급자와의 계약에 대금이 예치되어 이 대화는 읽기 전용입니다.</div>
+          </sc-if>
+        </section>
+      </div>
+
+    </div>
+  </main>
+
+  <sc-if value="{{report}}" hint-placeholder-val="{{ false }}">
+    <div class="rp-scrim" aria-hidden="true"></div>
+    <section class="rp-mdl" role="dialog" aria-modal="true" aria-labelledby="rp-h">
+      <div class="rph"><h2 id="rp-h">이 메시지를 신고할까요?</h2><button type="button" class="x" aria-label="닫기" data-action-href="?view=문의+중">×</button></div>
+      <div class="rpb">
+        <div class="q"><i>최준호 · 11월 3일 09:12</i>마자용 밖에서 직접 계약하시면 수수료 없이 해 드릴 수 있어요. 편하실 때 [연락처 가림] 으로 연락 주세요.</div>
+        <p class="lb">사유</p>
+        <div class="rs" role="radiogroup" aria-label="신고 사유">
+          <label class="on"><input type="radio" name="rp" checked>연락처 · 외부 거래 유도</label>
+          <label><input type="radio" name="rp">욕설 · 비방</label>
+          <label><input type="radio" name="rp">거짓 정보</label>
+          <label><input type="radio" name="rp">기타</label>
+        </div>
+        <p class="lb">설명 <span>(선택)</span></p>
+        <textarea aria-label="신고 설명" placeholder="어떤 점이 문제인지 적어 주세요"></textarea>
+        <p class="nt">신고 내용은 상대에게 알리지 않습니다 · 운영자가 확인합니다. 대화는 그대로 이어집니다.</p>
+      </div>
+      <div class="rpf"><a class="btn gh" href="Chat-Client.dc.html">취소</a><a class="btn warn" href="Chat-Client.dc.html">신고하기</a></div>
+    </section>
+  </sc-if>
+
+  <footer class="gf" aria-label="사이트 정보">
+    <div class="wrap">
+      <div class="gf-top">
+        <div class="gf-brand">
+          <span class="gf-logo"><span class="mark" aria-hidden="true"><i style="height:9px"></i><i style="height:17px"></i><i style="height:12px;opacity:.55"></i></span>마자용</span>
+          <p>소상공인을 위한 웹 외주 요구사항 정의 · 매칭 플랫폼</p>
+        </div>
+        <div class="gf-cs"><b>고객센터 1600-0000</b><span>평일 10:00–18:00</span><span>점심 12:00–13:00 · 주말 · 공휴일 휴무</span><span>help@majayong.example</span></div>
+      </div>
+      <nav class="gf-nav" aria-label="사이트 링크">
+        <div><b>서비스</b><a href="Main.dc.html">의뢰인 안내</a><a href="Supplier-Landing.dc.html">공급자 안내</a></div>
+        <div><b>고객센터</b><a href="Help.dc.html">자주 묻는 질문</a><a href="Help-Inquiry.dc.html">1:1 문의</a><a href="Help.dc.html?view=공지사항">공지사항</a></div>
+        <div><b>정책</b><a href="Terms.dc.html?view=이용약관">이용약관</a><a class="em" href="Terms.dc.html?view=개인정보+처리방침">개인정보 처리방침</a><a href="Terms.dc.html?view=명세+비밀유지">명세 비밀유지</a><a href="Terms.dc.html?view=중개자+고지">중개자 고지</a></div>
+      </nav>
+      <div class="gf-bot">
+        <p class="gf-biz">상호 로켓단<i></i>대표 김로켓<i></i>사업자등록번호 000-00-00000<i></i>통신판매업 신고 제2026-서울마포-0000호<br>주소 서울특별시 마포구 예시로 00, 0층<i></i>개인정보 보호책임자 박예시<i></i>이메일 help@majayong.example</p>
+        <p class="gf-copy">© 2026 로켓단. All rights reserved.</p>
+        <p class="gf-note">마자용은 통신판매중개자로서 거래 당사자가 아니며, 의뢰인과 공급자 사이 계약의 이행 책임은 각 당사자에게 있습니다. 대금 예치와 정산은 마자용이 관리합니다.</p>
+      </div>
+    </div>
+  </footer>
+
+</div>

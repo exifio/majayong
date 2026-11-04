@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>공급자 — 계정 설정</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="/_blob/a8316b816fb987eb4a5af50ab874b7d1">
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+.pg{word-break:keep-all;position:relative}
+.ac sc-if{display:contents}
+.phead{display:flex;align-items:center;gap:18px;flex-wrap:wrap;margin-bottom:26px}
+.phead .big{width:72px;height:72px;border-radius:50%;background:var(--navy-900);color:#fff;font-size:26px;font-weight:600;display:flex;align-items:center;justify-content:center;flex:none}
+.phead .nm{font-size:24px;font-weight:600;letter-spacing:-0.5px}
+.phead .mt{font-size:14px;color:var(--s600);margin-top:4px}
+.phead .sp{flex:1 1 auto}
+.star{color:var(--amber-700)}
+.btn.warn{background:#fff;color:var(--amber-700);border:1px solid #E6C68A}
+.btn.warn.off{opacity:.5;cursor:default}
+.ac-band{display:flex;gap:12px;align-items:flex-start;background:#EAF6F4;border:1px solid #C7E6E0;border-radius:12px;padding:14px 18px;margin:0 0 18px}
+.ac-band b{display:block;color:var(--teal-700);font-size:15px;margin:0 0 2px}
+.ac-band p{margin:0;font-size:14px;color:var(--s600)}
+.ac-sec{background:#fff;border:1px solid var(--s200);border-radius:12px;padding:20px 22px;margin:0 0 16px}
+.ac-sec h2{font-size:17px;font-weight:600;margin:0 0 4px}
+.ac-sec .ds{font-size:14px;color:var(--s600);margin:0 0 14px;line-height:1.6}
+.ac-row{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:12px 0;border-top:1px solid var(--s100)}
+.ac-row:first-of-type{border-top:0}
+.ac-row .k{font-size:13px;color:var(--s600);margin:0 0 2px}
+.ac-row .v{font-size:15px;color:var(--s900);font-weight:500}
+.ac-row .v .chip{font-size:12px;padding:2px 8px;margin-left:8px;vertical-align:1px}
+.ac-row .btn{white-space:nowrap;flex:none}
+.ac-prv{display:inline-block;font-size:12px;font-weight:500;padding:2px 8px;border-radius:6px;background:var(--s100);color:var(--s600);border:1px solid var(--s200);margin-left:8px;vertical-align:1px}
+.ac-g{display:inline-flex;width:22px;height:22px;border-radius:50%;border:1px solid var(--s200);align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--s600);margin-right:8px;vertical-align:-5px;background:#fff}
+.ac-pw{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.ac-pw .f{margin:0}
+.ac-act{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:14px}
+.ac-act .sec{margin:0}
+.ac-act .btn{white-space:nowrap;flex:none}
+.ac-out ul{margin:0 0 14px;padding-left:18px}
+.ac-out li{font-size:14px;color:var(--s600);line-height:1.75}
+.ac-out li b{color:var(--s900);font-weight:600}
+.m-scrim{position:absolute;inset:0;background:rgba(11,37,69,.55);z-index:30}
+.m-dlg{position:absolute;top:120px;left:50%;transform:translateX(-50%);width:560px;z-index:31;background:#fff;border-radius:16px;box-shadow:0 24px 60px rgba(11,37,69,.35);overflow:hidden}
+.m-dlg .mh{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:22px 26px 14px;border-bottom:1px solid var(--s200)}
+.m-dlg .mh h2{font-size:19px;font-weight:600;margin:0 0 4px;letter-spacing:-0.3px}
+.m-dlg .mh p{margin:0;font-size:14px;color:var(--s600)}
+.m-dlg .x{font-family:inherit;font-size:22px;line-height:1;color:var(--s600);background:none;border:0;cursor:pointer;padding:2px 4px}
+.m-dlg .mb{padding:18px 26px}
+.m-dlg .mf{display:flex;justify-content:flex-end;align-items:center;gap:10px;padding:14px 26px;border-top:1px solid var(--s200);background:var(--s50)}
+.m-dlg .mf .btn{white-space:nowrap}
+.m-blk{border:1px solid #F2E0BE;background:var(--amber-50);border-radius:10px;padding:12px 16px;margin:0 0 14px}
+.m-blk b{display:block;font-size:14px;color:var(--amber-700);margin:0 0 6px}
+.m-ct{display:flex;justify-content:space-between;align-items:center;gap:12px;background:#fff;border:1px solid var(--s200);border-radius:8px;padding:10px 12px}
+.m-ct .t{font-size:14px;font-weight:600;color:var(--s900)}
+.m-ct .s{font-size:12px;color:var(--s600);margin-top:2px}
+.m-ct .chip{font-size:12px;padding:2px 8px;flex:none}
+.ac-seg{display:inline-flex;border:1px solid var(--s300);border-radius:8px;overflow:hidden;vertical-align:middle;margin-right:10px}
+.ac-seg span{font-size:14px;font-weight:500;padding:5px 14px;color:var(--s600);background:#fff}
+.ac-seg span+span{border-left:1px solid var(--s300)}
+.ac-seg span.on{background:var(--navy-900);color:#fff}
+.ac-tmp{display:inline-block;font-size:12px;font-weight:500;padding:2px 8px;border-radius:6px;background:var(--amber-50);color:var(--amber-700);border:1px solid #F2E0BE;margin-left:8px;vertical-align:2px}
+.m-f{margin:0 0 14px}
+.m-f .lbl{display:block}
+.m-g2{display:grid;grid-template-columns:200px 1fr;gap:12px;margin:0 0 14px}
+.m-g2 .m-f{margin:0}
+.m-hint{font-size:13px;color:var(--s600);margin:6px 0 0;line-height:1.6}
+.m-now{display:flex;justify-content:space-between;gap:12px;font-size:14px;color:var(--s600);background:var(--s50);border:1px solid var(--s200);border-radius:8px;padding:10px 12px;margin:0 0 16px}
+.m-now b{color:var(--s900);font-weight:600}
+.m-one{border:1px solid #D6E4FF;background:#EEF4FF;border-radius:10px;padding:12px 16px;margin:0 0 4px}
+.m-one b{display:block;font-size:14px;color:var(--navy-900);margin:0 0 4px}
+.m-one p{margin:0;font-size:13px;color:var(--s600);line-height:1.65}
+.m-one .row{display:flex;gap:8px;align-items:center;margin-top:10px}
+.m-one .row .inp{width:150px}
+.m-one .sent{font-size:13px;color:var(--teal-700);font-weight:600;margin:8px 0 0}
+.m-one .row .tm{font-size:13px;color:var(--s600);margin-left:auto}
+.m-one .row .inp.err{border-color:var(--red-600);box-shadow:0 0 0 1px var(--red-600)}
+.m-one .er{font-size:14px;color:var(--red-600);margin:6px 0 0}
+.m-one .again{font-family:inherit;font-size:13px;color:var(--s600);background:none;border:0;padding:0;text-decoration:underline;cursor:pointer;margin-top:8px}
+.m-one.ok{border-color:#C7E6E0;background:#EAF6F4}
+.m-one.ok b{color:var(--teal-700)}
+.mf .why{font-size:13px;color:var(--s600);margin-right:auto}
+.inp[readonly]{background:var(--s50);color:var(--s600)}
+.m-rl{margin:0;padding-left:18px}
+.m-rl li{font-size:13px;color:var(--s600);line-height:1.75}
+</style>
+<style>
+.pg{min-height:100vh;position:relative;padding-bottom:256px;box-sizing:border-box}
+.gf{position:absolute;left:0;right:0;bottom:0;background:var(--navy-900);padding:34px 0 30px;font-size:14px;color:#A9BDD6;word-break:keep-all}
+.gf a{color:#A9BDD6;text-decoration:none}
+.gf-top{display:flex;justify-content:space-between;align-items:center;gap:12px 32px;flex-wrap:wrap}
+.gf-brand{display:flex;align-items:center;gap:16px;flex-wrap:wrap;min-width:0}
+.gf-logo{display:inline-flex;align-items:center;font-size:19px;font-weight:600;letter-spacing:-0.4px;color:#fff}
+.gf-brand p{margin:0}
+.gf-cs{display:flex;align-items:baseline;gap:4px 16px;flex-wrap:wrap}
+.gf-cs b{color:#fff;font-weight:600;font-size:15px}
+.gf-nav{display:flex;flex-wrap:wrap;gap:10px 44px;margin:18px 0 0;padding:0 0 24px;border-bottom:1px solid rgba(255,255,255,.14)}
+.gf-nav>div{display:flex;align-items:baseline;gap:18px;flex-wrap:wrap}
+.gf-nav b{color:#fff;font-weight:600}
+.gf-nav a.em{color:#fff;font-weight:600}
+.gf-bot{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:24px;padding-top:20px;font-size:13px;line-height:1.75;color:#8FA6C2}
+.gf-bot p{margin:0}
+.gf-biz i{display:inline-block;width:1px;height:10px;background:rgba(255,255,255,.28);margin:0 9px;vertical-align:-1px}
+.gf-copy{align-self:end;text-align:right;white-space:nowrap}
+.gf-note{grid-column:1 / -1;margin-top:8px !important}
+</style>
+</helmet>
+
+<div class="pg">
+
+  <header class="gnb dark">
+    <div class="wrap">
+      <div class="gnbin">
+        <a class="brand" href="Home-Supplier.dc.html"><span class="mark" aria-hidden="true"><i style="height:9px"></i><i style="height:17px"></i><i style="height:12px;opacity:.55"></i></span>마자용</a>
+        <nav class="nav" aria-label="주요 메뉴">
+          <a href="Home-Supplier.dc.html">홈</a><a href="Find-Supplier.dc.html">프로젝트 찾기</a><a href="Apps-Supplier.dc.html">내 지원</a><a href="Contracts-Supplier.dc.html">내 계약</a><a href="Find-Supplier.dc.html">북마크</a>
+        </nav>
+        <div class="gright">
+          <a class="bell dot" href="Chat-Supplier.dc.html" aria-label="채팅 — 새 메시지 1건"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"></path></svg></a>
+          <a class="bell dot" href="Notify-Supplier.dc.html" aria-label="알림 — 안 읽은 알림 3건"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"></path><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"></path></svg></a>
+          <span class="who"><span class="ava">최</span><span class="uname">최준호</span></span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="pad ac">
+    <div class="narrow">
+
+      <div class="phead">
+        <span class="big" aria-hidden="true">최</span>
+        <div>
+          <div class="nm">최준호</div>
+          <div class="mt">공급자 · 웹 외주 프리랜서 5년 차 · 2025년 가입 · <span class="star">★</span> 4.8 (리뷰 12건)</div>
+        </div>
+      </div>
+
+      <nav class="tabs" aria-label="프로필 메뉴">
+        <a href="Profile-Supplier.dc.html">기본 정보</a>
+        <a href="Profile-Supplier.dc.html">받은 리뷰</a>
+        <a class="on" href="Account-Supplier.dc.html">계정 설정</a>
+      </nav>
+
+      <sc-if value="{{bkDone}}" hint-placeholder-val="{{ false }}">
+        <div class="ac-band"><div><b>정산 계좌를 바꿨습니다 · 11월 4일 16:13</b><p>다음 지급부터 국민은행 끝자리 7890으로 보냅니다. 처리 중인 지급은 이전 계좌로 갑니다.</p></div></div>
+      </sc-if>
+      <sc-if value="{{isDone}}" hint-placeholder-val="{{ false }}">
+        <div class="ac-band"><div><b>비밀번호를 바꿨습니다 · 11월 3일 10:12</b><p>다른 기기에서는 다시 로그인해야 합니다. 바꾸지 않으셨다면 바로 비밀번호를 다시 바꿔 주세요.</p></div></div>
+      </sc-if>
+
+      <section class="ac-sec" aria-labelledby="h-login">
+        <h2 id="h-login">로그인 정보</h2>
+        <p class="ds">계정 이메일은 로그인과 안내 메일에만 쓰고, 다른 사용자에게는 어느 단계에서도 공개되지 않습니다.</p>
+        <div class="ac-row"><div><p class="k">계정 이메일</p><p class="v" style="margin:0">junho.choi@example.com<span class="ac-prv">공개 안 함</span></p></div><a class="btn sm gh" href="#email">이메일 바꾸기</a></div>
+        <div class="ac-row"><div><p class="k">이메일 로그인</p><p class="v" style="margin:0">비밀번호 사용 중</p></div></div>
+        <div class="ac-row"><div><p class="k">구글 로그인</p><p class="v" style="margin:0"><span class="ac-g">G</span>연결 안 됨</p></div><a class="btn sm gh" href="#google">구글 연결하기</a></div>
+        <div class="ac-row"><div><p class="k">역할</p><p class="v" style="margin:0"><span class="chip" style="margin-left:0">공급자</span></p></div><p class="sec" style="margin:0;text-align:right;flex:1 1 300px">가입 때 정해지고 바꿀 수 없습니다. 의뢰인으로 프로젝트를 맡기시려면 다른 이메일로 계정을 만들어 주세요.</p></div>
+      </section>
+
+      <section class="ac-sec" aria-labelledby="h-pw">
+        <h2 id="h-pw">비밀번호 변경</h2>
+        <p class="ds">8자 이상, 영문과 숫자를 섞어 주세요. 구글로만 가입하셨다면 현재 비밀번호 없이 '비밀번호 만들기'로 새로 정할 수 있습니다.</p>
+        <div class="ac-pw">
+          <div class="f"><label class="lbl" for="pw0">현재 비밀번호</label><input class="inp" id="pw0" type="password" value="{{pw0}}" placeholder="현재 비밀번호"></div>
+          <div class="f"><label class="lbl" for="pw1">새 비밀번호</label><input class="inp" id="pw1" type="password" value="{{pw1}}" placeholder="새 비밀번호"></div>
+          <div class="f"><label class="lbl" for="pw2">새 비밀번호 확인</label><input class="inp" id="pw2" type="password" value="{{pw1}}" placeholder="한 번 더"></div>
+        </div>
+        <div class="ac-act"><p class="sec">바꾸면 다른 기기의 로그인은 끝납니다.</p><a class="btn" href="Account-Supplier.dc.html">비밀번호 바꾸기</a></div>
+      </section>
+
+      <section class="ac-sec" aria-labelledby="h-pay">
+        <h2 id="h-pay">정산 정보</h2>
+        <p class="ds">승인된 구간 금액에서 수수료 5%를 뺀 금액이 정산 계좌로 지급됩니다. 바꾼 계좌는 다음 지급부터 쓰입니다.</p>
+        <div class="ac-row"><div><p class="k">구분</p><p class="v" style="margin:0"><span class="ac-seg" role="group" aria-label="구분"><span class="on">사업자</span><span>개인</span></span>사업자등록번호 끝자리 2731</p></div><p class="sec" style="margin:0;text-align:right;flex:1 1 280px">사업자는 대금 세금계산서를 의뢰인에게 직접 발행합니다. 개인이면 지급 때 3.3% 원천징수합니다.</p></div>
+        <div class="ac-row"><div><p class="k">정산 계좌</p><p class="v" style="margin:0">{{bankNow}}</p></div><a class="btn sm gh" href="#bank">계좌 바꾸기</a></div>
+      </section>
+
+      <section class="ac-sec ac-out" aria-labelledby="h-out">
+        <h2 id="h-out">탈퇴</h2>
+        <p class="ds">탈퇴하면 계정 이메일과 프로필이 지워지고 다시 로그인할 수 없습니다.</p>
+        <ul>
+          <li><b>진행 중인 계약 · 임시 계약 · 정산 처리 중</b>인 건이 있으면 탈퇴할 수 없습니다. 모두 끝난 뒤에 탈퇴해 주세요.</li>
+          <li>리뷰 · 계약 · 정산 기록은 법에서 정한 보관 기간 동안 남긴 뒤 지웁니다.</li>
+        </ul>
+        <div class="ac-act" style="margin-top:0"><p class="sec">상대방 화면에는 '탈퇴한 사용자'로 표시됩니다.</p><a class="btn sm warn" href="#leave">탈퇴하기</a></div>
+      </section>
+
+    </div>
+  </main>
+
+  <sc-if value="{{isLeave}}" hint-placeholder-val="{{ false }}">
+    <div class="m-scrim" aria-hidden="true"></div>
+    <section class="m-dlg" role="dialog" aria-modal="true" aria-label="탈퇴 확인">
+      <div class="mh"><div><h2>지금은 탈퇴할 수 없습니다</h2><p>진행 중인 계약이 끝나야 탈퇴할 수 있습니다.</p></div><button type="button" class="x" aria-label="닫기">×</button></div>
+      <div class="mb">
+        <div class="m-blk"><b>진행 중인 계약 1건</b>
+          <div class="m-ct"><div><div class="t">예약 달력, 예약금 결제 외 2개 기능</div><div class="s">의뢰인 온도 다이닝 · 작업 마감 12월 16일</div></div><span class="chip blue">진행 중</span></div>
+        </div>
+        <ul class="m-rl">
+          <li>진행 중 · 임시 계약 · 정산 처리 중인 건이 하나라도 있으면 탈퇴할 수 없습니다.</li>
+          <li>계약이 끝나고 정산까지 마치면 이 화면에서 바로 탈퇴할 수 있습니다.</li>
+          <li>계약을 그만두려면 내 계약에서 취소를 요청해 주세요. 사유에 따라 정산합니다.</li>
+        </ul>
+      </div>
+      <div class="mf"><a class="btn sm gh" href="Account-Supplier.dc.html">닫기</a><a class="btn sm tint" href="Contracts-Supplier.dc.html">내 계약 보기</a><span class="btn sm warn off" aria-disabled="true">탈퇴하기</span></div>
+    </section>
+  </sc-if>
+
+  <sc-if value="{{isEmail}}" hint-placeholder-val="{{ false }}">
+    <div class="m-scrim" aria-hidden="true"></div>
+    <section class="m-dlg" role="dialog" aria-modal="true" aria-label="이메일 바꾸기">
+      <div class="mh"><div><h2>이메일 바꾸기</h2><p>새 이메일로 확인 메일을 보내고, 메일의 링크를 누르면 바뀝니다.</p></div><button type="button" class="x" aria-label="닫기">×</button></div>
+      <div class="mb">
+        <div class="m-now"><span>지금 이메일</span><b>junho.choi@example.com</b></div>
+        <div class="m-f"><label class="lbl" for="em1">새 이메일</label><input class="inp" id="em1" type="text" value="junho.dev@example.com" placeholder="새 이메일 주소"></div>
+        <div class="m-f"><label class="lbl" for="em2">현재 비밀번호</label><input class="inp" id="em2" type="password" value="••••••••••" placeholder="본인 확인"></div>
+        <ul class="m-rl">
+          <li>링크를 누르기 전까지는 지금 이메일로 로그인하고 안내 메일도 지금 이메일로 갑니다.</li>
+          <li>바뀌면 지금 이메일로도 바뀐 사실을 알려 드립니다. 새 이메일도 다른 사용자에게는 공개되지 않습니다.</li>
+        </ul>
+      </div>
+      <div class="mf"><a class="btn sm gh" href="Account-Supplier.dc.html">취소</a><a class="btn sm" href="Account-Supplier.dc.html">확인 메일 보내기</a></div>
+    </section>
+  </sc-if>
+
+  <sc-if value="{{isBank}}" hint-placeholder-val="{{ false }}">
+    <div class="m-scrim" aria-hidden="true"></div>
+    <section class="m-dlg" role="dialog" aria-modal="true" aria-label="계좌 바꾸기" style="width:600px">
+      <div class="mh"><div><h2>계좌 바꾸기</h2><p>바꾼 계좌는 다음 지급부터 적용됩니다.</p></div><button type="button" class="x" aria-label="닫기">×</button></div>
+      <div class="mb">
+        <div class="m-now"><span>지금 계좌</span><b>신한은행 · 끝자리 2048 · 예금주 최준호</b></div>
+        <div class="m-g2">
+          <div class="m-f"><label class="lbl" for="bk1">은행</label><select class="inp" id="bk1"><option>국민은행</option></select></div>
+          <div class="m-f"><label class="lbl" for="bk2">계좌번호</label><input class="inp" id="bk2" type="text" value="123401-04-567890" placeholder="숫자만"></div>
+        </div>
+        <div class="m-f"><label class="lbl" for="bk3">예금주</label><input class="inp" id="bk3" type="text" value="최준호" readonly>
+          <p class="m-hint">예금주는 가입한 이름(최준호)과 같아야 합니다. 사업자는 대표자 이름 또는 사업자 명의 계좌를 쓸 수 있습니다.</p></div>
+        <sc-if value="{{bk0}}" hint-placeholder-val="{{ true }}">
+        <div class="m-one"><b>1원 인증</b>
+          <p>입력한 계좌로 1원을 보냅니다. 통장 입금자명에 적힌 숫자 4자리를 넣으면 본인 계좌로 확인됩니다.</p>
+          <div class="row"><input class="inp" type="text" value="" placeholder="숫자 4자리" aria-label="인증 숫자" disabled><a class="btn sm tint" href="Account-Supplier.dc.html">1원 보내기</a></div>
+        </div>
+        </sc-if>
+        <sc-if value="{{bkSent}}" hint-placeholder-val="{{ false }}">
+        <div class="m-one"><b>1원 인증</b>
+          <p class="sent">국민은행 ···7890으로 1원을 보냈습니다</p>
+          <p>통장 입금자명의 '마자용' 뒤 숫자 4자리를 넣어 주세요. 10분 동안 쓸 수 있습니다.</p>
+          <div class="row"><input class="{{bkInpCls}}" type="text" value="{{bkCode}}" placeholder="숫자 4자리" aria-label="인증 숫자"><a class="btn sm tint" href="Account-Supplier.dc.html">확인</a><span class="tm">남은 시간 {{bkTime}}</span></div>
+          <sc-if value="{{bkFail}}" hint-placeholder-val="{{ false }}"><p class="er">숫자가 맞지 않습니다 · 남은 시도 4회</p></sc-if>
+          <button type="button" class="again">다시 보내기</button>
+        </div>
+        </sc-if>
+        <sc-if value="{{bkOk}}" hint-placeholder-val="{{ false }}">
+        <div class="m-one ok"><b>✓ 본인 계좌로 확인했습니다</b>
+          <p>국민은행 ···7890 · 예금주 최준호 · 11월 4일 16:12 인증</p>
+        </div>
+        </sc-if>
+      </div>
+      <div class="mf"><span class="why">{{bkWhy}}</span><a class="btn sm gh" href="Account-Supplier.dc.html">취소</a><sc-if value="{{bkCan}}" hint-placeholder-val="{{ false }}"><a class="btn sm" href="Account-Supplier.dc.html">계좌 바꾸기</a></sc-if><sc-if value="{{bkCant}}" hint-placeholder-val="{{ true }}"><button type="button" class="btn sm off" disabled>계좌 바꾸기</button></sc-if></div>
+    </section>
+  </sc-if>
+
+  <footer class="gf" aria-label="사이트 정보">
+    <div class="wrap">
+      <div class="gf-top">
+        <div class="gf-brand">
+          <span class="gf-logo"><span class="mark" aria-hidden="true"><i style="height:9px"></i><i style="height:17px"></i><i style="height:12px;opacity:.55"></i></span>마자용</span>
+          <p>소상공인을 위한 웹 외주 요구사항 정의 · 매칭 플랫폼</p>
+        </div>
+        <div class="gf-cs"><b>고객센터 1600-0000</b><span>평일 10:00–18:00</span><span>점심 12:00–13:00 · 주말 · 공휴일 휴무</span><span>help@majayong.example</span></div>
+      </div>
+      <nav class="gf-nav" aria-label="사이트 링크">
+        <div><b>서비스</b><a href="Main.dc.html">의뢰인 안내</a><a href="Supplier-Landing.dc.html">공급자 안내</a></div>
+        <div><b>고객센터</b><a href="Help.dc.html">자주 묻는 질문</a><a href="Help-Inquiry.dc.html">1:1 문의</a><a href="Help.dc.html">공지사항</a></div>
+        <div><b>정책</b><a href="Terms.dc.html">이용약관</a><a class="em" href="Terms.dc.html">개인정보 처리방침</a><a href="Terms.dc.html">명세 비밀유지</a><a href="Terms.dc.html">중개자 고지</a></div>
+      </nav>
+      <div class="gf-bot">
+        <p class="gf-biz">상호 로켓단<i></i>대표 김로켓<i></i>사업자등록번호 000-00-00000<i></i>통신판매업 신고 제2026-서울마포-0000호<br>주소 서울특별시 마포구 예시로 00, 0층<i></i>개인정보 보호책임자 박예시<i></i>이메일 help@majayong.example</p>
+        <p class="gf-copy">© 2026 로켓단. All rights reserved.</p>
+        <p class="gf-note">마자용은 통신판매중개자로서 거래 당사자가 아니며, 의뢰인과 공급자 사이 계약의 이행 책임은 각 당사자에게 있습니다. 대금 예치와 정산은 마자용이 관리합니다.</p>
+      </div>
+    </div>
+  </footer>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"view":{"editor":"enum","options":["기본","탈퇴 확인","비밀번호 변경 완료","이메일 바꾸기","계좌 바꾸기","1원 보냄","1원 인증 실패","인증 완료","계좌 변경 완료"],"default":"기본","section":"상태"},"$preview":{"width":1280,"height":1913}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const v = this.props.view ?? '기본';
+    const done = v === '비밀번호 변경 완료';
+    return { isLeave: v === '탈퇴 확인', isEmail: v === '이메일 바꾸기', isBank: ['계좌 바꾸기','1원 보냄','1원 인증 실패','인증 완료'].includes(v), bk0: v === '계좌 바꾸기', bkSent: v === '1원 보냄' || v === '1원 인증 실패', bkFail: v === '1원 인증 실패', bkOk: v === '인증 완료',
+      bkInpCls: v === '1원 인증 실패' ? 'inp err' : 'inp', bkCode: v === '1원 인증 실패' ? '4831' : '', bkTime: v === '1원 인증 실패' ? '08:15' : '09:42',
+      bkCan: v === '인증 완료', bkCant: v !== '인증 완료', bkWhy: v === '인증 완료' ? '처리 중인 지급은 지금 계좌로 갑니다.' : '1원 인증을 마치면 바꿀 수 있습니다',
+      bkDone: v === '계좌 변경 완료', bankNow: v === '계좌 변경 완료' ? '국민은행 · 끝자리 7890 · 예금주 최준호' : '신한은행 · 끝자리 2048 · 예금주 최준호', isDone: done, pw0: done ? '' : '••••••••••', pw1: done ? '' : '••••••••••••' };
+  }
+}
+</script>
+</body>
+</html>

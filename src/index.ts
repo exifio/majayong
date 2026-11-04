@@ -1,4 +1,11 @@
 import { PrismaClient } from "@prisma/client";
+import { createServer } from "node:http";
+import { readFile } from "node:fs/promises";
+import { extname } from "node:path";
+import type { RequestHandler } from "express";
+import { renderCatalog } from "./lib/catalog.js";
+import { renderScreen, WEB_ROOT } from "./lib/page.js";
+import { screens } from "./screens/index.js";
 import {
   createIntegrationPorts,
   createPublicProjectPorts,
@@ -161,6 +168,51 @@ const cHandler = createHttpHandler(
   }, deferUnmatched: true },
 );
 
+const WEB_MIME: Record<string, string> = {
+  ".css": "text/css; charset=utf-8",
+  ".woff2": "font/woff2",
+  ".svg": "image/svg+xml",
+  ".png": "image/png",
+  ".pdf": "application/pdf",
+};
+const webScreens = new Map(screens.map((screen) => [screen.id === "Main" ? "/" : `/${screen.id}`, screen]));
+
+const webHandler: RequestHandler = (request, response, next) => {
+  if (request.method !== "GET" && request.method !== "HEAD") {
+    next();
+    return;
+  }
+  const url = new URL(request.originalUrl, "http://localhost");
+  const pathname = decodeURIComponent(url.pathname).replace(/\/+$/, "") || "/";
+  if (pathname.startsWith("/api/") || pathname === "/health") {
+    next();
+    return;
+  }
+  void (async () => {
+    if (pathname.startsWith("/assets/") && !pathname.includes("..")) {
+      const file = await readFile(new URL(`.${pathname}`, WEB_ROOT)).catch(() => null);
+      if (!file) {
+        response.status(404).type("text/plain").send("Not found");
+        return;
+      }
+      response.setHeader("content-type", WEB_MIME[extname(pathname)] ?? "application/octet-stream");
+      response.setHeader("cache-control", "public, max-age=3600");
+      response.send(file);
+      return;
+    }
+    if (pathname === "/screens") {
+      response.type("html").send(renderCatalog(screens));
+      return;
+    }
+    const screen = webScreens.get(pathname);
+    if (!screen) {
+      response.status(404).type("html").send(renderCatalog(screens));
+      return;
+    }
+    response.type("html").send(await renderScreen(screen, url.searchParams));
+  })().catch(next);
+};
+
 const app = createApp({
   db,
   tokenSecret,
@@ -187,8 +239,11 @@ const app = createApp({
   },
   routers: bRouters,
   fallback: cHandler,
+  web: webHandler,
 });
-const server = app.listen(port);
+const server = createServer(app);
+export default server;
+if (!process.env.VERCEL) server.listen(port);
 
 const stopScheduler =
   process.env.JOB_SCHEDULER_ENABLED === "true"

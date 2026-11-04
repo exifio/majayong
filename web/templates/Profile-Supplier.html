@@ -1,0 +1,284 @@
+<helmet>
+<style>
+.rvs{display:grid;grid-template-columns:200px minmax(0,1fr);gap:28px;align-items:start;padding:0 0 18px;margin:0 0 4px;border-bottom:1px solid var(--s200)}
+.avg .v{font-size:40px;font-weight:600;letter-spacing:-1px;color:var(--navy-900);line-height:1.1}
+.avg .stars{color:#E0A526;font-size:18px;letter-spacing:2px;margin:4px 0}
+.avg .stars i{font-style:normal;color:var(--s300)}
+.avg .n{font-size:14px;color:var(--s600)}
+.dist{margin-top:12px}
+.dist .r{display:grid;grid-template-columns:22px minmax(0,1fr) 22px;gap:8px;align-items:center;font-size:13px;color:var(--s600);margin:3px 0}
+.dist .bar{height:6px;border-radius:3px;background:var(--s100);overflow:hidden}
+.dist .bar i{display:block;height:6px;background:#E0A526;border-radius:3px}
+.ttg .k{font-size:13px;font-weight:600;color:var(--s600);margin:0 0 10px}
+.ttg .r{display:grid;grid-template-columns:170px minmax(0,1fr) 28px;gap:10px;align-items:center;font-size:14px;margin:0 0 8px}
+.ttg .bar{height:8px;border-radius:4px;background:var(--s100);overflow:hidden}
+.ttg .bar i{display:block;height:8px;background:var(--navy-900);opacity:.75;border-radius:4px}
+.ttg .r b{font-weight:600;text-align:right;font-variant-numeric:tabular-nums}
+.rc{padding:16px 0;border-top:1px solid var(--s200)}
+.rc:first-of-type{border-top:0}
+.rc .h{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin:0 0 4px}
+.rc .h .st2{color:#E0A526;font-size:15px;letter-spacing:1px}
+.rc .h .st2 i{font-style:normal;color:var(--s300)}
+.rc .h .dt{font-size:13px;color:var(--s600)}
+.rc .who{font-size:14px;color:var(--s600);margin:0 0 8px}
+.rc .who b{color:var(--s900);font-weight:600}
+.rc .tg3{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 8px}
+.rc .tg3 span{font-size:12px;background:var(--s50);border:1px solid var(--s200);border-radius:6px;padding:2px 8px}
+.rc p{margin:0;font-size:15px;line-height:1.7;color:var(--s900)}
+.more{display:block;text-align:center;font-size:14px;margin:6px 0 0}
+.rvbox{background:#fff;border:1px solid var(--s200);border-radius:14px;padding:22px 26px;margin:0 0 16px}
+.rvbox h2{font-size:18px;font-weight:600;margin:0 0 14px;display:flex;align-items:baseline;gap:8px}
+.rvbox h2 span{font-size:14px;font-weight:400;color:var(--s600)}
+.rvnote{font-size:14px;color:var(--s600);margin:0 0 18px;line-height:1.6}
+.rvbox sc-for{display:contents}
+.pg{word-break:keep-all}
+.phead{display:flex;align-items:center;gap:18px;flex-wrap:wrap;margin-bottom:26px}
+.phead .big{width:72px;height:72px;border-radius:50%;background:var(--navy-900);color:#fff;
+ font-size:26px;font-weight:600;display:flex;align-items:center;justify-content:center;flex:none}
+.phead .nm{font-size:24px;font-weight:600;letter-spacing:-0.5px}
+.phead .mt{font-size:14px;color:var(--s600);margin-top:4px}
+.phead .sp{flex:1 1 auto}
+.avaup{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.avaup .ph{width:64px;height:64px;border-radius:50%;background:var(--navy-900);color:#fff;
+ font-size:22px;font-weight:600;display:flex;align-items:center;justify-content:center;flex:none}
+.badge-pub{display:inline-block;font-size:13px;font-weight:500;padding:3px 9px;border-radius:6px;
+ background:var(--blue-50);color:var(--navy-900);border:1px solid #D7E5FF}
+.needed{display:inline-block;font-size:13px;font-weight:500;padding:3px 9px;border-radius:6px;
+ background:var(--amber-50);color:var(--amber-700);border:1px solid #F2E0BE;margin-left:6px}
+.savebar{display:flex;justify-content:flex-end;gap:10px;padding-top:4px}
+.star{color:var(--amber-700)}
+.ratecard{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
+.flinks{display:flex;flex-direction:column;gap:8px}
+.flinks .row{display:flex;gap:8px;align-items:center}
+.flinks .row .inp{flex:1 1 auto;min-width:0}
+.flinks .rm{flex:none;white-space:nowrap;font-family:inherit;font-size:14px;color:var(--s600);background:none;border:0;text-decoration:underline;cursor:pointer;padding:0 4px}
+.fileline{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:10px}
+.sumbox{background:var(--s50);border:1px solid var(--s200);border-radius:10px;padding:14px 16px;margin-top:4px}
+.sumbox .hd{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:0 0 6px}
+.sumbox .hd b{font-size:14px;font-weight:600;color:var(--s600)}
+.sumbox p{margin:0;font-size:15px;line-height:1.65;color:var(--s900)}
+.sumbox .acts{display:flex;gap:16px;margin-top:10px;font-size:14px}
+.sumbox .acts button{font-family:inherit;font-size:14px;color:var(--navy-900);background:none;border:0;text-decoration:underline;cursor:pointer;padding:0}
+.sumbox .acts .btn{text-decoration:none}
+.agreebox{border:1px solid var(--s200);border-radius:12px;background:#fff;padding:18px 20px;margin:0 0 18px}
+.agreebox h3{font-size:16px;font-weight:600;margin:0 0 10px}
+.agreebox .cbx{margin:0 0 8px}
+.agreebox .sec{margin:0 0 0 27px}
+</style>
+<style>
+.pg{min-height:100vh;position:relative;padding-bottom:256px;box-sizing:border-box}
+.gf{position:absolute;left:0;right:0;bottom:0;background:var(--navy-900);padding:34px 0 30px;font-size:14px;color:#A9BDD6;word-break:keep-all}
+.gf a{color:#A9BDD6;text-decoration:none}
+.gf-top{display:flex;justify-content:space-between;align-items:center;gap:12px 32px;flex-wrap:wrap}
+.gf-brand{display:flex;align-items:center;gap:16px;flex-wrap:wrap;min-width:0}
+.gf-logo{display:inline-flex;align-items:center;font-size:19px;font-weight:600;letter-spacing:-0.4px;color:#fff}
+.gf-brand p{margin:0}
+.gf-cs{display:flex;align-items:baseline;gap:4px 16px;flex-wrap:wrap}
+.gf-cs b{color:#fff;font-weight:600;font-size:15px}
+.gf-nav{display:flex;flex-wrap:wrap;gap:10px 44px;margin:18px 0 0;padding:0 0 24px;border-bottom:1px solid rgba(255,255,255,.14)}
+.gf-nav>div{display:flex;align-items:baseline;gap:18px;flex-wrap:wrap}
+.gf-nav b{color:#fff;font-weight:600}
+.gf-nav a.em{color:#fff;font-weight:600}
+.gf-bot{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:24px;padding-top:20px;font-size:13px;line-height:1.75;color:#8FA6C2}
+.gf-bot p{margin:0}
+.gf-biz i{display:inline-block;width:1px;height:10px;background:rgba(255,255,255,.28);margin:0 9px;vertical-align:-1px}
+.gf-copy{align-self:end;text-align:right;white-space:nowrap}
+.gf-note{grid-column:1 / -1;margin-top:8px !important}
+</style>
+</helmet>
+
+<div class="pg">
+
+  <header class="gnb dark">
+    <div class="wrap">
+      <div class="gnbin">
+        <a class="brand" href="Home-Supplier.dc.html"><span class="mark" aria-hidden="true"><i style="height:9px"></i><i style="height:17px"></i><i style="height:12px;opacity:.55"></i></span>마자용</a>
+        <nav class="nav" aria-label="주요 메뉴">
+          <a href="Home-Supplier.dc.html">홈</a><a href="Find-Supplier.dc.html">프로젝트 찾기</a><a href="Apps-Supplier.dc.html">내 지원</a><a href="Contracts-Supplier.dc.html">내 계약</a><a href="Find-Supplier.dc.html">북마크</a>
+        </nav>
+        <div class="gright">
+          <a class="bell dot" href="Chat-Supplier.dc.html" aria-label="채팅 — 새 메시지 1건"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"></path></svg></a>
+          <a class="bell dot" href="Notify-Supplier.dc.html" aria-label="알림 — 안 읽은 알림 3건"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg></a>
+          <span class="who"><span class="ava">최</span><span class="uname">최준호</span></span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="pad">
+    <div class="narrow">
+
+      <div class="phead">
+        <span class="big" aria-hidden="true">최</span>
+        <div>
+          <div class="nm">최준호</div>
+          <div class="mt">공급자 · 웹 외주 프리랜서 5년 차 · 2025년 가입 · <span class="star">★</span> 4.8 (리뷰 12건)</div>
+        </div>
+        <span class="sp"></span>
+        <a class="btn gh" href="PublicSupplier.dc.html">공개 프로필 보기</a>
+      </div>
+
+      <nav class="tabs" aria-label="프로필 메뉴">
+        <a class="{{tabB}}" href="?view=기본+정보">기본 정보</a>
+        <a class="{{tabR}}" href="?view=받은+리뷰">받은 리뷰 <span style="color:var(--s600);font-weight:400">12</span></a>
+        <a href="Account-Supplier.dc.html">계정 설정</a>
+      </nav>
+
+      <sc-if value="{{isRv}}" hint-placeholder-val="{{ false }}">
+        <p class="rvnote">리뷰는 공개 프로필과 의뢰인의 제안 비교 카드에 보입니다. 계약을 마친 의뢰인이 계약당 한 번 쓰고, 고치거나 지울 수 없습니다. 의뢰인 상호 대신 업종과 계약 기능만 보입니다.</p>
+        <section class="rvbox" aria-labelledby="h-rv">
+          <h2 id="h-rv">받은 리뷰 <span>★ 4.8 · 12건</span></h2>
+          <div class="rvs">
+            <div class="avg">
+              <div class="v">4.8</div>
+              <div class="stars">★★★★★</div>
+              <div class="n">리뷰 12건 평균</div>
+              <div class="dist">
+                <sc-for list="{{dist}}" as="d" hint-placeholder-count="5"><div class="r"><span>{{d.s}}점</span><span class="bar"><i style="{{d.w}}"></i></span><span>{{d.n}}</span></div></sc-for>
+              </div>
+            </div>
+            <div class="ttg">
+              <p class="k">많이 받은 태그</p>
+              <sc-for list="{{tt}}" as="t" hint-placeholder-count="5"><div class="r"><span>{{t.n}}</span><span class="bar"><i style="{{t.w}}"></i></span><b>{{t.c}}</b></div></sc-for>
+            </div>
+          </div>
+          <sc-for list="{{reviews}}" as="r" hint-placeholder-count="4">
+            <article class="rc">
+              <div class="h"><span class="st2">{{r.stars}}</span><span class="dt">{{r.d}}</span></div>
+              <p class="who"><b>{{r.who}}</b> · {{r.ct}}</p>
+              <div class="tg3"><sc-for list="{{r.tags}}" as="t" hint-placeholder-count="2"><span>{{t}}</span></sc-for></div>
+              <p>{{r.tx}}</p>
+            </article>
+          </sc-for>
+          <a class="ft more" href="#reviews-all">이전 리뷰 8건 더 보기</a>
+        </section>
+      </sc-if>
+      <sc-if value="{{isBasic}}" hint-placeholder-val="{{ true }}">
+      <section class="scope">
+        <div class="sh2">
+          <div class="nm">공개되는 정보 <span class="badge-pub">공개</span></div>
+          <div class="ds">의뢰인이 제안을 검토할 때 보게 되는 내용입니다. 공급자 정보는 모두 공개됩니다.</div>
+        </div>
+        <div class="bd">
+          <div class="f">
+            <span class="lbl">프로필 이미지</span>
+            <div class="avaup">
+              <span class="ph" aria-hidden="true">최</span>
+              <button type="button" class="btn gh sm">이미지 바꾸기</button>
+              <span class="sec">넣지 않으시면 이름 첫 글자로 표시됩니다.</span>
+            </div>
+          </div>
+
+          <div class="two">
+            <div class="f">
+              <label class="lbl" for="s-name">이름 또는 활동명<span class="needed">지원에 필요</span></label>
+              <input class="inp" id="s-name" type="text" value="최준호">
+            </div>
+            <div class="f">
+              <label class="lbl" for="s-career">경력<span class="opt">선택</span></label>
+              <input class="inp" id="s-career" type="number" value="5" min="0" max="50">
+              <p class="hint">연 단위로 적어주세요.</p>
+            </div>
+          </div>
+
+          <div class="f">
+            <label class="lbl" for="s-bio">자기소개<span class="opt">선택</span></label>
+            <textarea class="inp" id="s-bio">예약·결제 연동 위주로 작업해 온 웹 개발 프리랜서입니다. 소규모 식당 사이트를 열두 곳 만들었습니다.</textarea>
+          </div>
+
+          <div class="f">
+            <label class="lbl" for="s-ind">활동 업종<span class="needed">지원에 필요</span></label>
+            <select class="inp" id="s-ind">
+              <option selected>예약 기반 음식점</option>
+              <option>기타 (직접 입력)</option>
+            </select>
+          </div>
+
+          <div class="f">
+            <span class="lbl" id="lbl-skill">기술 스택<span class="needed">지원에 필요</span></span>
+            <div class="tagrow" role="group" aria-labelledby="lbl-skill" style="margin-bottom:10px">
+              <span class="tag on">React</span>
+              <span class="tag on">Next.js</span>
+              <span class="tag on">Supabase</span>
+              <span class="tag">Node.js</span>
+              <span class="tag">PG 연동</span>
+              <span class="tag">Vue</span>
+              <span class="tag">SQL</span>
+              <span class="tag">Firebase</span>
+              <span class="tag">디자인</span>
+            </div>
+            <input class="inp" type="text" placeholder="목록에 없으면 직접 적어주세요">
+            <p class="hint">의뢰인 명세의 필요 기술과 맞춰보는 데 씁니다.</p>
+          </div>
+
+          <div class="f">
+            <label class="lbl">포트폴리오<span class="opt">선택</span></label>
+            <div class="flinks">
+              <div class="row"><input class="inp" type="url" value="https://junho.work" aria-label="포트폴리오 링크 1"><button type="button" class="rm">빼기</button></div>
+              <div class="row"><input class="inp" type="url" value="https://ondo-sample.kr" aria-label="포트폴리오 링크 2"><button type="button" class="rm">빼기</button></div>
+              <div class="row"><input class="inp" type="url" placeholder="링크 더하기 — 작업한 사이트, 깃허브, 노션 등" aria-label="포트폴리오 링크 추가"></div>
+            </div>
+            <div class="fileline"><button type="button" class="btn gh sm">파일 올리기</button><span class="sec">PDF · 이미지, 5개까지. 올린 파일 1개 — 작업소개서.pdf</span></div>
+          </div>
+          <div class="f">
+            <label class="lbl">포트폴리오 요약 <span class="opt">AI가 작성</span></label>
+            <div class="sumbox">
+              <div class="hd"><b>의뢰인 제안 비교 카드에 보이는 문장</b><span class="{{chipCls}}">{{chip}}</span></div>
+              <sc-if value="{{hasText}}" hint-placeholder-val="{{ true }}"><p>소규모 식당 예약 사이트 12곳을 만들었습니다. 예약 달력과 PG 결제 연동 작업이 대부분이고, 가장 최근 작업은 회차제 코스 레스토랑의 예약 사이트입니다.</p></sc-if>
+              <sc-if value="{{isHidden}}" hint-placeholder-val="{{ false }}"><p style="color:var(--s600);font-size:14px">숨겨 두었습니다. 의뢰인에게는 등록한 링크만 보입니다.</p></sc-if>
+              <div class="acts">
+                <sc-if value="{{isDraft}}" hint-placeholder-val="{{ false }}"><a class="btn sm tint" href="?summary=공개+중">확인하고 공개</a></sc-if>
+                <button type="button">다시 만들기</button>
+                <sc-if value="{{isHidden}}" hint-placeholder-val="{{ false }}"><button type="button" data-action-href="?summary=공개+중">다시 보이기</button></sc-if>
+                <sc-if value="{{canHide}}" hint-placeholder-val="{{ true }}"><button type="button" data-action-href="?summary=숨김">숨기기</button></sc-if>
+              </div>
+            </div>
+            <p class="hint">문장은 직접 고칠 수 없습니다. 링크나 파일을 바꾸면 요약을 새로 만들고, 확인하실 때까지 공개하지 않습니다. 다시 만들기는 하루 5번까지입니다.</p>
+          </div>
+        </div>
+      </section>
+
+      <div class="card">
+        <h2 class="ct">역할</h2>
+        <div class="rowsb">
+          <span><span class="chip blue">공급자</span></span>
+          <span class="sec" style="text-align:right;flex:1 1 300px">가입할 때 정해진 역할은 바꿀 수 없습니다. 의뢰인으로도 활동하시려면 다른 이메일로 계정을 만들어주세요.</span>
+        </div>
+      </div>
+
+      <div class="info" style="margin-bottom:18px">
+        <b>시간당 단가나 블록 가격은 받지 않습니다.</b> 의뢰인은 경력과 평점, 포트폴리오 요약, 견적 총액을 함께 보고 고릅니다. 금액은 프로젝트마다 견적으로 적으시면 됩니다.
+      </div>
+
+      <div class="savebar">
+        <button type="button" class="btn gh">취소</button>
+        <button type="button" class="btn">저장하기</button>
+      </div>
+      </sc-if>
+
+    </div>
+  </main>
+
+  <footer class="gf" aria-label="사이트 정보">
+    <div class="wrap">
+      <div class="gf-top">
+        <div class="gf-brand">
+          <span class="gf-logo"><span class="mark" aria-hidden="true"><i style="height:9px"></i><i style="height:17px"></i><i style="height:12px;opacity:.55"></i></span>마자용</span>
+          <p>소상공인을 위한 웹 외주 요구사항 정의 · 매칭 플랫폼</p>
+        </div>
+        <div class="gf-cs"><b>고객센터 1600-0000</b><span>평일 10:00–18:00</span><span>점심 12:00–13:00 · 주말 · 공휴일 휴무</span><span>help@majayong.example</span></div>
+      </div>
+      <nav class="gf-nav" aria-label="사이트 링크">
+        <div><b>서비스</b><a href="Main.dc.html">의뢰인 안내</a><a href="Supplier-Landing.dc.html">공급자 안내</a></div>
+        <div><b>고객센터</b><a href="Help.dc.html">자주 묻는 질문</a><a href="Help-Inquiry.dc.html">1:1 문의</a><a href="Help.dc.html?view=공지사항">공지사항</a></div>
+        <div><b>정책</b><a href="Terms.dc.html?view=이용약관">이용약관</a><a class="em" href="Terms.dc.html?view=개인정보+처리방침">개인정보 처리방침</a><a href="Terms.dc.html?view=명세+비밀유지">명세 비밀유지</a><a href="Terms.dc.html?view=중개자+고지">중개자 고지</a></div>
+      </nav>
+      <div class="gf-bot">
+        <p class="gf-biz">상호 로켓단<i></i>대표 김로켓<i></i>사업자등록번호 000-00-00000<i></i>통신판매업 신고 제2026-서울마포-0000호<br>주소 서울특별시 마포구 예시로 00, 0층<i></i>개인정보 보호책임자 박예시<i></i>이메일 help@majayong.example</p>
+        <p class="gf-copy">© 2026 로켓단. All rights reserved.</p>
+        <p class="gf-note">마자용은 통신판매중개자로서 거래 당사자가 아니며, 의뢰인과 공급자 사이 계약의 이행 책임은 각 당사자에게 있습니다. 대금 예치와 정산은 마자용이 관리합니다.</p>
+      </div>
+    </div>
+  </footer>
+
+</div>

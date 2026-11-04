@@ -1,0 +1,175 @@
+<helmet>
+<style>
+.pg{word-break:keep-all}
+.ad sc-for,.ad sc-if{display:contents}
+.ad{position:relative;background:var(--s50);min-height:100%}
+.ad-top{height:64px;background:#fff;border-bottom:1px solid var(--s200);display:flex;align-items:center;justify-content:space-between;padding:0 28px;box-sizing:border-box}
+.ad-top .lg{display:flex;align-items:center;gap:10px;font-size:19px;font-weight:600;color:var(--s900);text-decoration:none;letter-spacing:-0.4px}
+.ad-top .lg .mark{margin-right:0}
+.ad-top .cp{font-size:12px;font-weight:500;color:var(--s600);background:var(--s100);border:1px solid var(--s200);border-radius:6px;padding:2px 8px;letter-spacing:0}
+.ad-top .me{display:flex;align-items:center;gap:10px;font-size:14px;color:var(--s600)}
+.ad-top .me b{color:var(--s900);font-weight:600}
+.ad-top .me .av{width:32px;height:32px;border-radius:50%;background:var(--navy-900);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600}
+.ad-body{display:grid;grid-template-columns:232px minmax(0,1fr);align-items:stretch}
+.ad-nav{background:var(--navy-900);padding:20px 12px;display:flex;flex-direction:column;gap:2px;min-height:calc(100% - 0px)}
+.ad-nav .h{font-size:12px;color:var(--on-sub);padding:0 12px 8px;letter-spacing:0.2px}
+.ad-nav a{display:flex;justify-content:space-between;align-items:center;font-size:15px;color:#fff;text-decoration:none;padding:10px 12px;border-radius:8px;border-left:3px solid transparent}
+.ad-nav a.on{background:rgba(255,255,255,.10);border-left-color:var(--blue-600);font-weight:600}
+.ad-nav a .bd{font-size:12px;font-weight:600;min-width:20px;height:20px;border-radius:10px;background:rgba(255,255,255,.16);color:#fff;display:inline-flex;align-items:center;justify-content:center;padding:0 6px;box-sizing:border-box}
+.ad-nav .sp{height:1px;background:var(--on-line);margin:12px 8px}
+.ad-nav a.mut{color:var(--on-sub);font-size:14px}
+.ad-nav .ft2{margin-top:auto;font-size:12px;color:var(--on-sub);line-height:1.6;padding:24px 12px 4px}
+.ad-main{padding:28px 32px 40px;min-width:0}
+.ad-main h1.t{margin:0 0 6px}
+.ad-main .sub{margin:0 0 20px;color:var(--s600);font-size:15px}
+.ad-tabs{display:flex;gap:6px;margin:0 0 14px;flex-wrap:wrap}
+.ad-tabs a{font-size:14px;padding:6px 13px;border-radius:16px;border:1px solid var(--s200);background:#fff;color:var(--s600);text-decoration:none}
+.ad-tabs a.on{background:var(--navy-900);border-color:var(--navy-900);color:#fff;font-weight:600}
+.ad-tabs a .n{margin-left:5px;font-weight:600}
+.ad-lbl{display:block;font-size:14px;font-weight:600;color:var(--s900);margin:14px 0 6px}
+.ad-lbl i{font-style:normal;font-weight:400;color:var(--amber-700);font-size:13px;margin-left:6px}
+.ad-in{width:100%;box-sizing:border-box;font-family:inherit;font-size:15px;color:var(--s900);background:#fff;border:1px solid var(--s300);border-radius:8px;padding:10px 12px}
+textarea.ad-in{min-height:76px;resize:vertical;line-height:1.6}
+.ad-log{font-size:13px;color:var(--s600);display:flex;align-items:center;gap:6px}
+.ad-log::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--s400)}
+.btn.warn{background:#fff;color:var(--amber-700);border:1px solid #E6C68A}
+.rp-grid{display:grid;grid-template-columns:340px minmax(0,1fr);gap:20px;align-items:start}
+.rp-list{background:#fff;border:1px solid var(--s200);border-radius:12px;overflow:hidden}
+.rp-li{display:block;padding:14px 16px;border-top:1px solid var(--s200);text-decoration:none;color:inherit}
+.rp-li.first{border-top:0}
+.rp-li.sel{background:#EEF4FF;box-shadow:inset 3px 0 0 var(--blue-600)}
+.rp-li .tp{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:0 0 6px}
+.rp-li .tp .chip{font-size:11px;padding:1px 7px;font-weight:600}
+.rp-li b{display:block;font-size:15px;color:var(--s900);margin:0 0 3px}
+.rp-li .mt{font-size:13px;color:var(--s600);line-height:1.5}
+.rp-more{font-size:13px;color:var(--s600);padding:12px 16px;border-top:1px solid var(--s200);background:var(--s50);margin:0}
+.rp-dt{background:#fff;border:1px solid var(--s200);border-radius:12px;padding:20px 22px}
+.rp-dt .hd{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.rp-dt .hd h2{font-size:20px;font-weight:600;margin:0 0 4px;letter-spacing:-0.3px}
+.rp-dt .hd .chips{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 8px}
+.rp-dt .hd .chips .chip{font-size:12px;padding:2px 8px}
+.rp-dt .mt3{font-size:13px;color:var(--s600);margin:0}
+.rp-sec{border-top:1px solid var(--s200);padding:14px 0 0;margin:14px 0 0}
+.rp-k{font-size:12px;font-weight:600;color:var(--s600);margin:0 0 8px}
+.rp-kv{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.rp-kv div{background:var(--s50);border:1px solid var(--s200);border-radius:8px;padding:9px 11px}
+.rp-kv span{display:block;font-size:12px;color:var(--s600)}
+.rp-kv b{display:block;font-size:14px;color:var(--s900);font-weight:600;margin-top:2px}
+.rp-say{margin:0;font-size:14px;color:var(--s900);line-height:1.6;background:var(--s50);border-radius:8px;padding:10px 12px}
+.rp-msgs{border:1px solid var(--s200);border-radius:10px;overflow:hidden}
+.rp-m{display:grid;grid-template-columns:118px minmax(0,1fr);gap:12px;padding:9px 12px;border-top:1px solid var(--s100);font-size:14px;line-height:1.55}
+.rp-m:first-child{border-top:0}
+.rp-m .w{font-size:12px;color:var(--s600)}
+.rp-m .w b{display:block;font-size:13px;color:var(--s900);font-weight:600}
+.rp-m.hit{background:var(--amber-50)}
+.rp-m.hit .t{color:#7A5A1C;font-weight:500}
+.rp-m.sys .t{color:var(--s600);font-size:13px}
+.rp-m .mask{display:inline-block;font-size:12px;background:var(--s100);border:1px solid var(--s200);border-radius:4px;padding:0 5px;color:var(--s600)}
+.rp-auto{display:flex;gap:8px;align-items:center;font-size:13px;color:var(--s600);margin:8px 0 0}
+.rp-auto .chip{font-size:11px;padding:1px 7px}
+.rp-acts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.rp-acts label{display:block;border:1px solid var(--s300);border-radius:10px;padding:10px 12px;cursor:pointer;font-size:14px;color:var(--s900)}
+.rp-acts label.on{border-color:var(--blue-600);background:#EEF4FF;box-shadow:inset 0 0 0 1px var(--blue-600)}
+.rp-acts label input{margin:0 6px 0 0;vertical-align:-1px}
+.rp-acts label span{display:block;font-size:12px;color:var(--s600);margin-top:3px;line-height:1.45}
+.rp-prev{margin:10px 0 0;padding:10px 12px;border-radius:8px;background:var(--s50);border:1px dashed var(--s300);font-size:13px;color:var(--s600);line-height:1.6}
+.rp-prev b{color:var(--s900)}
+.rp-foot{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:16px 0 0}
+.rp-foot p{margin:0;font-size:13px;color:var(--s600);line-height:1.6}
+.rp-foot .btn{white-space:nowrap;flex:none}
+.rp-done{background:#EAF6F4;border:1px solid #C7E6E0;border-radius:12px;padding:14px 18px;margin:0 0 16px}
+.rp-done b{display:block;color:var(--teal-700);font-size:15px;margin:0 0 2px}
+.rp-done p{margin:0;font-size:14px;color:var(--s600);line-height:1.6}
+.rp-done a{font-size:14px}
+
+</style>
+</helmet>
+
+<div class="pg ad">
+  <header class="ad-top">
+    <a class="lg" href="Admin-Blocks.dc.html"><span class="mark" aria-hidden="true"><i style="height:9px"></i><i style="height:17px"></i><i style="height:12px;opacity:.55"></i></span>마자용 운영<span class="cp">운영자 콘솔</span></a>
+    <div class="me"><span>운영자</span><b>김하늘</b><span class="av" aria-hidden="true">하</span></div>
+  </header>
+  <div class="ad-body">
+    <nav class="ad-nav" aria-label="운영 메뉴">
+      <p class="h">처리할 일</p>
+      <a href="Admin-Blocks.dc.html">블록 검토<span class="bd">7</span></a><a href="Admin-Payments.dc.html">보류된 결제<span class="bd">2</span></a><a href="Admin-Refunds.dc.html">환불 처리<span class="bd">1</span></a><a href="Admin-Disputes.dc.html">이견 개입<span class="bd">1</span></a><a class="on" aria-current="page" href="Admin-Reports.dc.html">신고 처리<span class="bd">{{nWait}}</span></a><a href="Admin-Inquiries.dc.html">1:1 문의<span class="bd">4</span></a>
+      <div class="sp"></div>
+      <a class="mut" href="Admin-Events.dc.html">이벤트 기록</a>
+      <p class="ft2">운영자 행위는 모두 이벤트 기록에 남습니다</p>
+    </nav>
+    <main class="ad-main">
+      <h1 class="t">신고 처리</h1>
+      <p class="sub">채팅에서 들어온 신고를 봅니다. 근거가 되는 메시지는 앞뒤 문맥만 보여 주고, 조치는 운영자가 사유와 함께 정합니다.</p>
+      <nav class="ad-tabs" aria-label="신고 보기"><a class="{{tabCls.wait}}" href="?view=처리+대기">처리 대기<span class="n">{{nWait}}</span></a><a class="{{tabCls.done}}" href="?view=처리+완료">처리 완료<span class="n">{{nDone}}</span></a></nav>
+      <sc-if value="{{isDone}}" hint-placeholder-val="{{ false }}">
+        <div class="rp-done" role="status"><b>{{dn.t}}</b><p>{{dn.p}} 조치와 사유는 <a class="ft" href="Admin-Events.dc.html">이벤트 기록</a>에 남았습니다.</p></div>
+      </sc-if>
+      <div class="rp-grid">
+        <section class="rp-list" aria-label="신고 목록">
+          <sc-for list="{{items}}" as="it" hint-placeholder-count="2">
+            <a class="{{it.cls}}" href="{{it.href}}">
+              <div class="tp"><span class="{{it.rCls}}">{{it.reason}}</span><span class="{{it.sCls}}">{{it.status}}</span></div>
+              <b>{{it.title}}</b>
+              <div class="mt">{{it.who}}</div>
+              <div class="mt">{{it.when}}</div>
+            </a>
+          </sc-for>
+          <p class="rp-more">{{moreNote}}</p>
+        </section>
+
+        <section class="rp-dt" aria-label="신고 상세">
+          <div class="hd">
+            <div>
+              <div class="chips"><span class="chip amber">연락처 · 외부 거래 유도</span><span class="{{dChipCls}}">{{dChip}}</span></div>
+              <h2>오후 세시 → 공급자 강태오</h2>
+              <p class="mt3">음료 사전 주문, 픽업 알림 외 1개 기능 · 문의 중(계약 전) · 신고 11월 2일 15:40</p>
+            </div>
+          </div>
+
+          <div class="rp-sec">
+            <p class="rp-k">신고 내용 — 의뢰인 문지아(오후 세시)</p>
+            <p class="rp-say">연락처를 계속 보내시고 카톡으로 따로 하자고 하십니다. 계약 전에는 여기서만 이야기하는 걸로 알고 있어서 신고합니다.</p>
+            <div class="rp-auto"><span class="chip">시스템</span>이 대화에서 연락처 형식 2회 가림 · 자동 탐지 기록과 함께 접수</div>
+          </div>
+
+          <div class="rp-sec">
+            <p class="rp-k">근거 메시지 — 신고된 메시지와 앞뒤 문맥만</p>
+            <div class="rp-msgs">
+              <div class="rp-m"><span class="w"><b>강태오</b>11월 2일 15:12</span><span class="t">견적 관련해서 자세히 설명드리고 싶어서요. <span class="mask">연락처 가림</span> 로 연락 주세요.</span></div>
+              <div class="rp-m"><span class="w"><b>문지아</b>15:20</span><span class="t">연락처는 계약 체결 뒤에 주고받는다고 되어 있어서요. 여기서 말씀해 주세요.</span></div>
+              <div class="rp-m hit"><span class="w"><b>강태오</b>15:31 · 신고됨</span><span class="t">카톡으로 따로 얘기해요, 수수료 아끼게. 아이디는 <span class="mask">연락처 가림</span> 이에요.</span></div>
+              <div class="rp-m sys"><span class="w"><b>시스템</b>15:40</span><span class="t">문지아님이 이 메시지를 신고했습니다.</span></div>
+            </div>
+          </div>
+
+          <div class="rp-sec">
+            <p class="rp-k">피신고자 — 공급자 강태오</p>
+            <div class="rp-kv">
+              <div><span>지난 경고</span><b>0회</b></div>
+              <div><span>완료한 계약</span><b>3건 · ★ 4.6</b></div>
+              <div><span>이전 신고</span><b>0건 · 이번이 처음</b></div>
+              <div><span>가입</span><b>2026년 6월</b></div>
+            </div>
+          </div>
+
+          <div class="rp-sec">
+            <p class="rp-k">조치</p>
+            <div class="rp-acts" role="radiogroup" aria-label="조치">
+              <sc-for list="{{acts}}" as="a" hint-placeholder-count="4"><label class="{{a.cls}}" data-action-href="{{a.href}}"><input type="radio" name="act" {{a.chk}}>{{a.name}}<span>{{a.desc}}</span></label></sc-for>
+            </div>
+            <div class="rp-prev">{{prev}}</div>
+            <label class="ad-lbl" for="rp-why">조치 사유<i>필수</i></label>
+            <textarea id="rp-why" class="ad-in" placeholder="어떤 메시지가 어떤 규칙에 해당하는지 적어 주세요.">{{why}}</textarea>
+            <div class="rp-foot">
+              <p>신고자 정보는 상대에게 알리지 않습니다 · 조치는 이벤트 기록에 남습니다</p>
+              <sc-if value="{{showBtn}}" hint-placeholder-val="{{ true }}"><a class="{{btnCls}}" href="{{confirmHref}}">조치 확정</a></sc-if>
+              <sc-if value="{{showOff}}" hint-placeholder-val="{{ false }}"><button type="button" class="btn off" disabled>조치 확정</button></sc-if>
+              <sc-if value="{{isDone}}" hint-placeholder-val="{{ false }}"><a class="btn gh" href="Admin-Events.dc.html">이벤트 기록 보기</a></sc-if>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+</div>

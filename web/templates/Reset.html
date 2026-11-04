@@ -1,0 +1,149 @@
+<helmet>
+<style>
+.pg{word-break:keep-all}
+.btn.warn{background:#fff;color:var(--amber-700);border:1px solid #E6C68A}
+.rs sc-for,.rs sc-if{display:contents}
+.formcard{max-width:480px;margin:0 auto}
+.rs .ic{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 0 14px;background:var(--s100);color:var(--navy-900)}
+.rs .ic.ok{background:#EAF6F4;color:var(--teal-700)}
+.rs .ic.am{background:var(--amber-50);color:var(--amber-700)}
+.rs .ic svg{width:24px;height:24px}
+.mailbox{background:var(--s50);border:1px solid var(--s200);border-radius:10px;padding:14px 16px;margin:0 0 16px;font-size:15px}
+.mailbox b{font-size:16px}
+.mailbox p{margin:4px 0 0;font-size:13px;color:var(--s600)}
+.rules5{list-style:none;margin:6px 0 0;padding:0}
+.rules5 li{font-size:13px;color:var(--teal-700);line-height:1.8}
+.rules5 li::before{content:"✓ "}
+.links3{display:flex;justify-content:center;gap:18px;margin:16px 0 0;font-size:14px}
+.txb{font-family:inherit;font-size:14px;color:var(--s600);background:none;border:0;text-decoration:underline;cursor:pointer;padding:0}
+
+</style>
+<style>
+.pg{min-height:100vh;position:relative;padding-bottom:256px;box-sizing:border-box}
+.gf{position:absolute;left:0;right:0;bottom:0;background:var(--navy-900);padding:34px 0 30px;font-size:14px;color:#A9BDD6;word-break:keep-all}
+.gf a{color:#A9BDD6;text-decoration:none}
+.gf-top{display:flex;justify-content:space-between;align-items:center;gap:12px 32px;flex-wrap:wrap}
+.gf-brand{display:flex;align-items:center;gap:16px;flex-wrap:wrap;min-width:0}
+.gf-logo{display:inline-flex;align-items:center;font-size:19px;font-weight:600;letter-spacing:-0.4px;color:#fff}
+.gf-brand p{margin:0}
+.gf-cs{display:flex;align-items:baseline;gap:4px 16px;flex-wrap:wrap}
+.gf-cs b{color:#fff;font-weight:600;font-size:15px}
+.gf-nav{display:flex;flex-wrap:wrap;gap:10px 44px;margin:18px 0 0;padding:0 0 24px;border-bottom:1px solid rgba(255,255,255,.14)}
+.gf-nav>div{display:flex;align-items:baseline;gap:18px;flex-wrap:wrap}
+.gf-nav b{color:#fff;font-weight:600}
+.gf-nav a.em{color:#fff;font-weight:600}
+.gf-bot{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:24px;padding-top:20px;font-size:13px;line-height:1.75;color:#8FA6C2}
+.gf-bot p{margin:0}
+.gf-biz i{display:inline-block;width:1px;height:10px;background:rgba(255,255,255,.28);margin:0 9px;vertical-align:-1px}
+.gf-copy{align-self:end;text-align:right;white-space:nowrap}
+.gf-note{grid-column:1 / -1;margin-top:8px !important}
+</style>
+</helmet>
+
+<div class="pg">
+  <header class="gnb">
+    <div class="wrap">
+      <div class="gnbin">
+        <a class="brand" href="Main.dc.html"><span class="mark" aria-hidden="true"><i style="height:9px"></i><i style="height:17px"></i><i style="height:12px;opacity:.55"></i></span>마자용</a>
+        <nav class="nav" aria-label="주요 메뉴"><a href="Main.dc.html">작동 방식</a><a href="Main.dc.html">안전장치</a><a href="Main.dc.html">비용</a></nav>
+        <div class="gright"><span class="sec">이미 계정이 있으신가요?</span><a class="lk ft" href="Login.dc.html">로그인</a></div>
+      </div>
+    </div>
+  </header>
+
+  <main class="pad rs">
+    <div class="narrow">
+      <div class="formcard">
+
+        <sc-if value="{{isAsk}}" hint-placeholder-val="{{ true }}">
+          <span class="ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"/><path d="m11 12 9-9M17 6l3 3"/></svg></span>
+          <h1 class="t">비밀번호를 잊으셨나요?</h1>
+          <p class="sub">가입한 이메일을 적어 주세요. 비밀번호를 새로 정하는 링크를 보내 드립니다.</p>
+          <div class="card">
+            <div class="f">
+              <label class="lbl" for="rs-email">이메일</label>
+              <input class="inp" id="rs-email" type="email" value="minjae.ondo@example.com">
+            </div>
+            <a class="btn full" href="?view=메일+보냄">재설정 메일 보내기</a>
+            <p class="hint" style="text-align:center;margin:12px 0 0">구글로 가입한 계정은 비밀번호가 없습니다. 구글로 로그인하세요.</p>
+          </div>
+          <div class="links3"><a class="ft" href="Login.dc.html">로그인으로 돌아가기</a><a class="ft" href="Signup.dc.html">계정 만들기</a></div>
+        </sc-if>
+
+        <sc-if value="{{isSent}}" hint-placeholder-val="{{ false }}">
+          <span class="ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16v12H4z"/><path d="m4 7 8 6 8-6"/></svg></span>
+          <h1 class="t">메일을 보냈습니다</h1>
+          <p class="sub">메일의 링크를 눌러 비밀번호를 새로 정해 주세요.</p>
+          <div class="card">
+            <div class="mailbox"><b>m******@example.com</b><p>링크는 30분 동안 쓸 수 있습니다. 가입하지 않은 이메일이면 메일이 가지 않습니다.</p></div>
+            <a class="btn full gh" href="Login.dc.html">로그인으로</a>
+            <p class="hint" style="text-align:center;margin:12px 0 0">메일이 오지 않았나요? 스팸함을 확인하거나 <button type="button" class="txb">다시 보내기</button></p>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{isNew}}" hint-placeholder-val="{{ false }}">
+          <span class="ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"/><path d="m11 12 9-9M17 6l3 3"/></svg></span>
+          <h1 class="t">새 비밀번호를 정해 주세요</h1>
+          <p class="sub">m******@example.com 계정의 비밀번호를 바꿉니다.</p>
+          <div class="card">
+            <div class="f">
+              <label class="lbl" for="rs-pw1">새 비밀번호</label>
+              <input class="inp" id="rs-pw1" type="password" value="ondo2026!!new">
+              <ul class="rules5"><li>8자 이상</li><li>영문과 숫자를 섞음</li></ul>
+            </div>
+            <div class="f">
+              <label class="lbl" for="rs-pw2">한 번 더</label>
+              <input class="inp" id="rs-pw2" type="password" value="ondo2026!!new">
+            </div>
+            <a class="btn full" href="?view=완료">비밀번호 바꾸기</a>
+            <p class="hint" style="text-align:center;margin:12px 0 0">바꾸면 다른 기기에서는 다시 로그인해야 합니다.</p>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{isExpired}}" hint-placeholder-val="{{ false }}">
+          <span class="ic am" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span>
+          <h1 class="t">링크가 만료되었습니다</h1>
+          <p class="sub">재설정 링크는 30분 동안만 쓸 수 있고, 한 번 쓰면 다시 쓸 수 없습니다.</p>
+          <div class="card">
+            <div class="note" style="margin:0 0 16px"><b>다시 요청해 주세요</b><p>새 링크를 받으면 이전 링크는 모두 쓸 수 없게 됩니다.</p></div>
+            <a class="btn full" href="?view=이메일+입력">재설정 메일 다시 받기</a>
+          </div>
+          <div class="links3"><a class="ft" href="Login.dc.html">로그인으로 돌아가기</a></div>
+        </sc-if>
+
+        <sc-if value="{{isDone}}" hint-placeholder-val="{{ false }}">
+          <span class="ic ok" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+          <h1 class="t">비밀번호를 바꿨습니다</h1>
+          <p class="sub">새 비밀번호로 로그인해 주세요. 다른 기기에서는 로그아웃되었습니다.</p>
+          <div class="card">
+            <a class="btn full" href="Login.dc.html">로그인하기</a>
+          </div>
+        </sc-if>
+
+      </div>
+    </div>
+  </main>
+
+  <footer class="gf" aria-label="사이트 정보">
+    <div class="wrap">
+      <div class="gf-top">
+        <div class="gf-brand">
+          <span class="gf-logo"><span class="mark" aria-hidden="true"><i style="height:9px"></i><i style="height:17px"></i><i style="height:12px;opacity:.55"></i></span>마자용</span>
+          <p>소상공인을 위한 웹 외주 요구사항 정의 · 매칭 플랫폼</p>
+        </div>
+        <div class="gf-cs"><b>고객센터 1600-0000</b><span>평일 10:00–18:00</span><span>점심 12:00–13:00 · 주말 · 공휴일 휴무</span><span>help@majayong.example</span></div>
+      </div>
+      <nav class="gf-nav" aria-label="사이트 링크">
+        <div><b>서비스</b><a href="Main.dc.html">의뢰인 안내</a><a href="Supplier-Landing.dc.html">공급자 안내</a></div>
+        <div><b>고객센터</b><a href="Help.dc.html">자주 묻는 질문</a><a href="Help-Inquiry.dc.html">1:1 문의</a><a href="Help.dc.html?view=공지사항">공지사항</a></div>
+        <div><b>정책</b><a href="Terms.dc.html?view=이용약관">이용약관</a><a class="em" href="Terms.dc.html?view=개인정보+처리방침">개인정보 처리방침</a><a href="Terms.dc.html?view=명세+비밀유지">명세 비밀유지</a><a href="Terms.dc.html?view=중개자+고지">중개자 고지</a></div>
+      </nav>
+      <div class="gf-bot">
+        <p class="gf-biz">상호 로켓단<i></i>대표 김로켓<i></i>사업자등록번호 000-00-00000<i></i>통신판매업 신고 제2026-서울마포-0000호<br>주소 서울특별시 마포구 예시로 00, 0층<i></i>개인정보 보호책임자 박예시<i></i>이메일 help@majayong.example</p>
+        <p class="gf-copy">© 2026 로켓단. All rights reserved.</p>
+        <p class="gf-note">마자용은 통신판매중개자로서 거래 당사자가 아니며, 의뢰인과 공급자 사이 계약의 이행 책임은 각 당사자에게 있습니다. 대금 예치와 정산은 마자용이 관리합니다.</p>
+      </div>
+    </div>
+  </footer>
+
+</div>

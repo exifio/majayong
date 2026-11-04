@@ -1,0 +1,275 @@
+<helmet>
+<style>
+.pg{word-break:keep-all}
+.intro{text-align:center;margin:0 0 28px}
+.intro h1.t{font-size:32px;letter-spacing:-0.8px;margin:0 0 10px}
+.intro .lead{margin:0}
+.ask{padding:30px 32px 28px}
+textarea.inp.big{min-height:132px;font-size:17px;line-height:1.65}
+/* 예시 문장 — 옅되 대비 4.5:1은 지키는 slate-500 */
+#pain::placeholder{color:#64748B}
+.money{display:flex;align-items:center;gap:10px}
+.money .inp{max-width:260px;text-align:right}
+.money .u{font-size:16px;color:var(--s600)}
+.go{margin-top:26px}
+.gonote{text-align:center;margin:10px 0 0}
+.or{display:flex;align-items:center;gap:14px;margin:28px 0 22px;color:var(--s600);font-size:14px}
+.or::before,.or::after{content:"";flex:1 1 auto;height:1px;background:var(--s200)}
+.alt{display:flex;align-items:center;gap:14px 24px;flex-wrap:wrap}
+.alt .lt{flex:999 1 340px;min-width:0}
+.alt .tt{font-size:16px;font-weight:600;margin:0 0 3px}
+.alt .sec{margin:0}
+.drafts{margin-top:28px}
+.dh{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;padding:18px 22px}
+.dh h2.ct{margin:0;font-size:18px}
+.cnt{font-size:14px;color:var(--s600)}
+.cnt b{color:var(--navy-900);font-weight:600}
+/* 홈 '내 프로젝트' 행과 같은 구성 */
+.pj{padding:18px 22px;border-top:1px solid var(--s200);display:flex;gap:16px;flex-wrap:wrap;align-items:center}
+.pj .lt{flex:999 1 400px;min-width:0}
+.pj .rt{flex:1 1 220px;text-align:right;min-width:0}
+.pj .ti{font-size:17px;font-weight:600;letter-spacing:-0.2px;margin:7px 0 5px}
+.pj .mt{font-size:14px;color:var(--s600)}
+.pj .amtl{font-size:14px;color:var(--s600)}
+.pj .amt2{font-size:20px;font-weight:600;letter-spacing:-0.3px;margin:2px 0 10px}
+.pj .amtx{font-size:13px;color:var(--s600);margin:-8px 0 10px}
+.pj .acts{display:flex;gap:16px;justify-content:flex-end;align-items:center}
+.keep{font-family:inherit;font-size:14px;color:var(--s600);background:none;border:0;
+ text-decoration:underline;cursor:pointer;padding:0}
+.archbar{display:flex;justify-content:space-between;align-items:center;gap:12px;width:100%;padding:15px 22px;
+ background:var(--s50);border:0;border-top:1px solid var(--s200);font-family:inherit;font-size:15px;
+ color:var(--s900);cursor:pointer;text-align:left}
+.archbar .r{display:inline-flex;align-items:center;gap:6px;font-size:14px;color:var(--s600)}
+.archbar svg{width:16px;height:16px;display:block}
+.arch{background:var(--s50)}
+.archnote{margin:0;padding:0 22px 18px}
+.keep.del{color:var(--s600)}
+/* 삭제 확인 창 */
+.dscrim{position:fixed;inset:0;background:rgba(11,37,69,.55);z-index:20}
+.dwrap{position:fixed;inset:0;z-index:21;display:flex;align-items:center;justify-content:center;padding:40px 20px}
+.dwrap .modal{max-width:440px}
+.dwrap .mbtns{display:flex;justify-content:flex-end;gap:8px;margin-top:22px}
+.how{margin-top:40px}
+.how h2.ct{text-align:center;margin:0 0 18px}
+.how .cols>div{flex:1 1 220px}
+.howc{height:100%;margin:0}
+.howc h3.st{margin:0 0 8px}
+.howc p{margin:0}
+.n{display:inline-flex;width:26px;height:26px;align-items:center;justify-content:center;border-radius:50%;
+ background:var(--blue-50);color:var(--navy-900);font-size:13px;font-weight:600;margin-bottom:12px}
+</style>
+<style>
+.pg{min-height:100vh;position:relative;padding-bottom:256px;box-sizing:border-box}
+.gf{position:absolute;left:0;right:0;bottom:0;background:var(--navy-900);padding:34px 0 30px;font-size:14px;color:#A9BDD6;word-break:keep-all}
+.gf a{color:#A9BDD6;text-decoration:none}
+.gf-top{display:flex;justify-content:space-between;align-items:center;gap:12px 32px;flex-wrap:wrap}
+.gf-brand{display:flex;align-items:center;gap:16px;flex-wrap:wrap;min-width:0}
+.gf-logo{display:inline-flex;align-items:center;font-size:19px;font-weight:600;letter-spacing:-0.4px;color:#fff}
+.gf-brand p{margin:0}
+.gf-cs{display:flex;align-items:baseline;gap:4px 16px;flex-wrap:wrap}
+.gf-cs b{color:#fff;font-weight:600;font-size:15px}
+.gf-nav{display:flex;flex-wrap:wrap;gap:10px 44px;margin:18px 0 0;padding:0 0 24px;border-bottom:1px solid rgba(255,255,255,.14)}
+.gf-nav>div{display:flex;align-items:baseline;gap:18px;flex-wrap:wrap}
+.gf-nav b{color:#fff;font-weight:600}
+.gf-nav a.em{color:#fff;font-weight:600}
+.gf-bot{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:24px;padding-top:20px;font-size:13px;line-height:1.75;color:#8FA6C2}
+.gf-bot p{margin:0}
+.gf-biz i{display:inline-block;width:1px;height:10px;background:rgba(255,255,255,.28);margin:0 9px;vertical-align:-1px}
+.gf-copy{align-self:end;text-align:right;white-space:nowrap}
+.gf-note{grid-column:1 / -1;margin-top:8px !important}
+</style>
+</helmet>
+
+<div class="pg">
+
+  <header class="gnb">
+    <div class="wrap">
+      <div class="gnbin">
+        <a class="brand" href="Home-Client.dc.html"><span class="mark" aria-hidden="true"><i style="height:9px"></i><i style="height:17px"></i><i style="height:12px;opacity:.55"></i></span>마자용</a>
+        <nav class="nav" aria-label="주요 메뉴">
+          <a href="Home-Client.dc.html">홈</a><a class="on" href="Input-Client.dc.html">프로젝트 시작</a><a href="My-Client.dc.html">내 프로젝트</a><a href="Contracts-Client.dc.html">내 계약</a><a href="Settle-Client.dc.html">정산 내역</a>
+        </nav>
+        <div class="gright">
+          <a class="bell dot" href="Chat-Client.dc.html" aria-label="채팅 — 새 메시지 1건"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"></path></svg></a>
+          <a class="bell dot" href="Notify-Client.dc.html" aria-label="알림 — 안 읽은 알림 3건"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"></path><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"></path></svg></a>
+          <span class="who"><span class="ava">민</span><span class="uname">정민재</span></span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="pad">
+    <div class="narrow">
+
+      <div class="intro">
+        <h1 class="t">요즘 어떤 점이 불편하세요?</h1>
+        <p class="lead">한 문장이면 충분합니다. 어떤 기능이 필요한지는 저희가 화면으로 먼저 그려드립니다.</p>
+      </div>
+
+      <section class="card ask" aria-label="새 초안 시작">
+        <div class="f">
+          <label class="lbl" for="pain">지금 겪고 계신 불편</label>
+          <textarea class="inp big" id="pain" placeholder="예) 예약 앱이랑 전화를 같이 받는데 노쇼 나면 재료를 다 버려요."></textarea>
+        </div>
+
+        <div class="f" style="margin-top:22px">
+          <label class="lbl" for="bud">생각해 두신 예산<span class="opt">선택</span></label>
+          <div class="money"><input class="inp" id="bud" type="text" inputmode="numeric" value="5,000,000"><span class="u">원</span></div>
+          <p class="hint">정확하지 않아도 됩니다. 초안을 고치면서 언제든 바꿀 수 있습니다.</p>
+        </div>
+
+        <sc-if value="{{atLimit}}" hint-placeholder-val="{{ false }}">
+          <div class="note" style="margin:22px 0 0">
+            <b>작성 중인 초안이 3개입니다</b>
+            <p>새로 시작하려면 아래 초안 중 하나를 확정하거나, 보관하거나, 삭제해 주세요. 보관한 초안은 나중에 다시 열 수 있고, 삭제한 초안은 되살릴 수 없습니다.</p>
+          </div>
+        </sc-if>
+
+        <div class="go">
+          <sc-if value="{{canStart}}" hint-placeholder-val="{{ true }}">
+            <a class="btn lg full" href="Draft-Client.dc.html">화면 초안 받아보기</a>
+          </sc-if>
+          <sc-if value="{{atLimit}}" hint-placeholder-val="{{ false }}">
+            <button type="button" class="btn lg full off" disabled="">화면 초안 받아보기</button>
+          </sc-if>
+          <p class="sec gonote">8초 안에 나옵니다. 마음에 들지 않으면 '처음부터'로 다시 시작할 수 있습니다.</p>
+        </div>
+
+        <div class="or">또는</div>
+
+        <div class="alt">
+          <div class="lt">
+            <p class="tt">적기 어려우시면 업종만 골라 시작하세요</p>
+            <p class="sec">지금은 예약 식당 한 업종입니다. 이 업종에 흔히 들어가는 기능으로 초안을 바로 그립니다. 1초면 나옵니다.</p>
+          </div>
+          <sc-if value="{{canStart}}" hint-placeholder-val="{{ true }}">
+            <a class="btn tint" href="Draft-Client.dc.html">예약 식당 기본 구성으로 시작하기</a>
+          </sc-if>
+          <sc-if value="{{atLimit}}" hint-placeholder-val="{{ false }}">
+            <button type="button" class="btn off" disabled="">예약 식당 기본 구성으로 시작하기</button>
+          </sc-if>
+        </div>
+      </section>
+
+      <sc-if value="{{showDrafts}}" hint-placeholder-val="{{ true }}">
+        <section class="card flat drafts" aria-labelledby="dh">
+          <div class="dh">
+            <h2 class="ct" id="dh">작성 중인 초안</h2>
+            <span class="cnt">작성 중 <b>{{count}}</b> / 3</span>
+          </div>
+
+          <sc-for list="{{drafts}}" as="d" hint-placeholder-count="1">
+            <div class="pj">
+              <div class="lt">
+                <span class="chip">작성 중</span> <span class="mt">{{d.when}}</span>
+                <div class="ti">{{d.title}}</div>
+                <div class="mt">{{d.meta}}</div>
+              </div>
+              <div class="rt">
+                <div class="amtl">수수료 포함 예상 총액</div>
+                <div class="amt2">{{d.amount}}</div>
+                <sc-if value="{{d.hasTbd}}" hint-placeholder-val="{{ true }}"><div class="amtx">{{d.tbd}}</div></sc-if>
+                <div class="acts">
+                  <button type="button" class="keep">보관하기</button>
+                  <button type="button" class="keep del" data-action-href="?deleteConfirm=true">삭제</button>
+                  <a class="btn sm tint" href="Draft-Client.dc.html">이어서 고치기</a>
+                </div>
+              </div>
+            </div>
+          </sc-for>
+
+          <button type="button" class="archbar" aria-expanded="{{archExpanded}}" onClick="{{toggleArch}}">
+            <span>보관된 초안 1개</span>
+            <span class="r">{{archLabel}}
+              <sc-if value="{{archOpen}}" hint-placeholder-val="{{ false }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 15 6-6 6 6"></path></svg></sc-if>
+              <sc-if value="{{archClosed}}" hint-placeholder-val="{{ true }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg></sc-if>
+            </span>
+          </button>
+
+          <sc-if value="{{archOpen}}" hint-placeholder-val="{{ false }}">
+            <div class="arch">
+              <div class="pj">
+                <div class="lt">
+                  <span class="chip out">보관됨</span> <span class="mt">10월 24일 보관 · 9월 24일 마지막 수정</span>
+                  <div class="ti">좌석 배치도 외 1개 기능</div>
+                  <div class="mt">명세 항목 2개 · 채팅 수정 28회 남음</div>
+                </div>
+                <div class="rt">
+                  <div class="amtl">수수료 포함 예상 총액</div>
+                  <div class="amt2">640,500원</div>
+                  <div class="acts">
+                    <button type="button" class="keep del" data-action-href="?deleteConfirm=true">삭제</button>
+                    <sc-if value="{{canStart}}" hint-placeholder-val="{{ true }}">
+                      <a class="btn sm tint" href="Draft-Client.dc.html">다시 열기</a>
+                    </sc-if>
+                    <sc-if value="{{atLimit}}" hint-placeholder-val="{{ false }}">
+                      <button type="button" class="btn sm off" disabled="">다시 열기</button>
+                    </sc-if>
+                  </div>
+                </div>
+              </div>
+              <p class="sec archnote">30일 동안 손대지 않았거나 '처음부터'로 새로 시작한 초안은 여기 보관합니다. 다시 열어도 예상 금액은 처음 그대로입니다. 필요 없는 초안은 삭제할 수 있지만, 삭제하면 되돌릴 수 없습니다.</p>
+            </div>
+          </sc-if>
+        </section>
+      </sc-if>
+
+      <section class="how" aria-labelledby="how">
+        <h2 class="ct" id="how">이렇게 작동합니다</h2>
+        <div class="cols">
+          <div><div class="card howc">
+            <span class="n">1</span>
+            <h3 class="st">문장에서 기능을 뽑습니다</h3>
+            <p class="sec">AI가 적으신 문장에서 기능만 뽑아 블록으로 그립니다. 처음 보는 기능이면 새 블록을 만들고, 한 번 만든 블록은 다른 분께도 같은 모습으로 쓰입니다.</p>
+          </div></div>
+          <div><div class="card howc">
+            <span class="n">2</span>
+            <h3 class="st">예상 총액으로 예산을 가늠합니다</h3>
+            <p class="sec">블록마다 AI가 분석해 정해 둔 단가로 예상 총액을 보여드립니다. 같은 기능은 누구에게나 같은 금액이고, 실제 금액은 공급자의 견적으로 정해집니다.</p>
+          </div></div>
+          <div><div class="card howc">
+            <span class="n">3</span>
+            <h3 class="st">적으신 문장은 공개되지 않습니다</h3>
+            <p class="sec">공급자에게는 블록으로 정리된 명세만 보입니다. 문장 속 이름이나 연락처는 기능을 뽑을 때 걸러지고, 원문은 어느 공급자에게도 열리지 않습니다.</p>
+          </div></div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+
+<sc-if value="{{delOpen}}" hint-placeholder-val="{{ false }}">
+  <div class="dscrim" aria-hidden="true"></div>
+  <div class="dwrap">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="del-h">
+      <h2 id="del-h">이 초안을 삭제할까요?</h2>
+      <p class="mdsub" style="margin:0">‘{{delTitle}}’을 삭제합니다. 적으신 문장과 고친 내용이 모두 사라지고 <b>되돌릴 수 없습니다.</b> 나중에 다시 볼 수도 있다면 보관해 두세요.</p>
+      <div class="mbtns"><button type="button" class="btn gh" data-action-href="?deleteConfirm=false">취소</button><button type="button" class="btn" data-action-href="?deleteConfirm=false">삭제하기</button></div>
+    </div>
+  </div>
+</sc-if>
+
+  <footer class="gf" aria-label="사이트 정보">
+    <div class="wrap">
+      <div class="gf-top">
+        <div class="gf-brand">
+          <span class="gf-logo"><span class="mark" aria-hidden="true"><i style="height:9px"></i><i style="height:17px"></i><i style="height:12px;opacity:.55"></i></span>마자용</span>
+          <p>소상공인을 위한 웹 외주 요구사항 정의 · 매칭 플랫폼</p>
+        </div>
+        <div class="gf-cs"><b>고객센터 1600-0000</b><span>평일 10:00–18:00</span><span>점심 12:00–13:00 · 주말 · 공휴일 휴무</span><span>help@majayong.example</span></div>
+      </div>
+      <nav class="gf-nav" aria-label="사이트 링크">
+        <div><b>서비스</b><a href="Main.dc.html">의뢰인 안내</a><a href="Supplier-Landing.dc.html">공급자 안내</a></div>
+        <div><b>고객센터</b><a href="Help.dc.html">자주 묻는 질문</a><a href="Help-Inquiry.dc.html">1:1 문의</a><a href="Help.dc.html?view=공지사항">공지사항</a></div>
+        <div><b>정책</b><a href="Terms.dc.html?view=이용약관">이용약관</a><a class="em" href="Terms.dc.html?view=개인정보+처리방침">개인정보 처리방침</a><a href="Terms.dc.html?view=명세+비밀유지">명세 비밀유지</a><a href="Terms.dc.html?view=중개자+고지">중개자 고지</a></div>
+      </nav>
+      <div class="gf-bot">
+        <p class="gf-biz">상호 로켓단<i></i>대표 김로켓<i></i>사업자등록번호 000-00-00000<i></i>통신판매업 신고 제2026-서울마포-0000호<br>주소 서울특별시 마포구 예시로 00, 0층<i></i>개인정보 보호책임자 박예시<i></i>이메일 help@majayong.example</p>
+        <p class="gf-copy">© 2026 로켓단. All rights reserved.</p>
+        <p class="gf-note">마자용은 통신판매중개자로서 거래 당사자가 아니며, 의뢰인과 공급자 사이 계약의 이행 책임은 각 당사자에게 있습니다. 대금 예치와 정산은 마자용이 관리합니다.</p>
+      </div>
+    </div>
+  </footer>
+
+</div>

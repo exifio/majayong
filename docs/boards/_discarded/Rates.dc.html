@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>공급자 — 블록 가격 관리</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="/_blob/a8316b816fb987eb4a5af50ab874b7d1">
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+.cat{display:flex;justify-content:space-between;align-items:baseline;padding:0 0 10px}
+.cat .cn{font-size:16px;font-weight:600;color:var(--navy-900)}
+.cat .cc{font-size:14px;color:var(--s600)}
+.blk{display:flex;align-items:flex-start;gap:16px;padding:16px 0;border-top:1px solid var(--s200);flex-wrap:wrap}
+.blk:first-of-type{border-top:0}
+.blk .pickcol{flex:1 1 300px;min-width:0;display:flex;gap:10px}
+.blk .pickcol input{width:17px;height:17px;margin:5px 0 0;accent-color:var(--blue-600);flex:none}
+.blk .nm{font-size:16px;font-weight:600}
+.blk .ds{font-size:14px;color:var(--s600);margin-top:3px}
+.blk .avg{flex:0 1 190px;font-size:14px;color:var(--s600)}
+.blk .avg b{color:var(--s900)}
+.blk .pricecol{flex:0 1 170px}
+.blk.off .nm,.blk.off .ds{color:var(--s400)}
+.inp.num{text-align:right}
+.inp[disabled]{background:var(--s50);color:var(--s400)}
+.phead{display:flex;align-items:center;gap:18px;flex-wrap:wrap;margin-bottom:26px}
+.phead .big{width:72px;height:72px;border-radius:50%;background:var(--navy-900);color:#fff;
+ font-size:26px;font-weight:600;display:flex;align-items:center;justify-content:center;flex:none}
+.phead .nm2{font-size:24px;font-weight:600;letter-spacing:-0.5px}
+.phead .mt{font-size:14px;color:var(--s600);margin-top:4px}
+.phead .sp{flex:1 1 auto}
+.star{color:var(--amber-700)}
+.savebar{display:flex;justify-content:flex-end;gap:10px;padding-top:4px}
+.checked{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:#fff;
+ border:1px solid var(--s200);border-radius:10px;padding:14px 18px;margin:0 0 12px}
+.checked .lb{font-size:14px;color:var(--s600)}
+.checked .dt{font-size:18px;font-weight:600;letter-spacing:-0.2px}
+.checked .sp2{flex:1 1 auto}
+</style>
+</helmet>
+
+<div class="pg">
+
+  <header class="gnb dark">
+    <div class="wrap">
+      <div class="gnbin">
+        <a class="brand" href="Supplier-Landing.dc.html"><span class="mark" aria-hidden="true"><i style="height:9px"></i><i style="height:17px"></i><i style="height:12px;opacity:.55"></i></span>마자용</a>
+        <nav class="nav" aria-label="주요 메뉴">
+          <a href="#home">홈</a><a href="#find">프로젝트 찾기</a><a href="#apps">내 지원</a><a href="#contract">내 계약</a><a href="#bookmark">북마크</a>
+        </nav>
+        <div class="gright">
+          <span class="tg" role="group" aria-label="공간 전환"><a href="Main.dc.html">의뢰인</a><span class="on">공급자</span></span>
+          <span class="bell" role="img" aria-label="알림"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg></span>
+          <span class="who"><span class="ava">최</span><span class="uname">최준호</span></span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="pad">
+    <div class="wrap">
+
+      <div class="phead">
+        <span class="big" aria-hidden="true">최</span>
+        <div>
+          <div class="nm2">최준호</div>
+          <div class="mt">공급자 · 웹 외주 프리랜서 5년 차 · 2026년 9월 가입 · <span class="star">★</span> 4.8 (리뷰 12건)</div>
+        </div>
+        <span class="sp"></span>
+        <a class="btn gh" href="#public">공개 프로필 보기</a>
+      </div>
+
+      <nav class="tabs" aria-label="프로필 메뉴">
+        <a href="Profile-Supplier.dc.html">기본 정보</a>
+        <a class="on" href="Rates.dc.html">블록 가격</a>
+        <a href="#reviews">받은 리뷰</a>
+        <a href="#account">계정 설정</a>
+      </nav>
+
+      <h1 class="t">블록 가격</h1>
+      <p class="sub">등록한 가격은 <b>플랫폼 평균 단가</b>를 만드는 데에만 쓰입니다. 나중에 견적서의 단가를 제한하지 않고, 지금 작성하는 가격이 의뢰인이나 다른 공급자에게 공개되지도 않습니다.</p>
+
+      <div class="checked">
+        <span class="lb">마지막 확인</span>
+        <span class="dt">2026년 4월 28일</span>
+      </div>
+
+      <div class="side">
+        <div class="main">
+
+          <div class="card">
+            <div class="cat"><span class="cn">예약</span><span class="cc">3개 블록</span></div>
+
+            <div class="blk">
+              <div class="pickcol"><input type="checkbox" id="r1" checked>
+                <label for="r1"><span class="nm">예약 달력</span><span class="ds">회차와 좌석을 지정해 예약을 받고, 정원이 차면 자동 마감</span></label></div>
+              <div class="avg">플랫폼 평균 <b>140만원</b><br><span class="dim">18명 등록</span></div>
+              <div class="pricecol"><input class="inp num" type="text" value="950,000" aria-label="예약 달력 가격"></div>
+            </div>
+
+            <div class="blk">
+              <div class="pickcol"><input type="checkbox" id="r2" checked>
+                <label for="r2"><span class="nm">회차 예약</span><span class="ds">점심·저녁 1부·2부처럼 회차를 나눠 운영</span></label></div>
+              <div class="avg">플랫폼 평균 <b>61만원</b><br><span class="dim">12명 등록</span></div>
+              <div class="pricecol"><input class="inp num" type="text" value="700,000" aria-label="회차 예약 가격"></div>
+            </div>
+
+            <div class="blk off">
+              <div class="pickcol"><input type="checkbox" id="r3">
+                <label for="r3"><span class="nm">좌석 배치도</span><span class="ds">손님이 자리를 직접 고름</span></label></div>
+              <div class="avg"><span class="chip out">금액 미정</span><br><span class="dim" style="display:inline-block;margin-top:5px">3명 등록 · 5명부터 평균 공개</span></div>
+              <div class="pricecol"><input class="inp num" type="text" placeholder="가격" disabled aria-label="좌석 배치도 가격"></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="cat"><span class="cn">결제</span><span class="cc">2개 블록</span></div>
+
+            <div class="blk">
+              <div class="pickcol"><input type="checkbox" id="r4" checked>
+                <label for="r4"><span class="nm">예약금 결제</span><span class="ds">예약할 때 예약금을 받고 규정에 따라 일부 또는 전액 환불</span></label></div>
+              <div class="avg">플랫폼 평균 <b>120만원</b><br><span class="dim">15명 등록</span></div>
+              <div class="pricecol"><input class="inp num" type="text" value="700,000" aria-label="예약금 결제 가격"></div>
+            </div>
+
+            <div class="blk">
+              <div class="pickcol"><input type="checkbox" id="r5" checked>
+                <label for="r5"><span class="nm">노쇼 위약금 자동 청구</span><span class="ds">사전 고지한 규정대로 위약금을 자동 청구</span></label></div>
+              <div class="avg">플랫폼 평균 <b>58만원</b><br><span class="dim">9명 등록</span></div>
+              <div class="pricecol"><input class="inp num" type="text" value="620,000" aria-label="노쇼 위약금 가격"></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="cat"><span class="cn">알림</span><span class="cc">2개 블록</span></div>
+
+            <div class="blk">
+              <div class="pickcol"><input type="checkbox" id="r6" checked>
+                <label for="r6"><span class="nm">리마인드 알림</span><span class="ds">예약 전날 손님에게 안내 문자를 자동 발송</span></label></div>
+              <div class="avg">플랫폼 평균 <b>60만원</b><br><span class="dim">16명 등록</span></div>
+              <div class="pricecol"><input class="inp num" type="text" value="450,000" aria-label="리마인드 알림 가격"></div>
+            </div>
+
+            <div class="blk">
+              <div class="pickcol"><input type="checkbox" id="r7" checked>
+                <label for="r7"><span class="nm">예약 확정 문자</span><span class="ds">예약이 잡히면 즉시 확정 안내 발송</span></label></div>
+              <div class="avg">플랫폼 평균 <b>29만원</b><br><span class="dim">11명 등록</span></div>
+              <div class="pricecol"><input class="inp num" type="text" value="310,000" aria-label="예약 확정 문자 가격"></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="cat"><span class="cn">고객 관리</span><span class="cc">3개 블록</span></div>
+
+            <div class="blk">
+              <div class="pickcol"><input type="checkbox" id="r8" checked>
+                <label for="r8"><span class="nm">단골 등급 관리</span><span class="ds">방문 횟수로 등급을 나누고 혜택을 다르게 적용</span></label></div>
+              <div class="avg">플랫폼 평균 <b>66만원</b><br><span class="dim">7명 등록</span></div>
+              <div class="pricecol"><input class="inp num" type="text" value="800,000" aria-label="단골 등급 관리 가격"></div>
+            </div>
+
+            <div class="blk off">
+              <div class="pickcol"><input type="checkbox" id="r9">
+                <label for="r9"><span class="nm">알레르기·선호 메모</span><span class="ds">손님별 알레르기와 취향을 미리 받아 기록</span></label></div>
+              <div class="avg"><span class="chip out">금액 미정</span><br><span class="dim" style="display:inline-block;margin-top:5px">4명 등록 · 5명부터 평균 공개</span></div>
+              <div class="pricecol"><input class="inp num" type="text" placeholder="가격" disabled aria-label="알레르기 메모 가격"></div>
+            </div>
+
+            <div class="blk off">
+              <div class="pickcol"><input type="checkbox" id="r10">
+                <label for="r10"><span class="nm">재방문 알림</span><span class="ds">한동안 오지 않은 손님에게 안내 발송</span></label></div>
+              <div class="avg">플랫폼 평균 <b>38만원</b><br><span class="dim">6명 등록</span></div>
+              <div class="pricecol"><input class="inp num" type="text" placeholder="가격" disabled aria-label="재방문 알림 가격"></div>
+            </div>
+          </div>
+
+          <div class="info">평균은 참고용입니다. 그대로 옮겨 적기보다 <b>평소 받으시는 금액</b>을 적어주세요. 평균을 그대로 채운 값은 다음 평균 계산에서 빠집니다.</div>
+
+          <div class="info" style="margin-top:12px;background:var(--s50)">
+            등록자가 <b>5명 미만</b>인 블록은 평균을 공개하지 않고 <span class="chip out">금액 미정</span>으로 둡니다. 적은 수의 가격으로 평균을 내면 한 사람의 금액이 그대로 드러나기 때문입니다.
+          </div>
+
+        </div>
+
+        <div class="rail">
+
+          <div class="card">
+            <h2 class="ct">등록 현황</h2>
+            <div class="rowsb" style="padding:5px 0"><span class="sec">등록한 가격</span><span><b>7개</b></span></div>
+            <hr class="hr">
+            <p class="sec" style="margin:0 0 16px">작성하지 않으실 블록은 비워두시면 됩니다. 나중에 ‘블록 가격’에서 더하거나 고칠 수 있습니다.</p>
+            <button type="button" class="btn full">저장하기</button>
+          </div>
+
+          <div class="card">
+            <h2 class="ct">가격이 쓰이는 곳</h2>
+            <p class="sec" style="margin:0 0 12px">견적을 쓰실 때 명세 항목에 해당하는 블록 가격이 <b>미리 채워집니다.</b> 그 자리에서 바꾸셔도 되고, 바꾼 값이 여기 등록 가격을 건드리지는 않습니다.</p>
+            <a class="ft" href="#howquote">견적 쓰는 방법 보기</a>
+          </div>
+
+          <div class="info">
+            이미 제출한 견적과 진행 중인 계약 금액은 여기서 가격을 바꿔도 달라지지 않습니다.
+          </div>
+
+        </div>
+      </div>
+
+      <div class="savebar">
+        <button type="button" class="btn gh">취소</button>
+        <button type="button" class="btn">저장하기</button>
+      </div>
+
+    </div>
+  </main>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":2176}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

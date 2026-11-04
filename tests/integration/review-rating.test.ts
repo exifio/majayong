@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { describe, it } from "node:test";
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, type Prisma } from "@prisma/client";
 import { testDatabaseUrl } from "../test-db.ts";
 import { createPrismaRepositories } from "../../src/infrastructure/prisma-store.ts";
 import { ReviewService } from "../../src/modules/review/index.ts";
@@ -54,7 +54,7 @@ describe("INT-C-07: 리뷰 생성과 A 평점 캐시 PG 트랜잭션", { skip: h
       const ratingPort = createProfileRatingPort(prisma);
       const profilePorts = {
         async updateProfileReviewStats(input: { targetUserId: string; rating: number }, tx?: unknown) {
-          await ratingPort.refresh(input.targetUserId, tx as any);
+          await ratingPort.refresh(input.targetUserId, tx as Prisma.TransactionClient);
           return { success: true };
         },
       };

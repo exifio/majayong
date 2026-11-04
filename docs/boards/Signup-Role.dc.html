@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>회원가입 — 역할 선택</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="/_blob/a8316b816fb987eb4a5af50ab874b7d1">
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+.formcard{max-width:720px;margin:0 auto}
+.rolepick{display:flex;gap:16px;flex-wrap:wrap}
+.rolepick label{flex:1 1 300px;min-width:0;border:1px solid var(--s200);border-radius:12px;
+ padding:20px 22px;background:#fff;cursor:pointer;display:block}
+.rolepick label.on{border-color:var(--blue-600);background:var(--blue-50);box-shadow:inset 0 0 0 1px var(--blue-600)}
+.rolepick .hd{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.rolepick input{width:18px;height:18px;margin:0;accent-color:var(--blue-600);flex:none}
+.rolepick .nm{font-size:18px;font-weight:600}
+.rolepick .ds{font-size:14px;color:var(--s600);line-height:1.6;display:block;margin-bottom:14px}
+.rolepick ul{margin:0;padding:0;list-style:none}
+.rolepick li{font-size:14px;color:var(--s600);padding-left:18px;position:relative;margin-bottom:6px}
+.rolepick li::before{content:"";position:absolute;left:2px;top:9px;width:4px;height:4px;
+ border-radius:50%;background:var(--s400)}
+.rolepick label.on li::before{background:var(--blue-600)}
+.pg{word-break:keep-all}
+sc-if{display:contents}
+.agr{background:#fff;border:1px solid var(--s200);border-radius:12px;padding:18px 20px;margin-top:20px}
+.agr h2{font-size:16px;font-weight:600;margin:0 0 4px}
+.agr .hint{font-size:13px;color:var(--s600);margin:0 0 12px}
+.agr .cbx{margin:0 0 8px}
+.agr .cbx:last-child{margin-bottom:0}
+.acct{display:flex;align-items:center;gap:10px;background:var(--teal-50);border:1px solid #C7E6E0;
+ border-radius:10px;padding:13px 16px;margin-bottom:22px;font-size:14px;color:var(--teal-700)}
+</style>
+<style>
+.pg{min-height:100vh;position:relative;padding-bottom:256px;box-sizing:border-box}
+.gf{position:absolute;left:0;right:0;bottom:0;background:var(--navy-900);padding:34px 0 30px;font-size:14px;color:#A9BDD6;word-break:keep-all}
+.gf a{color:#A9BDD6;text-decoration:none}
+.gf-top{display:flex;justify-content:space-between;align-items:center;gap:12px 32px;flex-wrap:wrap}
+.gf-brand{display:flex;align-items:center;gap:16px;flex-wrap:wrap;min-width:0}
+.gf-logo{display:inline-flex;align-items:center;font-size:19px;font-weight:600;letter-spacing:-0.4px;color:#fff}
+.gf-brand p{margin:0}
+.gf-cs{display:flex;align-items:baseline;gap:4px 16px;flex-wrap:wrap}
+.gf-cs b{color:#fff;font-weight:600;font-size:15px}
+.gf-nav{display:flex;flex-wrap:wrap;gap:10px 44px;margin:18px 0 0;padding:0 0 24px;border-bottom:1px solid rgba(255,255,255,.14)}
+.gf-nav>div{display:flex;align-items:baseline;gap:18px;flex-wrap:wrap}
+.gf-nav b{color:#fff;font-weight:600}
+.gf-nav a.em{color:#fff;font-weight:600}
+.gf-bot{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:24px;padding-top:20px;font-size:13px;line-height:1.75;color:#8FA6C2}
+.gf-bot p{margin:0}
+.gf-biz i{display:inline-block;width:1px;height:10px;background:rgba(255,255,255,.28);margin:0 9px;vertical-align:-1px}
+.gf-copy{align-self:end;text-align:right;white-space:nowrap}
+.gf-note{grid-column:1 / -1;margin-top:8px !important}
+</style>
+</helmet>
+
+<div class="pg">
+
+  <header class="gnb">
+    <div class="wrap">
+      <div class="gnbin">
+        <a class="brand" href="Main.dc.html"><span class="mark" aria-hidden="true"><i style="height:9px"></i><i style="height:17px"></i><i style="height:12px;opacity:.55"></i></span>마자용</a>
+        <nav class="nav" aria-label="주요 메뉴"><a href="Main.dc.html">작동 방식</a><a href="Main.dc.html">안전장치</a><a href="Main.dc.html">비용</a></nav>
+        <div class="gright"><span class="sec">minjae@ondo.kr</span></div>
+      </div>
+    </div>
+  </header>
+
+  <main class="pad">
+    <div class="narrow">
+      <div class="formcard">
+
+        <ol class="steps">
+          <li class="done"><i>✓</i>계정 만들기</li>
+          <li class="sep" aria-hidden="true">›</li>
+          <li class="on"><i>2</i>역할 선택</li>
+          <li class="sep" aria-hidden="true">›</li>
+          <li><i>3</i>프로필</li>
+        </ol>
+
+        <div class="acct">
+          <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" d="M3 8.5l3.2 3.2L13 5"/></svg>
+          {{acctMsg}}
+        </div>
+
+        <h1 class="t">어떤 쪽으로 시작하시나요?</h1>
+        <p class="sub">역할은 지금 정해지고 <b>이후 바꿀 수 없습니다.</b> 두 역할이 모두 필요하시면 다른 이메일로 계정을 하나 더 만들어주세요.</p>
+
+        <div class="rolepick" role="radiogroup" aria-label="역할 선택">
+          <label class="{{cliCls}}" for="role-client">
+            <span class="hd"><input type="radio" id="role-client" name="role" {{cliChk}}><span class="nm">외주를 맡깁니다</span></span>
+            <span class="ds">웹사이트나 앱이 필요한데 무엇을 요청해야 할지 모르시는 분</span>
+            <ul>
+              <li>화면 초안을 받아 고치면서 요구사항을 정리합니다</li>
+              <li>예산 안에 드는지 예상 총액으로 계약 전에 봅니다</li>
+              <li>공급자의 경력과 포트폴리오를 보고, 채팅으로 조건을 정합니다</li>
+            </ul>
+          </label>
+          <label class="{{supCls}}" for="role-supplier">
+            <span class="hd"><input type="radio" id="role-supplier" name="role" {{supChk}}><span class="nm">외주를 받습니다</span></span>
+            <span class="ds">웹 개발·디자인 프리랜서와 소규모 제작사</span>
+            <ul>
+              <li>기술 스택과 포트폴리오를 등록해 둡니다</li>
+              <li>기능 단위로 쪼개진 명세를 보고 총액과 기간으로 견적합니다</li>
+              <li>계약 범위가 서명 시점에 고정됩니다</li>
+            </ul>
+          </label>
+        </div>
+
+        <sc-if value="{{google}}" hint-placeholder-val="{{ false }}">
+          <section class="agr" aria-labelledby="agr-h">
+            <h2 id="agr-h">약관 동의</h2>
+            <p class="hint">구글로 가입하면 계정 만들기 단계를 건너뛰므로 여기서 동의를 받습니다.</p>
+            <div class="cbx"><input type="checkbox" id="g1" checked><label for="g1">이용약관과 개인정보 처리방침에 동의합니다 (필수) <a class="ft" href="Terms.dc.html">보기</a></label></div>
+            <div class="cbx"><input type="checkbox" id="g2" checked><label for="g2">마자용은 계약 당사자가 아닌 중개자임을 확인했습니다 (필수)</label></div>
+            <sc-if value="{{isSup}}" hint-placeholder-val="{{ true }}">
+              <div class="cbx"><input type="checkbox" id="g3" checked><label for="g3">명세 비밀유지 약관에 동의합니다 — 상세 공개로 본 명세와 의뢰인 정보를 마자용 밖으로 옮기지 않습니다 (공급자 필수) <a class="ft" href="Terms.dc.html">보기</a></label></div>
+            </sc-if>
+          </section>
+        </sc-if>
+
+        <div class="note" style="margin-top:20px">
+          <b>역할은 바꿀 수 없습니다</b>
+          <p>가입 후에는 다른 공간을 둘러볼 수는 있지만 그 역할의 행위는 할 수 없습니다. 의뢰인으로 가입하면 프로젝트를 등록할 수 있고, 공급자로 가입하면 견적을 낼 수 있습니다.</p>
+        </div>
+
+        <div class="rowsb" style="margin-top:20px">
+          <a class="btn gh" href="{{backHref}}">이전</a>
+          <a class="btn" href="{{nextHref}}">다음</a>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <footer class="gf" aria-label="사이트 정보">
+    <div class="wrap">
+      <div class="gf-top">
+        <div class="gf-brand">
+          <span class="gf-logo"><span class="mark" aria-hidden="true"><i style="height:9px"></i><i style="height:17px"></i><i style="height:12px;opacity:.55"></i></span>마자용</span>
+          <p>소상공인을 위한 웹 외주 요구사항 정의 · 매칭 플랫폼</p>
+        </div>
+        <div class="gf-cs"><b>고객센터 1600-0000</b><span>평일 10:00–18:00</span><span>점심 12:00–13:00 · 주말 · 공휴일 휴무</span><span>help@majayong.example</span></div>
+      </div>
+      <nav class="gf-nav" aria-label="사이트 링크">
+        <div><b>서비스</b><a href="Main.dc.html">의뢰인 안내</a><a href="Supplier-Landing.dc.html">공급자 안내</a></div>
+        <div><b>고객센터</b><a href="Help.dc.html">자주 묻는 질문</a><a href="Help-Inquiry.dc.html">1:1 문의</a><a href="Help.dc.html">공지사항</a></div>
+        <div><b>정책</b><a href="Terms.dc.html">이용약관</a><a class="em" href="Terms.dc.html">개인정보 처리방침</a><a href="Terms.dc.html">명세 비밀유지</a><a href="Terms.dc.html">중개자 고지</a></div>
+      </nav>
+      <div class="gf-bot">
+        <p class="gf-biz">상호 로켓단<i></i>대표 김로켓<i></i>사업자등록번호 000-00-00000<i></i>통신판매업 신고 제2026-서울마포-0000호<br>주소 서울특별시 마포구 예시로 00, 0층<i></i>개인정보 보호책임자 박예시<i></i>이메일 help@majayong.example</p>
+        <p class="gf-copy">© 2026 로켓단. All rights reserved.</p>
+        <p class="gf-note">마자용은 통신판매중개자로서 거래 당사자가 아니며, 의뢰인과 공급자 사이 계약의 이행 책임은 각 당사자에게 있습니다. 대금 예치와 정산은 마자용이 관리합니다.</p>
+      </div>
+    </div>
+  </footer>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"view":{"editor":"enum","options":["의뢰인 선택","공급자 선택","구글 가입"],"default":"의뢰인 선택","section":"상태"},"$preview":{"width":1280,"height":1529}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const v = this.props.view ?? '의뢰인 선택';
+    const g = v === '구글 가입', sup = v !== '의뢰인 선택';
+    return {
+      google: g, isSup: sup,
+      cliCls: sup ? '' : 'on', supCls: sup ? 'on' : '', cliChk: sup ? '' : 'checked', supChk: sup ? 'checked' : '',
+      acctMsg: g ? '구글 계정으로 시작합니다 — junho@example.com' : (sup ? '계정이 만들어졌습니다 — junho@example.com' : '계정이 만들어졌습니다 — minjae.ondo@example.com'),
+      backHref: g ? 'Login.dc.html' : 'Signup.dc.html',
+      nextHref: sup ? 'Signup-Supplier.dc.html' : 'Signup-Client.dc.html'
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,271 @@
+<helmet>
+<style>
+.pg{word-break:keep-all}
+.list sc-for,.list sc-if{display:contents}
+.crumb{font-size:14px;color:var(--s600);margin:0 0 10px}
+.crumb a{color:var(--s600)}
+.head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin:0 0 22px}
+.head h1.t{margin:0 0 6px}
+.head .sub{margin:0;font-size:15px}
+.head .sub b{color:var(--s900);font-weight:600}
+.head .rt{display:flex;align-items:center;gap:16px}
+/* 공급자 카드 — 지원 순서대로 한 줄에 하나 */
+.list{display:flex;flex-direction:column;gap:14px;margin:0 0 18px}
+.sc{display:grid;grid-template-columns:minmax(0,1fr) 300px;background:#fff;border:1px solid var(--s200);border-radius:12px;overflow:hidden}
+.sc.hold{background:var(--s50)}
+.sc .l{padding:22px 24px;min-width:0;display:flex;gap:16px}
+.sc .r{padding:22px 24px;border-left:1px solid var(--s200);display:flex;flex-direction:column;justify-content:space-between;align-items:flex-end;gap:14px}
+.av{flex:none;width:44px;height:44px;border-radius:50%;background:var(--s100);border:1px solid var(--s200);display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:600;color:var(--navy-900)}
+.bd{min-width:0;flex:1 1 auto}
+.list .top{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 4px}
+.top .nm{font-size:18px;font-weight:600;letter-spacing:-0.2px;margin:0}
+.mt{font-size:14px;color:var(--s600);margin:0 0 12px}
+.mt .star{color:var(--navy-900);margin-right:2px}
+.mt .sep{color:var(--s300);margin:0 7px}
+.pf{background:var(--s50);border:1px solid var(--s200);border-radius:8px;padding:12px 14px;margin:0 0 12px}
+.sc.hold .pf{background:#fff}
+.rjdone{background:#EAF6F4;border:1px solid #C7E6E0;border-radius:12px;padding:14px 20px;margin:0 0 18px}
+.rjdone b{display:block;color:var(--teal-700);font-size:15px;margin:0 0 2px}
+.rjdone p{margin:0;font-size:14px;color:var(--s600)}
+.pf .k{font-size:13px;font-weight:600;color:var(--s600);margin:0 0 4px}
+.pf .k span{font-weight:400;margin-left:6px}
+.pf p{font-size:15px;line-height:1.6;margin:0;color:var(--s900)}
+.pf.none p{color:var(--s600);font-size:14px}
+.links{display:flex;gap:18px;font-size:14px}
+.amt{text-align:right}
+.amt .k{font-size:14px;color:var(--s600);margin:0 0 2px}
+.amt .v{font-size:24px;font-weight:600;letter-spacing:-0.5px;color:var(--navy-900);font-variant-numeric:tabular-nums}
+.amt .fx{font-size:13px;color:var(--s600);margin-top:2px;font-variant-numeric:tabular-nums}
+.amt .chg{font-size:13px;font-weight:600;color:var(--amber-700);margin-top:2px}
+.acts{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+.rej{font-family:inherit;font-size:14px;color:var(--s600);background:none;border:0;text-decoration:underline;cursor:pointer;padding:0;margin-right:4px}
+.why{font-size:13px;color:var(--s600);text-align:right;margin:0;max-width:220px}
+.unread{display:inline-block;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--blue-600);color:#fff;font-size:12px;font-weight:600;line-height:18px;text-align:center;margin-left:6px}
+.after{margin:0;padding-left:18px}
+.after li{font-size:14px;color:var(--s600);line-height:1.7}
+.after b{color:var(--s900);font-weight:600}
+.banner{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
+.banner .acts{flex:none}
+.pg{position:relative}
+.btn.warn{background:#fff;color:var(--amber-700);border:1px solid #E6C68A}
+.rj-scrim{position:absolute;inset:0;background:rgba(11,37,69,.55);z-index:40}
+.rj-mdl{position:absolute;top:150px;left:50%;transform:translateX(-50%);width:540px;z-index:41;background:#fff;border-radius:16px;box-shadow:0 24px 60px rgba(11,37,69,.35);overflow:hidden;word-break:keep-all;text-align:left}
+.rj-mdl .rjh{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;padding:22px 26px 12px}
+.rj-mdl .rjh h2{font-size:20px;font-weight:600;letter-spacing:-0.3px;margin:0}
+.rj-mdl .rjh .x{font-family:inherit;font-size:22px;line-height:1;color:var(--s600);background:none;border:0;padding:2px 4px;cursor:pointer}
+.rj-mdl .rjb{padding:0 26px 18px}
+.rj-mdl .rjb ul{margin:0 0 16px;padding-left:18px}
+.rj-mdl .rjb li{font-size:15px;line-height:1.7;color:var(--s900)}
+.rj-mdl .rjb .lb{font-size:14px;font-weight:600;color:var(--s600);margin:0 0 6px}
+.rj-mdl .rjb .lb span{font-weight:400}
+.rj-mdl .rjb textarea{width:100%;box-sizing:border-box;min-height:76px;font-family:inherit;font-size:15px;border:1px solid var(--s300);border-radius:8px;padding:10px 12px;resize:none}
+.rj-mdl .rjf{display:flex;justify-content:flex-end;gap:10px;padding:14px 26px;border-top:1px solid var(--s200);background:var(--s50)}
+.rj-mdl .rjf .btn{white-space:nowrap}
+.zero{background:#fff;border:1px solid var(--s200);border-radius:12px;padding:28px 30px;margin:0 0 18px}
+.zero h2{font-size:20px;font-weight:600;letter-spacing:-0.3px;margin:0 0 6px}
+.zero .lead{font-size:15px;color:var(--s600);margin:0 0 18px;line-height:1.6}
+.zero .why3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:0 0 20px}
+.zero .why3>div{border:1px solid var(--s200);border-radius:10px;padding:14px 16px;background:var(--s50)}
+.zero .why3 b{display:block;font-size:14px;margin:0 0 4px}
+.zero .why3 p{margin:0;font-size:13px;color:var(--s600);line-height:1.6}
+.zero .acts{justify-content:flex-start}
+.qchip{font-size:12px;padding:2px 8px}
+</style>
+<style>
+.pg{min-height:100vh;position:relative;padding-bottom:256px;box-sizing:border-box}
+.gf{position:absolute;left:0;right:0;bottom:0;background:var(--navy-900);padding:34px 0 30px;font-size:14px;color:#A9BDD6;word-break:keep-all}
+.gf a{color:#A9BDD6;text-decoration:none}
+.gf-top{display:flex;justify-content:space-between;align-items:center;gap:12px 32px;flex-wrap:wrap}
+.gf-brand{display:flex;align-items:center;gap:16px;flex-wrap:wrap;min-width:0}
+.gf-logo{display:inline-flex;align-items:center;font-size:19px;font-weight:600;letter-spacing:-0.4px;color:#fff}
+.gf-brand p{margin:0}
+.gf-cs{display:flex;align-items:baseline;gap:4px 16px;flex-wrap:wrap}
+.gf-cs b{color:#fff;font-weight:600;font-size:15px}
+.gf-nav{display:flex;flex-wrap:wrap;gap:10px 44px;margin:18px 0 0;padding:0 0 24px;border-bottom:1px solid rgba(255,255,255,.14)}
+.gf-nav>div{display:flex;align-items:baseline;gap:18px;flex-wrap:wrap}
+.gf-nav b{color:#fff;font-weight:600}
+.gf-nav a.em{color:#fff;font-weight:600}
+.gf-bot{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:24px;padding-top:20px;font-size:13px;line-height:1.75;color:#8FA6C2}
+.gf-bot p{margin:0}
+.gf-biz i{display:inline-block;width:1px;height:10px;background:rgba(255,255,255,.28);margin:0 9px;vertical-align:-1px}
+.gf-copy{align-self:end;text-align:right;white-space:nowrap}
+.gf-note{grid-column:1 / -1;margin-top:8px !important}
+</style>
+</helmet>
+
+<div class="pg">
+
+  <header class="gnb">
+    <div class="wrap">
+      <div class="gnbin">
+        <a class="brand" href="Home-Client.dc.html"><span class="mark" aria-hidden="true"><i style="height:9px"></i><i style="height:17px"></i><i style="height:12px;opacity:.55"></i></span>마자용</a>
+        <nav class="nav" aria-label="주요 메뉴">
+          <a href="Home-Client.dc.html">홈</a><a href="Input-Client.dc.html">프로젝트 시작</a><a class="on" href="My-Client.dc.html">내 프로젝트</a><a href="Contracts-Client.dc.html">내 계약</a><a href="Settle-Client.dc.html">정산 내역</a>
+        </nav>
+        <div class="gright">
+          <a class="bell dot" href="Chat-Client.dc.html" aria-label="채팅 — 새 메시지 1건"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"></path></svg></a>
+          <a class="bell dot" href="Notify-Client.dc.html" aria-label="알림 — 안 읽은 알림 3건"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"></path><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"></path></svg></a>
+          <span class="who"><span class="ava">민</span><span class="uname">정민재</span></span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="pad">
+    <div class="wrap">
+
+      <p class="crumb"><a href="My-Client.dc.html">내 프로젝트</a> › 예약 달력, 예약금 결제 외 2개 기능</p>
+      <div class="head">
+        <div>
+          <h1 class="t">{{h1}}</h1>
+          <p class="sub"><b>지원 {{nApp}}건</b>{{subRej}} · 명세를 상세 열람한 공급자 5명</p>
+        </div>
+        <div class="rt">
+          <a class="ft" href="Spec-Client.dc.html" style="font-size:14px">명세 보기</a>
+          <span class="chip amber">{{deadChip}}</span>
+        </div>
+      </div>
+
+      <sc-if value="{{stale}}" hint-placeholder-val="{{ false }}">
+        <div class="note" style="margin:0 0 18px">
+          <b>명세를 고쳐서, 지금 받은 견적으로는 계약할 수 없습니다</b>
+          <p>아래 견적은 고치기 전 명세를 보고 적은 것입니다. 공급자들에게 재견적을 요청했고, 새 견적이 들어오면 채팅에서 '이 사람과 계약하기'를 누를 수 있습니다. 채팅은 그대로 이어집니다.</p>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{rejDone}}" hint-placeholder-val="{{ false }}">
+        <div class="rjdone" role="status"><b>김세라님의 지원을 거절했습니다 · 11월 2일 14:30</b><p>김세라님에게 '직접 거절' 알림이 갔고, 채팅은 읽기 전용입니다. 다른 지원은 그대로 남습니다.</p></div>
+      </sc-if>
+
+      <sc-if value="{{held}}" hint-placeholder-val="{{ false }}">
+        <div class="info banner" style="margin:0 0 18px">
+          <div>
+            <b style="color:var(--s900)">최준호님과 임시 계약 중입니다</b><br>
+            11월 10일까지 두 분이 모두 서명하면 계약이 체결됩니다. 그동안 다른 지원은 거절되지 않고 보류됩니다.
+          </div>
+          <div class="acts"><a class="btn sm tint" href="Contract-Client.dc.html">계약서 보기</a></div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{broke}}" hint-placeholder-val="{{ false }}">
+        <div class="note" style="margin:0 0 18px">
+          <b>최준호님과의 임시 계약이 결렬되었습니다</b>
+          <p>서명 기한(11월 10일)까지 서명이 끝나지 않았습니다. 모집 마감일이 지나 보류했던 지원 {{nApp}}건 중에서 고르실 수 있습니다 — 11월 17일까지. 새 지원을 받으시려면 <a class="ft" href="Spec-Client.dc.html?view=마감+연장">마감일을 늘려 주세요</a>.</p>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{zero}}" hint-placeholder-val="{{ false }}">
+        <section class="zero" aria-label="지원 없음">
+          <h2>모집이 11월 3일 마감되었는데 지원이 없습니다</h2>
+          <p class="lead">명세를 상세 열람한 공급자는 5명입니다. 마감을 늘려 더 기다리거나, 명세를 고쳐 다시 모집할 수 있습니다. 명세를 고치면 처음부터 다시 모집합니다.</p>
+          <div class="why3">
+            <div><b>희망 예산 구간</b><p>400~500만원 — 비슷한 기능 수의 다른 프로젝트보다 낮지 않습니다.</p></div>
+            <div><b>모집 기간</b><p>7일이었습니다. 지원은 보통 등록 3~5일째에 몰립니다.</p></div>
+            <div><b>기능 수</b><p>4개입니다. 꼭 필요한 기능만 남기면 견적을 내기 쉬워집니다.</p></div>
+          </div>
+          <div class="acts"><a class="btn" href="Spec-Client.dc.html?view=마감+연장">마감 연장</a><a class="btn gh" href="Spec-Client.dc.html">명세 고치기</a></div>
+        </section>
+      </sc-if>
+
+      <section class="list" aria-label="지원한 공급자">
+        <sc-for list="{{sups}}" as="s" hint-placeholder-count="3">
+          <article class="{{s.cls}}">
+            <div class="l">
+              <span class="av" aria-hidden="true">{{s.ini}}</span>
+              <div class="bd">
+                <div class="top">
+                  <p class="nm">{{s.name}}</p>
+                  <sc-if value="{{s.chip}}" hint-placeholder-val="{{ false }}"><span class="{{s.chipCls}}">{{s.chip}}</span></sc-if>
+                  <sc-if value="{{s.hasQ}}" hint-placeholder-val="{{ false }}"><span class="chip blue qchip" title="견적서에서 공급자 질문을 볼 수 있습니다">질문 {{s.qn}}</span></sc-if>
+                </div>
+                <p class="mt">{{s.career}}<span class="sep">|</span><sc-if value="{{s.hasRating}}" hint-placeholder-val="{{ true }}"><span class="star">★</span></sc-if>{{s.rating}}<span class="sep">|</span>{{s.reviews}}<span class="sep">|</span>{{s.applied}}</p>
+                <sc-if value="{{s.hasSum}}" hint-placeholder-val="{{ true }}">
+                  <div class="pf"><p class="k">포트폴리오 요약<span>AI가 등록 자료를 읽고 정리</span></p><p>{{s.summary}}</p></div>
+                </sc-if>
+                <sc-if value="{{s.noSum}}" hint-placeholder-val="{{ false }}">
+                  <div class="pf none"><p class="k">포트폴리오</p><p>요약이 없습니다. 등록한 링크 {{s.linkCnt}}개는 프로필에서 보실 수 있습니다.</p></div>
+                </sc-if>
+                <div class="links"><a class="ft" href="PublicSupplier.dc.html">프로필 보기</a><a class="ft" href="Quote-Client.dc.html">견적서 보기</a></div>
+              </div>
+            </div>
+            <div class="r">
+              <div class="amt">
+                <p class="k">견적 금액</p>
+                <div class="v">{{s.total}}</div>
+                <div class="fx">수수료 포함 {{s.withFee}}</div>
+                <sc-if value="{{s.chg}}" hint-placeholder-val="{{ false }}"><div class="chg">{{s.chg}}</div></sc-if>
+              </div>
+              <div class="acts">
+                <sc-if value="{{s.canAct}}" hint-placeholder-val="{{ true }}">
+                  <button type="button" class="rej" data-action-href="?view=거절+확인">거절</button>
+                  <a class="btn sm tint" href="Chat-Client.dc.html">{{s.chatLabel}}<sc-if value="{{s.unread}}" hint-placeholder-val="{{ false }}"><span class="unread">{{s.unread}}</span></sc-if></a>
+                </sc-if>
+                <sc-if value="{{s.chosen}}" hint-placeholder-val="{{ false }}">
+                  <a class="btn sm gh" href="Chat-Client.dc.html">문의하기 (채팅)</a>
+                  <a class="btn sm tint" href="Contract-Client.dc.html">계약서 보기</a>
+                </sc-if>
+                <sc-if value="{{s.locked}}" hint-placeholder-val="{{ false }}">
+                  <a class="btn sm gh" href="Chat-Client.dc.html">{{s.chatLabel}}</a>
+                </sc-if>
+              </div>
+              <sc-if value="{{s.why}}" hint-placeholder-val="{{ false }}"><p class="why">{{s.why}}</p></sc-if>
+            </div>
+          </article>
+        </sc-for>
+      </section>
+
+      <sc-if value="{{notZero}}" hint-placeholder-val="{{ true }}">
+      <div class="info">
+        <ul class="after">
+          <li>카드는 <b>지원한 순서</b>대로 놓입니다. 견적서에서 항목별 가능 여부와 작업 기간, 지원 메시지를 보실 수 있습니다.</li>
+          <li>카드의 <b>질문</b>은 공급자가 견적과 함께 남긴 것입니다. 지원 전에는 채팅할 수 없어서입니다 — 견적서에서 보고 채팅으로 답해 주세요.</li>
+          <li><b>문의하기 (채팅)</b>으로 공급자마다 따로 채팅할 수 있습니다. 계약 체결 전에는 연락처가 가려집니다.</li>
+          <li>조건은 <b>채팅에서 모두 정합니다.</b> 채팅에서 '이 사람과 계약하기'를 누르면 AI가 정리한 최종 합의 내용을 확인하고, 합의를 마치면 임시 계약이 되며 다른 지원은 보류됩니다.</li>
+          <li>두 분이 7일 안에 서명하면 계약이 체결되고, 대금이 예치되면 보류된 지원은 자동으로 거절됩니다.</li>
+        </ul>
+      </div>
+      </sc-if>
+
+    </div>
+  </main>
+
+  <sc-if value="{{rejM}}" hint-placeholder-val="{{ false }}">
+    <div class="rj-scrim" aria-hidden="true"></div>
+    <section class="rj-mdl" role="dialog" aria-modal="true" aria-labelledby="rj-h">
+      <div class="rjh"><h2 id="rj-h">{{rejName}}님의 지원을 거절할까요?</h2><button type="button" class="x" aria-label="닫기" data-action-href="?view=지원+3건">×</button></div>
+      <div class="rjb">
+        <ul>
+          <li>거절하면 <b>되돌릴 수 없습니다.</b> {{rejName}}님에게 '직접 거절' 알림이 갑니다.</li>
+          <li>{{rejName}}님과의 채팅은 읽기 전용이 됩니다.</li>
+          <li>다른 지원은 그대로 남습니다.</li>
+        </ul>
+        <p class="lb">거절 사유 <span>(선택 · 공급자에게 보이지 않습니다)</span></p>
+        <textarea aria-label="거절 사유" placeholder="예: 예산과 차이가 큽니다"></textarea>
+      </div>
+      <div class="rjf"><a class="btn gh" href="?view=지원+3건">돌아가기</a><a class="btn warn" href="?view=거절함">거절하기</a></div>
+    </section>
+  </sc-if>
+
+  <footer class="gf" aria-label="사이트 정보">
+    <div class="wrap">
+      <div class="gf-top">
+        <div class="gf-brand">
+          <span class="gf-logo"><span class="mark" aria-hidden="true"><i style="height:9px"></i><i style="height:17px"></i><i style="height:12px;opacity:.55"></i></span>마자용</span>
+          <p>소상공인을 위한 웹 외주 요구사항 정의 · 매칭 플랫폼</p>
+        </div>
+        <div class="gf-cs"><b>고객센터 1600-0000</b><span>평일 10:00–18:00</span><span>점심 12:00–13:00 · 주말 · 공휴일 휴무</span><span>help@majayong.example</span></div>
+      </div>
+      <nav class="gf-nav" aria-label="사이트 링크">
+        <div><b>서비스</b><a href="Main.dc.html">의뢰인 안내</a><a href="Supplier-Landing.dc.html">공급자 안내</a></div>
+        <div><b>고객센터</b><a href="Help.dc.html">자주 묻는 질문</a><a href="Help-Inquiry.dc.html">1:1 문의</a><a href="Help.dc.html?view=공지사항">공지사항</a></div>
+        <div><b>정책</b><a href="Terms.dc.html?view=이용약관">이용약관</a><a class="em" href="Terms.dc.html?view=개인정보+처리방침">개인정보 처리방침</a><a href="Terms.dc.html?view=명세+비밀유지">명세 비밀유지</a><a href="Terms.dc.html?view=중개자+고지">중개자 고지</a></div>
+      </nav>
+      <div class="gf-bot">
+        <p class="gf-biz">상호 로켓단<i></i>대표 김로켓<i></i>사업자등록번호 000-00-00000<i></i>통신판매업 신고 제2026-서울마포-0000호<br>주소 서울특별시 마포구 예시로 00, 0층<i></i>개인정보 보호책임자 박예시<i></i>이메일 help@majayong.example</p>
+        <p class="gf-copy">© 2026 로켓단. All rights reserved.</p>
+        <p class="gf-note">마자용은 통신판매중개자로서 거래 당사자가 아니며, 의뢰인과 공급자 사이 계약의 이행 책임은 각 당사자에게 있습니다. 대금 예치와 정산은 마자용이 관리합니다.</p>
+      </div>
+    </div>
+  </footer>
+
+</div>

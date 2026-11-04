@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>공급자 프로필 입력</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="/_blob/a8316b816fb987eb4a5af50ab874b7d1">
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+sc-if{display:contents}
+.pg{word-break:keep-all}
+.avaup{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.avaup .ph{width:64px;height:64px;border-radius:50%;background:var(--navy-900);color:#fff;
+ font-size:22px;font-weight:600;display:flex;align-items:center;justify-content:center;flex:none}
+.badge-pub{display:inline-block;font-size:13px;font-weight:500;padding:3px 9px;border-radius:6px;
+ background:var(--blue-50);color:var(--navy-900);border:1px solid #D7E5FF}
+.gate{background:var(--amber-50);border:1px solid #F2E0BE;border-left:3px solid var(--amber-700);
+ border-radius:0 10px 10px 0;padding:16px 18px;margin-bottom:22px}
+.gate .hd{font-size:16px;font-weight:600;color:var(--amber-700);margin-bottom:5px}
+.gate p{margin:0;font-size:14px;color:#8A6A24;line-height:1.6}
+.needed{display:inline-block;font-size:13px;font-weight:500;padding:3px 9px;border-radius:6px;
+ background:var(--amber-50);color:var(--amber-700);border:1px solid #F2E0BE;margin-left:6px}
+.flinks{display:flex;flex-direction:column;gap:8px}
+.flinks .row{display:flex;gap:8px;align-items:center}
+.flinks .row .inp{flex:1 1 auto;min-width:0}
+.flinks .rm{flex:none;white-space:nowrap;font-family:inherit;font-size:14px;color:var(--s600);background:none;border:0;text-decoration:underline;cursor:pointer;padding:0 4px}
+.fileline{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:10px}
+.sumbox{background:var(--s50);border:1px solid var(--s200);border-radius:10px;padding:14px 16px;margin-top:4px}
+.sumbox .hd{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:0 0 6px}
+.sumbox .hd b{font-size:14px;font-weight:600;color:var(--s600)}
+.sumbox p{margin:0;font-size:15px;line-height:1.65;color:var(--s900)}
+.sumbox .acts{display:flex;gap:16px;margin-top:10px;font-size:14px}
+.sumbox .acts button{font-family:inherit;font-size:14px;color:var(--navy-900);background:none;border:0;text-decoration:underline;cursor:pointer;padding:0}
+.sumbox .acts .btn{text-decoration:none}
+.agreebox{border:1px solid var(--s200);border-radius:12px;background:#fff;padding:18px 20px;margin:0 0 18px}
+.agreebox h3{font-size:16px;font-weight:600;margin:0 0 10px}
+.agreebox .cbx{margin:0 0 8px}
+.agreebox .sec{margin:0 0 0 27px}
+</style>
+<style>
+.pg{min-height:100vh;position:relative;padding-bottom:256px;box-sizing:border-box}
+.gf{position:absolute;left:0;right:0;bottom:0;background:var(--navy-900);padding:34px 0 30px;font-size:14px;color:#A9BDD6;word-break:keep-all}
+.gf a{color:#A9BDD6;text-decoration:none}
+.gf-top{display:flex;justify-content:space-between;align-items:center;gap:12px 32px;flex-wrap:wrap}
+.gf-brand{display:flex;align-items:center;gap:16px;flex-wrap:wrap;min-width:0}
+.gf-logo{display:inline-flex;align-items:center;font-size:19px;font-weight:600;letter-spacing:-0.4px;color:#fff}
+.gf-brand p{margin:0}
+.gf-cs{display:flex;align-items:baseline;gap:4px 16px;flex-wrap:wrap}
+.gf-cs b{color:#fff;font-weight:600;font-size:15px}
+.gf-nav{display:flex;flex-wrap:wrap;gap:10px 44px;margin:18px 0 0;padding:0 0 24px;border-bottom:1px solid rgba(255,255,255,.14)}
+.gf-nav>div{display:flex;align-items:baseline;gap:18px;flex-wrap:wrap}
+.gf-nav b{color:#fff;font-weight:600}
+.gf-nav a.em{color:#fff;font-weight:600}
+.gf-bot{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:24px;padding-top:20px;font-size:13px;line-height:1.75;color:#8FA6C2}
+.gf-bot p{margin:0}
+.gf-biz i{display:inline-block;width:1px;height:10px;background:rgba(255,255,255,.28);margin:0 9px;vertical-align:-1px}
+.gf-copy{align-self:end;text-align:right;white-space:nowrap}
+.gf-note{grid-column:1 / -1;margin-top:8px !important}
+</style>
+</helmet>
+
+<div class="pg">
+
+  <sc-if value="{{inSignup}}" hint-placeholder-val="{{ true }}">
+  <header class="gnb dark">
+    <div class="wrap">
+      <div class="gnbin">
+        <a class="brand" href="Supplier-Landing.dc.html"><span class="mark" aria-hidden="true"><i style="height:9px"></i><i style="height:17px"></i><i style="height:12px;opacity:.55"></i></span>마자용</a>
+        <nav class="nav" aria-label="주요 메뉴"><a href="Supplier-Landing.dc.html">견적 방식</a><a href="Supplier-Landing.dc.html">고르는 기준</a><a href="Supplier-Landing.dc.html">비용</a></nav>
+        <div class="gright"><span class="spacetag">공급자</span></div>
+      </div>
+    </div>
+  </header>
+  </sc-if>
+  <sc-if value="{{fromAction}}" hint-placeholder-val="{{ false }}">
+  <header class="gnb dark">
+    <div class="wrap">
+      <div class="gnbin">
+        <a class="brand" href="Home-Supplier.dc.html"><span class="mark" aria-hidden="true"><i style="height:9px"></i><i style="height:17px"></i><i style="height:12px;opacity:.55"></i></span>마자용</a>
+        <nav class="nav" aria-label="주요 메뉴">
+          <a href="Home-Supplier.dc.html">홈</a><a class="on" href="Find-Supplier.dc.html">프로젝트 찾기</a><a href="Apps-Supplier.dc.html">내 지원</a><a href="Contracts-Supplier.dc.html">내 계약</a><a href="Find-Supplier.dc.html">북마크</a>
+        </nav>
+        <div class="gright">
+          <a class="bell dot" href="Chat-Supplier.dc.html" aria-label="채팅 — 새 메시지 1건"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"></path></svg></a>
+          <a class="bell dot" href="Notify-Supplier.dc.html" aria-label="알림 — 안 읽은 알림 3건"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"></path><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"></path></svg></a>
+          <span class="who"><span class="ava">최</span><span class="uname">최준호</span></span>
+        </div>
+      </div>
+    </div>
+  </header>
+  </sc-if>
+
+  <main class="pad">
+    <div class="narrow">
+
+      <sc-if value="{{fromAction}}" hint-placeholder-val="{{ true }}">
+        <div class="gate">
+          <div class="hd">지원하려면 프로필이 필요합니다</div>
+          <p>의뢰인이 제안을 검토할 때 보는 정보입니다. 입력하고 저장하시면 <b>작성하시던 견적 화면으로 바로 돌아갑니다.</b></p>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{inSignup}}" hint-placeholder-val="{{ true }}">
+        <ol class="steps">
+          <li class="done"><i>✓</i>계정 만들기</li>
+          <li class="sep" aria-hidden="true">›</li>
+          <li class="done"><i>✓</i>역할 선택</li>
+          <li class="sep" aria-hidden="true">›</li>
+          <li class="on"><i>3</i>프로필</li>
+        </ol>
+      </sc-if>
+
+      <h1 class="t">{{heading}}</h1>
+      <p class="sub">{{subline}}</p>
+
+      <section class="scope">
+        <div class="sh2">
+          <div class="nm">공개되는 정보 <span class="badge-pub">공개</span></div>
+          <div class="ds">의뢰인이 제안을 검토할 때 보게 되는 내용입니다. 공급자 정보는 모두 공개됩니다.</div>
+        </div>
+        <div class="bd">
+          <div class="f">
+            <label class="lbl">프로필 이미지<span class="opt">선택</span></label>
+            <div class="avaup">
+              <span class="ph" aria-hidden="true">최</span>
+              <button type="button" class="btn gh sm">이미지 올리기</button>
+              <span class="sec">넣지 않으시면 이름 첫 글자로 표시됩니다.</span>
+            </div>
+          </div>
+
+          <div class="two">
+            <div class="f">
+              <label class="lbl" for="s-name">이름 또는 활동명<span class="needed">지원에 필요</span></label>
+              <input class="inp" id="s-name" type="text" value="최준호">
+              <p class="hint">제작사라면 상호를 적으셔도 됩니다.</p>
+            </div>
+            <div class="f">
+              <label class="lbl" for="s-career">경력<span class="opt">선택</span></label>
+              <input class="inp" id="s-career" type="number" value="5" min="0" max="50">
+              <p class="hint">연 단위로 적어주세요.</p>
+            </div>
+          </div>
+
+          <div class="f">
+            <label class="lbl" for="s-bio">자기소개<span class="opt">선택</span></label>
+            <textarea class="inp" id="s-bio">예약·결제 연동 위주로 작업해 온 웹 개발 프리랜서입니다. 소규모 식당 사이트를 열두 곳 만들었습니다.</textarea>
+          </div>
+
+          <div class="f">
+            <label class="lbl" for="s-ind">활동 업종<span class="needed">지원에 필요</span></label>
+            <select class="inp" id="s-ind">
+              <option selected>예약 기반 음식점</option>
+              <option>기타 (직접 입력)</option>
+            </select>
+            <p class="hint">지금 올라오는 프로젝트는 예약 기반 음식점입니다.</p>
+          </div>
+
+          <div class="f">
+            <span class="lbl" id="lbl-skill">기술 스택<span class="needed">지원에 필요</span></span>
+            <div class="tagrow" role="group" aria-labelledby="lbl-skill" style="margin-bottom:10px">
+              <span class="tag on">React</span>
+              <span class="tag on">Next.js</span>
+              <span class="tag on">Supabase</span>
+              <span class="tag">Node.js</span>
+              <span class="tag">PG 연동</span>
+              <span class="tag">Vue</span>
+              <span class="tag">SQL</span>
+              <span class="tag">Firebase</span>
+              <span class="tag">디자인</span>
+            </div>
+            <input class="inp" type="text" placeholder="목록에 없으면 직접 적어주세요">
+            <p class="hint">의뢰인 명세의 필요 기술과 맞춰보는 데 씁니다.</p>
+          </div>
+
+          <div class="f">
+            <label class="lbl">포트폴리오<span class="opt">선택</span></label>
+            <div class="flinks">
+              <div class="row"><input class="inp" type="url" value="https://junho.work" aria-label="포트폴리오 링크 1"><button type="button" class="rm">빼기</button></div>
+              <div class="row"><input class="inp" type="url" value="https://junho-works.kr/booking" aria-label="포트폴리오 링크 2"><button type="button" class="rm">빼기</button></div>
+              <div class="row"><input class="inp" type="url" placeholder="링크 더하기 — 작업한 사이트, 깃허브, 노션 등" aria-label="포트폴리오 링크 추가"></div>
+            </div>
+            <div class="fileline"><button type="button" class="btn gh sm">파일 올리기</button><span class="sec">PDF · 이미지, 5개까지. 올린 파일 1개 — 작업소개서.pdf</span></div>
+            <p class="hint">저장하면 AI가 링크와 파일을 읽어 포트폴리오 요약을 만듭니다. 요약은 확인하신 뒤에 공개되고, 의뢰인의 제안 비교 카드에 보입니다.</p>
+          </div>
+        </div>
+      </section>
+
+      <div class="info" style="margin-bottom:18px">
+        평균 별점과 리뷰는 거래를 마치면 공개 프로필에 쌓입니다. <b>시간당 단가나 블록 가격은 받지 않습니다</b> — 의뢰인은 경력과 평점, 포트폴리오, 견적 총액을 함께 보고 고릅니다.
+      </div>
+
+      <sc-if value="{{inSignup}}" hint-placeholder-val="{{ true }}">
+        <div class="agreebox">
+          <h3>가입 전 확인</h3>
+          <div class="cbx"><input type="checkbox" id="nda" checked><label for="nda">의뢰인 명세에 대한 <b>비밀유지 의무</b>에 동의합니다 <a class="ft" href="Terms.dc.html">약관 보기</a></label></div>
+          <p class="sec" style="margin-bottom:10px">열람한 명세와 의뢰인 정보를 밖으로 내보내지 않겠다는 약속입니다. 위반 시 계정 정지와 손해배상 책임이 따릅니다.</p>
+          <div class="cbx"><input type="checkbox" id="fee" checked><label for="fee">거래마다 수수료 5%가 부과되는 데 동의합니다</label></div>
+          <div class="cbx" style="margin:0"><input type="checkbox" id="ai" checked><label for="ai">등록한 포트폴리오를 AI가 읽어 요약하는 데 동의합니다</label></div>
+        </div>
+      </sc-if>
+
+      <div class="rowsb">
+        <a class="btn gh" href="{{backHref}}">{{backLabel}}</a>
+        <span style="display:flex;gap:10px;flex-wrap:wrap">
+          <sc-if value="{{inSignup}}" hint-placeholder-val="{{ true }}">
+            <a class="btn gh" href="Home-Supplier.dc.html">프로필은 나중에 입력하기</a>
+          </sc-if>
+          <a class="btn" href="{{nextHref}}">{{saveLabel}}</a>
+        </span>
+      </div>
+
+      <sc-if value="{{inSignup}}" hint-placeholder-val="{{ true }}">
+        <p class="sec" style="text-align:right;margin:12px 0 0">프로필은 건너뛰셔도 되지만, 비밀유지 동의는 가입에 꼭 필요합니다. 프로젝트에 지원하실 때 이 화면으로 다시 안내해 드립니다.</p>
+      </sc-if>
+
+    </div>
+  </main>
+
+  <footer class="gf" aria-label="사이트 정보">
+    <div class="wrap">
+      <div class="gf-top">
+        <div class="gf-brand">
+          <span class="gf-logo"><span class="mark" aria-hidden="true"><i style="height:9px"></i><i style="height:17px"></i><i style="height:12px;opacity:.55"></i></span>마자용</span>
+          <p>소상공인을 위한 웹 외주 요구사항 정의 · 매칭 플랫폼</p>
+        </div>
+        <div class="gf-cs"><b>고객센터 1600-0000</b><span>평일 10:00–18:00</span><span>점심 12:00–13:00 · 주말 · 공휴일 휴무</span><span>help@majayong.example</span></div>
+      </div>
+      <nav class="gf-nav" aria-label="사이트 링크">
+        <div><b>서비스</b><a href="Main.dc.html">의뢰인 안내</a><a href="Supplier-Landing.dc.html">공급자 안내</a></div>
+        <div><b>고객센터</b><a href="Help.dc.html">자주 묻는 질문</a><a href="Help-Inquiry.dc.html">1:1 문의</a><a href="Help.dc.html">공지사항</a></div>
+        <div><b>정책</b><a href="Terms.dc.html">이용약관</a><a class="em" href="Terms.dc.html">개인정보 처리방침</a><a href="Terms.dc.html">명세 비밀유지</a><a href="Terms.dc.html">중개자 고지</a></div>
+      </nav>
+      <div class="gf-bot">
+        <p class="gf-biz">상호 로켓단<i></i>대표 김로켓<i></i>사업자등록번호 000-00-00000<i></i>통신판매업 신고 제2026-서울마포-0000호<br>주소 서울특별시 마포구 예시로 00, 0층<i></i>개인정보 보호책임자 박예시<i></i>이메일 help@majayong.example</p>
+        <p class="gf-copy">© 2026 로켓단. All rights reserved.</p>
+        <p class="gf-note">마자용은 통신판매중개자로서 거래 당사자가 아니며, 의뢰인과 공급자 사이 계약의 이행 책임은 각 당사자에게 있습니다. 대금 예치와 정산은 마자용이 관리합니다.</p>
+      </div>
+    </div>
+  </footer>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"fromAction":{"editor":"boolean","default":false,"section":"상태"},"$preview":{"width":1280,"height":2309}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const fromAction = this.props.fromAction ?? false;
+    return {
+      fromAction: fromAction,
+      inSignup: !fromAction,
+      heading: fromAction ? '프로필을 입력해주세요' : '어떤 일을 하시는지 알려주세요',
+      subline: fromAction
+        ? '저장하면 작성하시던 견적 화면으로 돌아갑니다. 여기 적으신 내용은 그대로 프로필이 되고, 나중에 고치실 수 있습니다.'
+        : '여기 적으신 내용이 그대로 프로필이 됩니다. 지금 비워두셔도 되고, 나중에 ‘내 프로필’에서 고치실 수 있습니다.',
+      backHref: fromAction ? 'Project-Supplier.dc.html' : 'Signup-Role.dc.html',
+      backLabel: fromAction ? '돌아가기' : '이전',
+      nextHref: fromAction ? 'QuoteWrite-Supplier.dc.html' : 'Home-Supplier.dc.html',
+      saveLabel: fromAction ? '저장하고 견적으로 돌아가기' : '저장하고 가입 완료'
+    };
+  }
+}
+</script>
+</body>
+</html>

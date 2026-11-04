@@ -1,0 +1,176 @@
+<helmet>
+<style>
+
+.ad sc-for,.ad sc-if{display:contents}
+.ad{position:relative;background:var(--s50);min-height:100%}
+.ad-top{height:64px;background:#fff;border-bottom:1px solid var(--s200);display:flex;align-items:center;justify-content:space-between;padding:0 28px;box-sizing:border-box}
+.ad-top .lg{display:flex;align-items:center;gap:10px;font-size:19px;font-weight:600;color:var(--s900);text-decoration:none;letter-spacing:-0.4px}
+.ad-top .lg .mark{margin-right:0}
+.ad-top .cp{font-size:12px;font-weight:500;color:var(--s600);background:var(--s100);border:1px solid var(--s200);border-radius:6px;padding:2px 8px;letter-spacing:0}
+.ad-top .me{display:flex;align-items:center;gap:10px;font-size:14px;color:var(--s600)}
+.ad-top .me b{color:var(--s900);font-weight:600}
+.ad-top .me .av{width:32px;height:32px;border-radius:50%;background:var(--navy-900);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600}
+.ad-body{display:grid;grid-template-columns:232px minmax(0,1fr);align-items:stretch}
+.ad-nav{background:var(--navy-900);padding:20px 12px;display:flex;flex-direction:column;gap:2px;min-height:calc(100% - 0px)}
+.ad-nav .h{font-size:12px;color:var(--on-sub);padding:0 12px 8px;letter-spacing:0.2px}
+.ad-nav a{display:flex;justify-content:space-between;align-items:center;font-size:15px;color:#fff;text-decoration:none;padding:10px 12px;border-radius:8px;border-left:3px solid transparent}
+.ad-nav a.on{background:rgba(255,255,255,.10);border-left-color:var(--blue-600);font-weight:600}
+.ad-nav a .bd{font-size:12px;font-weight:600;min-width:20px;height:20px;border-radius:10px;background:rgba(255,255,255,.16);color:#fff;display:inline-flex;align-items:center;justify-content:center;padding:0 6px;box-sizing:border-box}
+.ad-nav .sp{height:1px;background:var(--on-line);margin:12px 8px}
+.ad-nav a.mut{color:var(--on-sub);font-size:14px}
+.ad-nav .ft2{margin-top:auto;font-size:12px;color:var(--on-sub);line-height:1.6;padding:24px 12px 4px}
+.ad-main{padding:28px 32px 40px;min-width:0}
+.ad-main h1.t{margin:0 0 6px}
+.ad-main .sub{margin:0 0 20px;color:var(--s600);font-size:15px}
+.ad-tabs{display:flex;gap:6px;margin:0 0 14px;flex-wrap:wrap}
+.ad-tabs a{font-size:14px;padding:6px 13px;border-radius:16px;border:1px solid var(--s200);background:#fff;color:var(--s600);text-decoration:none}
+.ad-tabs a.on{background:var(--navy-900);border-color:var(--navy-900);color:#fff;font-weight:600}
+.ad-tabs a .n{margin-left:5px;font-weight:600}
+.ad-scrim{position:absolute;inset:0;background:rgba(11,37,69,.55);z-index:30}
+.ad-mdl{position:absolute;top:120px;left:50%;transform:translateX(-50%);width:600px;z-index:31;background:#fff;border-radius:16px;box-shadow:0 24px 60px rgba(11,37,69,.35);overflow:hidden}
+.ad-mdl .mh{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:22px 26px 14px;border-bottom:1px solid var(--s200)}
+.ad-mdl .mh h2{font-size:19px;font-weight:600;margin:0 0 4px;letter-spacing:-0.3px}
+.ad-mdl .mh p{margin:0;font-size:14px;color:var(--s600)}
+.ad-mdl .x{font-family:inherit;font-size:22px;line-height:1;color:var(--s600);background:none;border:0;cursor:pointer;padding:2px 4px}
+.ad-mdl .mb{padding:18px 26px}
+.ad-mdl .mf{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 26px;border-top:1px solid var(--s200);background:var(--s50)}
+.ad-mdl .mf p{margin:0;font-size:13px;color:var(--s600)}
+.ad-mdl .mf .bt{display:flex;gap:10px;flex:none}
+.ad-lbl{display:block;font-size:14px;font-weight:600;color:var(--s900);margin:14px 0 6px}
+.ad-lbl i{font-style:normal;font-weight:400;color:var(--amber-700);font-size:13px;margin-left:6px}
+.ad-in{width:100%;box-sizing:border-box;font-family:inherit;font-size:15px;color:var(--s900);background:#fff;border:1px solid var(--s300);border-radius:8px;padding:10px 12px}
+textarea.ad-in{min-height:76px;resize:vertical;line-height:1.6}
+.ad-log{font-size:13px;color:var(--s600);display:flex;align-items:center;gap:6px}
+.ad-log::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--s400)}
+
+.pg{word-break:keep-all}
+.ad-nav a.mut.on{color:#fff}
+.ev-note{display:flex;gap:10px;align-items:center;background:#fff;border:1px solid var(--s200);border-radius:10px;padding:10px 14px;margin:0 0 14px;font-size:14px;color:var(--s600)}
+.ev-note b{color:var(--s900);font-weight:600}
+.ev-fl{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:0 0 12px}
+.ev-sel{font-family:inherit;font-size:14px;color:var(--s900);background:#fff;border:1px solid var(--s300);border-radius:8px;padding:8px 30px 8px 12px;appearance:none;background-image:linear-gradient(45deg,transparent 50%,var(--s600) 50%),linear-gradient(135deg,var(--s600) 50%,transparent 50%);background-position:calc(100% - 15px) 50%,calc(100% - 10px) 50%;background-size:5px 5px;background-repeat:no-repeat}
+.ev-seg{display:inline-flex;border:1px solid var(--s300);border-radius:8px;overflow:hidden;background:#fff}
+.ev-seg a{font-size:14px;color:var(--s600);padding:8px 12px;border-left:1px solid var(--s300);text-decoration:none;white-space:nowrap}
+.ev-seg a:first-child{border-left:0}
+.ev-seg a.on{background:var(--navy-900);color:#fff}
+.ev-q{flex:1 1 220px;min-width:200px;font-family:inherit;font-size:14px;border:1px solid var(--s300);border-radius:8px;padding:8px 12px;background:#fff}
+.ev-tw{background:#fff;border:1px solid var(--s200);border-radius:12px;overflow:hidden}
+table.ev{width:100%;border-collapse:collapse;table-layout:fixed}
+table.ev th{font-size:12px;font-weight:600;color:var(--s600);text-align:left;padding:10px 12px;background:var(--s50);border-bottom:1px solid var(--s200)}
+table.ev td{font-size:13px;padding:11px 12px;border-top:1px solid var(--s100);vertical-align:top;color:var(--s900);line-height:1.5}
+table.ev tr:first-child td{border-top:0}
+table.ev tbody tr{cursor:pointer}
+table.ev tr.sel td{background:#EEF4FF}
+table.ev td.tm{color:var(--s600);white-space:nowrap;font-variant-numeric:tabular-nums}
+table.ev td .who{display:block;font-weight:600}
+table.ev td .who2{display:block;font-size:12px;color:var(--s600)}
+table.ev td .chip{font-size:11px;padding:1px 7px;white-space:nowrap}
+table.ev td .ba{font-variant-numeric:tabular-nums}
+table.ev td .ba s{color:var(--s600)}
+table.ev td .ba b{font-weight:600}
+table.ev td.why{color:var(--s600)}
+.ev-pg{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-top:1px solid var(--s200);font-size:13px;color:var(--s600)}
+.ev-pg .pn{display:flex;gap:4px}
+.ev-pg .pn a{min-width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;border-radius:6px;text-decoration:none;color:var(--s600);font-size:13px}
+.ev-pg .pn a.on{background:var(--navy-900);color:#fff}
+/* 상세 서랍 */
+.ev-scrim{position:absolute;inset:0;background:rgba(11,37,69,.35);z-index:30}
+.ev-dr{position:absolute;top:0;right:0;bottom:0;width:460px;z-index:31;background:#fff;box-shadow:-16px 0 40px rgba(11,37,69,.22);display:flex;flex-direction:column}
+.ev-dr .dh{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:22px 24px 14px;border-bottom:1px solid var(--s200)}
+.ev-dr .dh h2{font-size:19px;font-weight:600;margin:6px 0 4px;letter-spacing:-0.3px}
+.ev-dr .dh p{margin:0;font-size:13px;color:var(--s600)}
+.ev-dr .x{font-family:inherit;font-size:22px;line-height:1;color:var(--s600);background:none;border:0;cursor:pointer;padding:2px 4px}
+.ev-dr .db{padding:16px 24px;overflow:hidden;flex:1 1 auto}
+.ev-kv{display:grid;grid-template-columns:96px minmax(0,1fr);gap:8px 12px;font-size:13px;margin:0 0 16px}
+.ev-kv dt{color:var(--s600)}
+.ev-kv dd{margin:0;color:var(--s900);word-break:break-all}
+.ev-h{font-size:12px;font-weight:600;color:var(--s600);margin:16px 0 6px}
+.ev-code{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.ev-code pre{margin:0;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;line-height:1.6;background:var(--s50);border:1px solid var(--s200);border-radius:8px;padding:10px 12px;white-space:pre-wrap;color:var(--s900)}
+.ev-code pre .k2{display:block;font-family:inherit;font-size:11px;font-weight:600;color:var(--s600);margin:0 0 4px}
+.ev-code pre.af{border-color:#C7E6E0;background:#F3FAF8}
+.ev-why{font-size:14px;color:var(--s900);line-height:1.6;background:var(--s50);border:1px solid var(--s200);border-radius:8px;padding:10px 12px;margin:0}
+.ev-imp{margin:0;padding-left:18px}
+.ev-imp li{font-size:13px;color:var(--s600);line-height:1.7}
+.ev-dr .df{padding:14px 24px;border-top:1px solid var(--s200);background:var(--s50);display:flex;justify-content:space-between;align-items:center;gap:12px}
+.ev-dr .df p{margin:0;font-size:12px;color:var(--s600)}
+</style>
+</helmet>
+
+<div class="pg ad">
+  <header class="ad-top">
+    <a class="lg" href="Admin-Blocks.dc.html"><span class="mark" aria-hidden="true"><i style="height:9px"></i><i style="height:17px"></i><i style="height:12px;opacity:.55"></i></span>마자용 운영<span class="cp">운영자 콘솔</span></a>
+    <div class="me"><span>운영자</span><b>김하늘</b><span class="av" aria-hidden="true">하</span></div>
+  </header>
+  <div class="ad-body">
+    <nav class="ad-nav" aria-label="운영 메뉴">
+      <p class="h">처리할 일</p>
+      <a href="Admin-Blocks.dc.html">블록 검토<span class="bd">7</span></a><a href="Admin-Payments.dc.html">보류된 결제<span class="bd">2</span></a><a href="Admin-Refunds.dc.html">환불 처리<span class="bd">1</span></a><a href="Admin-Disputes.dc.html">이견 개입<span class="bd">1</span></a><a href="Admin-Reports.dc.html">신고 처리<span class="bd">2</span></a><a href="Admin-Inquiries.dc.html">1:1 문의<span class="bd">4</span></a>
+      <div class="sp"></div>
+      <a class="mut on" aria-current="page" href="Admin-Events.dc.html">이벤트 기록</a>
+      <p class="ft2">운영자 행위는 모두 이벤트 기록에 남습니다</p>
+    </nav>
+    <main class="ad-main">
+      <h1 class="t">이벤트 기록</h1>
+      <p class="sub">운영자 행위와 거래의 주요 사건을 시간순으로 봅니다. 병합 · 단가 수정 · 결제 확정 · 정산 처리 · 판정은 전후 값과 사유가 함께 남습니다.</p>
+      <div class="ev-note"><b>기록은 지우거나 고칠 수 없습니다.</b> 계정 이메일 · 카드 번호 전체 같은 개인정보는 남기지 않고 끝자리만 남깁니다.</div>
+      <div class="ev-fl">
+        <select class="ev-sel" aria-label="기간"><option>최근 30일</option></select>
+        <div class="ev-seg" role="group" aria-label="행위자"><a class="on" href="Admin-Events.dc.html">전체</a><a href="Admin-Events.dc.html">운영자</a><a href="Admin-Events.dc.html">시스템</a><a href="Admin-Events.dc.html">의뢰인</a><a href="Admin-Events.dc.html">공급자</a></div>
+        <select class="ev-sel" aria-label="종류"><sc-for list="{{kinds}}" as="o" hint-placeholder-count="1"><option {{o.sel}}>{{o.t}}</option></sc-for></select>
+        <input class="ev-q" type="search" placeholder="계약 · 블록 · 사용자 이름으로 찾기" aria-label="찾기">
+      </div>
+      <div class="ev-tw">
+        <table class="ev">
+          <colgroup><col style="width:112px"><col style="width:118px"><col style="width:96px"><col style="width:22%"><col style="width:20%"><col></colgroup>
+          <thead><tr><th scope="col">시각</th><th scope="col">행위자</th><th scope="col">종류</th><th scope="col">대상</th><th scope="col">전 → 후</th><th scope="col">사유</th></tr></thead>
+          <tbody>
+            <sc-for list="{{rows}}" as="r" hint-placeholder-count="12">
+              <tr class="{{r.cls}}" data-action-href="?view=상세"><td class="tm">{{r.t}}</td><td><span class="who">{{r.who}}</span><span class="who2">{{r.who2}}</span></td><td><span class="{{r.chipCls}}">{{r.kind}}</span></td><td>{{r.tg}}</td><td class="ba"><s>{{r.bf}}</s> → <b>{{r.af}}</b></td><td class="why">{{r.why}}</td></tr>
+            </sc-for>
+          </tbody>
+        </table>
+        <div class="ev-pg"><span>{{pg}}</span><span class="pn"><a class="on" href="Admin-Events.dc.html">1</a><a href="Admin-Events.dc.html">2</a><a href="Admin-Events.dc.html">3</a><a href="Admin-Events.dc.html">›</a></span></div>
+      </div>
+    </main>
+  </div>
+  <sc-if value="{{isDetail}}" hint-placeholder-val="{{ false }}">
+    <div class="ev-scrim" aria-hidden="true"></div>
+    <aside class="ev-dr" role="dialog" aria-modal="true" aria-label="이벤트 상세">
+      <div class="dh">
+        <div><span class="chip amber" style="font-size:12px;padding:2px 8px">단가 수정</span><h2>‘주차 안내’ 블록 단가 수정</h2><p>11월 2일 10:05 · 운영자 김하늘</p></div>
+        <button type="button" class="x" aria-label="닫기" data-action-href="?view=목록">×</button>
+      </div>
+      <div class="db">
+        <dl class="ev-kv">
+          <dt>이벤트 번호</dt><dd>evt_20261102_1005_0041</dd>
+          <dt>행위자</dt><dd>운영자 김하늘 · 운영 계정 ops-02</dd>
+          <dt>종류</dt><dd>블록 단가 수정(㉑)</dd>
+          <dt>대상</dt><dd>블록 · 주차 안내 · blk_0381 · 음식점(한식)</dd>
+        </dl>
+        <p class="ev-h">전 → 후</p>
+        <div class="ev-code">
+          <pre><span class="k2">전</span>unit_price: 800,000
+basis_days: 4
+basis_note: "예약 확인 주차 안내 ·
+  가게용 주차장 설정"
+status: "active"</pre>
+          <pre class="af"><span class="k2">후</span>unit_price: 950,000
+basis_days: 5
+basis_note: "… + 주차권 안내
+  문자 발송 연동 1건"
+status: "active"</pre>
+        </div>
+        <p class="ev-h">사유</p>
+        <p class="ev-why">제휴 주차장 요금 계산과 주차권 안내 문자 발송이 근거에서 빠져 작업량이 적게 잡혔습니다. 발송 연동 1건(약 1일)을 더합니다.</p>
+        <p class="ev-h">영향</p>
+        <ul class="ev-imp">
+          <li>이 시각 뒤에 만들어지는 초안부터 950,000원이 쓰입니다.</li>
+          <li>이미 쓰인 초안 3건 · 명세 1건은 800,000원 그대로입니다.</li>
+          <li>공급자 화면에는 단가가 보이지 않습니다.</li>
+        </ul>
+      </div>
+      <div class="df"><p>기록은 지우거나 고칠 수 없습니다</p><a class="btn sm tint" href="Admin-Blocks.dc.html" style="white-space:nowrap">블록 검토에서 보기</a></div>
+    </aside>
+  </sc-if>
+</div>

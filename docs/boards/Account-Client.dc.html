@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>의뢰인 — 계정 설정</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="/_blob/a8316b816fb987eb4a5af50ab874b7d1">
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+.pg{word-break:keep-all;position:relative}
+.ac sc-if{display:contents}
+.phead{display:flex;align-items:center;gap:18px;flex-wrap:wrap;margin-bottom:26px}
+.phead .big{width:72px;height:72px;border-radius:50%;background:var(--blue-50);color:var(--navy-900);font-size:26px;font-weight:600;display:flex;align-items:center;justify-content:center;flex:none}
+.phead .nm{font-size:24px;font-weight:600;letter-spacing:-0.5px}
+.phead .mt{font-size:14px;color:var(--s600);margin-top:4px}
+.phead .sp{flex:1 1 auto}
+.star{color:var(--amber-700)}
+.btn.warn{background:#fff;color:var(--amber-700);border:1px solid #E6C68A}
+.btn.warn.off{opacity:.5;cursor:default}
+.ac-band{display:flex;gap:12px;align-items:flex-start;background:#EAF6F4;border:1px solid #C7E6E0;border-radius:12px;padding:14px 18px;margin:0 0 18px}
+.ac-band b{display:block;color:var(--teal-700);font-size:15px;margin:0 0 2px}
+.ac-band p{margin:0;font-size:14px;color:var(--s600)}
+.ac-sec{background:#fff;border:1px solid var(--s200);border-radius:12px;padding:20px 22px;margin:0 0 16px}
+.ac-sec h2{font-size:17px;font-weight:600;margin:0 0 4px}
+.ac-sec .ds{font-size:14px;color:var(--s600);margin:0 0 14px;line-height:1.6}
+.ac-row{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:12px 0;border-top:1px solid var(--s100)}
+.ac-row:first-of-type{border-top:0}
+.ac-row .k{font-size:13px;color:var(--s600);margin:0 0 2px}
+.ac-row .v{font-size:15px;color:var(--s900);font-weight:500}
+.ac-row .v .chip{font-size:12px;padding:2px 8px;margin-left:8px;vertical-align:1px}
+.ac-row .btn{white-space:nowrap;flex:none}
+.ac-prv{display:inline-block;font-size:12px;font-weight:500;padding:2px 8px;border-radius:6px;background:var(--s100);color:var(--s600);border:1px solid var(--s200);margin-left:8px;vertical-align:1px}
+.ac-g{display:inline-flex;width:22px;height:22px;border-radius:50%;border:1px solid var(--s200);align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--s600);margin-right:8px;vertical-align:-5px;background:#fff}
+.ac-pw{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.ac-pw .f{margin:0}
+.ac-act{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:14px}
+.ac-act .sec{margin:0}
+.ac-act .btn{white-space:nowrap;flex:none}
+.ac-out ul{margin:0 0 14px;padding-left:18px}
+.ac-out li{font-size:14px;color:var(--s600);line-height:1.75}
+.ac-out li b{color:var(--s900);font-weight:600}
+.m-scrim{position:absolute;inset:0;background:rgba(11,37,69,.55);z-index:30}
+.m-dlg{position:absolute;top:120px;left:50%;transform:translateX(-50%);width:560px;z-index:31;background:#fff;border-radius:16px;box-shadow:0 24px 60px rgba(11,37,69,.35);overflow:hidden}
+.m-dlg .mh{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:22px 26px 14px;border-bottom:1px solid var(--s200)}
+.m-dlg .mh h2{font-size:19px;font-weight:600;margin:0 0 4px;letter-spacing:-0.3px}
+.m-dlg .mh p{margin:0;font-size:14px;color:var(--s600)}
+.m-dlg .x{font-family:inherit;font-size:22px;line-height:1;color:var(--s600);background:none;border:0;cursor:pointer;padding:2px 4px}
+.m-dlg .mb{padding:18px 26px}
+.m-dlg .mf{display:flex;justify-content:flex-end;align-items:center;gap:10px;padding:14px 26px;border-top:1px solid var(--s200);background:var(--s50)}
+.m-dlg .mf .btn{white-space:nowrap}
+.m-blk{border:1px solid #F2E0BE;background:var(--amber-50);border-radius:10px;padding:12px 16px;margin:0 0 14px}
+.m-blk b{display:block;font-size:14px;color:var(--amber-700);margin:0 0 6px}
+.m-ct{display:flex;justify-content:space-between;align-items:center;gap:12px;background:#fff;border:1px solid var(--s200);border-radius:8px;padding:10px 12px}
+.m-ct .t{font-size:14px;font-weight:600;color:var(--s900)}
+.m-ct .s{font-size:12px;color:var(--s600);margin-top:2px}
+.m-ct .chip{font-size:12px;padding:2px 8px;flex:none}
+.m-rl{margin:0;padding-left:18px}
+.m-rl li{font-size:13px;color:var(--s600);line-height:1.75}
+.ac-tmp{display:inline-block;font-size:12px;font-weight:500;padding:2px 8px;border-radius:6px;background:var(--amber-50);color:var(--amber-700);border:1px solid #F2E0BE;margin-left:8px;vertical-align:2px}
+.m-f{margin:0 0 12px}
+.m-f .inp{width:100%;box-sizing:border-box}
+.m-cur{font-size:14px;color:var(--s600);background:var(--s50);border:1px solid var(--s200);border-radius:8px;padding:10px 12px;margin:0 0 14px}
+.m-cur b{color:var(--s900);font-weight:600;margin-left:6px}
+.m-ok{display:flex;justify-content:space-between;align-items:center;gap:12px;background:#EAF6F4;border:1px solid #C7E6E0;border-radius:10px;padding:12px 14px;margin:0 0 14px}
+.m-ok .t{font-size:14px;font-weight:600;color:var(--s900)}
+.m-ok .s{font-size:13px;color:var(--s600);margin-top:2px}
+.m-ok .chip{font-size:12px;padding:2px 8px;flex:none}
+.m-f .inp.err{border-color:var(--red-600);box-shadow:0 0 0 1px var(--red-600)}
+.m-err{font-size:14px;color:var(--red-600);margin:6px 0 0}
+.m-hint{font-size:13px;color:var(--s600);margin:6px 0 0;line-height:1.6}
+.m-info{background:#fff;border:1px solid var(--s200);border-radius:10px;padding:12px 14px;font-size:13px;color:var(--s600);line-height:1.7;margin:4px 0 0}
+</style>
+<style>
+.pg{min-height:100vh;position:relative;padding-bottom:256px;box-sizing:border-box}
+.gf{position:absolute;left:0;right:0;bottom:0;background:var(--navy-900);padding:34px 0 30px;font-size:14px;color:#A9BDD6;word-break:keep-all}
+.gf a{color:#A9BDD6;text-decoration:none}
+.gf-top{display:flex;justify-content:space-between;align-items:center;gap:12px 32px;flex-wrap:wrap}
+.gf-brand{display:flex;align-items:center;gap:16px;flex-wrap:wrap;min-width:0}
+.gf-logo{display:inline-flex;align-items:center;font-size:19px;font-weight:600;letter-spacing:-0.4px;color:#fff}
+.gf-brand p{margin:0}
+.gf-cs{display:flex;align-items:baseline;gap:4px 16px;flex-wrap:wrap}
+.gf-cs b{color:#fff;font-weight:600;font-size:15px}
+.gf-nav{display:flex;flex-wrap:wrap;gap:10px 44px;margin:18px 0 0;padding:0 0 24px;border-bottom:1px solid rgba(255,255,255,.14)}
+.gf-nav>div{display:flex;align-items:baseline;gap:18px;flex-wrap:wrap}
+.gf-nav b{color:#fff;font-weight:600}
+.gf-nav a.em{color:#fff;font-weight:600}
+.gf-bot{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:24px;padding-top:20px;font-size:13px;line-height:1.75;color:#8FA6C2}
+.gf-bot p{margin:0}
+.gf-biz i{display:inline-block;width:1px;height:10px;background:rgba(255,255,255,.28);margin:0 9px;vertical-align:-1px}
+.gf-copy{align-self:end;text-align:right;white-space:nowrap}
+.gf-note{grid-column:1 / -1;margin-top:8px !important}
+</style>
+</helmet>
+
+<div class="pg">
+
+  <header class="gnb">
+    <div class="wrap">
+      <div class="gnbin">
+        <a class="brand" href="Home-Client.dc.html"><span class="mark" aria-hidden="true"><i style="height:9px"></i><i style="height:17px"></i><i style="height:12px;opacity:.55"></i></span>마자용</a>
+        <nav class="nav" aria-label="주요 메뉴">
+          <a href="Home-Client.dc.html">홈</a><a href="Input-Client.dc.html">프로젝트 시작</a><a href="My-Client.dc.html">내 프로젝트</a><a href="Contracts-Client.dc.html">내 계약</a><a href="Settle-Client.dc.html">정산 내역</a>
+        </nav>
+        <div class="gright">
+          <a class="bell dot" href="Chat-Client.dc.html" aria-label="채팅 — 새 메시지 1건"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"></path></svg></a>
+          <a class="bell dot" href="Notify-Client.dc.html" aria-label="알림 — 안 읽은 알림 3건"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"></path><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"></path></svg></a>
+          <span class="who"><span class="ava">민</span><span class="uname">정민재</span></span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="pad ac">
+    <div class="narrow">
+
+      <div class="phead">
+        <span class="big" aria-hidden="true">민</span>
+        <div>
+          <div class="nm">정민재</div>
+          <div class="mt">의뢰인 · 온도 다이닝 · 2026년 8월 가입 · <span class="star">★</span> 4.5 (리뷰 2건)</div>
+        </div>
+      </div>
+
+      <nav class="tabs" aria-label="프로필 메뉴">
+        <a href="Profile-Client.dc.html">기본 정보</a>
+        <a href="Profile-Client.dc.html">받은 리뷰</a>
+        <a class="on" href="Account-Client.dc.html">계정 설정</a>
+      </nav>
+
+      <sc-if value="{{isTaxDone}}" hint-placeholder-val="{{ false }}">
+        <div class="ac-band"><div><b>증빙 정보를 바꿨습니다 · 11월 4일 16:10</b><p>다음 예치부터 바뀐 정보로 수수료 세금계산서를 발행합니다. 이미 발행된 증빙은 바뀌지 않습니다.</p></div></div>
+      </sc-if>
+      <sc-if value="{{isDone}}" hint-placeholder-val="{{ false }}">
+        <div class="ac-band"><div><b>비밀번호를 바꿨습니다 · 11월 3일 10:12</b><p>다른 기기에서는 다시 로그인해야 합니다. 바꾸지 않으셨다면 바로 비밀번호를 다시 바꿔 주세요.</p></div></div>
+      </sc-if>
+
+      <section class="ac-sec" aria-labelledby="h-login">
+        <h2 id="h-login">로그인 정보</h2>
+        <p class="ds">계정 이메일은 로그인과 안내 메일에만 쓰고, 다른 사용자에게는 어느 단계에서도 공개되지 않습니다.</p>
+        <div class="ac-row"><div><p class="k">계정 이메일</p><p class="v" style="margin:0">minjae.ondo@example.com<span class="ac-prv">공개 안 함</span></p></div><a class="btn sm gh" href="#email">이메일 바꾸기</a></div>
+        <div class="ac-row"><div><p class="k">이메일 로그인</p><p class="v" style="margin:0">비밀번호 사용 중</p></div></div>
+        <div class="ac-row"><div><p class="k">구글 로그인</p><p class="v" style="margin:0"><span class="ac-g">G</span>연결됨 · minjae.ondo@example.com</p></div><a class="btn sm gh" href="#google">연결 해제</a></div>
+      </section>
+
+      <section class="ac-sec" aria-labelledby="h-pw">
+        <h2 id="h-pw">비밀번호 변경</h2>
+        <p class="ds">8자 이상, 영문과 숫자를 섞어 주세요. 구글로만 가입하셨다면 현재 비밀번호 없이 '비밀번호 만들기'로 새로 정할 수 있습니다.</p>
+        <div class="ac-pw">
+          <div class="f"><label class="lbl" for="pw0">현재 비밀번호</label><input class="inp" id="pw0" type="password" value="{{pw0}}" placeholder="현재 비밀번호"></div>
+          <div class="f"><label class="lbl" for="pw1">새 비밀번호</label><input class="inp" id="pw1" type="password" value="{{pw1}}" placeholder="새 비밀번호"></div>
+          <div class="f"><label class="lbl" for="pw2">새 비밀번호 확인</label><input class="inp" id="pw2" type="password" value="{{pw1}}" placeholder="한 번 더"></div>
+        </div>
+        <div class="ac-act"><p class="sec">바꾸면 다른 기기의 로그인은 끝납니다.</p><a class="btn" href="Account-Client.dc.html">비밀번호 바꾸기</a></div>
+      </section>
+
+      <section class="ac-sec" aria-labelledby="h-role">
+        <h2 id="h-role">역할</h2>
+        <div class="ac-row"><div><p class="v" style="margin:0"><span class="chip blue">의뢰인</span></p></div><p class="sec" style="margin:0;text-align:right;flex:1 1 300px">가입 때 정해지고 바꿀 수 없습니다. 공급자로도 활동하시려면 다른 이메일로 계정을 만들어 주세요.</p></div>
+      </section>
+
+      <section class="ac-sec" aria-labelledby="h-pay">
+        <h2 id="h-pay">결제 수단 · 증빙 정보</h2>
+        <p class="ds" style="margin:0 0 4px">결제 수단은 저장하지 않습니다. 예치할 때마다 카드나 계좌이체를 고르고, 환불은 결제한 수단으로 돌려드립니다. 수수료 세금계산서는 마자용이, 대금 세금계산서는 사업자 공급자가 발행합니다.</p>
+        <div class="ac-row"><div><p class="k">증빙 정보</p><p class="v" style="margin:0">{{taxNow}}</p></div><a class="btn sm gh" href="#tax">바꾸기</a></div>
+      </section>
+
+      <section class="ac-sec ac-out" aria-labelledby="h-out">
+        <h2 id="h-out">탈퇴</h2>
+        <p class="ds">탈퇴하면 계정 이메일과 프로필이 지워지고 다시 로그인할 수 없습니다.</p>
+        <ul>
+          <li><b>진행 중인 계약 · 임시 계약 · 정산 처리 중</b>인 건이 있으면 탈퇴할 수 없습니다. 모두 끝난 뒤에 탈퇴해 주세요.</li>
+          <li>리뷰 · 계약 · 정산 기록은 법에서 정한 보관 기간 동안 남긴 뒤 지웁니다.</li>
+        </ul>
+        <div class="ac-act" style="margin-top:0"><p class="sec">상대방 화면에는 '탈퇴한 사용자'로 표시됩니다.</p><a class="btn sm warn" href="#leave">탈퇴하기</a></div>
+      </section>
+
+    </div>
+  </main>
+
+  <sc-if value="{{isEmail}}" hint-placeholder-val="{{ false }}">
+    <div class="m-scrim" aria-hidden="true"></div>
+    <section class="m-dlg" role="dialog" aria-modal="true" aria-label="이메일 바꾸기">
+      <div class="mh"><div><h2>계정 이메일 바꾸기</h2><p>새 이메일로 인증 메일을 보냅니다. 링크를 눌러 인증해야 바뀝니다.</p></div><button type="button" class="x" aria-label="닫기">×</button></div>
+      <div class="mb">
+        <p class="m-cur">지금 이메일<b>minjae.ondo@example.com</b></p>
+        <div class="m-f"><label class="lbl" for="em1">새 이메일</label><input class="inp" id="em1" type="email" value="ondo.dining@example.com" placeholder="새 이메일"></div>
+        <div class="m-f"><label class="lbl" for="em2">현재 비밀번호</label><input class="inp" id="em2" type="password" value="••••••••••" placeholder="현재 비밀번호"></div>
+        <ul class="m-rl">
+          <li>인증 메일의 링크는 24시간 동안 쓸 수 있습니다. 인증 전까지는 지금 이메일로 로그인합니다.</li>
+          <li>바뀐 이메일도 다른 사용자에게는 공개되지 않습니다. 구글 로그인 연결은 그대로입니다.</li>
+        </ul>
+      </div>
+      <div class="mf"><a class="btn sm gh" href="Account-Client.dc.html">취소</a><a class="btn sm" href="Account-Client.dc.html">인증 메일 보내기</a></div>
+    </section>
+  </sc-if>
+
+  <sc-if value="{{isTax}}" hint-placeholder-val="{{ false }}">
+    <div class="m-scrim" aria-hidden="true"></div>
+    <section class="m-dlg" role="dialog" aria-modal="true" aria-label="증빙 정보 바꾸기">
+      <div class="mh"><div><h2>증빙 정보 바꾸기</h2><p>수수료 세금계산서를 받을 정보입니다. 바꾸면 다음 예치부터 적용됩니다.</p></div><button type="button" class="x" aria-label="닫기">×</button></div>
+      <div class="mb">
+        <p class="m-cur">지금<b>사업자등록번호 끝자리 4417 · tax.ondo@example.com</b></p>
+        <div class="m-f"><label class="lbl" for="tx1">사업자등록번호</label><input class="{{taxInpCls}}" id="tx1" type="text" value="{{taxNo}}" placeholder="000-00-00000">
+          <sc-if value="{{taxErr}}" hint-placeholder-val="{{ false }}"><p class="m-err">사업자등록번호 10자리를 넣어 주세요</p></sc-if>
+          <sc-if value="{{taxOk}}" hint-placeholder-val="{{ true }}"><p class="m-hint">숫자 10자리. 하이픈은 자동으로 넣습니다</p></sc-if></div>
+        <div class="m-f"><label class="lbl" for="tx2">세금계산서 받을 이메일</label><input class="inp" id="tx2" type="email" value="tax.ondo@example.com" placeholder="이메일">
+          <p class="m-hint">계정 이메일과 달라도 됩니다. 상대에게는 보이지 않습니다</p></div>
+        <div class="m-info">사업자가 아니면 두 칸을 비워 두세요. 카드 결제는 카드 매출전표, 계좌이체는 결제 화면에서 현금영수증 번호를 넣으면 됩니다. 이미 발행된 증빙은 바뀌지 않습니다.</div>
+      </div>
+      <div class="mf"><a class="btn sm gh" href="Account-Client.dc.html">취소</a><a class="btn sm" href="Account-Client.dc.html">저장하기</a></div>
+    </section>
+  </sc-if>
+
+  <sc-if value="{{isGoogle}}" hint-placeholder-val="{{ false }}">
+    <div class="m-scrim" aria-hidden="true"></div>
+    <section class="m-dlg" role="dialog" aria-modal="true" aria-label="구글 연결 해제">
+      <div class="mh"><div><h2>구글 연결을 해제할까요?</h2><p>해제하면 이메일과 비밀번호로만 로그인합니다.</p></div><button type="button" class="x" aria-label="닫기">×</button></div>
+      <div class="mb">
+        <div class="m-ok"><div><div class="t">이메일 로그인 · 비밀번호 사용 중</div><div class="s">비밀번호가 있어야 해제할 수 있습니다</div></div><span class="chip teal">해제할 수 있음</span></div>
+        <ul class="m-rl">
+          <li>구글로만 가입했다면 먼저 '비밀번호 만들기'로 비밀번호를 정해야 해제할 수 있습니다.</li>
+          <li>해제해도 계약 · 정산 · 리뷰 기록은 그대로입니다.</li>
+          <li>다시 연결하려면 로그인 화면에서 '구글로 계속하기'를 누르면 됩니다.</li>
+        </ul>
+      </div>
+      <div class="mf"><a class="btn sm gh" href="Account-Client.dc.html">취소</a><a class="btn sm warn" href="Account-Client.dc.html">연결 해제</a></div>
+    </section>
+  </sc-if>
+
+  <sc-if value="{{isLeave}}" hint-placeholder-val="{{ false }}">
+    <div class="m-scrim" aria-hidden="true"></div>
+    <section class="m-dlg" role="dialog" aria-modal="true" aria-label="탈퇴 확인">
+      <div class="mh"><div><h2>지금은 탈퇴할 수 없습니다</h2><p>진행 중인 계약이 끝나야 탈퇴할 수 있습니다.</p></div><button type="button" class="x" aria-label="닫기">×</button></div>
+      <div class="mb">
+        <div class="m-blk"><b>진행 중인 계약 1건</b>
+          <div class="m-ct"><div><div class="t">예약 달력, 예약금 결제 외 2개 기능</div><div class="s">공급자 최준호 · 작업 마감 12월 16일</div></div><span class="chip blue">진행 중</span></div>
+        </div>
+        <ul class="m-rl">
+          <li>진행 중 · 임시 계약 · 정산 처리 중인 건이 하나라도 있으면 탈퇴할 수 없습니다.</li>
+          <li>계약이 끝나고 정산까지 마치면 이 화면에서 바로 탈퇴할 수 있습니다.</li>
+          <li>계약을 그만두려면 내 계약에서 취소를 요청해 주세요. 사유에 따라 정산합니다.</li>
+        </ul>
+      </div>
+      <div class="mf"><a class="btn sm gh" href="Account-Client.dc.html">닫기</a><a class="btn sm tint" href="Contracts-Client.dc.html">내 계약 보기</a><span class="btn sm warn off" aria-disabled="true">탈퇴하기</span></div>
+    </section>
+  </sc-if>
+
+  <footer class="gf" aria-label="사이트 정보">
+    <div class="wrap">
+      <div class="gf-top">
+        <div class="gf-brand">
+          <span class="gf-logo"><span class="mark" aria-hidden="true"><i style="height:9px"></i><i style="height:17px"></i><i style="height:12px;opacity:.55"></i></span>마자용</span>
+          <p>소상공인을 위한 웹 외주 요구사항 정의 · 매칭 플랫폼</p>
+        </div>
+        <div class="gf-cs"><b>고객센터 1600-0000</b><span>평일 10:00–18:00</span><span>점심 12:00–13:00 · 주말 · 공휴일 휴무</span><span>help@majayong.example</span></div>
+      </div>
+      <nav class="gf-nav" aria-label="사이트 링크">
+        <div><b>서비스</b><a href="Main.dc.html">의뢰인 안내</a><a href="Supplier-Landing.dc.html">공급자 안내</a></div>
+        <div><b>고객센터</b><a href="Help.dc.html">자주 묻는 질문</a><a href="Help-Inquiry.dc.html">1:1 문의</a><a href="Help.dc.html">공지사항</a></div>
+        <div><b>정책</b><a href="Terms.dc.html">이용약관</a><a class="em" href="Terms.dc.html">개인정보 처리방침</a><a href="Terms.dc.html">명세 비밀유지</a><a href="Terms.dc.html">중개자 고지</a></div>
+      </nav>
+      <div class="gf-bot">
+        <p class="gf-biz">상호 로켓단<i></i>대표 김로켓<i></i>사업자등록번호 000-00-00000<i></i>통신판매업 신고 제2026-서울마포-0000호<br>주소 서울특별시 마포구 예시로 00, 0층<i></i>개인정보 보호책임자 박예시<i></i>이메일 help@majayong.example</p>
+        <p class="gf-copy">© 2026 로켓단. All rights reserved.</p>
+        <p class="gf-note">마자용은 통신판매중개자로서 거래 당사자가 아니며, 의뢰인과 공급자 사이 계약의 이행 책임은 각 당사자에게 있습니다. 대금 예치와 정산은 마자용이 관리합니다.</p>
+      </div>
+    </div>
+  </footer>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"view":{"editor":"enum","options":["기본","탈퇴 확인","비밀번호 변경 완료","이메일 바꾸기","구글 연결 해제","증빙 정보 바꾸기","증빙 정보 오류","증빙 정보 저장 완료"],"default":"기본","section":"상태"},"$preview":{"width":1280,"height":1903}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const v = this.props.view ?? '기본';
+    const done = v === '비밀번호 변경 완료';
+    const tx = v === '증빙 정보 바꾸기', txe = v === '증빙 정보 오류', txd = v === '증빙 정보 저장 완료';
+    return { isTax: tx || txe, taxErr: txe, taxOk: !txe, taxNo: txe ? '418-81-2955' : '418-81-29544', taxInpCls: txe ? 'inp err' : 'inp', isTaxDone: txd,
+      taxNow: txd ? '사업자등록번호 끝자리 9544 · 세금계산서 받을 이메일 tax.ondo@example.com' : '사업자등록번호 끝자리 4417 · 세금계산서 받을 이메일 tax.ondo@example.com',
+      isEmail: v === '이메일 바꾸기', isGoogle: v === '구글 연결 해제', isLeave: v === '탈퇴 확인', isDone: done, pw0: done ? '' : '••••••••••', pw1: done ? '' : '••••••••••••' };
+  }
+}
+</script>
+</body>
+</html>

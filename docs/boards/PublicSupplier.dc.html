@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>의뢰인 — 공급자 공개 프로필</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="/_blob/a8316b816fb987eb4a5af50ab874b7d1">
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+.pg{word-break:keep-all}
+.pp sc-for,.pp sc-if{display:contents}
+.crumb{font-size:14px;color:var(--s600);margin:0 0 12px}
+.crumb a{color:var(--s600)}
+.lay{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:20px;align-items:start}
+.hc{background:#fff;border:1px solid var(--s200);border-radius:14px;padding:24px 26px;margin:0 0 16px}
+.hc .top{display:flex;gap:18px;align-items:center}
+.hc .av{flex:none;width:64px;height:64px;border-radius:50%;background:var(--s100);border:1px solid var(--s200);display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:600;color:var(--navy-900)}
+.hc .nm{font-size:24px;font-weight:600;letter-spacing:-0.5px;margin:0 0 4px}
+.hc .mt{font-size:15px;color:var(--s600)}
+.hc .mt .sep{color:var(--s300);margin:0 8px}
+.hc .mt .st{color:var(--navy-900);font-weight:600}
+.hc .rows{margin:18px 0 0;border-top:1px solid var(--s200);padding-top:16px;display:grid;grid-template-columns:96px minmax(0,1fr);gap:10px 16px;align-items:start}
+.hc .rows .k{font-size:14px;color:var(--s600);padding-top:3px}
+.hc .rows .v{font-size:15px;color:var(--s900);line-height:1.65}
+.chips3{display:flex;flex-wrap:wrap;gap:6px}
+.chips3 span{font-size:13px;padding:3px 10px;border-radius:6px;border:1px solid var(--s200);background:var(--s50);color:var(--s900)}
+.chips3.ind span{background:var(--blue-50,#EEF4FF);border-color:#D6E4FF;color:var(--navy-900)}
+.sec2{background:#fff;border:1px solid var(--s200);border-radius:14px;padding:22px 26px;margin:0 0 16px}
+.sec2 h2{font-size:18px;font-weight:600;margin:0 0 14px;display:flex;align-items:baseline;gap:8px}
+.sec2 h2 span{font-size:14px;font-weight:400;color:var(--s600)}
+.aib{background:var(--s50);border:1px solid var(--s200);border-radius:10px;padding:14px 16px;margin:0 0 14px}
+.aib .k{font-size:13px;font-weight:600;color:var(--s600);margin:0 0 6px}
+.aib .k span{font-weight:400;margin-left:6px}
+.aib p{margin:0;font-size:15px;line-height:1.65;color:var(--s900)}
+.aib.none p{font-size:14px;color:var(--s600)}
+.pl{list-style:none;margin:0;padding:0}
+.pl li{display:flex;align-items:center;gap:12px;padding:11px 0;border-top:1px solid var(--s200);font-size:15px}
+.pl li:first-child{border-top:0}
+.pl .ic{flex:none;width:32px;height:32px;border-radius:8px;background:var(--s100);border:1px solid var(--s200);display:flex;align-items:center;justify-content:center;color:var(--s600)}
+.pl .ic svg{width:16px;height:16px}
+.pl .t2{flex:1 1 auto;min-width:0}
+.pl .t2 a{color:var(--navy-900)}
+.pl .t2 span{display:block;font-size:13px;color:var(--s600);margin-top:1px}
+.rvs{display:grid;grid-template-columns:200px minmax(0,1fr);gap:28px;align-items:start;padding:0 0 18px;margin:0 0 4px;border-bottom:1px solid var(--s200)}
+.avg .v{font-size:40px;font-weight:600;letter-spacing:-1px;color:var(--navy-900);line-height:1.1}
+.avg .stars{color:#E0A526;font-size:18px;letter-spacing:2px;margin:4px 0}
+.avg .stars i{font-style:normal;color:var(--s300)}
+.avg .n{font-size:14px;color:var(--s600)}
+.dist{margin-top:12px}
+.dist .r{display:grid;grid-template-columns:22px minmax(0,1fr) 22px;gap:8px;align-items:center;font-size:13px;color:var(--s600);margin:3px 0}
+.dist .bar{height:6px;border-radius:3px;background:var(--s100);overflow:hidden}
+.dist .bar i{display:block;height:6px;background:#E0A526;border-radius:3px}
+.ttg .k{font-size:13px;font-weight:600;color:var(--s600);margin:0 0 10px}
+.ttg .r{display:grid;grid-template-columns:170px minmax(0,1fr) 28px;gap:10px;align-items:center;font-size:14px;margin:0 0 8px}
+.ttg .bar{height:8px;border-radius:4px;background:var(--s100);overflow:hidden}
+.ttg .bar i{display:block;height:8px;background:var(--navy-900);opacity:.75;border-radius:4px}
+.ttg .r b{font-weight:600;text-align:right;font-variant-numeric:tabular-nums}
+.rc{padding:16px 0;border-top:1px solid var(--s200)}
+.rc:first-of-type{border-top:0}
+.rc .h{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin:0 0 4px}
+.rc .h .st2{color:#E0A526;font-size:15px;letter-spacing:1px}
+.rc .h .st2 i{font-style:normal;color:var(--s300)}
+.rc .h .dt{font-size:13px;color:var(--s600)}
+.rc .who{font-size:14px;color:var(--s600);margin:0 0 8px}
+.rc .who b{color:var(--s900);font-weight:600}
+.rc .tg3{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 8px}
+.rc .tg3 span{font-size:12px;background:var(--s50);border:1px solid var(--s200);border-radius:6px;padding:2px 8px}
+.rc p{margin:0;font-size:15px;line-height:1.7;color:var(--s900)}
+.more{display:block;text-align:center;font-size:14px;margin:6px 0 0}
+.empty3{text-align:center;padding:26px 10px;border:1px dashed var(--s300);border-radius:12px;background:var(--s50)}
+.empty3 b{display:block;font-size:16px;margin:0 0 4px}
+.empty3 p{margin:0;font-size:14px;color:var(--s600)}
+.rail3 .card{margin:0 0 16px}
+.rail3 h3{font-size:16px;font-weight:600;margin:0 0 4px}
+.rail3 .pj{font-size:13px;color:var(--s600);margin:0 0 12px}
+.qm .r{display:flex;justify-content:space-between;gap:10px;font-size:14px;padding:6px 0;border-top:1px solid var(--s200)}
+.qm .r:first-of-type{border-top:0}
+.qm .r span{color:var(--s600)}
+.qm .r b{font-weight:600;font-variant-numeric:tabular-nums}
+.qm .acts{display:flex;flex-direction:column;gap:8px;margin-top:14px}
+.qm .acts .btn{justify-content:center;white-space:nowrap}
+.priv{font-size:13px;color:var(--s600);line-height:1.65;margin:0}
+.priv b{color:var(--s900);font-weight:600}
+</style>
+<style>
+.pg{min-height:100vh;position:relative;padding-bottom:256px;box-sizing:border-box}
+.gf{position:absolute;left:0;right:0;bottom:0;background:var(--navy-900);padding:34px 0 30px;font-size:14px;color:#A9BDD6;word-break:keep-all}
+.gf a{color:#A9BDD6;text-decoration:none}
+.gf-top{display:flex;justify-content:space-between;align-items:center;gap:12px 32px;flex-wrap:wrap}
+.gf-brand{display:flex;align-items:center;gap:16px;flex-wrap:wrap;min-width:0}
+.gf-logo{display:inline-flex;align-items:center;font-size:19px;font-weight:600;letter-spacing:-0.4px;color:#fff}
+.gf-brand p{margin:0}
+.gf-cs{display:flex;align-items:baseline;gap:4px 16px;flex-wrap:wrap}
+.gf-cs b{color:#fff;font-weight:600;font-size:15px}
+.gf-nav{display:flex;flex-wrap:wrap;gap:10px 44px;margin:18px 0 0;padding:0 0 24px;border-bottom:1px solid rgba(255,255,255,.14)}
+.gf-nav>div{display:flex;align-items:baseline;gap:18px;flex-wrap:wrap}
+.gf-nav b{color:#fff;font-weight:600}
+.gf-nav a.em{color:#fff;font-weight:600}
+.gf-bot{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:24px;padding-top:20px;font-size:13px;line-height:1.75;color:#8FA6C2}
+.gf-bot p{margin:0}
+.gf-biz i{display:inline-block;width:1px;height:10px;background:rgba(255,255,255,.28);margin:0 9px;vertical-align:-1px}
+.gf-copy{align-self:end;text-align:right;white-space:nowrap}
+.gf-note{grid-column:1 / -1;margin-top:8px !important}
+</style>
+</helmet>
+
+<div class="pg">
+
+  <header class="gnb">
+    <div class="wrap">
+      <div class="gnbin">
+        <a class="brand" href="Home-Client.dc.html"><span class="mark" aria-hidden="true"><i style="height:9px"></i><i style="height:17px"></i><i style="height:12px;opacity:.55"></i></span>마자용</a>
+        <nav class="nav" aria-label="주요 메뉴">
+          <a href="Home-Client.dc.html">홈</a><a href="Input-Client.dc.html">프로젝트 시작</a><a class="on" href="My-Client.dc.html">내 프로젝트</a><a href="Contracts-Client.dc.html">내 계약</a><a href="Settle-Client.dc.html">정산 내역</a>
+        </nav>
+        <div class="gright">
+          <a class="bell dot" href="Chat-Client.dc.html" aria-label="채팅 — 새 메시지 1건"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"></path></svg></a>
+          <a class="bell dot" href="Notify-Client.dc.html" aria-label="알림 — 안 읽은 알림 3건"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"></path><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"></path></svg></a>
+          <span class="who"><span class="ava">민</span><span class="uname">정민재</span></span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+
+  <main class="pad pp">
+    <div class="wrap">
+
+      <p class="crumb"><a href="My-Client.dc.html">내 프로젝트</a> › <a href="Compare-Client.dc.html">제안 비교</a> › {{name}}</p>
+
+      <div class="lay">
+        <div>
+          <section class="hc" aria-label="공급자 정보">
+            <div class="top">
+              <span class="av" aria-hidden="true">{{ini}}</span>
+              <div>
+                <p class="nm">{{name}}</p>
+                <div class="mt">{{role}}<span class="sep">|</span><sc-if value="{{hasRv}}" hint-placeholder-val="{{ true }}"><span class="st">★ 4.8</span> · </sc-if>{{rvText}}<span class="sep">|</span>완료한 계약 {{done}}건<span class="sep">|</span>{{joined}}</div>
+              </div>
+            </div>
+            <div class="rows">
+              <span class="k">활동 업종</span><div class="v"><div class="chips3 ind"><sc-for list="{{inds}}" as="t" hint-placeholder-count="1"><span>{{t}}</span></sc-for></div></div>
+              <span class="k">기술 스택</span><div class="v"><div class="chips3"><sc-for list="{{stack}}" as="t" hint-placeholder-count="3"><span>{{t}}</span></sc-for></div></div>
+              <span class="k">자기소개</span><div class="v">{{bio}}</div>
+            </div>
+          </section>
+
+          <section class="sec2" aria-labelledby="h-pf">
+            <h2 id="h-pf">포트폴리오</h2>
+            <sc-if value="{{hasSum}}" hint-placeholder-val="{{ true }}">
+              <div class="aib"><p class="k">포트폴리오 요약<span>AI가 등록 자료를 읽고 정리 · 공급자가 확인 후 공개</span></p><p>{{sum}}</p></div>
+            </sc-if>
+            <sc-if value="{{noSum}}" hint-placeholder-val="{{ false }}">
+              <div class="aib none"><p class="k">포트폴리오 요약</p><p>요약이 아직 없습니다. 아래 등록 자료를 직접 열어 보세요.</p></div>
+            </sc-if>
+            <ul class="pl">
+              <sc-for list="{{links}}" as="l" hint-placeholder-count="3">
+                <li><span class="ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="{{l.icon}}"></path></svg></span><span class="t2"><a href="#pf">{{l.t}}</a><span>{{l.s}}</span></span></li>
+              </sc-for>
+            </ul>
+          </section>
+
+          <section class="sec2" aria-labelledby="h-rv">
+            <h2 id="h-rv">받은 리뷰 <span>{{rvText}}</span></h2>
+            <sc-if value="{{hasRv}}" hint-placeholder-val="{{ true }}">
+              <div class="rvs">
+                <div class="avg">
+                  <div class="v">4.8</div>
+                  <div class="stars">★★★★★</div>
+                  <div class="n">리뷰 12건 평균</div>
+                  <div class="dist">
+                    <sc-for list="{{dist}}" as="d" hint-placeholder-count="5"><div class="r"><span>{{d.s}}점</span><span class="bar"><i style="{{d.w}}"></i></span><span>{{d.n}}</span></div></sc-for>
+                  </div>
+                </div>
+                <div class="ttg">
+                  <p class="k">많이 받은 태그</p>
+                  <sc-for list="{{tt}}" as="t" hint-placeholder-count="5"><div class="r"><span>{{t.n}}</span><span class="bar"><i style="{{t.w}}"></i></span><b>{{t.c}}</b></div></sc-for>
+                </div>
+              </div>
+              <sc-for list="{{reviews}}" as="r" hint-placeholder-count="4">
+                <article class="rc">
+                  <div class="h"><span class="st2">{{r.stars}}</span><span class="dt">{{r.d}}</span></div>
+                  <p class="who"><b>{{r.who}}</b> · {{r.ct}}</p>
+                  <div class="tg3"><sc-for list="{{r.tags}}" as="t" hint-placeholder-count="2"><span>{{t}}</span></sc-for></div>
+                  <p>{{r.tx}}</p>
+                </article>
+              </sc-for>
+              <a class="ft more" href="#reviews">리뷰 12건 모두 보기</a>
+            </sc-if>
+            <sc-if value="{{noRv}}" hint-placeholder-val="{{ false }}">
+              <div class="empty3"><b>아직 받은 리뷰가 없습니다</b><p>마자용에서 거래를 마치면 리뷰가 쌓입니다.</p></div>
+            </sc-if>
+          </section>
+        </div>
+
+        <aside class="rail3">
+          <section class="card qm" aria-labelledby="h-q">
+            <h3 id="h-q">이 공급자의 견적</h3>
+            <p class="pj">예약 달력, 예약금 결제 외 2개 기능 · {{qRound}}</p>
+            <div class="r"><span>견적 금액</span><b>{{qAmt}}</b></div>
+            <div class="r"><span>수수료 포함</span><b>{{qFee}}</b></div>
+            <div class="r"><span>작업 기간</span><b>{{qDays}}</b></div>
+            <div class="r"><span>할 수 있는 항목</span><b>{{qOk}}</b></div>
+            <div class="acts">
+              <a class="btn gh sm" href="Quote-Client.dc.html">견적서 보기</a>
+              <a class="btn tint sm" href="Chat-Client.dc.html">문의하기 (채팅)</a>
+            </div>
+          </section>
+          <section class="card" aria-label="연락처 안내">
+            <p class="priv"><b>연락처는 공개하지 않습니다.</b> 계약이 체결된 뒤 채팅에서 주고받을 수 있습니다. 그 전에는 문의 채팅으로 이야기해 주세요.</p>
+          </section>
+          <section class="card" aria-label="리뷰 안내">
+            <p class="priv">리뷰는 마자용에서 계약을 마친 의뢰인만 계약당 한 번 쓸 수 있고, 고칠 수 없습니다.</p>
+          </section>
+        </aside>
+      </div>
+
+    </div>
+  </main>
+
+  <footer class="gf" aria-label="사이트 정보">
+    <div class="wrap">
+      <div class="gf-top">
+        <div class="gf-brand">
+          <span class="gf-logo"><span class="mark" aria-hidden="true"><i style="height:9px"></i><i style="height:17px"></i><i style="height:12px;opacity:.55"></i></span>마자용</span>
+          <p>소상공인을 위한 웹 외주 요구사항 정의 · 매칭 플랫폼</p>
+        </div>
+        <div class="gf-cs"><b>고객센터 1600-0000</b><span>평일 10:00–18:00</span><span>점심 12:00–13:00 · 주말 · 공휴일 휴무</span><span>help@majayong.example</span></div>
+      </div>
+      <nav class="gf-nav" aria-label="사이트 링크">
+        <div><b>서비스</b><a href="Main.dc.html">의뢰인 안내</a><a href="Supplier-Landing.dc.html">공급자 안내</a></div>
+        <div><b>고객센터</b><a href="Help.dc.html">자주 묻는 질문</a><a href="Help-Inquiry.dc.html">1:1 문의</a><a href="Help.dc.html">공지사항</a></div>
+        <div><b>정책</b><a href="Terms.dc.html">이용약관</a><a class="em" href="Terms.dc.html">개인정보 처리방침</a><a href="Terms.dc.html">명세 비밀유지</a><a href="Terms.dc.html">중개자 고지</a></div>
+      </nav>
+      <div class="gf-bot">
+        <p class="gf-biz">상호 로켓단<i></i>대표 김로켓<i></i>사업자등록번호 000-00-00000<i></i>통신판매업 신고 제2026-서울마포-0000호<br>주소 서울특별시 마포구 예시로 00, 0층<i></i>개인정보 보호책임자 박예시<i></i>이메일 help@majayong.example</p>
+        <p class="gf-copy">© 2026 로켓단. All rights reserved.</p>
+        <p class="gf-note">마자용은 통신판매중개자로서 거래 당사자가 아니며, 의뢰인과 공급자 사이 계약의 이행 책임은 각 당사자에게 있습니다. 대금 예치와 정산은 마자용이 관리합니다.</p>
+      </div>
+    </div>
+  </footer>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"view":{"editor":"enum","options":["기본","리뷰 없음"],"default":"기본","section":"상태"},"$preview":{"width":1280,"height":2293}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const nut = (this.props.view ?? '기본') === '리뷰 없음';
+    const I = {
+      link: 'M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7',
+      file: 'M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8zM14 3v5h5'
+    };
+    const tagsAll = [['일정을 지켰어요', 10], ['조건대로 만들었어요', 9], ['다시 맡기고 싶어요', 8], ['설명이 쉬웠어요', 7], ['보완 요청에 빨리 답했어요', 6]];
+    const R = [
+      [5, '10월 20일', '음식점(한식 주점)', '테이블 예약, 대기 등록 외 2개 기능', ['설명이 쉬웠어요', '일정을 지켰어요'], '대기 등록 화면을 직원들이 바로 쓸 수 있게 만들어 주셨습니다. 관리 화면 사용법도 짧게 정리해 주셨어요.'],
+      [5, '9월 28일', '음식점(이탈리안)', '코스 예약, 와인 리스트 외 1개 기능', ['일정을 지켰어요', '조건대로 만들었어요', '다시 맡기고 싶어요'], '예약 마감 시각처럼 제가 미처 생각 못 한 부분을 채팅에서 먼저 물어봐 주셔서 좋았습니다. 보완 요청도 하루 만에 고쳐 주셨어요.'],
+      [4, '8월 24일', '베이커리', '케이크 예약, 픽업 시간 선택 외 1개 기능', ['조건대로 만들었어요', '보완 요청에 빨리 답했어요'], '픽업 시간 선택이 정해진 조건대로 잘 됩니다. 디자인은 조금 더 다듬고 싶었지만 범위 안에서 꼼꼼하게 해 주셨습니다.'],
+      [5, '7월 9일', '카페', '원두 정기배송 신청 외 1개 기능', ['다시 맡기고 싶어요', '일정을 지켰어요'], '마감보다 사흘 먼저 납품해 주셨고, 결제 연동 테스트까지 같이 봐 주셨습니다.']
+    ];
+    const reviews = R.map(r => ({ stars: '★'.repeat(r[0]) + '☆'.repeat(5 - r[0]), d: r[1], who: r[2], ct: r[3], tags: r[4], tx: r[5] }));
+    return nut ? {
+      name: '스튜디오 넛', ini: '넛', role: '제작사 · 경력 9년', hasRv: false, noRv: true, rvText: '리뷰 없음', done: 0, joined: '2026년 10월 가입',
+      inds: ['예약 기반 음식점', '카페 · 베이커리'], stack: ['Next.js', 'Figma', 'Supabase'],
+      bio: '디자이너 2명, 개발자 3명이 함께하는 웹 제작사입니다. 브랜드 디자인부터 예약 사이트까지 한 팀이 맡습니다.',
+      hasSum: false, noSum: true,
+      links: [{ icon: I.link, t: 'studio-nut.kr/works', s: '작업 사례 모음' }, { icon: I.link, t: 'behance.net/studionut', s: '디자인 포트폴리오' }],
+      dist: [], tt: [], reviews: [],
+      qRound: '1회차 · 11월 1일 지원', qAmt: '4,500,000원', qFee: '4,725,000원', qDays: '56일', qOk: '3 / 4'
+    } : {
+      name: '최준호', ini: '최', role: '웹 외주 프리랜서 · 경력 5년', hasRv: true, noRv: false, rvText: '리뷰 12건', done: 12, joined: '2025년 가입',
+      inds: ['예약 기반 음식점'], stack: ['React', 'Next.js', 'Supabase'],
+      bio: '예약·결제 연동 위주로 작업해 온 웹 개발 프리랜서입니다. 소규모 식당 사이트를 열두 곳 만들었습니다.',
+      hasSum: true, noSum: false,
+      sum: '소규모 식당 예약 사이트 12곳을 만들었습니다. 예약 달력과 PG 결제 연동 작업이 대부분이고, 가장 최근 작업은 회차제 코스 레스토랑의 예약 사이트입니다.',
+      links: [{ icon: I.link, t: 'junho.work', s: '작업 사례와 소개' }, { icon: I.link, t: 'junho-works.kr/booking', s: '최근 작업 — 회차제 코스 레스토랑 예약' }, { icon: I.file, t: '작업소개서.pdf', s: 'PDF · 올린 파일' }],
+      dist: [[5, 10], [4, 2], [3, 0], [2, 0], [1, 0]].map(d => ({ s: d[0], n: d[1], w: 'width:' + Math.round(d[1] / 12 * 100) + '%' })),
+      tt: tagsAll.map(t => ({ n: t[0], c: t[1], w: 'width:' + Math.round(t[1] / 12 * 100) + '%' })),
+      reviews: reviews,
+      qRound: '2회차 · 11월 1일 채팅에서 수정', qAmt: '3,100,000원', qFee: '3,255,000원', qDays: '42일', qOk: '4 / 4'
+    };
+  }
+}
+</script>
+</body>
+</html>

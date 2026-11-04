@@ -1,0 +1,204 @@
+<helmet>
+<style>
+.pg{word-break:keep-all}
+.head{margin:0 0 22px}
+.head h1.t{margin:0 0 6px}
+.head .sub{margin:0}
+.bar2{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;border-bottom:1px solid var(--s200);margin-bottom:16px}
+.bar2 .tabs{border-bottom:0;margin-bottom:0}
+.tabs a .n2{font-size:14px;color:var(--s600);margin-left:4px;font-weight:400}
+.tabs a.on .n2{color:var(--navy-900);font-weight:600}
+.lim{font-size:14px;color:var(--s600);padding-bottom:12px}
+.lim b{color:var(--s900);font-weight:600}
+/* 홈 '내 프로젝트' 행과 같은 구성 */
+.pj{padding:18px 22px;border-top:1px solid var(--s200);display:flex;gap:16px;flex-wrap:wrap;align-items:center}
+.pj .lt{flex:999 1 460px;min-width:0}
+.pj .rt{flex:1 1 220px;text-align:right;min-width:0}
+.pj .ti{font-size:17px;font-weight:600;letter-spacing:-0.2px;margin:7px 0 5px}
+.pj .mt{font-size:14px;color:var(--s600)}
+.pj .mt.dead{color:var(--amber-700);font-weight:600}
+.pj .nt{font-size:14px;color:var(--s600);margin:8px 0 0;padding-left:10px;border-left:2px solid var(--s300)}
+.pj .amtl{font-size:14px;color:var(--s600)}
+.pj .amt2{font-size:20px;font-weight:600;letter-spacing:-0.3px;margin:2px 0 10px}
+.pj .amtx{font-size:13px;color:var(--s600);margin:-8px 0 10px}
+.pj .acts{display:flex;gap:16px;justify-content:flex-end;align-items:center;flex-wrap:wrap}
+.lst>.pj:first-child{border-top:0}
+.archbar{display:flex;justify-content:space-between;align-items:center;gap:12px;width:100%;padding:15px 22px;
+ background:var(--s50);border:0;border-top:1px solid var(--s200);font-family:inherit;font-size:15px;
+ color:var(--s900);cursor:pointer;text-align:left}
+.archbar .r{display:inline-flex;align-items:center;gap:6px;font-size:14px;color:var(--s600)}
+.archbar svg{width:16px;height:16px;display:block}
+.arch{background:var(--s50)}
+.archnote{margin:0;padding:0 22px 18px}
+.keep{font-family:inherit;font-size:14px;color:var(--s600);background:none;border:0;text-decoration:underline;cursor:pointer;padding:0}
+.keep.del{color:var(--s600)}
+/* 삭제 확인 창 */
+.dscrim{position:fixed;inset:0;background:rgba(11,37,69,.55);z-index:20}
+.dwrap{position:fixed;inset:0;z-index:21;display:flex;align-items:center;justify-content:center;padding:40px 20px}
+.dwrap .modal{max-width:440px}
+.dwrap .mbtns{display:flex;justify-content:flex-end;gap:8px;margin-top:22px}
+/* 빈 상태 */
+.empty{text-align:center;padding:56px 24px}
+.empty h2{font-size:20px;font-weight:600;margin:0 0 6px}
+.empty p{margin:0 0 20px}
+.btn.warn{background:#fff;color:var(--amber-700);border:1px solid #E6C68A}
+</style>
+<style>
+.pg{min-height:100vh;position:relative;padding-bottom:256px;box-sizing:border-box}
+.gf{position:absolute;left:0;right:0;bottom:0;background:var(--navy-900);padding:34px 0 30px;font-size:14px;color:#A9BDD6;word-break:keep-all}
+.gf a{color:#A9BDD6;text-decoration:none}
+.gf-top{display:flex;justify-content:space-between;align-items:center;gap:12px 32px;flex-wrap:wrap}
+.gf-brand{display:flex;align-items:center;gap:16px;flex-wrap:wrap;min-width:0}
+.gf-logo{display:inline-flex;align-items:center;font-size:19px;font-weight:600;letter-spacing:-0.4px;color:#fff}
+.gf-brand p{margin:0}
+.gf-cs{display:flex;align-items:baseline;gap:4px 16px;flex-wrap:wrap}
+.gf-cs b{color:#fff;font-weight:600;font-size:15px}
+.gf-nav{display:flex;flex-wrap:wrap;gap:10px 44px;margin:18px 0 0;padding:0 0 24px;border-bottom:1px solid rgba(255,255,255,.14)}
+.gf-nav>div{display:flex;align-items:baseline;gap:18px;flex-wrap:wrap}
+.gf-nav b{color:#fff;font-weight:600}
+.gf-nav a.em{color:#fff;font-weight:600}
+.gf-bot{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:24px;padding-top:20px;font-size:13px;line-height:1.75;color:#8FA6C2}
+.gf-bot p{margin:0}
+.gf-biz i{display:inline-block;width:1px;height:10px;background:rgba(255,255,255,.28);margin:0 9px;vertical-align:-1px}
+.gf-copy{align-self:end;text-align:right;white-space:nowrap}
+.gf-note{grid-column:1 / -1;margin-top:8px !important}
+</style>
+</helmet>
+
+<div class="pg">
+
+  <header class="gnb">
+    <div class="wrap">
+      <div class="gnbin">
+        <a class="brand" href="Home-Client.dc.html"><span class="mark" aria-hidden="true"><i style="height:9px"></i><i style="height:17px"></i><i style="height:12px;opacity:.55"></i></span>마자용</a>
+        <nav class="nav" aria-label="주요 메뉴">
+          <a href="Home-Client.dc.html">홈</a><a href="Input-Client.dc.html">프로젝트 시작</a><a class="on" href="My-Client.dc.html">내 프로젝트</a><a href="Contracts-Client.dc.html">내 계약</a><a href="Settle-Client.dc.html">정산 내역</a>
+        </nav>
+        <div class="gright">
+          <a class="bell dot" href="Chat-Client.dc.html" aria-label="채팅 — 새 메시지 1건"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"></path></svg></a>
+          <a class="bell dot" href="Notify-Client.dc.html" aria-label="알림 — 안 읽은 알림 3건"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg></a>
+          <span class="who"><span class="ava">민</span><span class="uname">정민재</span></span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="pad">
+    <div class="wrap">
+
+      <div class="head">
+        <h1 class="t">내 프로젝트</h1>
+        <p class="sub">작성 중인 초안부터 계약까지, 맡기신 일을 한곳에서 봅니다.</p>
+      </div>
+
+      <div class="bar2">
+        <nav class="tabs" aria-label="상태별 보기">
+          <a class="on" href="#all">전체<span class="n2">{{cAll}}</span></a>
+          <a href="#draft">작성 중<span class="n2">{{cDraft}}</span></a>
+          <a href="#recruit">모집<span class="n2">{{cRecruit}}</span></a>
+          <a href="Contracts-Client.dc.html">계약<span class="n2">{{cContract}}</span></a>
+          <a href="#done">완료<span class="n2">{{cDone}}</span></a>
+        </nav>
+        <span class="lim">작성 중인 초안 <b>{{cDraft}}</b> / 3</span>
+      </div>
+
+      <sc-if value="{{hasAny}}" hint-placeholder-val="{{ true }}">
+        <section class="card flat" aria-label="프로젝트 목록">
+          <div class="lst">
+            <sc-for list="{{rows}}" as="r" hint-placeholder-count="2">
+              <div class="pj">
+                <div class="lt">
+                  <span class="chip {{r.chipCls}}">{{r.chip}}</span>
+                  <sc-if value="{{r.urgent}}" hint-placeholder-val="{{ false }}"> <span class="mt dead">{{r.when}}</span></sc-if>
+                  <sc-if value="{{r.calm}}" hint-placeholder-val="{{ true }}"> <span class="mt">{{r.when}}</span></sc-if>
+                  <div class="ti">{{r.title}}</div>
+                  <div class="mt">{{r.meta}}</div>
+                  <sc-if value="{{r.hasNote}}" hint-placeholder-val="{{ false }}"><p class="nt">{{r.note}}</p></sc-if>
+                </div>
+                <div class="rt">
+                  <sc-if value="{{r.hasAmt}}" hint-placeholder-val="{{ true }}"><div class="amtl">{{r.amtLabel}}</div>
+                  <div class="amt2">{{r.amount}}</div></sc-if>
+                  <sc-if value="{{r.hasTbd}}" hint-placeholder-val="{{ false }}"><div class="amtx">{{r.tbd}}</div></sc-if>
+                  <div class="acts">
+                    <sc-if value="{{r.hasLink}}" hint-placeholder-val="{{ false }}"><a class="ft" href="{{r.linkHref}}" style="font-size:14px">{{r.link}}</a></sc-if>
+                    <sc-if value="{{r.isDraft}}" hint-placeholder-val="{{ false }}"><button type="button" class="keep">보관하기</button><button type="button" class="keep del" data-action-href="?deleteConfirm=true">삭제</button></sc-if>
+                    <a class="btn sm tint" href="{{r.href}}">{{r.action}}</a>
+                  </div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+
+          <button type="button" class="archbar" aria-expanded="{{archExpanded}}" onClick="{{toggleArch}}">
+            <span>보관된 초안 1개</span>
+            <span class="r">{{archLabel}}
+              <sc-if value="{{archOpen}}" hint-placeholder-val="{{ false }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 15 6-6 6 6"/></svg></sc-if>
+              <sc-if value="{{archClosed}}" hint-placeholder-val="{{ true }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></sc-if>
+            </span>
+          </button>
+          <sc-if value="{{archOpen}}" hint-placeholder-val="{{ false }}">
+            <div class="arch">
+              <div class="pj">
+                <div class="lt">
+                  <span class="chip out">보관됨</span> <span class="mt">10월 24일 보관 · 9월 24일 마지막 수정</span>
+                  <div class="ti">좌석 배치도 외 1개 기능</div>
+                  <div class="mt">명세 항목 2개 · 채팅 수정 28회 남음</div>
+                </div>
+                <div class="rt">
+                  <div class="amtl">수수료 포함 예상 총액</div>
+                  <div class="amt2">640,500원</div>
+                  <div class="acts"><button type="button" class="keep del" data-action-href="?deleteConfirm=true">삭제</button><a class="btn sm tint" href="Draft-Client.dc.html">다시 열기</a></div>
+                </div>
+              </div>
+              <p class="sec archnote">30일 동안 손대지 않았거나 '처음부터'로 새로 시작한 초안은 여기 보관합니다. 다시 열어도 예상 금액은 처음 그대로입니다. 필요 없는 초안은 삭제할 수 있지만, 삭제하면 되살릴 수 없습니다.</p>
+            </div>
+          </sc-if>
+        </section>
+      </sc-if>
+
+      <sc-if value="{{isEmpty}}" hint-placeholder-val="{{ false }}">
+        <section class="card empty" aria-label="빈 목록">
+          <h2>아직 맡기신 프로젝트가 없습니다</h2>
+          <p class="sec">불편한 점을 한 문장으로 적으면 화면 초안부터 그려드립니다.</p>
+          <a class="btn" href="Input-Client.dc.html">프로젝트 시작하기</a>
+        </section>
+      </sc-if>
+
+    </div>
+  </main>
+
+
+<sc-if value="{{delOpen}}" hint-placeholder-val="{{ false }}">
+  <div class="dscrim" aria-hidden="true"></div>
+  <div class="dwrap">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="del-h">
+      <h2 id="del-h">이 초안을 삭제할까요?</h2>
+      <p class="mdsub" style="margin:0">‘{{delTitle}}’을 삭제합니다. 적으신 문장과 고친 내용이 모두 사라지고 <b>되살릴 수 없습니다.</b> 나중에 다시 볼 수도 있다면 보관해 두세요.</p>
+      <div class="mbtns"><button type="button" class="btn gh" data-action-href="?deleteConfirm=false">취소</button><button type="button" class="btn warn" data-action-href="?deleteConfirm=false">삭제하기</button></div>
+    </div>
+  </div>
+</sc-if>
+
+  <footer class="gf" aria-label="사이트 정보">
+    <div class="wrap">
+      <div class="gf-top">
+        <div class="gf-brand">
+          <span class="gf-logo"><span class="mark" aria-hidden="true"><i style="height:9px"></i><i style="height:17px"></i><i style="height:12px;opacity:.55"></i></span>마자용</span>
+          <p>소상공인을 위한 웹 외주 요구사항 정의 · 매칭 플랫폼</p>
+        </div>
+        <div class="gf-cs"><b>고객센터 1600-0000</b><span>평일 10:00–18:00</span><span>점심 12:00–13:00 · 주말 · 공휴일 휴무</span><span>help@majayong.example</span></div>
+      </div>
+      <nav class="gf-nav" aria-label="사이트 링크">
+        <div><b>서비스</b><a href="Main.dc.html">의뢰인 안내</a><a href="Supplier-Landing.dc.html">공급자 안내</a></div>
+        <div><b>고객센터</b><a href="Help.dc.html">자주 묻는 질문</a><a href="Help-Inquiry.dc.html">1:1 문의</a><a href="Help.dc.html?view=공지사항">공지사항</a></div>
+        <div><b>정책</b><a href="Terms.dc.html?view=이용약관">이용약관</a><a class="em" href="Terms.dc.html?view=개인정보+처리방침">개인정보 처리방침</a><a href="Terms.dc.html?view=명세+비밀유지">명세 비밀유지</a><a href="Terms.dc.html?view=중개자+고지">중개자 고지</a></div>
+      </nav>
+      <div class="gf-bot">
+        <p class="gf-biz">상호 로켓단<i></i>대표 김로켓<i></i>사업자등록번호 000-00-00000<i></i>통신판매업 신고 제2026-서울마포-0000호<br>주소 서울특별시 마포구 예시로 00, 0층<i></i>개인정보 보호책임자 박예시<i></i>이메일 help@majayong.example</p>
+        <p class="gf-copy">© 2026 로켓단. All rights reserved.</p>
+        <p class="gf-note">마자용은 통신판매중개자로서 거래 당사자가 아니며, 의뢰인과 공급자 사이 계약의 이행 책임은 각 당사자에게 있습니다. 대금 예치와 정산은 마자용이 관리합니다.</p>
+      </div>
+    </div>
+  </footer>
+
+</div>

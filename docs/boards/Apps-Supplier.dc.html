@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>공급자 — 내 지원 현황</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="/_blob/a8316b816fb987eb4a5af50ab874b7d1">
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+.sentb{display:flex;justify-content:space-between;align-items:center;gap:16px;background:#EAF6F4;border:1px solid #C7E6E0;border-radius:12px;padding:14px 20px;margin:0 0 18px}
+.sentb b{display:block;color:var(--teal-700);font-size:15px;margin:0 0 2px}
+.sentb p{margin:0;font-size:14px;color:var(--s600)}
+.pj.newr{background:#F5FBFA}
+.ap sc-for,.ap sc-if{display:contents}
+.head{margin:0 0 22px}
+.head h1.t{margin:0 0 6px}
+.head .sub{margin:0}
+/* 선택됨 — 서명 대기 */
+.focus{background:var(--navy-900);border-radius:14px;padding:26px 28px;margin-bottom:22px;color:#fff;display:flex;gap:28px;flex-wrap:wrap;align-items:center;box-sizing:border-box}
+.focus .lt{flex:999 1 420px;min-width:0}
+.focus .rt{flex:1 1 300px;min-width:0}
+.focus .kick{font-size:14px;font-weight:600;color:var(--on-ok);margin:0 0 8px}
+.focus h2{font-size:26px;font-weight:600;letter-spacing:-0.6px;line-height:1.35;margin:0 0 10px;color:#fff}
+.focus p{font-size:15px;color:var(--on-sub);margin:0 0 20px;line-height:1.65}
+.focus .acts2{display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+.focus .txb{font-family:inherit;font-size:14px;color:var(--on-sub);background:none;border:0;text-decoration:underline;cursor:pointer;padding:0}
+.mini{background:rgba(255,255,255,.07);border:1px solid var(--on-line);border-radius:11px;padding:18px 20px}
+.mini .tt{font-size:15px;font-weight:600;margin-bottom:12px;color:#fff}
+.mrow{display:flex;justify-content:space-between;align-items:center;font-size:15px;padding:4px 0}
+.mrow .k{color:var(--on-sub)}
+.mrow .v2{color:#fff;font-variant-numeric:tabular-nums}
+.mini .ft2{font-size:13px;color:var(--on-sub);margin:10px 0 0;line-height:1.6}
+/* 탭 */
+.bar2{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;border-bottom:1px solid var(--s200);margin-bottom:16px}
+.bar2 .tabs{border-bottom:0;margin-bottom:0}
+.tabs a .n2{font-size:14px;color:var(--s600);margin-left:4px;font-weight:400}
+.tabs a.on .n2{color:var(--navy-900);font-weight:600}
+.lim{font-size:14px;color:var(--s600);padding-bottom:12px}
+/* 행 */
+.pj{padding:18px 22px;border-top:1px solid var(--s200);display:flex;gap:16px;flex-wrap:wrap;align-items:center}
+.lst>.pj:first-child{border-top:0}
+.pj .lt{flex:999 1 460px;min-width:0}
+.pj .rt{flex:1 1 240px;text-align:right;min-width:0}
+.pj .top{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.pj .ti{font-size:17px;font-weight:600;letter-spacing:-0.2px;margin:7px 0 5px}
+.pj .mt{font-size:14px;color:var(--s600)}
+.pj .mt .sep{color:var(--s300);margin:0 7px}
+.pj .mt.dead{color:var(--amber-700);font-weight:600}
+.pj .nt{font-size:14px;color:var(--s600);margin:8px 0 0;padding-left:10px;border-left:2px solid var(--s300);line-height:1.6}
+.pj .nt.am{border-left-color:var(--amber-700);color:#7A5A1C}
+.pj .amtl{font-size:14px;color:var(--s600)}
+.pj .amt2{font-size:20px;font-weight:600;letter-spacing:-0.3px;margin:2px 0 2px;font-variant-numeric:tabular-nums}
+.pj .amtx{font-size:13px;color:var(--s600);margin:0 0 10px;font-variant-numeric:tabular-nums}
+.pj .acts{display:flex;gap:14px;justify-content:flex-end;align-items:center;flex-wrap:wrap}
+.pj .acts .btn{white-space:nowrap;flex:none}
+.unread{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;border-radius:9px;background:var(--blue-600);color:#fff;font-size:12px;font-weight:600;margin-left:6px;padding:0 5px;box-sizing:border-box}
+.txb{font-family:inherit;font-size:14px;color:var(--s600);background:none;border:0;text-decoration:underline;cursor:pointer;padding:0;white-space:nowrap}
+.pj.end .ti{color:var(--s600)}
+.pj.end .amt2{color:var(--s600)}
+.pj.held{background:var(--s50)}
+/* 보류 펼침 */
+.holdbox{flex:1 1 100%;background:#fff;border:1px solid var(--s200);border-radius:12px;padding:16px 18px;margin-top:2px}
+.holdbox b{display:block;font-size:15px;margin:0 0 6px}
+.holdbox ol{margin:0;padding-left:20px}
+.holdbox li{font-size:14px;color:var(--s600);line-height:1.75}
+.holdbox li b{display:inline;font-size:14px;color:var(--s900);margin:0;font-weight:600}
+.holdbox .wd{font-size:13px;color:var(--s600);margin:10px 0 0}
+.grp2{display:flex;justify-content:space-between;align-items:center;padding:13px 22px;background:var(--s50);border-top:1px solid var(--s200);font-size:14px;color:var(--s600)}
+.grp2 b{color:var(--s900);font-weight:600}
+.pg{position:relative}
+.btn.warn{background:#fff;color:var(--amber-700);border:1px solid #E6C68A}
+.m-scrim{position:absolute;inset:0;background:rgba(11,37,69,.55);z-index:30}
+.m-dlg{position:absolute;top:220px;left:50%;transform:translateX(-50%);width:540px;z-index:31;background:#fff;border-radius:16px;box-shadow:0 24px 60px rgba(11,37,69,.35);overflow:hidden;word-break:keep-all}
+.m-dlg .m-h{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;padding:22px 26px 6px}
+.m-dlg .m-h h2{font-size:20px;font-weight:600;letter-spacing:-0.3px;margin:0}
+.m-dlg .m-x{font-family:inherit;font-size:22px;line-height:1;color:var(--s600);background:none;border:0;cursor:pointer;padding:2px 4px}
+.m-dlg .m-b{padding:8px 26px 20px}
+.m-dlg .m-b p{margin:0 0 12px;font-size:15px;color:var(--s600);line-height:1.65}
+.m-dlg ul{margin:0;padding-left:18px}
+.m-dlg li{font-size:14px;color:var(--s900);line-height:1.8}
+.m-dlg .m-f{display:flex;justify-content:flex-end;gap:10px;padding:14px 26px;border-top:1px solid var(--s200);background:var(--s50)}
+.m-dlg .m-f .btn{white-space:nowrap}
+</style>
+<style>
+.pg{min-height:100vh;position:relative;padding-bottom:256px;box-sizing:border-box}
+.gf{position:absolute;left:0;right:0;bottom:0;background:var(--navy-900);padding:34px 0 30px;font-size:14px;color:#A9BDD6;word-break:keep-all}
+.gf a{color:#A9BDD6;text-decoration:none}
+.gf-top{display:flex;justify-content:space-between;align-items:center;gap:12px 32px;flex-wrap:wrap}
+.gf-brand{display:flex;align-items:center;gap:16px;flex-wrap:wrap;min-width:0}
+.gf-logo{display:inline-flex;align-items:center;font-size:19px;font-weight:600;letter-spacing:-0.4px;color:#fff}
+.gf-brand p{margin:0}
+.gf-cs{display:flex;align-items:baseline;gap:4px 16px;flex-wrap:wrap}
+.gf-cs b{color:#fff;font-weight:600;font-size:15px}
+.gf-nav{display:flex;flex-wrap:wrap;gap:10px 44px;margin:18px 0 0;padding:0 0 24px;border-bottom:1px solid rgba(255,255,255,.14)}
+.gf-nav>div{display:flex;align-items:baseline;gap:18px;flex-wrap:wrap}
+.gf-nav b{color:#fff;font-weight:600}
+.gf-nav a.em{color:#fff;font-weight:600}
+.gf-bot{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:24px;padding-top:20px;font-size:13px;line-height:1.75;color:#8FA6C2}
+.gf-bot p{margin:0}
+.gf-biz i{display:inline-block;width:1px;height:10px;background:rgba(255,255,255,.28);margin:0 9px;vertical-align:-1px}
+.gf-copy{align-self:end;text-align:right;white-space:nowrap}
+.gf-note{grid-column:1 / -1;margin-top:8px !important}
+</style>
+</helmet>
+
+<div class="pg">
+
+  <header class="gnb dark">
+    <div class="wrap">
+      <div class="gnbin">
+        <a class="brand" href="Home-Supplier.dc.html"><span class="mark" aria-hidden="true"><i style="height:9px"></i><i style="height:17px"></i><i style="height:12px;opacity:.55"></i></span>마자용</a>
+        <nav class="nav" aria-label="주요 메뉴">
+          <a href="Home-Supplier.dc.html">홈</a><a href="Find-Supplier.dc.html">프로젝트 찾기</a><a class="on" href="Apps-Supplier.dc.html">내 지원</a><a href="Contracts-Supplier.dc.html">내 계약</a><a href="Find-Supplier.dc.html">북마크</a>
+        </nav>
+        <div class="gright">
+          <a class="bell dot" href="Chat-Supplier.dc.html" aria-label="채팅 — 새 메시지 1건"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"></path></svg></a>
+          <a class="bell dot" href="Notify-Supplier.dc.html" aria-label="알림 — 안 읽은 알림 3건"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"></path><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"></path></svg></a>
+          <span class="who"><span class="ava">최</span><span class="uname">최준호</span></span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="pad ap">
+    <div class="wrap">
+
+      <div class="head">
+        <h1 class="t">내 지원</h1>
+        <p class="sub">보낸 견적이 어디까지 왔는지 봅니다. 문의 채팅은 의뢰인이 열면 시작되고, 견적은 채팅에서 고칠 수 있습니다.</p>
+      </div>
+
+      <sc-if value="{{wdDone}}" hint-placeholder-val="{{ false }}">
+        <div class="sentb" role="status"><div><b>지원을 철회했습니다 · 단골 등급 관리, 재방문 알림 외 1개 기능</b><p>11월 4일 · 브루잉 랩에 철회가 알려졌고 채팅은 읽기 전용입니다. 이 프로젝트에서는 다시 선택될 수 없습니다.</p></div><a class="ft" href="#ended" style="font-size:14px;flex:none">종료된 지원 보기</a></div>
+      </sc-if>
+      <sc-if value="{{sent}}" hint-placeholder-val="{{ false }}">
+        <div class="sentb" role="status"><div><b>견적을 보냈습니다 · 예약 달력, 예약금 결제 외 2개 기능</b><p>1회차 3,000,000원 · 42일 · 예상 수령 2,850,000원. 의뢰인이 문의하면 채팅이 열리고, 이 목록에서 상태가 바뀝니다.</p></div><a class="ft" href="QuoteView-Supplier.dc.html" style="font-size:14px;flex:none">보낸 견적 보기</a></div>
+      </sc-if>
+      <sc-if value="{{picked}}" hint-placeholder-val="{{ false }}">
+        <section class="focus" aria-label="서명 대기">
+          <div class="lt">
+            <p class="kick">선택됨 · 임시 계약</p>
+            <h2>선택되었습니다 — 11월 10일까지 서명해 주세요 (D-7)</h2>
+            <p>온도 다이닝이 최종 합의 내용을 확인하고 임시 계약을 만들었습니다. 계약서에서 합의한 기능과 조건을 확인하고 서명하시면, 의뢰인도 서명할 때 계약이 체결됩니다. 기한이 지나면 결렬됩니다.</p>
+            <div class="acts2">
+              <a class="btn lg onnavy" href="Contract-Supplier.dc.html">계약서 확인하고 서명</a>
+              <button type="button" class="txb">서명 거절</button>
+            </div>
+          </div>
+          <div class="rt">
+            <div class="mini">
+              <div class="tt">예약 달력, 예약금 결제 외 2개 기능</div>
+              <div class="mrow"><span class="k">합의 금액</span><span class="v2">3,100,000원</span></div>
+              <div class="mrow"><span class="k">수수료 5%</span><span class="v2">− 155,000원</span></div>
+              <div class="mrow"><span class="k">예상 수령액</span><span class="v2">2,945,000원</span></div>
+              <div class="mrow"><span class="k">지급</span><span class="v2">중간 50 : 최종 50</span></div>
+              <p class="ft2">서명을 거절하면 바로 결렬되고, 이 지원은 거절 처리됩니다. 임시 계약 중에는 견적을 고칠 수 없습니다.</p>
+            </div>
+          </div>
+        </section>
+      </sc-if>
+
+      <div class="bar2">
+        <nav class="tabs" aria-label="상태별 보기">
+          <sc-for list="{{tabs}}" as="t" hint-placeholder-count="6"><a class="{{t.cls}}" href="#apps">{{t.name}}<span class="n2">{{t.n}}</span></a></sc-for>
+        </nav>
+        <span class="lim">지원한 날짜 최신순</span>
+      </div>
+
+      <section class="card flat" aria-label="지원 목록">
+        <div class="lst">
+          <sc-for list="{{rows}}" as="r" hint-placeholder-count="4">
+            <div class="{{r.cls}}">
+              <div class="lt">
+                <div class="top"><span class="{{r.chipCls}}">{{r.chip}}</span><span class="mt">{{r.when}}</span></div>
+                <div class="ti">{{r.title}}</div>
+                <div class="mt">{{r.client}}<span class="sep">|</span>{{r.applied}}</div>
+                <sc-if value="{{r.hasNote}}" hint-placeholder-val="{{ false }}"><p class="{{r.ntCls}}">{{r.note}}</p></sc-if>
+              </div>
+              <div class="rt">
+                <div class="amtl">{{r.amtLabel}}</div>
+                <div class="amt2">{{r.amount}}</div>
+                <div class="amtx">{{r.amtSub}}</div>
+                <div class="acts">
+                  <sc-if value="{{r.hasTx}}" hint-placeholder-val="{{ false }}"><button type="button" class="txb">{{r.tx}}</button></sc-if>
+                  <sc-if value="{{r.hasLink}}" hint-placeholder-val="{{ true }}"><a class="ft" href="{{r.linkHref}}" style="font-size:14px">{{r.link}}</a></sc-if>
+                  <sc-if value="{{r.hasBtn}}" hint-placeholder-val="{{ true }}"><a class="{{r.btnCls}}" href="{{r.href}}">{{r.action}}<sc-if value="{{r.unread}}" hint-placeholder-val="{{ false }}"><span class="unread">{{r.unread}}</span></sc-if></a></sc-if>
+                </div>
+              </div>
+              <sc-if value="{{r.expand}}" hint-placeholder-val="{{ false }}">
+                <div class="holdbox">
+                  <b>보류는 거절이 아닙니다</b>
+                  <ol>
+                    <li>의뢰인이 다른 공급자와 <b>임시 계약 중</b>입니다. 서명 기한은 11월 10일입니다.</li>
+                    <li>두 분이 서명하고 의뢰인이 대금을 예치하면 이 지원은 <b>자동으로 거절</b>됩니다. 채팅은 읽기 전용이 됩니다.</li>
+                    <li>서명 없이 기한이 지나거나 결렬되면, 의뢰인이 보류된 지원 중에서 <b>다시 고를 수 있습니다.</b></li>
+                  </ol>
+                  <p class="wd">보류 중에는 견적을 고칠 수 없습니다. 지원을 철회하면 결렬되더라도 이 프로젝트에서 선택될 수 없습니다.</p>
+                </div>
+              </sc-if>
+            </div>
+          </sc-for>
+          <sc-if value="{{showEnded}}" hint-placeholder-val="{{ true }}">
+            <div class="grp2"><span><b>종료된 지원</b> {{nEnded}}건 — 거절 · 결렬 · 철회된 지원은 30일 동안 여기 남습니다</span></div>
+            <sc-for list="{{ended}}" as="r" hint-placeholder-count="3">
+              <div class="pj end">
+                <div class="lt">
+                  <div class="top"><span class="{{r.chipCls}}">{{r.chip}}</span><span class="mt">{{r.when}}</span></div>
+                  <div class="ti">{{r.title}}</div>
+                  <div class="mt">{{r.client}}<span class="sep">|</span>{{r.applied}}</div>
+                  <p class="nt">{{r.note}}</p>
+                </div>
+                <div class="rt">
+                  <div class="amtl">{{r.amtLabel}}</div>
+                  <div class="amt2">{{r.amount}}</div>
+                  <div class="amtx">{{r.amtSub}}</div>
+                  <div class="acts"><a class="btn sm gh" href="{{r.href}}">{{r.action}}</a></div>
+                </div>
+              </div>
+            </sc-for>
+          </sc-if>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <sc-if value="{{wdOpen}}" hint-placeholder-val="{{ false }}">
+    <div class="m-scrim" aria-hidden="true"></div>
+    <section class="m-dlg" role="dialog" aria-modal="true" aria-labelledby="m-wd">
+      <div class="m-h"><h2 id="m-wd">지원을 철회할까요?</h2><button type="button" class="m-x" aria-label="닫기">×</button></div>
+      <div class="m-b">
+        <p>단골 등급 관리, 재방문 알림 외 1개 기능 · 브루잉 랩 · 내 견적 1,800,000원</p>
+        <ul>
+          <li>철회하면 이 프로젝트에서 <b>다시 선택될 수 없습니다.</b></li>
+          <li>지금 진행 중인 임시 계약이 결렬되어도 마찬가지입니다.</li>
+          <li>의뢰인과의 채팅은 읽기 전용이 됩니다. <b>되돌릴 수 없습니다.</b></li>
+        </ul>
+      </div>
+      <div class="m-f"><button type="button" class="btn gh">돌아가기</button><a class="btn warn" href="Apps-Supplier.dc.html">지원 철회</a></div>
+    </section>
+  </sc-if>
+
+  <footer class="gf" aria-label="사이트 정보">
+    <div class="wrap">
+      <div class="gf-top">
+        <div class="gf-brand">
+          <span class="gf-logo"><span class="mark" aria-hidden="true"><i style="height:9px"></i><i style="height:17px"></i><i style="height:12px;opacity:.55"></i></span>마자용</span>
+          <p>소상공인을 위한 웹 외주 요구사항 정의 · 매칭 플랫폼</p>
+        </div>
+        <div class="gf-cs"><b>고객센터 1600-0000</b><span>평일 10:00–18:00</span><span>점심 12:00–13:00 · 주말 · 공휴일 휴무</span><span>help@majayong.example</span></div>
+      </div>
+      <nav class="gf-nav" aria-label="사이트 링크">
+        <div><b>서비스</b><a href="Main.dc.html">의뢰인 안내</a><a href="Supplier-Landing.dc.html">공급자 안내</a></div>
+        <div><b>고객센터</b><a href="Help.dc.html">자주 묻는 질문</a><a href="Help-Inquiry.dc.html">1:1 문의</a><a href="Help.dc.html">공지사항</a></div>
+        <div><b>정책</b><a href="Terms.dc.html">이용약관</a><a class="em" href="Terms.dc.html">개인정보 처리방침</a><a href="Terms.dc.html">명세 비밀유지</a><a href="Terms.dc.html">중개자 고지</a></div>
+      </nav>
+      <div class="gf-bot">
+        <p class="gf-biz">상호 로켓단<i></i>대표 김로켓<i></i>사업자등록번호 000-00-00000<i></i>통신판매업 신고 제2026-서울마포-0000호<br>주소 서울특별시 마포구 예시로 00, 0층<i></i>개인정보 보호책임자 박예시<i></i>이메일 help@majayong.example</p>
+        <p class="gf-copy">© 2026 로켓단. All rights reserved.</p>
+        <p class="gf-note">마자용은 통신판매중개자로서 거래 당사자가 아니며, 의뢰인과 공급자 사이 계약의 이행 책임은 각 당사자에게 있습니다. 대금 예치와 정산은 마자용이 관리합니다.</p>
+      </div>
+    </div>
+  </footer>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;view&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;전체&quot;,&quot;선택됨(서명 대기)&quot;,&quot;보류 중&quot;,&quot;지원 철회 확인&quot;,&quot;지원 철회됨&quot;,&quot;제출 완료&quot;],&quot;default&quot;:&quot;전체&quot;,&quot;section&quot;:&quot;상태&quot;},&quot;$preview&quot;:{&quot;width&quot;:1280,&quot;height&quot;:2263}}">
+class Component extends DCLogic {
+  renderVals() {
+    const v = this.props.view ?? '전체';
+    const wd = v === '지원 철회 확인', wdDone = v === '지원 철회됨';
+    const sent = v === '제출 완료';
+    const picked = v === '선택됨(서명 대기)', held = v === '보류 중' || wd;
+    const base = (o) => Object.assign({ cls: 'pj', chipCls: 'chip', hasNote: false, ntCls: 'nt', note: '', hasTx: false, tx: '',
+      hasLink: false, link: '', linkHref: '#', hasBtn: true, btnCls: 'btn sm tint', href: '#', action: '', unread: '', expand: false,
+      amtLabel: '내 견적 · 1회차' }, o);
+    const ondo = picked
+      ? base({ chip: '임시 계약 · 서명 대기', chipCls: 'chip amber', when: '서명 기한 11월 10일 · D-7',
+          title: '예약 달력, 예약금 결제 외 2개 기능', client: '온도 다이닝 · 음식점(코스 레스토랑)', applied: '10월 29일 지원',
+          amtLabel: '합의 금액 · 2회차', amount: '3,100,000원', amtSub: '42일 · 예상 수령 2,945,000원',
+          hasNote: true, note: '임시 계약 중에는 견적을 고칠 수 없습니다. 위 카드에서 계약서를 확인하고 서명해 주세요.',
+          hasLink: true, link: '채팅 보기', linkHref: 'Chat-Supplier.dc.html', href: 'Contract-Supplier.dc.html', action: '계약서 보기' })
+      : base({ chip: '문의 중', chipCls: 'chip blue', when: '마감 11월 3일',
+          title: '예약 달력, 예약금 결제 외 2개 기능', client: '온도 다이닝 · 음식점(코스 레스토랑)', applied: '10월 29일 지원',
+          amtLabel: '내 견적 · 2회차', amount: '3,100,000원', amtSub: '42일 · 예상 수령 2,945,000원',
+          hasNote: true, note: '11월 1일 채팅에서 견적을 고쳤습니다(1회차 3,000,000원 → 대체됨). 새 메시지 1건이 있습니다.',
+          hasLink: true, link: '견적 보기', linkHref: 'QuoteView-Supplier.dc.html', href: 'Chat-Supplier.dc.html', action: '채팅 보기', unread: 1 });
+    const review = base({ chip: '문의 중', chipCls: 'chip blue', when: '마감 11월 9일',
+      title: '회차 예약, 알레르기 사전 접수 외 2개 기능', client: '담소 키친 · 음식점(한식 주점)', applied: '10월 31일 지원',
+      amount: '2,400,000원', amtSub: '35일 · 예상 수령 2,280,000원',
+      hasNote: true, note: '의뢰인이 11월 1일 문의 채팅을 열었습니다. 정할 것은 채팅에서 함께 정합니다.',
+      hasLink: true, link: '견적 보기', linkHref: 'QuoteView-Supplier.dc.html', href: 'Chat-Supplier.dc.html', action: '채팅 보기' });
+    const requote = base({ chip: '재견적 요청', chipCls: 'chip amber', when: '마감 11월 21일',
+      title: '좌석 배치도, 코스 메뉴 선택 외 3개 기능', client: '라운드 테이블 · 음식점(와인 바)', applied: '10월 27일 지원',
+      amount: '3,600,000원', amtSub: '이전 명세 기준 · 선택될 수 없음',
+      hasNote: true, ntCls: 'nt am', note: '11월 2일 의뢰인이 명세를 고쳤습니다. 지금 견적으로는 선택될 수 없으니 바뀐 항목을 보고 다시 내 주세요.',
+      href: 'QuoteWrite-Supplier.dc.html', action: '다시 견적 내기' });
+    const hold = base({ cls: held ? 'pj held' : 'pj', chip: '보류', chipCls: 'chip out', when: '다른 공급자 서명 기한 11월 10일',
+      title: '단골 등급 관리, 재방문 알림 외 1개 기능', client: '브루잉 랩 · 카페', applied: '10월 25일 지원',
+      amount: '1,800,000원', amtSub: '28일 · 예상 수령 1,710,000원',
+      hasNote: !held, note: '의뢰인이 다른 공급자와 계약을 진행 중입니다(예치 전). 결렬되면 다시 선택될 수 있습니다.',
+      hasTx: true, tx: '지원 철회', btnCls: 'btn sm gh', href: 'Chat-Supplier.dc.html', action: '채팅 보기', expand: held });
+    let rows = held ? [hold] : wdDone ? [ondo, review, requote] : [ondo, review, requote, hold];
+    if (sent) {
+      rows.length = 0;
+      rows.push(base({ cls: 'pj newr', chip: '검토 중', when: '방금 제출 · 마감 11월 3일',
+        title: '예약 달력, 예약금 결제 외 2개 기능', client: '온도 다이닝 · 음식점(코스 레스토랑)', applied: '10월 29일 지원',
+        amount: '3,000,000원', amtSub: '42일 · 예상 수령 2,850,000원',
+        hasNote: true, note: '의뢰인에게 묻고 싶은 것 2개를 함께 보냈습니다. 의뢰인이 문의 채팅을 열면 답을 받을 수 있습니다.',
+        hasLink: true, link: '프로젝트 보기', linkHref: 'Project-Supplier.dc.html', btnCls: 'btn sm gh', href: 'QuoteView-Supplier.dc.html', action: '보낸 견적 보기' }),
+        Object.assign({}, requote, { chip: '검토 중', chipCls: 'chip', ntCls: 'nt', amtSub: '30일 · 예상 수령 3,420,000원', note: '의뢰인이 아직 문의하지 않았습니다.', btnCls: 'btn sm gh', href: 'QuoteView-Supplier.dc.html', action: '견적 보기' }),
+        Object.assign({}, hold, { cls: 'pj', chip: '검토 중', chipCls: 'chip', when: '마감 11월 5일', hasNote: true, note: '의뢰인이 아직 문의하지 않았습니다.', hasTx: false, expand: false, href: 'QuoteView-Supplier.dc.html', action: '견적 보기' }));
+    }
+    const ended = [
+      { chip: '자동 거절', chipCls: 'chip out', when: '10월 30일', title: '전화 예약 대체, 대기 명단 외 1개 기능', client: '하루 베이커리 · 베이커리', applied: '10월 18일 지원',
+        amtLabel: '내 견적 · 1회차', amount: '1,500,000원', amtSub: '21일',
+        note: '의뢰인이 다른 공급자와 계약하고 예치를 마쳐 자동으로 거절되었습니다. 채팅은 읽기 전용입니다.', href: 'Chat-Supplier.dc.html', action: '채팅 보기' },
+      { chip: '직접 거절', chipCls: 'chip out', when: '10월 22일', title: '포장 주문, 픽업 시간 선택 외 2개 기능', client: '면옥 · 음식점(냉면)', applied: '10월 15일 지원',
+        amtLabel: '내 견적 · 1회차', amount: '2,200,000원', amtSub: '30일',
+        note: '의뢰인이 견적을 거절했습니다.', href: 'Project-Supplier.dc.html', action: '프로젝트 보기' },
+      { chip: '결렬', chipCls: 'chip out', when: '10월 12일', title: '클래스 예약, 수강권 결제 외 1개 기능', client: '공방 결 · 공방', applied: '9월 28일 지원',
+        amtLabel: '합의 금액', amount: '1,900,000원', amtSub: '임시 계약 · 7일 안에 서명 없음',
+        note: '서명 기한 7일이 지나 결렬되었습니다. 이 지원은 거절로 처리되었습니다.', href: 'Chat-Supplier.dc.html', action: '채팅 보기' }
+    ];
+    if (sent) ended.shift();
+    if (wdDone) ended.unshift({ chip: '철회함', chipCls: 'chip out', when: '11월 4일', title: '단골 등급 관리, 재방문 알림 외 1개 기능', client: '브루잉 랩 · 카페', applied: '10월 25일 지원',
+      amtLabel: '내 견적 · 1회차', amount: '1,800,000원', amtSub: '28일',
+      note: '지원을 철회했습니다. 임시 계약이 결렬되어도 이 프로젝트에서 다시 선택될 수 없고, 채팅은 읽기 전용입니다.', href: 'Chat-Supplier.dc.html', action: '채팅 보기' });
+    const T = sent ? [['전체', 5], ['검토 중', 3], ['문의 중', 0], ['선택됨', 0], ['보류', 0], ['종료', 2]] : [['전체', 7], ['검토 중', 1], ['문의 중', picked ? 1 : 2], ['선택됨', picked ? 1 : 0], ['보류', wdDone ? 0 : 1], ['종료', wdDone ? 4 : 3]];
+    const tabs = T.map(t => ({ name: t[0], n: t[1], cls: (held ? t[0] === '보류' : t[0] === '전체') ? 'on' : '' }));
+    return { wdDone: wdDone, nEnded: ended.length, sent: sent, picked: picked, rows: rows, ended: ended, showEnded: !held, tabs: tabs, wdOpen: wd };
+  }
+}
+</script>
+</body>
+</html>

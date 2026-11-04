@@ -1,0 +1,268 @@
+<helmet>
+<style>
+.ag sc-for,.ag sc-if{display:contents}
+.crumb{font-size:14px;color:var(--s600);margin:0 0 10px}
+.crumb a{color:var(--s600)}
+.head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin:0 0 20px}
+.head h1.t{margin:0 0 6px}
+.head .sub{margin:0;max-width:760px}
+.whoS{display:flex;align-items:center;gap:10px;font-size:14px;color:var(--s600)}
+.whoS .av{width:36px;height:36px;border-radius:50%;background:var(--s100);border:1px solid var(--s200);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;color:var(--navy-900)}
+.whoS b{color:var(--s900);font-size:15px}
+.lay{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:20px;align-items:start}
+/* 상태 띠 */
+.band2{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;border-radius:12px;padding:16px 20px;margin:0 0 16px;border:1px solid var(--s200);background:#fff}
+.band2.done{background:#EAF6F4;border-color:#C7E6E0}
+.band2.open{background:var(--amber-50);border-color:#F2E0BE}
+.band2 b{display:block;font-size:16px;margin:0 0 2px}
+.band2.done b{color:var(--teal-700)}
+.band2.open b{color:var(--amber-700)}
+.band2 p{margin:0;font-size:14px;color:var(--s600)}
+.band2.open p{color:#7A5A1C}
+/* 기능 카드 — 읽기 전용 */
+.fc{background:#fff;border:1px solid var(--s200);border-radius:12px;margin:0 0 14px;overflow:hidden}
+.fh{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:16px 20px;border-bottom:1px solid var(--s200)}
+.fh .nm{font-size:17px;font-weight:600}
+.fh .ds{font-size:14px;color:var(--s600);margin-top:2px}
+.fh .stg{font-size:13px;color:var(--s600);flex:none}
+.fh .stg b{color:var(--s900);font-weight:600}
+.fc.gone{background:var(--s50)}
+.fc.gone .fh{border-bottom:0}
+.fc.gone .fh .nm{color:var(--s600);text-decoration:line-through}
+.cr{display:grid;grid-template-columns:130px minmax(0,1fr) 104px;gap:14px;align-items:start;padding:14px 20px;border-top:1px solid var(--s200)}
+.cr.first{border-top:0}
+.cr .q{font-size:14px;color:var(--s600);padding-top:2px}
+.cr .a{font-size:15px;font-weight:500;color:var(--navy-900);line-height:1.6}
+.cr .src{font-size:13px;color:var(--s600);margin-top:3px}
+.cr .src a{color:var(--s600);margin-left:8px}
+.cr .pend{font-size:14px;color:var(--s600);line-height:1.6}
+.cr .pend .a2{display:block;color:var(--s900);font-weight:500}
+.cr .pend a{font-size:13px}
+.cr .st{text-align:right}
+.cr .st .chip{font-size:12px;padding:3px 8px}
+.cr.open{background:var(--s50)}
+.cr{position:relative}
+.fc:has(.pop){overflow:visible;position:relative;z-index:15}
+.cr.popon{background:#EEF4FF}
+.pop{position:absolute;top:calc(100% - 6px);left:150px;width:560px;z-index:20;background:#fff;border:1px solid var(--s200);border-radius:12px;box-shadow:0 16px 40px rgba(11,37,69,.22);padding:16px 18px;word-break:keep-all}
+.pop .ph2{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:0 0 8px}
+.pop .ph2 b{font-size:15px}
+.pop .ph2 button{font-family:inherit;font-size:20px;line-height:1;color:var(--s600);background:none;border:0;cursor:pointer}
+.pop .ai{font-size:14px;color:var(--navy-900);background:var(--s50);border-radius:8px;padding:8px 12px;margin:0 0 10px;line-height:1.6}
+.pop .ai i{font-style:normal;font-size:12px;color:var(--s600);display:block}
+.pop .q3{border-left:3px solid var(--s300);padding:2px 0 2px 10px;margin:0 0 8px}
+.pop .q3 .w{font-size:12px;color:var(--s600)}
+.pop .q3 p{margin:2px 0 0;font-size:14px;line-height:1.55;color:var(--s900)}
+.pop .q3.key{border-left-color:var(--teal-700)}
+.pop .ft3{display:flex;justify-content:space-between;align-items:center;margin-top:10px;font-size:13px;color:var(--s600)}
+/* 오른쪽 */
+.rail2 .card{margin:0 0 16px}
+.rail2 h3{font-size:16px;font-weight:600;margin:0 0 4px}
+.ratio .big{font-size:24px;font-weight:600;letter-spacing:-0.4px;color:var(--navy-900);margin:6px 0 2px;font-variant-numeric:tabular-nums}
+.split2{margin-top:12px;font-size:14px;line-height:1.7;border-top:1px solid var(--s200);padding-top:10px}
+.split2 .r{display:flex;justify-content:space-between;gap:10px}
+.split2 .r span{color:var(--s600)}
+.split2 .r b{font-weight:500;font-variant-numeric:tabular-nums}
+.after{margin:0;padding-left:18px}
+.after li{font-size:14px;color:var(--s600);line-height:1.7}
+.after b{color:var(--s900);font-weight:600}
+.warn2{border:1px solid #F2E0BE;background:var(--amber-50);border-radius:12px;padding:14px 18px;margin:0 0 16px}
+.warn2 b{display:block;color:var(--amber-700);font-size:15px;margin:0 0 4px}
+.warn2 p{margin:0 0 10px;font-size:14px;color:#7A5A1C}
+.warn2 .cbx{margin:0}
+/* 하단 고정 바 */
+.dock{position:sticky;bottom:0;z-index:10;background:#fff;border-top:1px solid var(--s200);padding:14px 0 16px;margin-top:8px}
+.dock .row2{display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap}
+.dock .amts{display:flex;gap:28px;align-items:flex-end;flex-wrap:wrap}
+.dock .amts .k{font-size:13px;color:var(--s600);margin:0 0 2px}
+.dock .amts .v{font-size:20px;font-weight:600;font-variant-numeric:tabular-nums}
+.dock .amts .v.tot{color:var(--navy-900)}
+.dock .amts .s{font-size:12px;color:var(--s600);margin-top:1px}
+.dock .amts .op{font-size:18px;color:var(--s400);padding-bottom:18px}
+.dock .acts{display:flex;align-items:center;gap:10px}
+.dock .why{font-size:13px;color:var(--s600);text-align:right;margin:8px 0 0}
+.dock .cbx{margin:10px 0 0;justify-content:flex-end}
+</style>
+<style>
+.pg{min-height:100vh;position:relative;padding-bottom:256px;box-sizing:border-box}
+.gf{position:absolute;left:0;right:0;bottom:0;background:var(--navy-900);padding:34px 0 30px;font-size:14px;color:#A9BDD6;word-break:keep-all}
+.gf a{color:#A9BDD6;text-decoration:none}
+.gf-top{display:flex;justify-content:space-between;align-items:center;gap:12px 32px;flex-wrap:wrap}
+.gf-brand{display:flex;align-items:center;gap:16px;flex-wrap:wrap;min-width:0}
+.gf-logo{display:inline-flex;align-items:center;font-size:19px;font-weight:600;letter-spacing:-0.4px;color:#fff}
+.gf-brand p{margin:0}
+.gf-cs{display:flex;align-items:baseline;gap:4px 16px;flex-wrap:wrap}
+.gf-cs b{color:#fff;font-weight:600;font-size:15px}
+.gf-nav{display:flex;flex-wrap:wrap;gap:10px 44px;margin:18px 0 0;padding:0 0 24px;border-bottom:1px solid rgba(255,255,255,.14)}
+.gf-nav>div{display:flex;align-items:baseline;gap:18px;flex-wrap:wrap}
+.gf-nav b{color:#fff;font-weight:600}
+.gf-nav a.em{color:#fff;font-weight:600}
+.gf-bot{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:24px;padding-top:20px;font-size:13px;line-height:1.75;color:#8FA6C2}
+.gf-bot p{margin:0}
+.gf-biz i{display:inline-block;width:1px;height:10px;background:rgba(255,255,255,.28);margin:0 9px;vertical-align:-1px}
+.gf-copy{align-self:end;text-align:right;white-space:nowrap}
+.gf-note{grid-column:1 / -1;margin-top:8px !important}
+</style>
+</helmet>
+
+<div class="pg">
+
+  <header class="gnb">
+    <div class="wrap">
+      <div class="gnbin">
+        <a class="brand" href="Home-Client.dc.html"><span class="mark" aria-hidden="true"><i style="height:9px"></i><i style="height:17px"></i><i style="height:12px;opacity:.55"></i></span>마자용</a>
+        <nav class="nav" aria-label="주요 메뉴">
+          <a href="Home-Client.dc.html">홈</a><a href="Input-Client.dc.html">프로젝트 시작</a><a class="on" href="My-Client.dc.html">내 프로젝트</a><a href="Contracts-Client.dc.html">내 계약</a><a href="Settle-Client.dc.html">정산 내역</a>
+        </nav>
+        <div class="gright">
+          <a class="bell" href="Chat-Client.dc.html" aria-label="채팅"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"></path></svg></a>
+          <a class="bell dot" href="Notify-Client.dc.html" aria-label="알림 — 안 읽은 알림 3건"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"></path><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"></path></svg></a>
+          <span class="who"><span class="ava">민</span><span class="uname">정민재</span></span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="pad ag">
+    <div class="wrap">
+
+      <p class="crumb"><a href="My-Client.dc.html">내 프로젝트</a> › <a href="Chat-Client.dc.html">채팅</a> › 최종 합의 내용 확인</p>
+      <div class="head">
+        <div>
+          <h1 class="t">최종 합의 내용 확인</h1>
+          <p class="sub">채팅에서 정한 내용을 AI가 기능마다 정리했습니다. 이 화면에서는 고칠 수 없습니다. 다른 점이 있으면 채팅으로 돌아가 고쳐 주세요. 정한 내용은 이 화면에 바로 반영됩니다.</p>
+        </div>
+        <div class="whoS"><span class="av" aria-hidden="true">최</span><span><b>최준호</b><br>경력 5년 · ★ 4.8 · 리뷰 12건</span></div>
+      </div>
+
+      <sc-if value="{{open}}" hint-placeholder-val="{{ true }}">
+        <div class="band2 open">
+          <div><b>아직 정하지 않은 조건이 {{nOpen}}건 있습니다</b><p>이대로 합의할 수 있습니다. 기능은 그대로 검수 기준에 들어가고, 정하지 않은 세부 조건만 계약서에 '정하지 않음'으로 남아 검수 기준에서 빠집니다. 지급 구간 · 비율은 기본값이 들어갑니다. 정하고 싶으면 채팅에서 마저 이야기해 주세요.</p></div>
+          <a class="ft" href="Chat-Client.dc.html" style="font-size:14px;flex:none">채팅에서 정하기</a>
+        </div>
+      </sc-if>
+      <sc-if value="{{allDone}}" hint-placeholder-val="{{ false }}">
+        <div class="band2 done">
+          <div><b>정할 것 {{nAllCond}}건이 모두 채팅에서 정해졌습니다</b><p>아래 내용이 계약서에 검수 기준으로 붙습니다. 다른 점이 있으면 채팅에서 고쳐 주세요.</p></div>
+          <a class="ft" href="Chat-Client.dc.html" style="font-size:14px">채팅 보기</a>
+        </div>
+      </sc-if>
+
+      <div class="lay">
+        <div>
+          <sc-if value="{{dropped}}" hint-placeholder-val="{{ false }}">
+            <div class="warn2">
+              <b>처음 문장에서 나온 기능이 빠졌습니다</b>
+              <p style="margin:0">채팅에서 '노쇼 기록'을 이번 계약에서 빼기로 하고, 견적을 2,800,000원(3회차)으로 고쳤습니다. 처음 적으신 불편("노쇼 나면 재료를 다 버려요")에서 나온 기능이라 알려 드립니다. 이대로 합의하면 계약 범위에 들어가지 않습니다.</p>
+            </div>
+          </sc-if>
+
+          <sc-for list="{{fns}}" as="f" hint-placeholder-count="4">
+            <section class="{{f.cls}}" aria-label="{{f.name}}">
+              <div class="fh">
+                <div><div class="nm">{{f.name}}</div><div class="ds">{{f.desc}}</div></div>
+                <sc-if value="{{f.keep}}" hint-placeholder-val="{{ true }}"><span class="stg">지급 구간 <b>{{f.stage}}</b></span></sc-if>
+                <sc-if value="{{f.gone}}" hint-placeholder-val="{{ false }}"><span class="stg">채팅에서 빼기로 함 · <a class="ft" href="Chat-Client.dc.html">근거 보기</a></span></sc-if>
+              </div>
+              <sc-if value="{{f.keep}}" hint-placeholder-val="{{ true }}">
+                <sc-for list="{{f.conds}}" as="c" hint-placeholder-count="2">
+                  <div class="{{c.cls}}">
+                    <div class="q">{{c.q}}</div>
+                    <div>
+                      <sc-if value="{{c.isOk}}" hint-placeholder-val="{{ true }}">
+                        <div class="a">{{c.text}}</div>
+                        <div class="src">{{c.src}}<a href="Chat-Client.dc.html">근거 보기</a></div>
+                        <sc-if value="{{c.pop}}" hint-placeholder-val="{{ false }}">
+                          <div class="pop" role="dialog" aria-label="환불 기준의 근거">
+                            <div class="ph2"><b>환불 기준 — 이 줄의 근거</b><button type="button" aria-label="닫기">×</button></div>
+                            <p class="ai"><i>AI 정리</i>회차마다 정한 마감 시각 전에 취소하면 전액 환불, 그 뒤에는 환불 없음</p>
+                            <div class="q3"><span class="w">나 · 11월 1일 14:02</span><p>전날 취소면 돌려주고 싶은데, 회차마다 다르게 정할 수 있을까요?</p></div>
+                            <div class="q3"><span class="w">최준호 · 11월 1일 14:20</span><p>점심과 저녁 회차마다 마감 시각을 따로 두고, 그 전에 취소하면 전액 환불, 이후는 환불 없음으로 설정하실 수 있게 만들겠습니다.</p></div>
+                            <div class="q3 key"><span class="w">나 · 11월 1일 14:35 — 받아들임</span><p>좋아요. (환불 기준은 말씀하신 대로)</p></div>
+                            <div class="ft3"><span>제안 → 받아들임이 있어 '정해짐'으로 표시했습니다 · 근거 3건</span><a class="ft" href="Chat-Client.dc.html">채팅에서 보기</a></div>
+                          </div>
+                        </sc-if>
+                      </sc-if>
+                      <sc-if value="{{c.isPr}}" hint-placeholder-val="{{ false }}">
+                        <div class="pend">{{c.who}}<span class="a2">“{{c.text}}”</span>상대가 답하지 않아 계약서에 '정하지 않음'으로 남습니다 · <a class="ft" href="Chat-Client.dc.html">채팅에서 답하기</a></div>
+                      </sc-if>
+                      <sc-if value="{{c.isNo}}" hint-placeholder-val="{{ false }}">
+                        <div class="pend">채팅에서 아직 이야기하지 않았습니다 · 계약서에 '정하지 않음'으로 남습니다 <a class="ft" href="Chat-Client.dc.html" style="margin-left:8px">채팅에서 정하기</a></div>
+                      </sc-if>
+                    </div>
+                    <div class="st"><span class="{{c.chipCls}}">{{c.chip}}</span></div>
+                  </div>
+                </sc-for>
+              </sc-if>
+            </section>
+          </sc-for>
+        </div>
+
+        <aside class="rail2">
+          <section class="card ratio" aria-labelledby="r-h">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><h3 id="r-h" style="margin:0">지급 구간 · 비율</h3><span class="{{payChipCls}}" style="font-size:12px;padding:3px 8px">{{payChip}}</span></div>
+            <div class="big">중간 50 : 최종 50</div>
+            <p class="sec" style="margin:0">{{payNote}}</p>
+            <div class="split2">
+              <div class="r"><span>중간 · {{midNames}}</span><b>{{stageAmt}}</b></div>
+              <div class="r"><span>최종 · {{finNames}}</span><b>{{stageAmt}}</b></div>
+            </div>
+            <p class="sec" style="margin:8px 0 0">구간에 담긴 기능이 모두 승인되면 그 구간 금액이 지급됩니다.</p>
+          </section>
+          <section class="card" aria-labelledby="n-h">
+            <h3 id="n-h" style="margin-bottom:8px">합의를 마치면</h3>
+            <ul class="after">
+              <li><b>임시 계약</b>이 만들어지고 최준호님에게 알림이 갑니다.</li>
+              <li>11월 10일까지 <b>두 분이 서명</b>하면 계약이 체결됩니다. 기한이 지나면 결렬됩니다.</li>
+              <li>그동안 다른 지원은 거절되지 않고 <b>보류</b>됩니다.</li>
+              <li>임시 계약 중에는 내용을 바꿀 수 없습니다.</li>
+            </ul>
+          </section>
+        </aside>
+      </div>
+
+    </div>
+  </main>
+
+  <section class="dock" aria-label="합의 금액과 완료">
+    <div class="wrap">
+      <div class="row2">
+        <div class="amts">
+          <div><p class="k">견적 최종 금액</p><div class="v">{{finalAmt}}</div><div class="s">{{finalSub}}</div></div>
+          <span class="op">+</span>
+          <div><p class="k">플랫폼 수수료 5%</p><div class="v">{{feeAmt}}</div><div class="s">&nbsp;</div></div>
+          <span class="op">=</span>
+          <div><p class="k">예치할 금액</p><div class="v tot">{{totAmt}}</div><div class="s">&nbsp;</div></div>
+        </div>
+        <div class="acts">
+          <a class="btn gh" href="Chat-Client.dc.html">채팅으로 돌아가기</a>
+          <a class="btn" href="Contract-Client.dc.html">이 내용으로 합의 완료</a>
+        </div>
+      </div>
+      <sc-if value="{{hasWhy}}" hint-placeholder-val="{{ false }}"><p class="why">{{why}}</p></sc-if>
+    </div>
+  </section>
+
+  <footer class="gf" aria-label="사이트 정보">
+    <div class="wrap">
+      <div class="gf-top">
+        <div class="gf-brand">
+          <span class="gf-logo"><span class="mark" aria-hidden="true"><i style="height:9px"></i><i style="height:17px"></i><i style="height:12px;opacity:.55"></i></span>마자용</span>
+          <p>소상공인을 위한 웹 외주 요구사항 정의 · 매칭 플랫폼</p>
+        </div>
+        <div class="gf-cs"><b>고객센터 1600-0000</b><span>평일 10:00–18:00</span><span>점심 12:00–13:00 · 주말 · 공휴일 휴무</span><span>help@majayong.example</span></div>
+      </div>
+      <nav class="gf-nav" aria-label="사이트 링크">
+        <div><b>서비스</b><a href="Main.dc.html">의뢰인 안내</a><a href="Supplier-Landing.dc.html">공급자 안내</a></div>
+        <div><b>고객센터</b><a href="Help.dc.html">자주 묻는 질문</a><a href="Help-Inquiry.dc.html">1:1 문의</a><a href="Help.dc.html?view=공지사항">공지사항</a></div>
+        <div><b>정책</b><a href="Terms.dc.html?view=이용약관">이용약관</a><a class="em" href="Terms.dc.html?view=개인정보+처리방침">개인정보 처리방침</a><a href="Terms.dc.html?view=명세+비밀유지">명세 비밀유지</a><a href="Terms.dc.html?view=중개자+고지">중개자 고지</a></div>
+      </nav>
+      <div class="gf-bot">
+        <p class="gf-biz">상호 로켓단<i></i>대표 김로켓<i></i>사업자등록번호 000-00-00000<i></i>통신판매업 신고 제2026-서울마포-0000호<br>주소 서울특별시 마포구 예시로 00, 0층<i></i>개인정보 보호책임자 박예시<i></i>이메일 help@majayong.example</p>
+        <p class="gf-copy">© 2026 로켓단. All rights reserved.</p>
+        <p class="gf-note">마자용은 통신판매중개자로서 거래 당사자가 아니며, 의뢰인과 공급자 사이 계약의 이행 책임은 각 당사자에게 있습니다. 대금 예치와 정산은 마자용이 관리합니다.</p>
+      </div>
+    </div>
+  </footer>
+
+</div>

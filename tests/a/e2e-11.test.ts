@@ -88,7 +88,7 @@ describe("E2E-11 AI failure safety", () => {
       headers: { authorization: `Bearer ${token}`, "content-type": "application/json" },
       body: JSON.stringify({ entryType: "SENTENCE", text: "예약 달력과 방문 인원 선택 기능이 필요합니다." }),
     });
-    const draftBody = await createDraft.json() as any;
+    const draftBody = await createDraft.json() as { data: { id: string; pendingFeatures: unknown[] } };
     expect(createDraft.status).toBe(201);
     draftIds.push(draftBody.data.id);
     expect(Array.isArray(draftBody.data.pendingFeatures)).toBe(true);

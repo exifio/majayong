@@ -110,7 +110,7 @@ describe("E2E-12 PII and security", () => {
       headers: { authorization: `Bearer ${clientToken}`, "content-type": "application/json" },
       body: JSON.stringify({ entryType: "DEFAULT_DRAFT" }),
     });
-    const draftBody = await draftRes.json() as any;
+    const draftBody = await draftRes.json() as { data: { id: string } };
     expect(draftRes.status).toBe(201);
     const draftId = draftBody.data.id;
     draftIds.push(draftId);
@@ -125,7 +125,7 @@ describe("E2E-12 PII and security", () => {
         deadline: "2026-11-10T09:00:00.000Z",
       }),
     });
-    const publishBody = await publishRes.json() as any;
+    const publishBody = await publishRes.json() as { data: { projectId: string } };
     expect(publishRes.status).toBe(201);
     const projectId = publishBody.data.projectId;
     projectIds.push(projectId);

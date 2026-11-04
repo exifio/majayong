@@ -1,0 +1,469 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>의뢰인 — 검수</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="/_blob/a8316b816fb987eb4a5af50ab874b7d1">
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+.isp sc-for,.isp sc-if{display:contents}
+.pgw{position:relative}
+.crumb{font-size:14px;color:var(--s600);margin:0 0 10px}
+.crumb a{color:var(--s600)}
+.head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin:0 0 20px}
+.head h1.t{margin:0 0 6px;display:flex;align-items:center;gap:10px}
+.head h1.t .chip{font-size:14px}
+.head .sub{margin:0;max-width:760px}
+.whoS{display:flex;align-items:center;gap:10px;font-size:14px;color:var(--s600)}
+.whoS .av{width:36px;height:36px;border-radius:50%;background:var(--s100);border:1px solid var(--s200);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;color:var(--navy-900)}
+.whoS b{color:var(--s900);font-size:15px}
+/* 계약 요약 */
+.sum{display:grid;grid-template-columns:repeat(3,minmax(0,1fr)) 1.4fr;gap:0;background:#fff;border:1px solid var(--s200);border-radius:12px;margin:0 0 16px}
+.sum>div{padding:16px 20px;border-left:1px solid var(--s200)}
+.sum>div:first-child{border-left:0}
+.sum .k{font-size:13px;color:var(--s600);margin:0 0 4px}
+.sum .v{font-size:18px;font-weight:600;color:var(--navy-900);font-variant-numeric:tabular-nums}
+.sum .s{font-size:12px;color:var(--s600);margin-top:2px}
+.pbar{display:flex;gap:4px;margin:8px 0 6px}
+.pbar i{flex:1 1 0;height:8px;border-radius:4px;background:var(--s200)}
+.pbar i.b-ok{background:var(--teal-700)}
+.pbar i.b-wait{background:#B8C7DB}
+.pbar i.b-fix{background:#E2B55C}
+.paid{display:flex;justify-content:space-between;align-items:center;gap:16px;border-radius:12px;padding:14px 20px;margin:0 0 16px;background:#EAF6F4;border:1px solid #C7E6E0}
+.paid b{display:block;font-size:16px;color:var(--teal-700);margin:0 0 2px}
+.head h1.t .dlc{font-size:14px;font-weight:500;color:var(--s600);letter-spacing:0}
+.head h1.t .dlc b{color:var(--navy-900);font-weight:600}
+.warnb{display:flex;justify-content:space-between;align-items:center;gap:16px;border-radius:12px;padding:14px 20px;margin:0 0 16px;background:var(--amber-50);border:1px solid #F2E0BE}
+.warnb b{display:block;font-size:16px;color:var(--amber-700);margin:0 0 2px}
+.warnb p{margin:0;font-size:14px;color:#7A5A1C}
+.paid p{margin:0;font-size:14px;color:var(--s600)}
+.lay{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:20px;align-items:start}
+.tabs2{display:flex;gap:6px;border-bottom:1px solid var(--s200);margin:0 0 16px}
+.tabs2 a{font-size:15px;color:var(--s600);text-decoration:none;padding:10px 14px;border-bottom:2px solid transparent;margin-bottom:-1px;display:flex;gap:8px;align-items:center}
+.tabs2 a.on{color:var(--navy-900);font-weight:600;border-color:var(--navy-900)}
+.tabs2 .chip{font-size:12px;padding:2px 8px}
+/* 항목 카드 */
+.ic{background:#fff;border:1px solid var(--s200);border-radius:12px;margin:0 0 14px;overflow:hidden}
+.ic .ih{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;padding:16px 20px}
+.ic .ih .nm{font-size:17px;font-weight:600}
+.ic .ih .ds{font-size:14px;color:var(--s600);margin-top:2px}
+.ic .ih .chip{flex:none;font-size:12px;padding:3px 9px}
+.crit{margin:0 20px;padding:12px 0 14px;border-top:1px solid var(--s200)}
+.crit .k{font-size:13px;font-weight:600;color:var(--s600);margin:0 0 6px}
+.crit ul{list-style:none;margin:0;padding:0}
+.crit li{display:grid;grid-template-columns:140px minmax(0,1fr);gap:12px;font-size:14px;line-height:1.6;padding:3px 0}
+.crit .q{color:var(--s600)}
+.crit .a{color:var(--navy-900);font-weight:500}
+.crit li.un .a{color:var(--s600);font-weight:400}
+.crit li.un .a em{font-style:normal;display:inline-block;font-size:12px;border:1px dashed var(--s400);border-radius:5px;padding:0 6px;margin-right:6px;color:var(--s600)}
+/* 공급자 납품물 */
+.dl{background:var(--s50);border-top:1px solid var(--s200);padding:14px 20px 16px}
+.dl .k{font-size:13px;font-weight:600;color:var(--s600);margin:0 0 8px;display:flex;justify-content:space-between;gap:10px}
+.dl .k span{font-weight:400}
+.dl .rw{display:grid;grid-template-columns:110px minmax(0,1fr);gap:12px;font-size:14px;line-height:1.6;padding:3px 0}
+.dl .rw .q{color:var(--s600)}
+.dl .rw a{color:var(--navy-900);word-break:break-all}
+.fchip{display:inline-flex;align-items:center;gap:6px;background:#fff;border:1px solid var(--s200);border-radius:6px;padding:2px 8px;font-size:13px;color:var(--s900)}
+.dl .none{color:var(--s400)}
+.acts3{display:flex;justify-content:flex-end;align-items:center;gap:10px;padding:12px 20px;border-top:1px solid var(--s200)}
+.acts3 .btn{white-space:nowrap;flex:none}
+.acts3 .nt2{margin-right:auto;font-size:13px;color:var(--s600)}
+.doneRow{display:flex;justify-content:space-between;align-items:center;gap:12px;border-top:1px solid var(--s200);padding:12px 20px;font-size:14px;background:#F3FAF8;color:var(--teal-700)}
+.doneRow a{color:var(--s600)}
+.waitRow{border-top:1px solid var(--s200);padding:12px 20px;font-size:14px;background:var(--s50);color:var(--s600);line-height:1.6}
+.waitRow b{color:var(--s900);font-weight:600;margin-right:6px}
+.waitRow q{display:block;color:var(--s900);margin:4px 0 0;quotes:"“" "”"}
+/* 보완 요청 작성 */
+.fixf{margin:0;border-top:1px solid #F2E0BE;background:var(--amber-50);padding:16px 20px 18px}
+.fixf .t4{font-size:15px;font-weight:600;color:var(--amber-700);margin:0 0 12px}
+.fixf .lbl{display:block;font-size:13px;font-weight:600;color:#7A5A1C;margin:0 0 6px}
+.fixf .grp{margin:0 0 14px}
+.rchips{display:flex;flex-wrap:wrap;gap:8px}
+.rchips span{font-size:14px;padding:6px 13px;border-radius:16px;border:1px solid #E7D3AE;background:#fff;color:var(--s900)}
+.rchips span.on{border-color:var(--amber-700);color:var(--amber-700);font-weight:600}
+.rchips span.on::before{content:"✓ "}
+.fixf textarea.inp{width:100%;box-sizing:border-box;min-height:84px;resize:vertical;line-height:1.6;background:#fff}
+.fixf .bt{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:12px}
+.fixf .bt p{margin:0;font-size:13px;color:#7A5A1C}
+.fixf .bt .acts{display:flex;gap:10px;flex:none}
+.fixf .bt .btn{white-space:nowrap}
+.scp{font-size:13px;color:var(--s600);margin:4px 0 0;padding:0 2px}
+/* 오른쪽 */
+.rail2 .card{margin:0 0 16px}
+.rail2 h3{font-size:16px;font-weight:600;margin:0 0 10px}
+.pay .tot{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.pay .tot span{font-size:14px;color:var(--s600)}
+.pay .tot b{font-size:22px;font-weight:600;color:var(--navy-900);font-variant-numeric:tabular-nums}
+.pay .nt{font-size:13px;color:var(--s600);margin:8px 0 0;line-height:1.6}
+.prog .pr{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:7px 0;border-top:1px solid var(--s200);font-size:14px}
+.prog .pr:first-of-type{border-top:0}
+.prog .pr .g{font-size:12px;color:var(--s600);margin-right:6px}
+.prog .chip{font-size:12px;padding:2px 8px}
+.prog .cnt{font-size:13px;color:var(--s600);margin:0 0 8px}
+.after{margin:0;padding-left:18px}
+.after li{font-size:14px;color:var(--s600);line-height:1.7}
+.after b{color:var(--s900);font-weight:600}
+.help{display:block;font-size:13px;color:var(--s600);margin:12px 0 0;text-decoration:underline;text-underline-offset:3px}
+/* 승인 확인 모달 */
+.scrim2{position:absolute;inset:0;background:rgba(11,37,69,.55);z-index:30}
+.mdl{position:absolute;top:160px;left:50%;transform:translateX(-50%);width:560px;z-index:31;background:#fff;border-radius:16px;box-shadow:0 24px 60px rgba(11,37,69,.35);overflow:hidden}
+.mdl .mh{padding:24px 26px 6px}
+.mdl .mh h2{font-size:20px;font-weight:600;letter-spacing:-0.3px;margin:0 0 6px}
+.mdl .mh p{margin:0;font-size:14px;color:var(--s600)}
+.mdl .mb{padding:14px 26px 20px}
+.mdl .li3{list-style:none;margin:0 0 14px;padding:0;border:1px solid var(--s200);border-radius:10px}
+.mdl .li3 li{display:flex;justify-content:space-between;gap:10px;font-size:15px;padding:10px 14px;border-top:1px solid var(--s200)}
+.mdl .li3 li:first-child{border-top:0}
+.mdl .li3 li span{font-size:13px;color:var(--teal-700)}
+.mdl .amt3{display:flex;justify-content:space-between;align-items:baseline;gap:12px;background:var(--s50);border-radius:10px;padding:14px 16px;margin:0 0 12px}
+.mdl .amt3 span{font-size:14px;color:var(--s600)}
+.mdl .amt3 b{font-size:24px;font-weight:600;color:var(--navy-900);font-variant-numeric:tabular-nums}
+.mdl .warn4{font-size:14px;color:#7A5A1C;background:var(--amber-50);border:1px solid #F2E0BE;border-radius:10px;padding:10px 14px;margin:0;line-height:1.6}
+.mdl .mf{display:flex;justify-content:flex-end;gap:10px;padding:14px 26px;border-top:1px solid var(--s200);background:var(--s50)}
+.mdl .mf .btn{white-space:nowrap}
+.mdl .hx{position:absolute;top:18px;right:20px;font-family:inherit;font-size:22px;line-height:1;color:var(--s600);background:none;border:0;cursor:pointer}
+.mdl .fl2{font-size:14px;font-weight:600;color:var(--s600);margin:0 0 6px}
+.mdl .sel2{width:100%;box-sizing:border-box;font-family:inherit;font-size:15px;border:1px solid var(--s300);border-radius:8px;padding:9px 12px;background:#fff;margin:0 0 14px}
+.mdl textarea{width:100%;box-sizing:border-box;min-height:96px;font-family:inherit;font-size:15px;line-height:1.6;border:1px solid var(--s300);border-radius:8px;padding:10px 12px;resize:none;margin:0 0 14px}
+.mdl .ck2{list-style:none;margin:0 0 14px;padding:0}
+.mdl .ck2 li{display:flex;gap:10px;align-items:flex-start;font-size:14px;line-height:1.5;padding:5px 0;color:var(--s900)}
+.mdl .ck2 li input{margin:3px 0 0;flex:none}
+.mdl .ck2 li span{color:var(--s600);font-size:13px;display:block}
+.mdl .note5{font-size:13px;color:var(--s600);background:var(--s50);border:1px solid var(--s200);border-radius:10px;padding:10px 14px;margin:0;line-height:1.6;word-break:keep-all}
+</style>
+<style>
+.pg{min-height:100vh;position:relative;padding-bottom:256px;box-sizing:border-box}
+.gf{position:absolute;left:0;right:0;bottom:0;background:var(--navy-900);padding:34px 0 30px;font-size:14px;color:#A9BDD6;word-break:keep-all}
+.gf a{color:#A9BDD6;text-decoration:none}
+.gf-top{display:flex;justify-content:space-between;align-items:center;gap:12px 32px;flex-wrap:wrap}
+.gf-brand{display:flex;align-items:center;gap:16px;flex-wrap:wrap;min-width:0}
+.gf-logo{display:inline-flex;align-items:center;font-size:19px;font-weight:600;letter-spacing:-0.4px;color:#fff}
+.gf-brand p{margin:0}
+.gf-cs{display:flex;align-items:baseline;gap:4px 16px;flex-wrap:wrap}
+.gf-cs b{color:#fff;font-weight:600;font-size:15px}
+.gf-nav{display:flex;flex-wrap:wrap;gap:10px 44px;margin:18px 0 0;padding:0 0 24px;border-bottom:1px solid rgba(255,255,255,.14)}
+.gf-nav>div{display:flex;align-items:baseline;gap:18px;flex-wrap:wrap}
+.gf-nav b{color:#fff;font-weight:600}
+.gf-nav a.em{color:#fff;font-weight:600}
+.gf-bot{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:24px;padding-top:20px;font-size:13px;line-height:1.75;color:#8FA6C2}
+.gf-bot p{margin:0}
+.gf-biz i{display:inline-block;width:1px;height:10px;background:rgba(255,255,255,.28);margin:0 9px;vertical-align:-1px}
+.gf-copy{align-self:end;text-align:right;white-space:nowrap}
+.gf-note{grid-column:1 / -1;margin-top:8px !important}
+</style>
+</helmet>
+
+<div class="pg pgw">
+
+  <header class="gnb">
+    <div class="wrap">
+      <div class="gnbin">
+        <a class="brand" href="Home-Client.dc.html"><span class="mark" aria-hidden="true"><i style="height:9px"></i><i style="height:17px"></i><i style="height:12px;opacity:.55"></i></span>마자용</a>
+        <nav class="nav" aria-label="주요 메뉴">
+          <a href="Home-Client.dc.html">홈</a><a href="Input-Client.dc.html">프로젝트 시작</a><a href="My-Client.dc.html">내 프로젝트</a><a class="on" href="Contracts-Client.dc.html">내 계약</a><a href="Settle-Client.dc.html">정산 내역</a>
+        </nav>
+        <div class="gright">
+          <a class="bell dot" href="Chat-Client.dc.html" aria-label="채팅 — 새 메시지 1건"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"></path></svg></a>
+          <a class="bell dot" href="Notify-Client.dc.html" aria-label="알림 — 안 읽은 알림 3건"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"></path><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"></path></svg></a>
+          <span class="who"><span class="ava">민</span><span class="uname">정민재</span></span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="pad isp">
+    <div class="wrap">
+
+      <p class="crumb"><a href="Contracts-Client.dc.html">내 계약</a> › <a href="Contract-Client.dc.html">예약 달력, 예약금 결제 외 2개 기능</a> › 검수</p>
+      <div class="head">
+        <div>
+          <h1 class="t">검수 <span class="{{stChipCls}}">{{stChip}}</span><sc-if value="{{hasDl}}" hint-placeholder-val="{{ true }}"><span class="dlc">검수 기한 <b>{{dlDate}}</b> · 지나면 자동 승인</span></sc-if></h1>
+          <p class="sub">계약서에 붙은 기능과 조건이 검수 기준입니다. 항목마다 결과물을 확인하고 승인하거나 보완을 요청해 주세요. 구간의 항목이 모두 승인되면 그 구간 금액이 공급자에게 지급됩니다.</p>
+        </div>
+        <div class="whoS"><span class="av" aria-hidden="true">최</span><span><b>최준호</b><br>공급자 · <a class="ft" href="Chat-Client.dc.html">채팅</a></span></div>
+      </div>
+
+      <section class="sum" aria-label="계약 요약">
+        <div><p class="k">합의 금액</p><div class="v">3,100,000원</div><div class="s">계약 체결 · 예치 11월 4일</div></div>
+        <div><p class="k">지급 비율</p><div class="v">중간 50 : 최종 50</div><div class="s">구간마다 1,550,000원</div></div>
+        <div><p class="k">작업 마감</p><div class="v">12월 16일</div><div class="s">42일 · D-{{dday}}</div></div>
+        <div><p class="k">검수 진행 · 항목 4건 중 승인 {{nOkItems}}건</p>
+          <div class="pbar" aria-hidden="true"><sc-for list="{{bar}}" as="b" hint-placeholder-count="4"><i class="{{b}}"></i></sc-for></div>
+          <div class="s">{{barNote}}</div></div>
+      </section>
+
+      <sc-if value="{{isDue}}" hint-placeholder-val="{{ false }}">
+        <div class="warnb">
+          <div><b>내일(12월 2일)까지 검수해 주세요</b><p>내일까지 검수하지 않으면 예약 달력 · 예약금 결제가 자동 승인되고 중간 구간 1,550,000원이 최준호님에게 지급됩니다. 보완이 필요하면 그 전에 요청해 주세요.</p></div>
+        </div>
+      </sc-if>
+      <sc-if value="{{sent}}" hint-placeholder-val="{{ false }}">
+        <div class="paid" role="status">
+          <div><b>{{sentT}}</b><p>{{sentP}}</p></div>
+          <a class="ft" href="Chat-Client.dc.html" style="font-size:14px;flex:none">채팅에서 보기</a>
+        </div>
+      </sc-if>
+      <sc-if value="{{showPaid}}" hint-placeholder-val="{{ false }}">
+        <div class="paid">
+          <div><b>중간 구간 승인 · 1,550,000원 지급 완료</b><p>11월 27일 · 예약 달력과 예약금 결제를 모두 승인해 중간 구간 금액이 최준호님에게 지급되었습니다.</p></div>
+          <a class="ft" href="Settle-Client.dc.html" style="font-size:14px;flex:none">정산 내역 보기</a>
+        </div>
+      </sc-if>
+
+      <div class="lay">
+        <div>
+          <nav class="tabs2" aria-label="구간">
+            <a class="{{tabMid}}" href="#mid">중간 구간 · 2건 <span class="{{midChipCls}}">{{midChip}}</span></a>
+            <a class="{{tabFin}}" href="#fin">최종 구간 · 2건 <span class="{{finChipCls}}">{{finChip}}</span></a>
+          </nav>
+
+          <sc-for list="{{items}}" as="it" hint-placeholder-count="2">
+            <section class="ic" aria-label="{{it.name}}">
+              <div class="ih">
+                <div><div class="nm">{{it.name}}</div><div class="ds">{{it.desc}}</div></div>
+                <span class="{{it.chipCls}}">{{it.chip}}</span>
+              </div>
+              <div class="crit">
+                <p class="k">검수 기준 · 계약서에 붙은 합의 조건</p>
+                <ul>
+                  <sc-for list="{{it.conds}}" as="c" hint-placeholder-count="2">
+                    <li class="{{c.cls}}"><span class="q">{{c.q}}</span><span class="a"><sc-if value="{{c.un}}" hint-placeholder-val="{{ false }}"><em>정하지 않음</em></sc-if>{{c.a}}</span></li>
+                  </sc-for>
+                </ul>
+              </div>
+              <sc-if value="{{it.showDl}}" hint-placeholder-val="{{ true }}">
+                <div class="dl">
+                  <p class="k">공급자 납품물<span>{{it.when}}</span></p>
+                  <div class="rw"><span class="q">결과물 링크</span><a href="#open">{{it.link}}</a></div>
+                  <div class="rw"><span class="q">첨부 파일</span><span><sc-for list="{{it.files}}" as="f" hint-placeholder-count="1"><span class="fchip">{{f}}</span></sc-for><sc-if value="{{it.noFile}}" hint-placeholder-val="{{ false }}"><span class="none">없음</span></sc-if></span></div>
+                  <div class="rw"><span class="q">확인 방법</span><span>{{it.memo}}</span></div>
+                </div>
+              </sc-if>
+              <sc-if value="{{it.acts}}" hint-placeholder-val="{{ true }}">
+                <div class="acts3">
+                  <span class="nt2">조건 줄대로 동작하는지 확인해 주세요</span>
+                  <a class="btn sm gh" href="#fix">보완 요청</a>
+                  <a class="btn sm tint" href="#ok">승인</a>
+                </div>
+              </sc-if>
+              <sc-if value="{{it.waitRow}}" hint-placeholder-val="{{ false }}">
+                <div class="waitRow"><b>{{it.wT}}</b>{{it.wD}}<sc-if value="{{it.wQ}}" hint-placeholder-val="{{ false }}"><q>{{it.wQ}}</q></sc-if></div>
+              </sc-if>
+              <sc-if value="{{it.okRow}}" hint-placeholder-val="{{ false }}">
+                <div class="doneRow"><span>✓ {{it.okNote}}</span><a href="#sub">납품물 다시 보기</a></div>
+              </sc-if>
+              <sc-if value="{{it.fixForm}}" hint-placeholder-val="{{ false }}">
+                <div class="fixf">
+                  <p class="t4">보완 요청 작성 · 예약금 결제</p>
+                  <div class="grp">
+                    <span class="lbl">사유</span>
+                    <div class="rchips"><span class="on">조건과 다름</span><span>동작하지 않음</span><span>빠진 부분 있음</span><span>기타</span></div>
+                  </div>
+                  <div class="grp">
+                    <span class="lbl">어느 조건 줄인가요</span>
+                    <div class="rchips"><span>예약금 금액</span><span class="on">환불 기준</span><span>기능 설명</span></div>
+                  </div>
+                  <div class="grp" style="margin:0">
+                    <label class="lbl" for="fx-c">공급자에게 남길 말</label>
+                    <textarea class="inp" id="fx-c">저녁 2부 회차는 마감 시각이 지나도 환불 버튼이 보여요. 회차마다 정한 마감 시각 이후에는 환불이 안 되게 해 주세요.</textarea>
+                  </div>
+                  <div class="bt">
+                    <p>이 항목만 다시 받습니다. 승인한 예약 달력은 다시 검수하지 않습니다.</p>
+                    <div class="acts"><a class="btn sm gh" href="#cancel">취소</a><a class="btn sm tint" href="#send">보완 요청 보내기</a></div>
+                  </div>
+                </div>
+              </sc-if>
+            </section>
+          </sc-for>
+          <p class="scp">계약에 없는 기능은 검수 대상이 아닙니다. 더 필요하면 <a class="ft" href="Input-Client.dc.html">새 프로젝트</a>로 맡기세요.</p>
+        </div>
+
+        <aside class="rail2">
+          <section class="card pay" aria-labelledby="p-h">
+            <h3 id="p-h">{{payTitle}}</h3>
+            <div class="tot"><span>{{payStage}} 구간 · 50%</span><b>1,550,000원</b></div>
+            <p class="nt">{{payNote}}</p>
+          </section>
+          <section class="card prog" aria-labelledby="g-h">
+            <h3 id="g-h">항목 승인 진행</h3>
+            <p class="cnt">{{progCnt}}</p>
+            <sc-for list="{{prog}}" as="p" hint-placeholder-count="4">
+              <div class="pr"><span><span class="g">{{p.g}}</span>{{p.name}}</span><span class="{{p.chipCls}}">{{p.chip}}</span></div>
+            </sc-for>
+          </section>
+          <section class="card" aria-labelledby="n-h">
+            <h3 id="n-h">알아두실 것</h3>
+            <ul class="after">
+              <li>구간의 항목이 <b>모두 승인되면</b> 그 구간 금액이 공급자에게 지급됩니다.</li>
+              <li><b>승인한 항목은 다시 검수하지 않습니다.</b> 승인은 되돌릴 수 없습니다.</li>
+              <li>보완 요청은 <b>항목 단위</b>로, 사유를 골라 보냅니다.</li>
+              <li>납품 후 <b>7일 안에</b> 검수하지 않으면 그 구간 항목은 자동 승인되고 지급됩니다. 다시 납품하면 기한도 다시 7일입니다.</li>
+              <li>'정하지 않음' 조건은 검수 기준이 아닙니다. 그 항목은 <b>기능 설명대로 동작하는지만</b> 봅니다.</li>
+            </ul>
+            <a class="help" href="#help">같은 문제로 보완이 반복되면 운영자에게 도움 요청</a>
+          </section>
+        </aside>
+      </div>
+
+    </div>
+  </main>
+
+  <sc-if value="{{modal}}" hint-placeholder-val="{{ false }}">
+    <div class="scrim2" aria-hidden="true"></div>
+    <section class="mdl" role="dialog" aria-modal="true" aria-label="중간 구간 승인">
+      <div class="mh">
+        <h2>중간 구간을 모두 승인합니다</h2>
+        <p>예약 달력 · 예약금 결제를 승인하면 중간 구간 금액이 지급됩니다.</p>
+      </div>
+      <div class="mb">
+        <ul class="li3">
+          <li>예약 달력<span>11월 25일 승인함</span></li>
+          <li>예약금 결제<span>지금 승인 · 보완 1회</span></li>
+        </ul>
+        <div class="amt3"><span>최준호님에게 지급</span><b>1,550,000원</b></div>
+        <p class="warn4">승인한 항목은 되돌릴 수 없고 다시 검수하지 않습니다. 지급된 금액은 예치금에서 빠집니다.</p>
+      </div>
+      <div class="mf">
+        <a class="btn gh" href="Inspect-Client.dc.html">취소</a>
+        <a class="btn" href="Inspect-Client.dc.html">승인하고 지급</a>
+      </div>
+    </section>
+  </sc-if>
+
+  <sc-if value="{{helpM}}" hint-placeholder-val="{{ false }}">
+    <div class="scrim2" aria-hidden="true"></div>
+    <section class="mdl" role="dialog" aria-modal="true" aria-labelledby="hp-h" style="top:110px;width:600px">
+      <button type="button" class="hx" aria-label="닫기">×</button>
+      <div class="mh">
+        <h2 id="hp-h">운영자에게 도움 요청</h2>
+        <p>같은 항목의 보완이 반복되거나 조건 해석이 다를 때 운영자가 근거를 보고 판정합니다.</p>
+      </div>
+      <div class="mb">
+        <p class="fl2">어떤 항목인가요?</p>
+        <select class="sel2" aria-label="항목"><option>예약금 결제 · 중간 구간 · 보완 1회</option></select>
+        <p class="fl2">무엇이 다른가요?</p>
+        <textarea aria-label="다툼 요약">저녁 2부 회차는 마감 시각이 지나도 환불 버튼이 보입니다. 공급자는 '회차마다 정한 마감 시각'을 하루 단위로 이해했다고 합니다.</textarea>
+        <p class="fl2">근거로 함께 보낼 것</p>
+        <ul class="ck2">
+          <li><input type="checkbox" checked aria-label="조건 줄"><div>최종 합의 내용의 조건 줄<span>환불 기준 — 회차마다 정한 마감 시각 전에 취소하면 전액 환불, 그 뒤에는 환불 없음</span></div></li>
+          <li><input type="checkbox" checked aria-label="보완 요청 이력"><div>보완 요청 이력<span>11월 25일 · 조건과 다름 · 환불 기준</span></div></li>
+          <li><input type="checkbox" aria-label="채팅 메시지"><div>채팅 메시지 2건<span>10월 31일 환불 기준을 정한 대화</span></div></li>
+        </ul>
+        <p class="note5">운영자는 '최종 합의 내용'의 조건 줄을 근거로 판정합니다. 판정 전까지 이 항목의 검수는 멈추고, 다른 항목은 그대로 검수할 수 있습니다. 판정 결과는 채팅과 내 계약에 남습니다.</p>
+      </div>
+      <div class="mf">
+        <a class="btn gh" href="Inspect-Client.dc.html">취소</a>
+        <a class="btn" href="Inspect-Client.dc.html">도움 요청 보내기</a>
+      </div>
+    </section>
+  </sc-if>
+
+  <footer class="gf" aria-label="사이트 정보">
+    <div class="wrap">
+      <div class="gf-top">
+        <div class="gf-brand">
+          <span class="gf-logo"><span class="mark" aria-hidden="true"><i style="height:9px"></i><i style="height:17px"></i><i style="height:12px;opacity:.55"></i></span>마자용</span>
+          <p>소상공인을 위한 웹 외주 요구사항 정의 · 매칭 플랫폼</p>
+        </div>
+        <div class="gf-cs"><b>고객센터 1600-0000</b><span>평일 10:00–18:00</span><span>점심 12:00–13:00 · 주말 · 공휴일 휴무</span><span>help@majayong.example</span></div>
+      </div>
+      <nav class="gf-nav" aria-label="사이트 링크">
+        <div><b>서비스</b><a href="Main.dc.html">의뢰인 안내</a><a href="Supplier-Landing.dc.html">공급자 안내</a></div>
+        <div><b>고객센터</b><a href="Help.dc.html">자주 묻는 질문</a><a href="Help-Inquiry.dc.html">1:1 문의</a><a href="Help.dc.html">공지사항</a></div>
+        <div><b>정책</b><a href="Terms.dc.html">이용약관</a><a class="em" href="Terms.dc.html">개인정보 처리방침</a><a href="Terms.dc.html">명세 비밀유지</a><a href="Terms.dc.html">중개자 고지</a></div>
+      </nav>
+      <div class="gf-bot">
+        <p class="gf-biz">상호 로켓단<i></i>대표 김로켓<i></i>사업자등록번호 000-00-00000<i></i>통신판매업 신고 제2026-서울마포-0000호<br>주소 서울특별시 마포구 예시로 00, 0층<i></i>개인정보 보호책임자 박예시<i></i>이메일 help@majayong.example</p>
+        <p class="gf-copy">© 2026 로켓단. All rights reserved.</p>
+        <p class="gf-note">마자용은 통신판매중개자로서 거래 당사자가 아니며, 의뢰인과 공급자 사이 계약의 이행 책임은 각 당사자에게 있습니다. 대금 예치와 정산은 마자용이 관리합니다.</p>
+      </div>
+    </div>
+  </footer>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;view&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;검수 대기&quot;,&quot;보완 요청 작성&quot;,&quot;승인 확인&quot;,&quot;최종 검수&quot;,&quot;도움 요청&quot;,&quot;중간 승인 완료&quot;,&quot;검수 기한 하루 전&quot;,&quot;보완 요청 보냄&quot;,&quot;도움 요청 보냄&quot;],&quot;default&quot;:&quot;검수 대기&quot;,&quot;section&quot;:&quot;상태&quot;},&quot;$preview&quot;:{&quot;width&quot;:1280,&quot;height&quot;:2053}}">
+class Component extends DCLogic {
+  renderVals() {
+    const v = this.props.view ?? '검수 대기';
+    const fixV = v === '보완 요청 작성', conf = v === '승인 확인', fin = v === '최종 검수', midDone = v === '중간 승인 완료', due = v === '검수 기한 하루 전';
+    const fixSent = v === '보완 요청 보냄', helpSent = v === '도움 요청 보냄', sent = fixSent || helpSent;
+    const C = (q, a, un) => ({ q: q, a: un ? '기능 설명대로 동작하는지만 봅니다' : a, un: !!un, cls: un ? 'un' : '' });
+    const chip = { pre: ['chip out', '납품 전'], wait: ['chip blue', '검수 대기'], ok: ['chip teal', '승인'], fix: ['chip amber', '보완 요청함'], help: ['chip', '운영자 확인 중'] };
+    const mk = (o, st, extra) => Object.assign({ chipCls: chip[st][0], chip: chip[st][1], showDl: st !== 'pre', acts: st === 'wait',
+      okRow: st === 'ok', waitRow: st === 'fix' || st === 'help', wT: '', wD: '', wQ: '', fixForm: false, files: [], noFile: true, memo: '', okNote: '', when: '' }, o, extra || {});
+    const cal = { name: '예약 달력', desc: '회차별로 예약받고 정원이 차면 마감',
+      conds: [C('회차 구성', '점심 1회 · 저녁 2회, 회차마다 정원 10석'), C('예약 가능 기간', '방문 30일 전부터 전날 18시까지')],
+      link: 'https://test.ondo-dining.kr/admin/slots', files: ['회차설정_화면.png'], noFile: false, when: '11월 25일 납품',
+      memo: '관리 화면 › 예약 설정에서 회차와 정원을 바꾼 뒤, 손님 화면에서 정원이 차면 마감되는지 확인해 주세요.' };
+    const dep = { name: '예약금 결제', desc: '예약할 때 예약금을 받고 환불 규정 안내',
+      conds: [C('예약금 금액', '1인당 30,000원 정액, 관리 화면에서 바꿀 수 있게'), C('환불 기준', '회차마다 정한 마감 시각 전에 취소하면 전액 환불, 그 뒤에는 환불 없음')],
+      link: 'https://test.ondo-dining.kr/reserve', when: '11월 25일 납품', memo: '메모 없음' };
+    const dep2 = Object.assign({}, dep, { files: ['환불마감_수정.mp4'], noFile: false, when: '11월 26일 다시 납품 · 보완 1회',
+      memo: '저녁 2부(마감 17:00) 예약을 만든 뒤 17:01 이후 취소해 보세요. 환불 버튼 대신 “환불 기간이 지났습니다”가 보입니다.' });
+    const nos = { name: '노쇼 기록', desc: '노쇼 손님을 기록해 다음 예약 때 표시',
+      conds: [C('노쇼 판정 기준', '예약 시각 30분이 지나도 연락이 없으면 노쇼'), C('표시 방식', '', true)],
+      link: 'https://test.ondo-dining.kr/admin/noshow', files: ['노쇼기록_흐름.pdf'], noFile: false, when: '12월 12일 납품',
+      memo: '관리 화면 › 예약 목록에서 지난 예약을 노쇼로 표시한 뒤, 같은 손님이 다시 예약하면 표시가 붙는지 확인해 주세요.' };
+    const rem = { name: '리마인드 알림', desc: '예약 전날 손님에게 안내 자동 발송',
+      conds: [C('발송 시점', '방문 전날 18:00'), C('발송 수단', '카카오 알림톡, 실패하면 문자')],
+      link: 'https://test.ondo-dining.kr/admin/remind', when: '12월 12일 납품',
+      memo: '관리 화면 › 알림 기록에서 테스트 발송을 눌러 보세요. 알림톡이 실패하면 문자로 바뀐 기록이 남습니다.' };
+    let items, prog;
+    if (midDone) {
+      items = [mk(cal, 'ok', { okNote: '11월 25일 승인 · 다시 검수하지 않습니다' }), mk(dep2, 'ok', { okNote: '11월 27일 승인 · 보완 1회 · 다시 검수하지 않습니다' })];
+      prog = [['중간', '예약 달력', 'ok'], ['중간', '예약금 결제', 'ok'], ['최종', '노쇼 기록', 'pre'], ['최종', '리마인드 알림', 'pre']];
+    } else if (fin) {
+      items = [mk(nos, 'wait'), mk(rem, 'wait')];
+      prog = [['중간', '예약 달력', 'ok'], ['중간', '예약금 결제', 'ok'], ['최종', '노쇼 기록', 'wait'], ['최종', '리마인드 알림', 'wait']];
+    } else if (fixV) {
+      items = [mk(cal, 'ok', { okNote: '11월 25일 승인 · 다시 검수하지 않습니다' }), mk(dep, 'wait', { acts: false, fixForm: true, chipCls: 'chip amber', chip: '보완 요청 작성 중' })];
+      prog = [['중간', '예약 달력', 'ok'], ['중간', '예약금 결제', 'wait'], ['최종', '노쇼 기록', 'pre'], ['최종', '리마인드 알림', 'pre']];
+    } else if (fixSent) {
+      items = [mk(cal, 'ok', { okNote: '11월 25일 승인 · 다시 검수하지 않습니다' }),
+               mk(dep, 'fix', { wT: '보완 요청함 · 11월 25일 18:20', wD: '조건과 다름 · 환불 기준 · 다시 납품되면 이 항목만 다시 검수합니다',
+                 wQ: '저녁 2부 회차는 마감 시각이 지나도 환불 버튼이 보여요. 회차마다 정한 마감 시각 이후에는 환불이 안 되게 해 주세요.' })];
+      prog = [['중간', '예약 달력', 'ok'], ['중간', '예약금 결제', 'fix'], ['최종', '노쇼 기록', 'pre'], ['최종', '리마인드 알림', 'pre']];
+    } else if (helpSent) {
+      items = [mk(cal, 'ok', { okNote: '11월 25일 승인 · 다시 검수하지 않습니다' }),
+               mk(dep2, 'help', { wT: '운영자에게 도움 요청함 · 11월 27일 10:05', wD: '판정 전까지 이 항목의 검수와 자동 승인은 멈춥니다. 판정은 채팅과 내 계약에 남습니다.' })];
+      prog = [['중간', '예약 달력', 'ok'], ['중간', '예약금 결제', 'help'], ['최종', '노쇼 기록', 'pre'], ['최종', '리마인드 알림', 'pre']];
+    } else if (conf) {
+      items = [mk(cal, 'ok', { okNote: '11월 25일 승인 · 다시 검수하지 않습니다' }), mk(dep2, 'wait')];
+      prog = [['중간', '예약 달력', 'ok'], ['중간', '예약금 결제', 'wait'], ['최종', '노쇼 기록', 'pre'], ['최종', '리마인드 알림', 'pre']];
+    } else {
+      items = [mk(cal, 'wait'), mk(dep, 'wait')];
+      prog = [['중간', '예약 달력', 'wait'], ['중간', '예약금 결제', 'wait'], ['최종', '노쇼 기록', 'pre'], ['최종', '리마인드 알림', 'pre']];
+    }
+    const barCls = { ok: 'b-ok', wait: 'b-wait', fix: 'b-fix', help: 'b-fix', pre: 'b-pre' };
+    const nOk = prog.filter(p => p[2] === 'ok').length;
+    const stageOk = prog.filter(p => p[0] === (fin ? '최종' : '중간') && p[2] === 'ok').length;
+    return {
+      sent: sent,
+      sentT: fixSent ? '예약금 결제 보완 요청을 보냈습니다 · 11월 25일 18:20' : '운영자에게 도움 요청을 보냈습니다 · 11월 27일 10:05',
+      sentP: fixSent ? '최준호님에게 사유(조건과 다름 · 환불 기준)와 남길 말이 전달되었습니다. 다시 납품되면 알림이 오고, 그때부터 검수 기한 7일이 새로 시작됩니다.'
+                     : '운영자가 조건 줄과 보완 요청 이력을 보고 판정합니다. 최준호님에게도 도움 요청이 알려졌습니다. 판정이 나오면 알림이 옵니다.',
+      items: items, bar: prog.map(p => barCls[p[2]]), nOkItems: nOk, modal: conf, helpM: v === '도움 요청',
+      prog: prog.map(p => ({ g: p[0], name: p[1], chipCls: chip[p[2]][0], chip: chip[p[2]][1] })),
+      progCnt: midDone ? '중간 구간 2건 모두 승인 · 최종 구간 납품 전' : (fin ? '최종' : '중간') + ' 구간 · 2건 중 ' + stageOk + '건 승인',
+      barNote: midDone ? '중간 구간 지급 완료 · 최종 구간 작업 중' : fin ? '중간 구간 지급 완료 · 최종 구간 검수 대기' : fixSent ? '중간 구간 · 승인 1건, 보완 요청 1건' : helpSent ? '중간 구간 · 승인 1건, 운영자 확인 중 1건' : (fixV || conf ? '중간 구간 · 승인 1건, 검수 대기 1건' : '중간 구간 · 11월 25일 납품 · 검수 대기 2건'),
+      isFinal: fin, showPaid: fin || midDone, isDue: due, dday: fin ? 4 : (midDone ? 19 : (due ? 15 : 21)),
+      hasDl: !midDone && !sent, dlDate: fin ? '12월 19일' : (conf ? '12월 3일' : '12월 2일'),
+      stChip: midDone ? '중간 구간 승인 완료' : fixSent ? '다시 납품 기다리는 중' : helpSent ? '운영자 확인 중' : (fin ? '최종 구간 검수 대기' : (fixV ? '보완 요청 작성 중' : '중간 구간 검수 대기')),
+      stChipCls: midDone ? 'chip teal' : sent ? 'chip' : (fixV || due ? 'chip amber' : 'chip blue'),
+      tabMid: fin ? '' : 'on', tabFin: fin ? 'on' : '',
+      midChip: fin || midDone ? '지급 완료' : fixSent ? '보완 요청 중' : helpSent ? '운영자 확인 중' : '검수 대기', midChipCls: fin || midDone ? 'chip teal' : fixSent ? 'chip amber' : helpSent ? 'chip' : 'chip blue',
+      finChip: fin ? '검수 대기' : (midDone ? '작업 중 · 납품 기다리는 중' : '납품 전'), finChipCls: fin ? 'chip blue' : 'chip out',
+      payTitle: midDone ? '중간 구간 지급 완료' : (fin ? '최종 구간 지급 예정' : '이번 구간 지급 예정'), payStage: fin ? '최종' : '중간',
+      payNote: midDone ? '11월 27일 최준호님에게 지급되었습니다. 최종 구간(노쇼 기록 · 리마인드 알림)은 납품되면 검수할 수 있습니다.' : fin ? '노쇼 기록과 리마인드 알림을 모두 승인하면 지급되고 계약이 완료됩니다. 원 단위 끝수는 최종 지급에 더합니다.'
+                   : '예약 달력과 예약금 결제를 모두 승인하면 최준호님에게 지급됩니다. 한 항목만 승인해서는 지급되지 않습니다.'
+    };
+  }
+}
+</script>
+</body>
+</html>

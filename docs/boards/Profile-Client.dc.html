@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>의뢰인 — 내 프로필</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="/_blob/a8316b816fb987eb4a5af50ab874b7d1">
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+.pg{word-break:keep-all}
+.phead{display:flex;align-items:center;gap:18px;flex-wrap:wrap;margin-bottom:26px}
+.phead .big{width:72px;height:72px;border-radius:50%;background:var(--blue-50);color:var(--navy-900);
+ font-size:26px;font-weight:600;display:flex;align-items:center;justify-content:center;flex:none}
+.phead .nm{font-size:24px;font-weight:600;letter-spacing:-0.5px}
+.phead .mt{font-size:14px;color:var(--s600);margin-top:4px}
+.phead .sp{flex:1 1 auto}
+.avaup{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.avaup .ph{width:64px;height:64px;border-radius:50%;background:var(--blue-50);color:var(--navy-900);
+ font-size:22px;font-weight:600;display:flex;align-items:center;justify-content:center;flex:none}
+.badge-pub{display:inline-block;font-size:13px;font-weight:500;padding:3px 9px;border-radius:6px;
+ background:var(--blue-50);color:var(--navy-900);border:1px solid #D7E5FF}
+.badge-prv{display:inline-block;font-size:13px;font-weight:500;padding:3px 9px;border-radius:6px;
+ background:var(--s100);color:var(--s600);border:1px solid var(--s200)}
+.needed{display:inline-block;font-size:13px;font-weight:500;padding:3px 9px;border-radius:6px;
+ background:var(--amber-50);color:var(--amber-700);border:1px solid #F2E0BE;margin-left:6px}
+.savebar{display:flex;justify-content:flex-end;gap:10px;padding-top:4px}
+.star{color:var(--amber-700)}
+.pg sc-if,.pg sc-for{display:contents}
+.rvs{display:flex;align-items:center;gap:22px;flex-wrap:wrap;margin:0 0 6px}
+.rvs .avg{font-size:32px;font-weight:700;letter-spacing:-0.5px;color:var(--s900)}
+.rvs .avg .star{font-size:26px;margin-right:4px}
+.rvs .cnt{font-size:14px;color:var(--s600);line-height:1.6}
+.tagc{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 4px}
+.tagc span{font-size:14px;background:var(--s50);border:1px solid var(--s200);border-radius:18px;padding:6px 12px;color:var(--s900)}
+.tagc span b{font-weight:600;color:var(--navy-900);margin-left:6px}
+.rc{border-top:1px solid var(--s200);padding:16px 0}
+.rc:last-child{padding-bottom:0}
+.rc .h{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin:0 0 6px}
+.rc .h b{font-size:15px}
+.rc .h span{font-size:13px;color:var(--s600)}
+.rc .st{color:#E0A526;font-size:16px;letter-spacing:2px}
+.rc .st i{font-style:normal;color:var(--s300)}
+.rc .st em{font-style:normal;color:var(--s900);font-size:14px;letter-spacing:0;margin-left:8px;font-weight:600}
+.rc .tg3{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.rc .tg3 span{font-size:13px;background:var(--s50);border:1px solid var(--s200);border-radius:6px;padding:3px 9px}
+.rc p{margin:0;font-size:15px;line-height:1.7;color:var(--s900)}
+.rc .ctx{font-size:13px;color:var(--s600);margin-top:6px}
+</style>
+<style>
+.pg{min-height:100vh;position:relative;padding-bottom:256px;box-sizing:border-box}
+.gf{position:absolute;left:0;right:0;bottom:0;background:var(--navy-900);padding:34px 0 30px;font-size:14px;color:#A9BDD6;word-break:keep-all}
+.gf a{color:#A9BDD6;text-decoration:none}
+.gf-top{display:flex;justify-content:space-between;align-items:center;gap:12px 32px;flex-wrap:wrap}
+.gf-brand{display:flex;align-items:center;gap:16px;flex-wrap:wrap;min-width:0}
+.gf-logo{display:inline-flex;align-items:center;font-size:19px;font-weight:600;letter-spacing:-0.4px;color:#fff}
+.gf-brand p{margin:0}
+.gf-cs{display:flex;align-items:baseline;gap:4px 16px;flex-wrap:wrap}
+.gf-cs b{color:#fff;font-weight:600;font-size:15px}
+.gf-nav{display:flex;flex-wrap:wrap;gap:10px 44px;margin:18px 0 0;padding:0 0 24px;border-bottom:1px solid rgba(255,255,255,.14)}
+.gf-nav>div{display:flex;align-items:baseline;gap:18px;flex-wrap:wrap}
+.gf-nav b{color:#fff;font-weight:600}
+.gf-nav a.em{color:#fff;font-weight:600}
+.gf-bot{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:24px;padding-top:20px;font-size:13px;line-height:1.75;color:#8FA6C2}
+.gf-bot p{margin:0}
+.gf-biz i{display:inline-block;width:1px;height:10px;background:rgba(255,255,255,.28);margin:0 9px;vertical-align:-1px}
+.gf-copy{align-self:end;text-align:right;white-space:nowrap}
+.gf-note{grid-column:1 / -1;margin-top:8px !important}
+</style>
+</helmet>
+
+<div class="pg">
+
+  <header class="gnb">
+    <div class="wrap">
+      <div class="gnbin">
+        <a class="brand" href="Home-Client.dc.html"><span class="mark" aria-hidden="true"><i style="height:9px"></i><i style="height:17px"></i><i style="height:12px;opacity:.55"></i></span>마자용</a>
+        <nav class="nav" aria-label="주요 메뉴">
+          <a href="Home-Client.dc.html">홈</a><a href="Input-Client.dc.html">프로젝트 시작</a><a href="My-Client.dc.html">내 프로젝트</a><a href="Contracts-Client.dc.html">내 계약</a><a href="Settle-Client.dc.html">정산 내역</a>
+        </nav>
+        <div class="gright">
+          <a class="bell dot" href="Chat-Client.dc.html" aria-label="채팅 — 새 메시지 1건"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"></path></svg></a>
+          <a class="bell dot" href="Notify-Client.dc.html" aria-label="알림 — 안 읽은 알림 3건"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg></a>
+          <span class="who"><span class="ava">민</span><span class="uname">정민재</span></span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="pad">
+    <div class="narrow">
+
+      <div class="phead">
+        <span class="big" aria-hidden="true">민</span>
+        <div>
+          <div class="nm">정민재</div>
+          <div class="mt">의뢰인 · 음식점(코스 레스토랑) · 2026년 8월 가입 · <span class="star">★</span> 4.5 (리뷰 2건)</div>
+        </div>
+        <span class="sp"></span>
+        <a class="btn gh" href="PublicClient.dc.html">공개 프로필 보기</a>
+      </div>
+
+      <nav class="tabs" aria-label="프로필 메뉴">
+        <a class="{{tabBasic}}" href="Profile-Client.dc.html">기본 정보</a>
+        <a class="{{tabRv}}" href="Profile-Client.dc.html">받은 리뷰 <span class="sec" style="font-weight:400">2</span></a>
+        <a href="Account-Client.dc.html">계정 설정</a>
+      </nav>
+
+      <sc-if value="{{basic}}" hint-placeholder-val="{{ true }}">
+      <section class="scope">
+        <div class="sh2">
+          <div class="nm">목록에도 보이는 정보 <span class="badge-pub">전체 공개</span></div>
+          <div class="ds">로그인한 공급자 누구나 프로젝트 목록에서 볼 수 있습니다. 이름 · 상호는 여기에 보이지 않습니다.</div>
+        </div>
+        <div class="bd">
+          <div class="f">
+              <label class="lbl" for="p-field">업종</label>
+              <select class="inp" id="p-field">
+                <option selected>음식점(코스 레스토랑)</option>
+                <option>기타 (직접 입력)</option>
+              </select>
+            </div>
+        </div>
+      </section>
+
+      <section class="scope">
+        <div class="sh2">
+          <div class="nm">명세 상세에서 공개되는 정보 <span class="badge-prv">상세 공개</span></div>
+          <div class="ds">프로젝트 명세의 상세를 연 공급자에게 보입니다. 열람 기록이 남고, 공급자는 비밀유지 의무를 집니다.</div>
+        </div>
+        <div class="bd">
+          <div class="f">
+            <span class="lbl">프로필 이미지</span>
+            <div class="avaup">
+              <span class="ph" aria-hidden="true">민</span>
+              <button type="button" class="btn gh sm">이미지 바꾸기</button>
+              <span class="sec">넣지 않으시면 이름 첫 글자로 표시됩니다.</span>
+            </div>
+          </div>
+          <div class="f">
+          <div class="f">
+              <label class="lbl" for="p-name">이름<span class="opt">상세 공개에서만 보임</span></label>
+              <input class="inp" id="p-name" type="text" value="정민재">
+            </div>
+          </div>
+          <div class="f">
+            <label class="lbl" for="p-biz">상호<span class="needed">프로젝트 등록에 필요</span></label>
+            <input class="inp" id="p-biz" type="text" value="온도 다이닝">
+          </div>
+          <div class="f">
+            <label class="lbl" for="p-addr">가게 주소<span class="opt">선택</span></label>
+            <input class="inp" id="p-addr" type="text" value="서울 마포구 와우산로 00길 00">
+            <p class="hint">공급자가 가게 규모와 위치를 가늠할 때 씁니다.</p>
+          </div>
+          <div class="f">
+            <label class="lbl" for="p-web">웹사이트<span class="opt">선택</span></label>
+            <input class="inp" id="p-web" type="url" value="ondo-dining.kr" placeholder="아직 없으시면 비워두세요">
+          </div>
+          <div class="f">
+            <label class="lbl" for="p-bio">자기소개<span class="opt">선택</span></label>
+            <textarea class="inp" id="p-bio">카운터 10석 코스 레스토랑을 3년째 운영하고 있습니다. 전화 예약을 줄이고 싶어요.</textarea>
+            <p class="hint">명세 상세에서 공급자에게 보입니다. 어떤 가게인지 알면 견적과 상담이 쉬워집니다.</p>
+          </div>
+        </div>
+      </section>
+
+      <div class="card">
+        <h2 class="ct">역할</h2>
+        <div class="rowsb">
+          <span><span class="chip blue">의뢰인</span></span>
+          <span class="sec" style="text-align:right;flex:1 1 300px">가입할 때 정해진 역할은 바꿀 수 없습니다. 공급자로도 활동하시려면 다른 이메일로 계정을 만들어주세요.</span>
+        </div>
+      </div>
+
+      <div class="info" style="margin-bottom:18px">
+        연락처는 받지 않습니다. 이메일은 로그인에만 쓰이며 <b>어느 단계에서도 공개되지 않습니다.</b> 이메일을 바꾸시려면 ‘계정 설정’에서 하실 수 있습니다.
+      </div>
+
+      <div class="savebar">
+        <button type="button" class="btn gh">취소</button>
+        <button type="button" class="btn">저장하기</button>
+      </div>
+      </sc-if>
+      <sc-if value="{{rv}}" hint-placeholder-val="{{ false }}">
+      <div class="card">
+        <div class="rvs">
+          <div class="avg"><span class="star">★</span>4.5</div>
+          <div class="cnt">받은 리뷰 2건 · 완료한 계약 2건<br>함께 일한 공급자가 계약을 마친 뒤 남긴 리뷰입니다. 한 번만 쓸 수 있고 고칠 수 없습니다.</div>
+        </div>
+        <div class="tagc"><sc-for list="{{tagc}}" as="t" hint-placeholder-count="4"><span>{{t.n}}<b>{{t.c}}</b></span></sc-for></div>
+      </div>
+      <div class="card">
+        <h2 class="ct">리뷰 2건</h2>
+        <sc-for list="{{reviews}}" as="r" hint-placeholder-count="2">
+          <article class="rc">
+            <div class="h"><b>{{r.who}}</b><span>{{r.date}}</span></div>
+            <div class="st">{{r.full}}<i>{{r.empty}}</i><em>{{r.score}}점</em></div>
+            <div class="tg3"><sc-for list="{{r.tags}}" as="t" hint-placeholder-count="2"><span>{{t}}</span></sc-for></div>
+            <p>{{r.text}}</p>
+            <div class="ctx">{{r.ctx}}</div>
+          </article>
+        </sc-for>
+      </div>
+      <div class="info">리뷰는 공개 프로필에 보입니다. <a class="ft" href="PublicClient.dc.html">공개 프로필에서 보기</a></div>
+      </sc-if>
+
+    </div>
+  </main>
+
+  <footer class="gf" aria-label="사이트 정보">
+    <div class="wrap">
+      <div class="gf-top">
+        <div class="gf-brand">
+          <span class="gf-logo"><span class="mark" aria-hidden="true"><i style="height:9px"></i><i style="height:17px"></i><i style="height:12px;opacity:.55"></i></span>마자용</span>
+          <p>소상공인을 위한 웹 외주 요구사항 정의 · 매칭 플랫폼</p>
+        </div>
+        <div class="gf-cs"><b>고객센터 1600-0000</b><span>평일 10:00–18:00</span><span>점심 12:00–13:00 · 주말 · 공휴일 휴무</span><span>help@majayong.example</span></div>
+      </div>
+      <nav class="gf-nav" aria-label="사이트 링크">
+        <div><b>서비스</b><a href="Main.dc.html">의뢰인 안내</a><a href="Supplier-Landing.dc.html">공급자 안내</a></div>
+        <div><b>고객센터</b><a href="Help.dc.html">자주 묻는 질문</a><a href="Help-Inquiry.dc.html">1:1 문의</a><a href="Help.dc.html">공지사항</a></div>
+        <div><b>정책</b><a href="Terms.dc.html">이용약관</a><a class="em" href="Terms.dc.html">개인정보 처리방침</a><a href="Terms.dc.html">명세 비밀유지</a><a href="Terms.dc.html">중개자 고지</a></div>
+      </nav>
+      <div class="gf-bot">
+        <p class="gf-biz">상호 로켓단<i></i>대표 김로켓<i></i>사업자등록번호 000-00-00000<i></i>통신판매업 신고 제2026-서울마포-0000호<br>주소 서울특별시 마포구 예시로 00, 0층<i></i>개인정보 보호책임자 박예시<i></i>이메일 help@majayong.example</p>
+        <p class="gf-copy">© 2026 로켓단. All rights reserved.</p>
+        <p class="gf-note">마자용은 통신판매중개자로서 거래 당사자가 아니며, 의뢰인과 공급자 사이 계약의 이행 책임은 각 당사자에게 있습니다. 대금 예치와 정산은 마자용이 관리합니다.</p>
+      </div>
+    </div>
+  </footer>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"view":{"editor":"enum","options":["기본 정보","받은 리뷰"],"default":"기본 정보","section":"상태"},"$preview":{"width":1280,"height":2309}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const v = this.props.view ?? '기본 정보';
+    const rv = v === '받은 리뷰';
+    const mk = (n) => ({ full: '★'.repeat(n), empty: '★'.repeat(5 - n), score: n });
+    const reviews = [
+      Object.assign({ who: '이도윤', date: '10월 2일', tags: ['검수가 빨랐어요', '요청 범위를 지켰어요', '다시 일하고 싶어요'],
+        text: '계약에 없는 요청은 새 프로젝트로 나눠 주셔서 범위가 흔들리지 않았습니다. 검수도 이틀 안에 끝내 주셨어요.',
+        ctx: '메뉴판 페이지, 오시는 길 외 1개 기능 · 합의 900,000원' }, mk(5)),
+      Object.assign({ who: '한서진', date: '9월 20일', tags: ['조건을 분명히 정해 줬어요', '검수가 빨랐어요', '답장이 빨랐어요'],
+        text: '처음 문의 때부터 무엇을 정해야 하는지 알고 계셔서 진행이 빨랐습니다. 검수 기준이 분명해서 좋았습니다.',
+        ctx: '단체 예약 문의 폼 외 1개 기능 · 합의 700,000원' }, mk(4))
+    ];
+    return {
+      basic: !rv, rv: rv, tabBasic: rv ? '' : 'on', tabRv: rv ? 'on' : '',
+      tagc: [{ n: '검수가 빨랐어요', c: 2 }, { n: '조건을 분명히 정해 줬어요', c: 1 }, { n: '답장이 빨랐어요', c: 1 }, { n: '요청 범위를 지켰어요', c: 1 }, { n: '다시 일하고 싶어요', c: 1 }],
+      reviews: reviews
+    };
+  }
+}
+</script>
+</body>
+</html>

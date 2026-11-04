@@ -1,0 +1,239 @@
+<helmet>
+<style>
+.pg{word-break:keep-all}
+.fd sc-for,.fd sc-if{display:contents}
+.head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin:0 0 18px}
+.head h1.t{margin:0 0 6px}
+.head .sub{margin:0;font-size:15px;max-width:760px}
+/* 검색 줄 */
+.sbar{display:flex;gap:10px;align-items:center;margin:0 0 18px}
+.sbar .qbox{position:relative;flex:1 1 auto}
+.sbar .qbox svg{position:absolute;left:14px;top:50%;width:18px;height:18px;margin-top:-9px;color:var(--s400)}
+.sbar .qbox .inp{padding-left:42px;height:46px;box-sizing:border-box;font-size:15px}
+.sbar .btn{white-space:nowrap;flex:none}
+/* 본문 2단 */
+.lay{display:grid;grid-template-columns:250px minmax(0,1fr);gap:24px;align-items:start}
+.lay.one{grid-template-columns:minmax(0,1fr)}
+.flt{background:#fff;border:1px solid var(--s200);border-radius:12px;padding:6px 18px}
+.flt .grp{padding:14px 0;border-top:1px solid var(--s200)}
+.flt .grp:first-child{border-top:0}
+.flt .gt{font-size:14px;font-weight:600;margin:0 0 9px;display:flex;justify-content:space-between;align-items:baseline}
+.flt .gt a{font-size:13px;font-weight:400;color:var(--s600)}
+.flt .ck{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--s900);padding:3px 0}
+.flt .ck input{width:16px;height:16px;margin:0;accent-color:var(--blue-600);flex:none}
+.flt .ck span{color:var(--s400);margin-left:auto;font-size:13px;font-variant-numeric:tabular-nums}
+.flt .tagrow{gap:6px}
+.flt .tag{font-size:13px;padding:4px 9px}
+.flt .reset{display:block;font-size:13px;color:var(--s600);padding:12px 0 10px;border-top:1px solid var(--s200)}
+/* 결과 줄 */
+.rbar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin:0 0 12px}
+.rbar .cnt{font-size:15px;color:var(--s600);margin:0}
+.rbar .cnt b{color:var(--s900);font-weight:600}
+.sort{display:flex;gap:6px}
+.sort .cseg.on{background:var(--s100);color:var(--s900);border-color:var(--s300)}
+.applied{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 12px}
+.applied .tag{background:var(--s50)}
+.applied .tag i{font-style:normal;color:var(--s400);margin-left:6px}
+/* 프로젝트 카드 */
+.plist{display:flex;flex-direction:column;gap:10px}
+.pc{display:grid;grid-template-columns:minmax(0,1fr) 190px;background:#fff;border:1px solid var(--s200);border-radius:12px;overflow:hidden}
+.pc .l{padding:16px 20px;min-width:0}
+.pc .r{padding:16px 20px;border-left:1px solid var(--s200);display:flex;flex-direction:column;justify-content:space-between;align-items:flex-end;gap:12px}
+.pc .top{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 6px;font-size:14px;color:var(--s600)}
+.pc .top .dl{color:var(--s600)}
+.pc .top .dl.soon{color:var(--amber-700);font-weight:600}
+.pc .ti{font-size:17px;font-weight:600;letter-spacing:-0.2px;margin:0 0 4px}
+.pc .it{font-size:14px;color:var(--s600);margin:0 0 8px}
+.pc .it b{color:var(--s900);font-weight:500}
+.pc .stk{display:flex;gap:6px;flex-wrap:wrap}
+.pc .stk .tag{font-size:12px;padding:3px 8px}
+.pc .stk .tag.on{font-weight:500}
+.pc .bud{text-align:right}
+.pc .bud .k{font-size:13px;color:var(--s600);margin:0}
+.pc .bud .v{font-size:18px;font-weight:600;color:var(--navy-900);letter-spacing:-0.3px}
+.pc .rt2{display:flex;align-items:center;gap:8px}
+.pc .rt2 .btn{white-space:nowrap}
+.bm{width:36px;height:36px;border-radius:8px;border:1px solid var(--s200);background:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--s400);padding:0;flex:none}
+.bm svg{width:18px;height:18px}
+.bm.on{color:var(--navy-900);border-color:#D7E5FF;background:var(--blue-50)}
+.pc.closed{background:var(--s50)}
+.pc.closed .ti,.pc.closed .bud .v{color:var(--s600)}
+.pager{display:flex;justify-content:center;gap:6px;margin:20px 0 0}
+.pager a,.pager span{min-width:36px;height:36px;box-sizing:border-box;border:1px solid var(--s200);border-radius:8px;background:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:14px;color:var(--s600);text-decoration:none;padding:0 10px}
+.pager .on{background:var(--navy-900);border-color:var(--navy-900);color:#fff;font-weight:600}
+.pager .off{color:var(--s300)}
+.empty{background:#fff;border:1px solid var(--s200);border-radius:12px;padding:48px 28px;text-align:center}
+.empty h2{font-size:19px;font-weight:600;margin:0 0 8px}
+.empty p{font-size:15px;color:var(--s600);margin:0 0 6px;line-height:1.6}
+.empty .acts{display:flex;justify-content:center;gap:10px;margin-top:18px}
+.foot2{font-size:13px;color:var(--s600);margin:14px 0 0}
+</style>
+<style>
+.pg{min-height:100vh;position:relative;padding-bottom:256px;box-sizing:border-box}
+.gf{position:absolute;left:0;right:0;bottom:0;background:var(--navy-900);padding:34px 0 30px;font-size:14px;color:#A9BDD6;word-break:keep-all}
+.gf a{color:#A9BDD6;text-decoration:none}
+.gf-top{display:flex;justify-content:space-between;align-items:center;gap:12px 32px;flex-wrap:wrap}
+.gf-brand{display:flex;align-items:center;gap:16px;flex-wrap:wrap;min-width:0}
+.gf-logo{display:inline-flex;align-items:center;font-size:19px;font-weight:600;letter-spacing:-0.4px;color:#fff}
+.gf-brand p{margin:0}
+.gf-cs{display:flex;align-items:baseline;gap:4px 16px;flex-wrap:wrap}
+.gf-cs b{color:#fff;font-weight:600;font-size:15px}
+.gf-nav{display:flex;flex-wrap:wrap;gap:10px 44px;margin:18px 0 0;padding:0 0 24px;border-bottom:1px solid rgba(255,255,255,.14)}
+.gf-nav>div{display:flex;align-items:baseline;gap:18px;flex-wrap:wrap}
+.gf-nav b{color:#fff;font-weight:600}
+.gf-nav a.em{color:#fff;font-weight:600}
+.gf-bot{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:24px;padding-top:20px;font-size:13px;line-height:1.75;color:#8FA6C2}
+.gf-bot p{margin:0}
+.gf-biz i{display:inline-block;width:1px;height:10px;background:rgba(255,255,255,.28);margin:0 9px;vertical-align:-1px}
+.gf-copy{align-self:end;text-align:right;white-space:nowrap}
+.gf-note{grid-column:1 / -1;margin-top:8px !important}
+</style>
+</helmet>
+
+<div class="pg">
+
+  <header class="gnb dark">
+    <div class="wrap">
+      <div class="gnbin">
+        <a class="brand" href="Home-Supplier.dc.html"><span class="mark" aria-hidden="true"><i style="height:9px"></i><i style="height:17px"></i><i style="height:12px;opacity:.55"></i></span>마자용</a>
+        <nav class="nav" aria-label="주요 메뉴">
+          <a href="Home-Supplier.dc.html">홈</a><a class="{{navFind}}" href="Find-Supplier.dc.html">프로젝트 찾기</a><a href="Apps-Supplier.dc.html">내 지원</a><a href="Contracts-Supplier.dc.html">내 계약</a><a class="{{navBm}}" href="?view=북마크">북마크</a>
+        </nav>
+        <div class="gright">
+          <a class="bell dot" href="Chat-Supplier.dc.html" aria-label="채팅 — 새 메시지 1건"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"></path></svg></a>
+          <a class="bell dot" href="Notify-Supplier.dc.html" aria-label="알림 — 안 읽은 알림 3건"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"></path><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"></path></svg></a>
+          <span class="who"><span class="ava">최</span><span class="uname">최준호</span></span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="pad fd">
+    <div class="wrap">
+
+      <div class="head">
+        <div>
+          <h1 class="t">{{title}}</h1>
+          <p class="sub">{{sub}}</p>
+        </div>
+      </div>
+
+      <sc-if value="{{isFind}}" hint-placeholder-val="{{ true }}">
+        <div class="sbar">
+          <div class="qbox">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg>
+            <input class="inp" type="search" aria-label="키워드 검색" placeholder="제목이나 기능 이름으로 찾기 — 예: 예약, 쿠폰" value="{{q}}">
+          </div>
+          <button type="button" class="btn" data-action-href="?view=검색+결과+없음">검색</button>
+        </div>
+      </sc-if>
+
+      <div class="{{layCls}}">
+
+        <sc-if value="{{isFind}}" hint-placeholder-val="{{ true }}">
+          <aside class="flt" aria-label="필터">
+            <div class="grp">
+              <p class="gt">카테고리 <a href="#">초기화</a></p>
+              <label class="ck"><input type="checkbox">음식점<span>11</span></label>
+              <label class="ck"><input type="checkbox">카페 · 베이커리<span>5</span></label>
+              <label class="ck"><input type="checkbox">미용 · 뷰티<span>3</span></label>
+              <label class="ck"><input type="checkbox">학원 · 교육<span>2</span></label>
+              <label class="ck"><input type="checkbox">숙박<span>2</span></label>
+            </div>
+            <div class="grp">
+              <p class="gt">예산 범위</p>
+              <label class="ck"><input type="checkbox">200만원 미만</label>
+              <label class="ck"><input type="checkbox">200~400만원</label>
+              <label class="ck"><input type="checkbox">400만원 이상</label>
+            </div>
+            <div class="grp">
+              <p class="gt">기술 스택 <a href="#">내 스택</a></p>
+              <div class="tagrow"><span class="tag">React</span><span class="tag">Next.js</span><span class="tag">Supabase</span><span class="tag">Vue</span><span class="tag">Firebase</span><span class="tag">Node.js</span></div>
+            </div>
+            <div class="grp">
+              <p class="gt">마감일</p>
+              <label class="ck"><input type="radio" name="dl">3일 안</label>
+              <label class="ck"><input type="radio" name="dl">7일 안</label>
+              <label class="ck"><input type="radio" name="dl" checked>전체</label>
+            </div>
+            <div class="grp">
+              <p class="gt">모집 상태</p>
+              <label class="ck"><input type="checkbox" checked>모집 중</label>
+              <label class="ck"><input type="checkbox" checked>마감</label>
+            </div>
+            <a class="reset" href="#">필터 모두 지우기</a>
+          </aside>
+        </sc-if>
+
+        <section aria-label="프로젝트 목록">
+          <div class="rbar">
+            <p class="cnt">{{countText}}</p>
+            <div class="sort" role="group" aria-label="정렬">
+              <span class="cseg on">최신순</span><span class="cseg">마감임박순</span><span class="cseg">예산 높은순</span>
+            </div>
+          </div>
+
+          <sc-if value="{{hasRows}}" hint-placeholder-val="{{ true }}">
+            <div class="plist">
+              <sc-for list="{{rows}}" as="p" hint-placeholder-count="10">
+                <article class="{{p.cls}}">
+                  <div class="l">
+                    <div class="top"><span class="chip">{{p.cat}}</span><sc-if value="{{p.closed}}" hint-placeholder-val="{{ false }}"><span class="chip out">모집 마감</span></sc-if><span class="{{p.dlCls}}">{{p.dl}}</span></div>
+                    <h2 class="ti">{{p.title}}</h2>
+                    <p class="it">명세 항목 <b>{{p.n}}개</b> · {{p.items}}</p>
+                    <div class="stk"><sc-for list="{{p.stack}}" as="s" hint-placeholder-count="2"><span class="{{s.cls}}">{{s.name}}</span></sc-for></div>
+                  </div>
+                  <div class="r">
+                    <div class="bud"><p class="k">희망 예산</p><div class="v">{{p.budget}}</div></div>
+                    <div class="rt2">
+                      <button type="button" class="{{p.bmCls}}" aria-pressed="{{p.bmPressed}}" aria-label="북마크"><svg viewBox="0 0 24 24" fill="{{p.bmFill}}" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M6 3.5h12v17l-6-4-6 4z"></path></svg></button>
+                      <a class="{{p.btnCls}}" href="Project-Supplier.dc.html">{{p.btn}}</a>
+                    </div>
+                  </div>
+                </article>
+              </sc-for>
+            </div>
+            <sc-if value="{{isFind}}" hint-placeholder-val="{{ true }}">
+              <nav class="pager" aria-label="쪽"><span class="off">이전</span><span class="on">1</span><a href="#">2</a><a href="#">3</a><a href="#">다음</a></nav>
+            </sc-if>
+          </sc-if>
+
+          <sc-if value="{{isEmpty}}" hint-placeholder-val="{{ false }}">
+            <div class="empty">
+              <h2>‘키오스크 연동’에 맞는 프로젝트가 없습니다</h2>
+              <p>검색어는 프로젝트 제목과 기능 이름에서만 찾습니다. 기능 설명은 명세를 열어야 보입니다.</p>
+              <p>필터를 줄이거나 다른 기능 이름으로 찾아 보세요.</p>
+              <div class="acts"><a class="btn gh" href="Find-Supplier.dc.html">필터 모두 지우기</a><a class="btn tint" href="Find-Supplier.dc.html">내 기술 스택으로 보기</a></div>
+            </div>
+          </sc-if>
+
+          <p class="foot2">{{foot}}</p>
+        </section>
+      </div>
+
+    </div>
+  </main>
+
+  <footer class="gf" aria-label="사이트 정보">
+    <div class="wrap">
+      <div class="gf-top">
+        <div class="gf-brand">
+          <span class="gf-logo"><span class="mark" aria-hidden="true"><i style="height:9px"></i><i style="height:17px"></i><i style="height:12px;opacity:.55"></i></span>마자용</span>
+          <p>소상공인을 위한 웹 외주 요구사항 정의 · 매칭 플랫폼</p>
+        </div>
+        <div class="gf-cs"><b>고객센터 1600-0000</b><span>평일 10:00–18:00</span><span>점심 12:00–13:00 · 주말 · 공휴일 휴무</span><span>help@majayong.example</span></div>
+      </div>
+      <nav class="gf-nav" aria-label="사이트 링크">
+        <div><b>서비스</b><a href="Main.dc.html">의뢰인 안내</a><a href="Supplier-Landing.dc.html">공급자 안내</a></div>
+        <div><b>고객센터</b><a href="Help.dc.html">자주 묻는 질문</a><a href="Help-Inquiry.dc.html">1:1 문의</a><a href="Help.dc.html?view=공지사항">공지사항</a></div>
+        <div><b>정책</b><a href="Terms.dc.html?view=이용약관">이용약관</a><a class="em" href="Terms.dc.html?view=개인정보+처리방침">개인정보 처리방침</a><a href="Terms.dc.html?view=명세+비밀유지">명세 비밀유지</a><a href="Terms.dc.html?view=중개자+고지">중개자 고지</a></div>
+      </nav>
+      <div class="gf-bot">
+        <p class="gf-biz">상호 로켓단<i></i>대표 김로켓<i></i>사업자등록번호 000-00-00000<i></i>통신판매업 신고 제2026-서울마포-0000호<br>주소 서울특별시 마포구 예시로 00, 0층<i></i>개인정보 보호책임자 박예시<i></i>이메일 help@majayong.example</p>
+        <p class="gf-copy">© 2026 로켓단. All rights reserved.</p>
+        <p class="gf-note">마자용은 통신판매중개자로서 거래 당사자가 아니며, 의뢰인과 공급자 사이 계약의 이행 책임은 각 당사자에게 있습니다. 대금 예치와 정산은 마자용이 관리합니다.</p>
+      </div>
+    </div>
+  </footer>
+
+</div>

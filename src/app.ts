@@ -56,6 +56,8 @@ export type AppOptions = {
   routers?: readonly Router[];
   /** B/C 라우터가 처리하지 못한 요청을 넘길 하위 핸들러(C의 node:http 라우터 등). */
   fallback?: (req: IncomingMessage, res: ServerResponse) => Promise<void>;
+  /** API가 아닌 경로를 프론트 화면/정적 자산으로 처리하는 최종 핸들러. */
+  web?: RequestHandler;
 };
 
 class ApiError extends Error {
@@ -398,6 +400,8 @@ export function createApp(options: AppOptions): Express {
         });
     });
   }
+
+  if (options.web) app.use(options.web);
 
   app.use((_req, res) => {
     const requestId = String(res.locals.requestId);
