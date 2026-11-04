@@ -150,6 +150,10 @@ describe("E2E-04 서명", () => {
     const hash = contractRow?.contentHash;
     expect(hash).toBeTruthy();
 
+    const contractDetail = await req(baseUrl, "GET", `/api/v1/contracts/${contractId}`, clientToken);
+    expect(contractDetail.status).toBe(200);
+    expect(contractDetail.body.data.items.every((item: any) => typeof item.id === "string" && item.approvedAt === null)).toBe(true);
+
     const clientSign = await req(baseUrl, "POST", `/api/v1/contracts/${contractId}/sign`, clientToken, { expectedContentHash: hash });
     expect(clientSign.status).toBe(200);
     const supplierSign = await req(baseUrl, "POST", `/api/v1/contracts/${contractId}/sign`, supplierToken, { expectedContentHash: hash });
