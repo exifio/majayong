@@ -16,6 +16,7 @@ import {
 } from '../../src/modules/market/project-detail.ts';
 import {
   PROJECT_PAGE_SIZE,
+  createProjectSearchPort,
   recommendProjectsForSupplier,
   searchPublicProjects,
 } from '../../src/modules/market/project-search.ts';
@@ -472,5 +473,74 @@ describe('B-01-T06 가격·원문 비공개', () => {
       (error: unknown) =>
         error instanceof PublicProjectContractError && error.reason === 'SENSITIVE_FIELD',
     );
+  });
+});
+
+describe('B-01 보조: A 호출용 ProjectSearchPort adapter', () => {
+  it('후보 목록을 한 번 읽어 필터·정렬·페이지를 적용한다', async () => {
+    const projects = Array.from({ length: 12 }, (_, index) =>
+      makeProject(index + 1, {
+        industryCode: index === 0 ? 'CAFE' : 'FOOD',
+      }),
+    );
+    let calls = 0;
+    const port = createProjectSearchPort({
+      listPublicProjectCandidates: async () => {
+        calls += 1;
+        return projects;
+      },
+    });
+
+    const page = await port.searchPublicProjects({
+      filters: { industryCode: 'FOOD' },
+      sort: 'LATEST',
+      page: 2,
+    });
+
+    assert.equal(calls, 1);
+    assert.equal(page.items.length, 1);
+    assert.deepEqual(page.meta, { page: 2, pageSize: 10, total: 11, totalPages: 2 });
+    assert.equal(page.items[0]?.industryCode, 'FOOD');
+  });
+
+  it('후보 응답이 배열이 아니면 502 INVALID_VALUE다', async () => {
+    const port = createProjectSearchPort({
+      listPublicProjectCandidates: async () => null,
+    });
+
+    await assert.rejects(
+      port.searchPublicProjects({}),
+      (error: unknown) =>
+        error instanceof PublicProjectContractError &&
+        error.status === 502 &&
+        error.reason === 'INVALID_VALUE',
+    );
+  });
+
+  it('민감 필드가 섞인 후보는 adapter에서도 502 SENSITIVE_FIELD다', async () => {
+    const port = createProjectSearchPort({
+      listPublicProjectCandidates: async () => [
+        { ...makeProject(1), aiUnitPrice: 900_000 },
+      ],
+    });
+
+    await assert.rejects(
+      port.searchPublicProjects({}),
+      (error: unknown) =>
+        error instanceof PublicProjectContractError &&
+        error.reason === 'SENSITIVE_FIELD' &&
+        error.field === 'aiUnitPrice',
+    );
+  });
+
+  it('후보가 없으면 빈 페이지를 돌려준다', async () => {
+    const port = createProjectSearchPort({
+      listPublicProjectCandidates: async () => [],
+    });
+
+    const page = await port.searchPublicProjects({});
+
+    assert.deepEqual(page.items, []);
+    assert.deepEqual(page.meta, { page: 1, pageSize: 10, total: 0, totalPages: 0 });
   });
 });

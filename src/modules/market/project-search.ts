@@ -4,7 +4,11 @@
  * HTTP 소유권은 A에 있다(API_INDEX #045~046). B는 필터 5종·정렬 3종·
  * 페이지당 10건·제목/기능 검색과 공급자 홈 추천만 제공한다.
  */
-import { toPublicProjectSummary, type PublicProjectSummary } from './public-project.js';
+import {
+  PublicProjectContractError,
+  toPublicProjectSummary,
+  type PublicProjectSummary,
+} from './public-project.js';
 
 export const PROJECT_PAGE_SIZE = 10;
 
@@ -42,6 +46,25 @@ export interface ProjectSearchPage {
 /** A가 구현/호출하는 계약. B 구현은 DB 후보 목록을 받아 순수하게 필터링한다. */
 export interface ProjectSearchPort {
   searchPublicProjects(input: ProjectSearchInput): Promise<ProjectSearchPage>;
+}
+
+/** A가 제공하는 공개 후보 목록. 신뢰 경계 밖 응답이므로 unknown으로 받는다. */
+export interface ProjectCandidatePort {
+  listPublicProjectCandidates(): Promise<unknown>;
+}
+
+export function createProjectSearchPort(candidates: ProjectCandidatePort): ProjectSearchPort {
+  return {
+    async searchPublicProjects(input) {
+      const response = await candidates.listPublicProjectCandidates();
+      if (!Array.isArray(response)) {
+        throw new PublicProjectContractError('$candidates', 'INVALID_VALUE');
+      }
+
+      // ponytail: 후보 전체를 읽어 메모리에서 필터·페이지 처리. 데이터가 커지면 repository로 내린다.
+      return searchPublicProjects(response.map(toPublicProjectSummary), input);
+    },
+  };
 }
 
 export interface SupplierRecommendationProfile {
