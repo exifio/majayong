@@ -1,3 +1,4 @@
+import { createHash, timingSafeEqual } from "node:crypto";
 import { endOfKstDayPlus, requireDepositContractTerms, splitInstallments } from "../settlement/policy.ts";
 
 export type DepositStatus = "PENDING" | "HELD" | "COMPLETED" | "FAILED";
@@ -108,7 +109,60 @@ export interface DepositRepository {
 }
 
 export interface TossVerifyAdapter {
-  verifyPayment?(orderId: string, paymentKey: string, amount: number): Promise<{ verified: boolean }>;
+  verifyPayment?(orderId: string, paymentKey: string, amount: number): Promise<unknown>;
+}
+
+export interface DepositCompletionPort {
+  completeDeposit(input: {
+    depositId: string;
+    pgKey: string;
+    paymentEvent: { dedupKey: string; payload: TossWebhookPayload };
+  }): Promise<{
+    deposit: EscrowDeposit;
+    contract: DepositContractInfo;
+    installments: PaymentInstallment[];
+  }>;
+}
+
+function webhookSecretMatches(provided: unknown, expected: string): boolean {
+  if (typeof provided !== "string" || expected.length === 0) return false;
+  const providedDigest = createHash("sha256").update(provided, "utf8").digest();
+  const expectedDigest = createHash("sha256").update(expected, "utf8").digest();
+  return timingSafeEqual(providedDigest, expectedDigest);
+}
+
+function parseTossWebhookPayload(value: unknown): TossWebhookPayload | null {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) return null;
+  const candidate = value as Record<string, unknown>;
+  const { orderId, paymentKey, amount, status, eventType, transactionKey } = candidate;
+  if (
+    typeof orderId !== "string" || orderId.trim().length === 0 ||
+    typeof paymentKey !== "string" || paymentKey.trim().length === 0 ||
+    typeof amount !== "number" || !Number.isSafeInteger(amount) || amount <= 0 ||
+    typeof status !== "string" || status.trim().length === 0 ||
+    (eventType !== undefined && typeof eventType !== "string") ||
+    (transactionKey !== undefined && (typeof transactionKey !== "string" || transactionKey.trim().length === 0))
+  ) {
+    return null;
+  }
+  return {
+    orderId,
+    paymentKey,
+    amount,
+    status,
+    ...(eventType === undefined ? {} : { eventType }),
+    ...(transactionKey === undefined ? {} : { transactionKey }),
+  };
+}
+
+function pgEvidenceRejects(evidence: unknown, payload: TossWebhookPayload): boolean {
+  if (typeof evidence !== "object" || evidence === null || Array.isArray(evidence)) return true;
+  const result = evidence as Record<string, unknown>;
+  return result.verified !== true ||
+    result.orderId !== payload.orderId ||
+    result.paymentKey !== payload.paymentKey ||
+    result.amount !== payload.amount ||
+    result.status !== "DONE";
 }
 
 export class DepositHttpError extends Error {
@@ -237,6 +291,7 @@ export interface DepositServiceOptions {
   contractsPort: DepositContractsPort;
   webhookSecret: string;
   tossAdapter?: TossVerifyAdapter;
+  completionPort: DepositCompletionPort;
   clock?: { now(): Date };
 }
 
@@ -245,14 +300,36 @@ export class DepositService {
   private readonly contractsPort: DepositContractsPort;
   private readonly webhookSecret: string;
   private readonly tossAdapter?: TossVerifyAdapter;
+  private readonly completionPort: DepositCompletionPort;
   private readonly clock: { now(): Date };
+  private readonly depositTails = new Map<string, Promise<void>>();
 
   constructor(options: DepositServiceOptions) {
     this.repo = options.repo;
     this.contractsPort = options.contractsPort;
     this.webhookSecret = options.webhookSecret;
     this.tossAdapter = options.tossAdapter;
+    if (!options.completionPort) throw new Error("DepositCompletionPort is required");
+    this.completionPort = options.completionPort;
     this.clock = options.clock ?? { now: () => new Date() };
+  }
+
+  private async withDepositLock<T>(depositId: string, work: () => Promise<T>): Promise<T> {
+    // shortcut: protects one process only; use a database transaction for multi-instance deployment.
+    const previous = this.depositTails.get(depositId) ?? Promise.resolve();
+    let release: () => void = () => {};
+    const current = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const tail = previous.then(() => current, () => current);
+    this.depositTails.set(depositId, tail);
+    await previous.then(() => undefined, () => undefined);
+    try {
+      return await work();
+    } finally {
+      release();
+      if (this.depositTails.get(depositId) === tail) this.depositTails.delete(depositId);
+    }
   }
 
   async createDeposit(
@@ -338,116 +415,123 @@ export class DepositService {
 
   async handleTossWebhook(
     auth: { serverSecret?: string; bearerToken?: string; isPublicUserToken?: boolean },
-    payload: TossWebhookPayload,
+    rawPayload: unknown,
   ): Promise<{ status: DepositStatus; deposit: EscrowDeposit; isDuplicate?: boolean; reason?: string }> {
     if (auth.isPublicUserToken) {
       throw new DepositHttpError(403, "서버 전용 웹훅 엔드포인트입니다. 공개 사용자 토큰으로 호출할 수 없습니다.");
     }
 
-    if (auth.serverSecret !== this.webhookSecret) {
+    if (!webhookSecretMatches(auth.serverSecret, this.webhookSecret)) {
       throw new DepositHttpError(401, "웹훅 인증 실패: 위조되었거나 유효하지 않은 비밀키입니다.");
     }
+    const payload = parseTossWebhookPayload(rawPayload);
+    if (!payload) throw new DepositHttpError(400, "웹훅 본문이 올바르지 않습니다.");
 
-    const deposit = await this.repo.findById(payload.orderId);
-    if (!deposit) {
-      throw new DepositHttpError(404, `orderId에 해당하는 예치 건을 찾을 수 없습니다: ${payload.orderId}`);
-    }
+    return this.withDepositLock(payload.orderId, async () => {
+      const deposit = await this.repo.findById(payload.orderId);
+      if (!deposit) {
+        throw new DepositHttpError(404, `orderId에 해당하는 예치 건을 찾을 수 없습니다: ${payload.orderId}`);
+      }
+      if (deposit.status === "COMPLETED") {
+        return { status: "COMPLETED" as const, deposit, isDuplicate: true };
+      }
 
-    const dedupKey = payload.transactionKey ?? payload.paymentKey;
+      const dedupKey = payload.transactionKey ?? payload.paymentKey;
+      const existingEvent = await this.repo.findPaymentEventByDedupKey(deposit.id, dedupKey);
+      if (existingEvent) {
+        await this.repo.createPaymentEvent({
+          depositId: deposit.id,
+          eventType: "DUPLICATE_BLOCKED",
+          dedupKey: `${dedupKey}-dup-${Date.now()}`,
+          payload,
+          resultNote: "중복 콜백 수신 차단",
+        });
+        const current = (await this.repo.findById(deposit.id)) ?? deposit;
+        return { status: current.status, deposit: current, isDuplicate: true };
+      }
+      if (deposit.status === "HELD") {
+        return { status: "HELD" as const, deposit, reason: deposit.heldReason ?? "HELD" };
+      }
 
-    const existingEvent = await this.repo.findPaymentEventByDedupKey(deposit.id, dedupKey);
-    if (existingEvent) {
-      await this.repo.createPaymentEvent({
+      const contract = await this.contractsPort.getContract(deposit.contractId);
+      if (!contract) throw new DepositHttpError(404, "계약을 찾을 수 없습니다.");
+      if (contract.depositDeadline !== null && this.clock.now().getTime() > contract.depositDeadline.getTime()) {
+        return this.holdDeposit(deposit, dedupKey, payload, "DEPOSIT_EXPIRED", "예치 기한이 지난 콜백");
+      }
+      if (contract.status !== "ACTIVE" || contract.paymentStatus !== "PENDING") {
+        return this.holdDeposit(deposit, dedupKey, payload, "CONTRACT_NOT_DEPOSITABLE", "예치 가능한 계약 상태가 아님");
+      }
+      if (payload.amount !== deposit.amount) {
+        return this.holdDeposit(
+          deposit,
+          dedupKey,
+          payload,
+          "AMOUNT_MISMATCH",
+          `금액 불일치 (기대: ${deposit.amount}, 수신: ${payload.amount})`,
+          "AMOUNT_MISMATCH",
+        );
+      }
+      if (payload.status !== "DONE") {
+        return this.holdDeposit(
+          deposit,
+          dedupKey,
+          payload,
+          payload.status,
+          `불확실한 결제 상태 (${payload.status}) - HELD 격리`,
+          "CALLBACK_RECEIVED",
+        );
+      }
+      if (!this.tossAdapter?.verifyPayment) {
+        return this.holdDeposit(deposit, dedupKey, payload, "VERIFY_UNAVAILABLE", "PG 재조회 없음");
+      }
+
+      let evidence: unknown;
+      try {
+        evidence = await this.tossAdapter.verifyPayment(payload.orderId, payload.paymentKey, payload.amount);
+      } catch {
+        evidence = { verified: false };
+      }
+      if (pgEvidenceRejects(evidence, payload)) {
+        return this.holdDeposit(deposit, dedupKey, payload, "VERIFY_FAILED", "PG 재조회 검증 실패");
+      }
+
+      const current = (await this.repo.findById(deposit.id)) ?? deposit;
+      if (current.status === "COMPLETED") {
+        return { status: "COMPLETED" as const, deposit: current, isDuplicate: true };
+      }
+      if (current.status === "HELD") {
+        return { status: "HELD" as const, deposit: current, reason: current.heldReason ?? "HELD" };
+      }
+
+      const { deposit: completedDeposit } = await this.completionPort.completeDeposit({
         depositId: deposit.id,
-        eventType: "DUPLICATE_BLOCKED",
-        dedupKey: `${dedupKey}-dup-${Date.now()}`,
-        payload,
-        resultNote: "중복 콜백 수신 차단",
+        pgKey: payload.paymentKey,
+        paymentEvent: { dedupKey, payload },
       });
-      return { status: deposit.status, deposit, isDuplicate: true };
-    }
+      return { status: "COMPLETED" as const, deposit: completedDeposit };
+    });
+  }
 
-    if (payload.amount !== deposit.amount) {
-      await this.repo.createPaymentEvent({
-        depositId: deposit.id,
-        eventType: "AMOUNT_MISMATCH",
-        dedupKey,
-        payload,
-        resultNote: `금액 불일치 (기대: ${deposit.amount}, 수신: ${payload.amount})`,
-      });
-      const updated = await this.repo.updateDeposit(deposit.id, {
-        status: "HELD",
-        heldReason: "AMOUNT_MISMATCH",
-      });
-      return { status: "HELD", deposit: updated, reason: "AMOUNT_MISMATCH" };
-    }
-
-    if (payload.status !== "DONE") {
-      await this.repo.createPaymentEvent({
-        depositId: deposit.id,
-        eventType: "CALLBACK_RECEIVED",
-        dedupKey,
-        payload,
-        resultNote: `불확실한 결제 상태 (${payload.status}) - HELD 격리`,
-      });
-      const updated = await this.repo.updateDeposit(deposit.id, {
-        status: "HELD",
-        heldReason: payload.status,
-      });
-      return { status: "HELD", deposit: updated, reason: payload.status };
-    }
-
-    if (!this.tossAdapter?.verifyPayment) {
-      await this.repo.createPaymentEvent({
-        depositId: deposit.id,
-        eventType: "FAILED",
-        dedupKey,
-        payload,
-        resultNote: "PG 재조회 없음",
-      });
-      const updated = await this.repo.updateDeposit(deposit.id, {
-        status: "HELD",
-        heldReason: "VERIFY_UNAVAILABLE",
-      });
-      return { status: "HELD", deposit: updated, reason: "VERIFY_UNAVAILABLE" };
-    }
-
-    let verified: { verified: boolean };
-    try {
-      verified = await this.tossAdapter.verifyPayment(payload.orderId, payload.paymentKey, payload.amount);
-    } catch {
-      verified = { verified: false };
-    }
-    if (verified.verified === false) {
-      await this.repo.createPaymentEvent({
-        depositId: deposit.id,
-        eventType: "FAILED",
-        dedupKey,
-        payload,
-        resultNote: "PG 재조회 검증 실패",
-      });
-      const updated = await this.repo.updateDeposit(deposit.id, {
-        status: "HELD",
-        heldReason: "VERIFY_FAILED",
-      });
-      return { status: "HELD", deposit: updated, reason: "VERIFY_FAILED" };
-    }
-
+  private async holdDeposit(
+    deposit: EscrowDeposit,
+    dedupKey: string,
+    payload: TossWebhookPayload,
+    reason: string,
+    resultNote: string,
+    eventType: PaymentEventType = "FAILED",
+  ): Promise<{ status: DepositStatus; deposit: EscrowDeposit; reason: string }> {
     await this.repo.createPaymentEvent({
       depositId: deposit.id,
-      eventType: "VERIFIED",
+      eventType,
       dedupKey,
       payload,
-      resultNote: "결제 검증 성공",
+      resultNote,
     });
-
-    const completed = await this.repo.updateDeposit(deposit.id, {
-      status: "COMPLETED",
-      pgKey: payload.paymentKey,
-      depositedAt: this.clock.now(),
+    const updated = await this.repo.updateDeposit(deposit.id, {
+      status: "HELD",
+      heldReason: reason,
     });
-
-    return { status: "COMPLETED", deposit: completed };
+    return { status: "HELD", deposit: updated, reason };
   }
 }
 
@@ -474,7 +558,11 @@ export class DepositCompletionService {
     this.clock = options.clock ?? { now: () => new Date() };
   }
 
-  async completeDeposit(input: { depositId: string; pgKey: string }): Promise<{
+  async completeDeposit(input: {
+    depositId: string;
+    pgKey: string;
+    paymentEvent?: { dedupKey: string; payload: TossWebhookPayload };
+  }): Promise<{
     deposit: EscrowDeposit;
     contract: DepositContractInfo;
     installments: PaymentInstallment[];
@@ -494,6 +582,7 @@ export class DepositCompletionService {
     // 롤백 복원용 원본 스냅샷
     const originalDepositStatus = deposit.status;
     const originalDepositedAt = deposit.depositedAt;
+    const originalPgKey = deposit.pgKey;
     const originalContractPaymentStatus = contract.paymentStatus;
     const originalTotalDeposited = contract.totalDeposited ?? 0;
     const originalWorkDueAt = contract.workDueAt ?? null;
@@ -514,64 +603,86 @@ export class DepositCompletionService {
 
     try {
       // 1. 구간 2행 생성
-      const installments = await this.repo.createInstallments([
-        {
-          contractId: contract.id,
-          stage: "INTERIM",
-          ratio: interimRatio,
-          amount: interimAmount,
-          supplierFee: interimSupplierFee,
-          withholdingTax: 0,
-          releaseAmount: interimAmount - interimSupplierFee,
-          status: "PENDING",
-          approvedAt: null,
-          releasedAt: null,
-          taxInvoiceIssuedAt: null,
-        },
-        {
-          contractId: contract.id,
-          stage: "FINAL",
-          ratio: finalRatio,
-          amount: finalAmount,
-          supplierFee: finalSupplierFee,
-          withholdingTax: 0,
-          releaseAmount: finalAmount - finalSupplierFee,
-          status: "PENDING",
-          approvedAt: null,
-          releasedAt: null,
-          taxInvoiceIssuedAt: null,
-        },
-      ]);
+      const installments = await this.repo.createInstallments(
+        [
+          {
+            contractId: contract.id,
+            stage: "INTERIM",
+            ratio: interimRatio,
+            amount: interimAmount,
+            supplierFee: interimSupplierFee,
+            withholdingTax: 0,
+            releaseAmount: interimAmount - interimSupplierFee,
+            status: "PENDING",
+            approvedAt: null,
+            releasedAt: null,
+            taxInvoiceIssuedAt: null,
+          },
+          {
+            contractId: contract.id,
+            stage: "FINAL",
+            ratio: finalRatio,
+            amount: finalAmount,
+            supplierFee: finalSupplierFee,
+            withholdingTax: 0,
+            releaseAmount: finalAmount - finalSupplierFee,
+            status: "PENDING",
+            approvedAt: null,
+            releasedAt: null,
+            taxInvoiceIssuedAt: null,
+          },
+        ],
+      );
 
       // 2. 계약 상태 갱신
-      const updatedContract = await this.contractsPort.updateContract(contract.id, {
-        paymentStatus: "DEPOSITED",
-        totalDeposited: deposit.amount,
-        workDueAt,
-      });
+      const updatedContract = await this.contractsPort.updateContract(
+        contract.id,
+        {
+          paymentStatus: "DEPOSITED",
+          totalDeposited: deposit.amount,
+          workDueAt,
+        },
+      );
 
       // 3. 예치 상태 갱신
-      const updatedDeposit = await this.repo.updateDeposit(deposit.id, {
-        status: "COMPLETED",
-        pgKey: input.pgKey,
-        depositedAt: completionTime,
-      });
+      const updatedDeposit = await this.repo.updateDeposit(
+        deposit.id,
+        {
+          status: "COMPLETED",
+          pgKey: input.pgKey,
+          depositedAt: completionTime,
+        },
+      );
 
       // 4. B 포트 호출: 타 보류 지원 자동 거절
       if (contract.projectId && contract.applicationId) {
-        await this.marketplacePort.autoRejectCompetingApplications({
-          projectId: contract.projectId,
-          acceptedApplicationId: contract.applicationId,
-        });
+        await this.marketplacePort.autoRejectCompetingApplications(
+          {
+            projectId: contract.projectId,
+            acceptedApplicationId: contract.applicationId,
+          },
+        );
+      }
+
+      if (input.paymentEvent) {
+        await this.repo.createPaymentEvent(
+          {
+            depositId: deposit.id,
+            eventType: "VERIFIED",
+            dedupKey: input.paymentEvent.dedupKey,
+            payload: input.paymentEvent.payload,
+            resultNote: "결제 검증 성공",
+          },
+        );
       }
 
       return { deposit: updatedDeposit, contract: updatedContract, installments };
     } catch (err) {
-      // 원자성 롤백 복원
       await this.repo.deleteInstallments(contract.id);
       await this.repo.updateDeposit(deposit.id, {
         status: originalDepositStatus,
         depositedAt: originalDepositedAt,
+        pgKey: originalPgKey,
       });
       await this.contractsPort.updateContract(contract.id, {
         paymentStatus: originalContractPaymentStatus,

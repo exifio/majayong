@@ -100,17 +100,23 @@ describe("C-10: 배포용 기한 작업·전영역 연결 검증·인계", () =>
     let currentTime = t0;
     const clock = { now: () => currentTime, set: (d: Date) => { currentTime = d; } };
 
-    const depositService = new DepositService({
-      repo: depositRepo,
-      contractsPort,
-      webhookSecret: "wh_secret_c10",
-      clock,
-    });
-
     const completionService = new DepositCompletionService({
       repo: depositRepo,
       contractsPort,
       marketplacePort,
+      clock,
+    });
+
+    const depositService = new DepositService({
+      repo: depositRepo,
+      contractsPort,
+      webhookSecret: "wh_secret_c10",
+      tossAdapter: {
+        async verifyPayment(orderId, paymentKey, amount) {
+          return { verified: true, orderId, paymentKey, amount, status: "DONE" };
+        },
+      },
+      completionPort: completionService,
       clock,
     });
 
