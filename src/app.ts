@@ -30,6 +30,7 @@ import {
 import { createPrismaWithdrawalStore } from "./modules/identity/withdrawal.js";
 import { mountProfileApi, type ProfilePorts } from "./modules/profile/api.js";
 import { ProfileError } from "./modules/profile/errors.js";
+import { mountPricingApi } from "./modules/pricing/api.js";
 import { mountProjectApi } from "./modules/project/api.js";
 import type { PrismaClient } from "@prisma/client";
 
@@ -309,6 +310,7 @@ export function createApp(options: AppOptions): Express {
   }));
 
   mountProfileApi(router, options.db, options.profile ?? {}, now, handler => authenticated(options, handler));
+  mountPricingApi(router, options.db, now, handler => authenticated(options, handler));
   mountProjectApi(
     router,
     options.db,

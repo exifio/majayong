@@ -3,7 +3,9 @@ import { BlockOrigin, DraftEntryType, PrismaClient, Role } from "@prisma/client"
 import express, { type NextFunction, type Request, type Response } from "express";
 import { createServer, type Server } from "node:http";
 import { randomUUID } from "node:crypto";
+import { createApp } from "../../src/app.ts";
 import type { Actor } from "../../src/modules/identity/session.ts";
+import { issueAccessToken } from "../../src/modules/identity/auth.ts";
 import { mountPricingApi } from "../../src/modules/pricing/api.ts";
 import type { AuthenticatedDraftRoute } from "../../src/modules/draft/api.ts";
 import { applyEstimateToBudget, getPriceReport } from "../../src/modules/pricing/service.ts";
@@ -19,6 +21,7 @@ const userIds: string[] = [];
 const draftIds: string[] = [];
 const blockIds: string[] = [];
 const servers: Server[] = [];
+const tokenSecret = "a05-pricing-common-app-test-token-secret-long-enough";
 
 async function makeUser(role: Role): Promise<string> {
   const id = randomUUID();
@@ -81,6 +84,16 @@ async function startPricingServer(actor: Actor): Promise<string> {
   return `http://127.0.0.1:${address.port}/api/v1`;
 }
 
+async function startCommonAppServer(): Promise<string> {
+  const app = createApp({ db, tokenSecret, now: () => new Date("2026-11-03T09:00:00.000Z") });
+  const server = createServer(app);
+  await new Promise<void>(resolve => server.listen(0, "127.0.0.1", resolve));
+  const address = server.address();
+  if (!address || typeof address === "string") throw new Error("HTTP server did not bind");
+  servers.push(server);
+  return `http://127.0.0.1:${address.port}/api/v1`;
+}
+
 afterAll(async () => {
   await Promise.all(servers.map(server => new Promise<void>((resolve, reject) => {
     server.close(error => error ? reject(error) : resolve());
@@ -101,6 +114,32 @@ afterAll(async () => {
 });
 
 describe("A-05 pricing PostgreSQL integration", () => {
+  it("routes price reports through the common app with bearer authentication", async () => {
+    const { clientId, draftId } = await makeDraftWithBlock();
+    const token = issueAccessToken({
+      userId: clientId,
+      role: Role.CLIENT,
+      expiresAt: new Date("2026-11-03T09:00:00.000Z").getTime() + 60_000,
+    }, tokenSecret);
+    const baseUrl = await startCommonAppServer();
+    const response = await fetch(`${baseUrl}/drafts/${draftId}/price-report`, {
+      headers: { authorization: `Bearer ${token}` },
+    });
+    const body = await response.json() as { data?: { estimatedTotal?: number } };
+
+    expect(response.status).toBe(200);
+    expect(body.data?.estimatedTotal).toBe(1050);
+
+    const applyResponse = await fetch(`${baseUrl}/drafts/${draftId}/apply-estimate`, {
+      method: "POST",
+      headers: { authorization: `Bearer ${token}` },
+    });
+    const applyBody = await applyResponse.json() as { data?: { estimatedTotal?: number; hopeBudget?: number } };
+
+    expect(applyResponse.status).toBe(200);
+    expect(applyBody.data).toMatchObject({ estimatedTotal: 1050, hopeBudget: 1050 });
+  });
+
   it("A-05-T02 keeps the existing DraftBlock price snapshot after catalog price changes", async () => {
     const { clientId, draftId, blockId } = await makeDraftWithBlock();
     const before = await getPriceReport(db, draftId, clientId);
