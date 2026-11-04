@@ -258,10 +258,17 @@ export class CancellationService {
       throw new CancellationHttpError(403, "취소를 요청한 상대방만 동의할 수 있습니다.");
     }
 
-    await this.assertNoUnapprovedClientFullRefund(contract);
+    const installments = await this.repo.listInstallments(contract.id);
+    const requestedAt = contract.cancelRequestedAt ?? this.clock.now();
+    const clientFullRefund = isClientFullRefund({
+      cause: contract.cancelCause,
+      depositedAt: contract.depositedAt,
+      requestedAt,
+      installmentStatuses: installments.map((row) => row.status),
+    });
 
     // 합의 사유는 요청 단계에 기록된 비율만 확정한다. 그 외 사유는 PRD 13.2 정책값을 쓴다.
-    let agreedRate: number;
+    let agreedRate: number | null;
     if (contract.cancelCause === "MUTUAL") {
       if (contract.compensationRate === null) {
         throw new CancellationHttpError(409, "합의 보상 비율이 요청에 기록되지 않았습니다.");
@@ -270,12 +277,13 @@ export class CancellationService {
     } else if (contract.cancelCause === "SUPPLIER") {
       agreedRate = 0;
     } else if (contract.cancelCause === "CLIENT") {
-      agreedRate = 50;
+      // D-16: 예치 후 24시간 내·무납품이면 보상 없이 전액 환불(nullable 표현).
+      agreedRate = clientFullRefund ? null : 50;
     } else {
       throw new CancellationHttpError(409, "취소 사유가 기록되지 않았습니다.");
     }
 
-    const split = await this.calculateCancellationSplit(contract.id, agreedRate);
+    const split = await this.calculateCancellationSplit(contract.id, agreedRate ?? 0);
 
     return this.repo.updateContract(contract.id, {
       cancelResolution: "AGREED",
@@ -322,7 +330,15 @@ export class CancellationService {
     ) {
       throw new CancellationHttpError(422, "보상 비율은 0~100 사이여야 합니다.");
     }
-    if (contract.cancelCause === "CLIENT" && input.objectionRate < 50) {
+    const installments = await this.repo.listInstallments(contract.id);
+    const requestedAt = contract.cancelRequestedAt ?? this.clock.now();
+    const clientFullRefund = isClientFullRefund({
+      cause: contract.cancelCause,
+      depositedAt: contract.depositedAt,
+      requestedAt,
+      installmentStatuses: installments.map((row) => row.status),
+    });
+    if (contract.cancelCause === "CLIENT" && !clientFullRefund && input.objectionRate < 50) {
       throw new CancellationHttpError(422, "의뢰인 사정 취소는 보상 비율이 50% 이상이어야 합니다.");
     }
 
@@ -385,19 +401,26 @@ export class CancellationService {
       throw new CancellationHttpError(409, "상대 이의 또는 3일 무응답 에스컬레이션 이후에만 운영자 판정할 수 있습니다.");
     }
 
-    await this.assertNoUnapprovedClientFullRefund(contract);
+    const installments = await this.repo.listInstallments(contract.id);
+    const requestedAt = contract.cancelRequestedAt ?? this.clock.now();
+    const clientFullRefund = isClientFullRefund({
+      cause: contract.cancelCause,
+      depositedAt: contract.depositedAt,
+      requestedAt,
+      installmentStatuses: installments.map((row) => row.status),
+    });
 
-    if (contract.cancelCause === "CLIENT" && input.compensationRate < 50) {
+    if (contract.cancelCause === "CLIENT" && !clientFullRefund && input.compensationRate < 50) {
       throw new CancellationHttpError(
         422,
         "의뢰인 사정 취소는 보상 비율이 50% 이상이어야 합니다. (raw 제약 6)",
       );
     }
-
-    const split = await this.calculateCancellationSplit(contract.id, input.compensationRate);
+    const effectiveRate = contract.cancelCause === "CLIENT" && clientFullRefund ? 0 : input.compensationRate;
+    const split = await this.calculateCancellationSplit(contract.id, effectiveRate);
 
     return this.repo.updateContract(contract.id, {
-      compensationRate: input.compensationRate,
+      compensationRate: contract.cancelCause === "CLIENT" && clientFullRefund ? null : input.compensationRate,
       refundReason: input.reason,
       refundAmount: split.refundAmount,
       settledAmount: split.settledAmount,
@@ -463,24 +486,6 @@ export class CancellationService {
       clientFeeRefund,
       ongoingStagePaidFull,
     };
-  }
-
-  private async assertNoUnapprovedClientFullRefund(
-    contract: CancellationContractEntity,
-  ): Promise<void> {
-    const installments = await this.repo.listInstallments(contract.id);
-    const requestedAt = contract.cancelRequestedAt ?? this.clock.now();
-    if (
-      isClientFullRefund({
-        cause: contract.cancelCause,
-        depositedAt: contract.depositedAt,
-        requestedAt,
-        installmentStatuses: installments.map((row) => row.status),
-      }) === false
-    ) {
-      return;
-    }
-    throw new CancellationHttpError(409, "D16_BLOCKED");
   }
 
   async getCancellation(

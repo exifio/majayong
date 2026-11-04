@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import { describe, it } from "node:test";
 import { PrismaClient } from "@prisma/client";
 import { createPrismaRepositories } from "../../src/infrastructure/prisma-store.ts";
-import { CancellationHttpError, CancellationService } from "../../src/modules/cancellation/index.ts";
+import { CancellationService } from "../../src/modules/cancellation/index.ts";
 import { DepositCompletionService } from "../../src/modules/deposit/index.ts";
 import { DeliveryService } from "../../src/modules/delivery/index.ts";
 import { SettlementService } from "../../src/modules/settlement/policy.ts";
@@ -136,34 +136,41 @@ describe("INT-C-02: Prisma 저장소 골든 패스", { skip: hasDatabase ? false
           cancelNote: "D-16 regression",
         },
       });
-      await assert.rejects(
-        () =>
-          cancellation.agreeCancellation(
-            { userId: supplierId, role: "SUPPLIER" },
-            { contractId },
-          ),
-        (err: unknown) =>
-          err instanceof CancellationHttpError && err.status === 409 && err.message === "D16_BLOCKED",
+      const agreed = await cancellation.agreeCancellation(
+        { userId: supplierId, role: "SUPPLIER" },
+        { contractId },
       );
-      const blockedCancellation = await prisma.contract.findUnique({ where: { id: contractId } });
-      assert.equal(blockedCancellation?.status, "CANCEL_REQUESTED");
-      assert.equal(blockedCancellation?.cancelResolution, null);
-      assert.equal(blockedCancellation?.refundAmount, null);
+      assert.equal(agreed.status, "CANCELLED");
+      assert.equal(agreed.compensationRate, null);
+      assert.equal(agreed.refundAmount, 3_255_000);
+      assert.equal(agreed.settledAmount, 0);
+      assert.equal(agreed.clientFeeRefund, 155_000);
+      const fullRefund = await prisma.contract.findUnique({ where: { id: contractId } });
+      assert.equal(fullRefund?.status, "CANCELLED");
+      assert.equal(fullRefund?.compensationRate, null);
 
+      // 관리자 판정도 같은 nullable 전액 환불 표현을 쓴다.
       await prisma.contract.update({
         where: { id: contractId },
-        data: { cancelEscalatedAt: clock.now() },
+        data: {
+          status: "CANCEL_REQUESTED",
+          cancelResolution: null,
+          cancelResolvedAt: null,
+          compensationRate: null,
+          refundAmount: null,
+          settledAmount: null,
+          clientFeeRefund: null,
+          cancelEscalatedAt: clock.now(),
+        },
       });
-      await assert.rejects(
-        () =>
-          cancellation.decideCancellation({
-            contractId,
-            compensationRate: 0,
-            reason: "D-16 regression",
-          }),
-        (err: unknown) =>
-          err instanceof CancellationHttpError && err.status === 409 && err.message === "D16_BLOCKED",
-      );
+      const decided = await cancellation.decideCancellation({
+        contractId,
+        compensationRate: 0,
+        reason: "D-16 regression",
+      });
+      assert.equal(decided.compensationRate, null);
+      assert.equal(decided.refundAmount, 3_255_000);
+      assert.equal(decided.settledAmount, 0);
 
       await prisma.contract.update({
         where: { id: contractId },
@@ -174,6 +181,13 @@ describe("INT-C-02: Prisma 저장소 골든 패스", { skip: hasDatabase ? false
           cancelRequestedAt: null,
           cancelNote: null,
           cancelEscalatedAt: null,
+          cancelResolution: null,
+          cancelResolvedAt: null,
+          compensationRate: null,
+          refundAmount: null,
+          settledAmount: null,
+          clientFeeRefund: null,
+          refundReason: null,
         },
       });
 

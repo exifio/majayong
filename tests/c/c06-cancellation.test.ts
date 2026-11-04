@@ -446,7 +446,7 @@ describe("C-06: 예치 후 계약 취소·이의·운영자 수동 처리", () =
     }
   });
 
-  it("C-06-T09 D-16 승인 전 24시간 내 무납품 전액 환불 판정을 차단", async () => {
+  it("C-06-T09 D-16 승인 후 24시간 내 무납품 전액 환불을 허용", async () => {
     const agreed = createTestSetup();
     const within24h = new Date(depositTime.getTime() + 2 * 60 * 60 * 1000);
 
@@ -458,15 +458,15 @@ describe("C-06: 예치 후 계약 취소·이의·운영자 수동 처리", () =
       cancelNote: "24시간 이내 전액 환불 요청",
     });
 
-    await assert.rejects(
-      () =>
-        agreed.service.agreeCancellation(
-          { userId: agreed.contract.supplierUserId, role: "SUPPLIER" },
-          { contractId: agreed.contract.id },
-        ),
-      (err: unknown) =>
-        err instanceof CancellationHttpError && err.status === 409 && err.message === "D16_BLOCKED",
+    const agreedResult = await agreed.service.agreeCancellation(
+      { userId: agreed.contract.supplierUserId, role: "SUPPLIER" },
+      { contractId: agreed.contract.id },
     );
+    assert.equal(agreedResult.status, "CANCELLED");
+    assert.equal(agreedResult.compensationRate, null);
+    assert.equal(agreedResult.refundAmount, 3_255_000);
+    assert.equal(agreedResult.settledAmount, 0);
+    assert.equal(agreedResult.clientFeeRefund, 155_000);
 
     const decided = createTestSetup();
     await decided.repo.updateContract(decided.contract.id, {
@@ -476,20 +476,15 @@ describe("C-06: 예치 후 계약 취소·이의·운영자 수동 처리", () =
       cancelRequestedAt: within24h,
       cancelEscalatedAt: within24h,
     });
-    await assert.rejects(
-      () =>
-        decided.service.decideCancellation({
-          contractId: decided.contract.id,
-          compensationRate: 0,
-          reason: "24시간 내 무납품 전액환불",
-        }),
-      (err: unknown) => {
-        if (!(err instanceof CancellationHttpError)) return false;
-        assert.equal(err.status, 409);
-        assert.equal(err.message, "D16_BLOCKED");
-        return true;
-      },
-    );
+    const decidedResult = await decided.service.decideCancellation({
+      contractId: decided.contract.id,
+      compensationRate: 0,
+      reason: "24시간 내 무납품 전액환불",
+    });
+    assert.equal(decidedResult.compensationRate, null);
+    assert.equal(decidedResult.refundAmount, 3_255_000);
+    assert.equal(decidedResult.settledAmount, 0);
+    assert.equal(decidedResult.clientFeeRefund, 155_000);
   });
 
   it("C-06-T10 이미 납품한 진행 구간 전액 지급/후속 구간 전액 환불", async () => {

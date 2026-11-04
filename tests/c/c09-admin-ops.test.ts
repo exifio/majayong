@@ -531,16 +531,15 @@ describe("C-09: 관리자 블록/예치/분쟁/정산/감사 API", () => {
 
     await seedCancellation("contract-cancel-24h", ["PENDING", "PENDING"]);
 
-    await assert.rejects(
-      () =>
-        service.decideCancellation(
-          { userId: "admin-1", role: "ADMIN" },
-          "contract-cancel-24h",
-          { compensationRate: 0, reason: "24시간 내 무납품" },
-        ),
-      (err: unknown) =>
-        err instanceof AdminHttpError && err.status === 409 && err.message === "D16_BLOCKED",
+    const decided = await service.decideCancellation(
+      { userId: "admin-1", role: "ADMIN" },
+      "contract-cancel-24h",
+      { compensationRate: 0, reason: "24시간 내 무납품" },
     );
+    assert.equal(decided.compensationRate, null);
+    assert.equal(decided.refundAmount, 3_255_000);
+    assert.equal(decided.settledAmount, 0);
+    assert.equal(decided.clientFeeRefund, 155_000);
 
     await seedCancellation("contract-cancel-delivered", ["DELIVERED", "PENDING"]);
     await assert.rejects(
