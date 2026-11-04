@@ -1,4 +1,5 @@
 import { Role } from "@prisma/client";
+import type { IncomingMessage, ServerResponse } from "node:http";
 import express, { type ErrorRequestHandler, type Express, type Request, type RequestHandler, type Response, type Router } from "express";
 import { createRequestId, errorResponse } from "./core/observability.js";
 import {
@@ -46,6 +47,8 @@ export type AppOptions = {
   profile?: ProfilePorts;
   /** B/C 라우터. A와 같은 세션 인증으로 `/api/v1` 아래에 mount한다. */
   routers?: readonly Router[];
+  /** B/C 라우터가 처리하지 못한 요청을 넘길 하위 핸들러(C의 node:http 라우터 등). */
+  fallback?: (req: IncomingMessage, res: ServerResponse) => Promise<void>;
 };
 
 class ApiError extends Error {
@@ -353,6 +356,23 @@ export function createApp(options: AppOptions): Express {
   app.get("/health", (_req, res) => {
     res.json({ data: { status: "ok" } });
   });
+
+  if (options.fallback) {
+    const fallback = options.fallback;
+    app.use((req, res, next) => {
+      const prefix = "/api/v1";
+      if (req.url === undefined || !req.url.startsWith(`${prefix}/`)) {
+        next();
+        return;
+      }
+      const original = req.url;
+      req.url = original.slice(prefix.length);
+      void fallback(req, res).catch((error: unknown) => {
+        req.url = original;
+        next(error);
+      });
+    });
+  }
 
   app.use((_req, res) => {
     const requestId = String(res.locals.requestId);

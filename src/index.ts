@@ -3,6 +3,14 @@ import { createIntegrationPorts } from "./integration/external-ports.js";
 import { createPrismaIntegrationDb, createPrismaPorts } from "./integration/prisma-wiring.js";
 import { createApp } from "./app.js";
 import { createBRouters } from "./server.js";
+import { createAppHandler } from "./composition.js";
+import { createProfileRatingPort } from "./modules/profile/api.js";
+import { requireActor } from "./modules/identity/session.js";
+import { createMarketplaceAutoRejectPort } from "./modules/application/marketplace-port.js";
+import { createPrismaApplicationUnitOfWork } from "./modules/application/prisma-adapter.js";
+import { createNotificationBridge } from "./modules/notification/c-bridge.js";
+import { createPrismaNotificationTx } from "./modules/notification/prisma-adapter.js";
+import { HttpError } from "./http/envelope.js";
 
 const databaseUrl = process.env.DATABASE_URL;
 const tokenSecret = process.env.TOKEN_SECRET;
@@ -22,8 +30,55 @@ const google = process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET 
 const db = new PrismaClient();
 const now = () => new Date();
 const integrationPorts = createIntegrationPorts(createPrismaIntegrationDb(db), { now });
-const bRouters = createBRouters(createPrismaPorts(db), integrationPorts).map(
+const prismaPorts = createPrismaPorts(db);
+const bRouters = createBRouters(prismaPorts, integrationPorts).map(
   (mounted) => mounted.router,
+);
+
+const pending = (name: string): never => {
+  throw new HttpError(503, "INTEGRATION_PENDING", `${name} Port가 아직 연결되지 않았습니다.`);
+};
+const ratingPort = createProfileRatingPort(db);
+const cHandler = createAppHandler(
+  {
+    prisma: db,
+    webhookSecret: process.env.TOSS_WEBHOOK_SECRET ?? "",
+    clock: { now },
+    ports: {
+      marketplace: createMarketplaceAutoRejectPort(
+        createPrismaApplicationUnitOfWork(prismaPorts.application),
+      ),
+      notifications: createNotificationBridge(
+        createPrismaNotificationTx(prismaPorts.notification),
+        { now },
+      ),
+      profileReview: {
+        async updateProfileReviewStats(input) {
+          await ratingPort.refresh(input.targetUserId);
+          return { success: true };
+        },
+      },
+      storage: {
+        async createUploadUrl() { return pending("Storage"); },
+        async createDownloadUrl() { return pending("Storage"); },
+      },
+      catalogAdmin: {
+        async executeBlockAction() { return pending("CatalogAdmin"); },
+      },
+    },
+  },
+  async (req) => {
+    const header = req.headers.authorization;
+    const value = typeof header === "string" ? header : undefined;
+    const match = /^Bearer ([^\s]+)$/.exec(value ?? "");
+    if (!match) return null;
+    try {
+      const actor = await requireActor(db, match[1]!, tokenSecret, Date.now());
+      return { userId: actor.userId, role: actor.role };
+    } catch {
+      return null;
+    }
+  },
 );
 
 const app = createApp({
@@ -36,6 +91,7 @@ const app = createApp({
     supplierNdaVersion: process.env.SUPPLIER_NDA_VERSION,
   },
   routers: bRouters,
+  fallback: cHandler,
 });
 const server = app.listen(port);
 
