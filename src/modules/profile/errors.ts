@@ -1,3 +1,10 @@
 export class ProfileError extends Error {
-  constructor(readonly code: string, readonly status: number) { super(code); }
+  readonly code: string;
+  readonly status: number;
+
+  constructor(code: string, status: number) {
+    super(code);
+    this.code = code;
+    this.status = status;
+  }
 }

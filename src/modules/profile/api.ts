@@ -168,29 +168,33 @@ export function createPayoutAccountStatusPort(db: PrismaClient) {
 }
 
 export function createProfileRatingPort(db: PrismaClient) {
+  async function refreshInTransaction(tx: Prisma.TransactionClient, userId: string): Promise<void> {
+    const user = await tx.user.findUnique({ where: { id: userId }, select: { role: true } });
+    if (!user || (user.role !== Role.CLIENT && user.role !== Role.SUPPLIER)) return;
+    if (user.role === Role.CLIENT) {
+      await tx.$queryRaw`SELECT "userId" FROM client_profiles WHERE "userId" = ${userId} FOR UPDATE`;
+      if (!await tx.clientProfile.findUnique({ where: { userId }, select: { userId: true } })) return;
+      const [rating, reviewCount] = await Promise.all([
+        tx.review.aggregate({ where: { revieweeId: userId }, _avg: { rating: true } }),
+        tx.review.count({ where: { revieweeId: userId } }),
+      ]);
+      await tx.clientProfile.update({ where: { userId }, data: { ratingAvg: rating._avg.rating, reviewCount } });
+      return;
+    }
+    await tx.$queryRaw`SELECT "userId" FROM supplier_profiles WHERE "userId" = ${userId} FOR UPDATE`;
+    if (!await tx.supplierProfile.findUnique({ where: { userId }, select: { userId: true } })) return;
+    const [rating, reviewCount] = await Promise.all([
+      tx.review.aggregate({ where: { revieweeId: userId }, _avg: { rating: true } }),
+      tx.review.count({ where: { revieweeId: userId } }),
+    ]);
+    await tx.supplierProfile.update({ where: { userId }, data: { ratingAvg: rating._avg.rating, reviewCount } });
+  }
+
   return {
-    async refresh(userId: string): Promise<void> {
-      await db.$transaction(async tx => {
-        const user = await tx.user.findUnique({ where: { id: userId }, select: { role: true } });
-        if (!user || (user.role !== Role.CLIENT && user.role !== Role.SUPPLIER)) return;
-        if (user.role === Role.CLIENT) {
-          await tx.$queryRaw`SELECT "userId" FROM client_profiles WHERE "userId" = ${userId} FOR UPDATE`;
-          if (!await tx.clientProfile.findUnique({ where: { userId }, select: { userId: true } })) return;
-          const [rating, reviewCount] = await Promise.all([
-            tx.review.aggregate({ where: { revieweeId: userId }, _avg: { rating: true } }),
-            tx.review.count({ where: { revieweeId: userId } }),
-          ]);
-          await tx.clientProfile.update({ where: { userId }, data: { ratingAvg: rating._avg.rating, reviewCount } });
-          return;
-        }
-        await tx.$queryRaw`SELECT "userId" FROM supplier_profiles WHERE "userId" = ${userId} FOR UPDATE`;
-        if (!await tx.supplierProfile.findUnique({ where: { userId }, select: { userId: true } })) return;
-        const [rating, reviewCount] = await Promise.all([
-          tx.review.aggregate({ where: { revieweeId: userId }, _avg: { rating: true } }),
-          tx.review.count({ where: { revieweeId: userId } }),
-        ]);
-        await tx.supplierProfile.update({ where: { userId }, data: { ratingAvg: rating._avg.rating, reviewCount } });
-      });
+    /** 같은 tx를 넘기면 그 tx에서 평점을 갱신한다(리뷰 생성과 원자적). */
+    async refresh(userId: string, tx?: Prisma.TransactionClient): Promise<void> {
+      if (tx !== undefined) return refreshInTransaction(tx, userId);
+      await db.$transaction((inner) => refreshInTransaction(inner, userId));
     },
   };
 }

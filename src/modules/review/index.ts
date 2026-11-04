@@ -29,7 +29,7 @@ export interface ReviewContractEntity {
 }
 
 export interface ProfileReviewPorts {
-  updateProfileReviewStats(input: { targetUserId: string; rating: number }): Promise<{ success: boolean }>;
+  updateProfileReviewStats(input: { targetUserId: string; rating: number }, tx?: unknown): Promise<{ success: boolean }>;
 }
 
 /** #093·#094·#095 외부 공개 응답. 작성자/대상 식별자는 노출하지 않는다. */
@@ -58,7 +58,7 @@ export class DuplicateReviewError extends Error {
 export interface ReviewRepository {
   seedContract(contract: ReviewContractEntity): void;
   getContract(id: string): Promise<ReviewContractEntity | null>;
-  createReview(data: Omit<ReviewEntity, "id">): Promise<ReviewEntity>;
+  createReview(data: Omit<ReviewEntity, "id">, tx?: unknown): Promise<ReviewEntity>;
   findReviewByContractAndReviewer(contractId: string, reviewerId: string): Promise<ReviewEntity | null>;
   listReviewsByContract(contractId: string): Promise<ReviewEntity[]>;
   listReviewsByReviewee(revieweeId: string): Promise<ReviewEntity[]>;
@@ -76,7 +76,7 @@ export function createInMemoryReviewRepository(): ReviewRepository {
     async getContract(id) {
       return contracts.get(id) ?? null;
     },
-    async createReview(data) {
+    async createReview(data, _tx?: unknown) {
       // DB @@unique([contractId, reviewerId])와 동일한 원자적 검사
       for (const r of reviews.values()) {
         if (r.contractId === data.contractId && r.reviewerId === data.reviewerId) {
@@ -117,6 +117,8 @@ export interface ReviewServiceOptions {
   /** PRD F-14 "역할별 5종"의 실제 태그 값은 원본에 없다. Gate 0(D-18) 승인 전에는 전달하지 않는다. */
   allowedTags?: { CLIENT: readonly string[]; SUPPLIER: readonly string[] };
   reviewerProfiles?: ReviewerProfilePort;
+  /** 리뷰 저장과 A 평점 갱신을 같은 트랜잭션으로 묶는다. */
+  transactionRunner?: { run<T>(work: (tx: unknown) => Promise<T>): Promise<T> };
 }
 
 const MAX_REVIEW_COMMENT_LENGTH = 500;
@@ -128,6 +130,7 @@ export class ReviewService {
   private readonly clock: { now(): Date };
   private readonly allowedTags?: { CLIENT: readonly string[]; SUPPLIER: readonly string[] };
   private readonly reviewerProfiles?: ReviewerProfilePort;
+  private readonly transactionRunner?: ReviewServiceOptions["transactionRunner"];
 
   constructor(options: ReviewServiceOptions) {
     this.repo = options.repo;
@@ -135,6 +138,7 @@ export class ReviewService {
     this.clock = options.clock ?? { now: () => new Date() };
     this.allowedTags = options.allowedTags;
     this.reviewerProfiles = options.reviewerProfiles;
+    this.transactionRunner = options.transactionRunner;
   }
 
   async createReview(
@@ -192,33 +196,38 @@ export class ReviewService {
 
     const tags = this.validateTags(input.tags ?? [], reviewerRole);
 
-    let review: ReviewEntity;
-    try {
-      review = await this.repo.createReview({
-        contractId: contract.id,
-        reviewerId: actor.userId,
-        revieweeId,
-        reviewerRole,
-        rating: input.rating,
-        comment: cleanComment,
-        tags,
-        createdAt: this.clock.now(),
-      });
-    } catch (err) {
-      // DB @@unique([contractId, reviewerId]) 충돌 → 409
-      if (err instanceof DuplicateReviewError) {
-        throw new ReviewHttpError(409, "이미 리뷰를 작성하셨습니다. 리뷰는 계약당 1회만 작성할 수 있습니다.");
+    const persist = async (tx?: unknown): Promise<ReviewEntity> => {
+      let review: ReviewEntity;
+      try {
+        review = await this.repo.createReview({
+          contractId: contract.id,
+          reviewerId: actor.userId,
+          revieweeId,
+          reviewerRole,
+          rating: input.rating,
+          comment: cleanComment,
+          tags,
+          createdAt: this.clock.now(),
+        }, tx);
+      } catch (err) {
+        // DB @@unique([contractId, reviewerId]) 충돌 → 409
+        if (err instanceof DuplicateReviewError) {
+          throw new ReviewHttpError(409, "이미 리뷰를 작성하셨습니다. 리뷰는 계약당 1회만 작성할 수 있습니다.");
+        }
+        throw err;
       }
-      throw err;
-    }
 
-    // A 포트를 통한 프로필 평점 통계 갱신
-    await this.profilePorts.updateProfileReviewStats({
-      targetUserId: revieweeId,
-      rating: input.rating,
-    });
+      // A 포트를 통한 프로필 평점 통계 갱신 — 리뷰 저장과 같은 tx
+      await this.profilePorts.updateProfileReviewStats({
+        targetUserId: revieweeId,
+        rating: input.rating,
+      }, tx);
 
-    return review;
+      return review;
+    };
+
+    if (this.transactionRunner === undefined) return persist();
+    return this.transactionRunner.run(persist);
   }
 
   private validateTags(tags: unknown, role: ReviewerRole): string[] {

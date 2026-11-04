@@ -84,6 +84,9 @@ export function createIntegrationServices(config: IntegrationConfig) {
     repo: repos.reviewRepository,
     profilePorts: config.ports.profileReview,
     clock,
+    transactionRunner: {
+      run: (work) => config.prisma.$transaction((tx) => work(tx)),
+    },
   });
   const files = new FileService({
     repo: repos.fileRepository,

@@ -732,8 +732,8 @@ export function createPrismaRepositories(prisma: PrismaClient, options: PrismaSt
         status: mapped.status,
       };
     },
-    async createReview(data) {
-      const row = await prisma.review.create({
+    async createReview(data, tx?: unknown) {
+      const row = await db(tx).review.create({
         data: {
           contractId: data.contractId,
           reviewerId: data.reviewerId,

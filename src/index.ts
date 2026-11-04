@@ -90,8 +90,11 @@ const cHandler = createAppHandler(
         { now, notificationTxFor: (tx) => createPrismaNotificationTx(tx as NotificationDbClient) },
       ),
       profileReview: {
-        async updateProfileReviewStats(input) {
-          await ratingPort.refresh(input.targetUserId);
+        async updateProfileReviewStats(input, tx) {
+          await ratingPort.refresh(
+            input.targetUserId,
+            tx as import("@prisma/client").Prisma.TransactionClient | undefined,
+          );
           return { success: true };
         },
       },
