@@ -201,3 +201,164 @@ describe("C-07: 완료 후 상호 리뷰·공개 평점", () => {
     assert.match(review.comment ?? "", /\[연락처\]/);
   });
 });
+
+describe("C-07 재검수: 공개 DTO·조회 권한·태그 검증·동시성", () => {
+  function setup(options?: {
+    allowedTags?: { CLIENT: readonly string[]; SUPPLIER: readonly string[] };
+    withdrawnUserIds?: readonly string[];
+  }) {
+    const repo = createInMemoryReviewRepository();
+    const contract: ReviewContractEntity = {
+      id: "contract-c07r",
+      clientUserId: "client-c07r",
+      supplierUserId: "supplier-c07r",
+      status: "COMPLETED",
+    };
+    repo.seedContract(contract);
+
+    let statsUpdates = 0;
+    const service = new ReviewService({
+      repo,
+      profilePorts: {
+        async updateProfileReviewStats() {
+          statsUpdates++;
+          return { success: true };
+        },
+      },
+      clock: { now: () => new Date("2026-11-25T10:00:00.000Z") },
+      allowedTags: options?.allowedTags,
+      reviewerProfiles: {
+        async getReviewerProfile(userId: string) {
+          return {
+            displayName: `이름-${userId}`,
+            withdrawn: (options?.withdrawnUserIds ?? []).includes(userId),
+          };
+        },
+      },
+    });
+
+    return { repo, contract, service, getStatsUpdates: () => statsUpdates };
+  }
+
+  it("C-07-F01a 계약 리뷰 목록은 당사자만 조회", async () => {
+    const { service, contract } = setup();
+    await service.createReview(
+      { userId: contract.clientUserId, role: "CLIENT" },
+      { contractId: contract.id, rating: 5, tags: [] },
+    );
+
+    await assert.rejects(
+      () => service.listContractReviews({ userId: "outsider" }, contract.id),
+      (err: unknown) => err instanceof ReviewHttpError && err.status === 403,
+    );
+
+    const asClient = await service.listContractReviews(
+      { userId: contract.clientUserId },
+      contract.id,
+    );
+    assert.equal(asClient.length, 1);
+    const asSupplier = await service.listContractReviews(
+      { userId: contract.supplierUserId },
+      contract.id,
+    );
+    assert.equal(asSupplier.length, 1);
+  });
+
+  it("C-07-F01b 공개 DTO는 식별자를 숨기고 탈퇴 상대는 익명 처리", async () => {
+    const { service, contract } = setup({ withdrawnUserIds: ["client-c07r"] });
+    await service.createReview(
+      { userId: contract.clientUserId, role: "CLIENT" },
+      { contractId: contract.id, rating: 5, comment: "좋아요", tags: [] },
+    );
+
+    const publicReviews = await service.listSupplierReviews(contract.supplierUserId);
+    assert.equal(publicReviews.length, 1);
+    const dto = publicReviews[0] as Record<string, unknown>;
+    assert.equal("reviewerId" in dto, false);
+    assert.equal("revieweeId" in dto, false);
+    assert.equal("contractId" in dto, false);
+    assert.equal(dto.rating, 5);
+    assert.equal(dto.reviewerDisplayName, "익명");
+
+    const active = setup();
+    await active.service.createReview(
+      { userId: active.contract.supplierUserId, role: "SUPPLIER" },
+      { contractId: active.contract.id, rating: 4, tags: [] },
+    );
+    const [activeDto] = await active.service.listClientReviews(active.contract.clientUserId);
+    assert.equal(activeDto.reviewerDisplayName, `이름-${active.contract.supplierUserId}`);
+  });
+
+  it("C-07-F01c 태그·본문 형식을 서버에서 검증", async () => {
+    const { service, contract } = setup({
+      allowedTags: { CLIENT: ["친절해요", "전문적이에요"], SUPPLIER: ["명확해요"] },
+    });
+    const client = { userId: contract.clientUserId, role: "CLIENT" };
+
+    await assert.rejects(
+      () =>
+        service.createReview(client, {
+          contractId: contract.id,
+          rating: 5,
+          tags: ["허용되지않은태그"],
+        }),
+      (err: unknown) => err instanceof ReviewHttpError && err.status === 400,
+    );
+    await assert.rejects(
+      () =>
+        service.createReview(client, {
+          contractId: contract.id,
+          rating: 5,
+          tags: ["친절해요", "전문적이에요", "친절해요", "전문적이에요", "친절해요", "전문적이에요"],
+        }),
+      (err: unknown) => err instanceof ReviewHttpError && err.status === 400,
+    );
+    await assert.rejects(
+      () =>
+        service.createReview(client, {
+          contractId: contract.id,
+          rating: 5,
+          tags: ["친절해요", "친절해요"],
+        }),
+      (err: unknown) => err instanceof ReviewHttpError && err.status === 400,
+    );
+
+    // 500자 허용, 501자 거부
+    const ok = await service.createReview(client, {
+      contractId: contract.id,
+      rating: 5,
+      tags: ["친절해요"],
+      comment: "가".repeat(500),
+    });
+    assert.equal(ok.comment?.length, 500);
+
+    const other = setup();
+    await assert.rejects(
+      () =>
+        other.service.createReview(
+          { userId: other.contract.clientUserId, role: "CLIENT" },
+          { contractId: other.contract.id, rating: 5, tags: [], comment: "가".repeat(501) },
+        ),
+      (err: unknown) => err instanceof ReviewHttpError && err.status === 400,
+    );
+  });
+
+  it("C-07-F02 동시 작성에도 리뷰 1건·평점 캐시 1회", async () => {
+    const { service, contract, getStatsUpdates } = setup();
+    const actor = { userId: contract.clientUserId, role: "CLIENT" };
+
+    const results = await Promise.allSettled([
+      service.createReview(actor, { contractId: contract.id, rating: 5, tags: [] }),
+      service.createReview(actor, { contractId: contract.id, rating: 4, tags: [] }),
+    ]);
+
+    assert.equal(results.filter((r) => r.status === "fulfilled").length, 1);
+    const rejected = results.filter(
+      (r): r is PromiseRejectedResult => r.status === "rejected",
+    );
+    assert.equal(rejected.length, 1);
+    assert.ok(rejected[0].reason instanceof ReviewHttpError);
+    assert.equal(rejected[0].reason.status, 409);
+    assert.equal(getStatsUpdates(), 1);
+  });
+});

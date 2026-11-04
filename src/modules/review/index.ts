@@ -32,6 +32,29 @@ export interface ProfileReviewPorts {
   updateProfileReviewStats(input: { targetUserId: string; rating: number }): Promise<{ success: boolean }>;
 }
 
+/** #093·#094·#095 외부 공개 응답. 작성자/대상 식별자는 노출하지 않는다. */
+export interface PublicReviewDto {
+  id: string;
+  rating: number;
+  comment: string | null;
+  tags: string[];
+  reviewerRole: ReviewerRole;
+  reviewerDisplayName: string;
+  createdAt: Date;
+}
+
+export interface ReviewerProfilePort {
+  getReviewerProfile(userId: string): Promise<{ displayName: string; withdrawn: boolean } | null>;
+}
+
+/** 리포지토리의 (contractId, reviewerId) 유니크 위반. 실제 DB에서는 @@unique([contractId, reviewerId]). */
+export class DuplicateReviewError extends Error {
+  constructor() {
+    super("이미 리뷰를 작성했습니다.");
+    this.name = "DuplicateReviewError";
+  }
+}
+
 export interface ReviewRepository {
   seedContract(contract: ReviewContractEntity): void;
   getContract(id: string): Promise<ReviewContractEntity | null>;
@@ -54,6 +77,12 @@ export function createInMemoryReviewRepository(): ReviewRepository {
       return contracts.get(id) ?? null;
     },
     async createReview(data) {
+      // DB @@unique([contractId, reviewerId])와 동일한 원자적 검사
+      for (const r of reviews.values()) {
+        if (r.contractId === data.contractId && r.reviewerId === data.reviewerId) {
+          throw new DuplicateReviewError();
+        }
+      }
       const id = `rev-${idCounter++}`;
       const rec: ReviewEntity = { ...data, id };
       reviews.set(id, rec);
@@ -85,17 +114,27 @@ export interface ReviewServiceOptions {
   repo: ReviewRepository;
   profilePorts: ProfileReviewPorts;
   clock?: { now(): Date };
+  /** PRD F-14 "역할별 5종"의 실제 태그 값은 원본에 없다. Gate 0(D-18) 승인 전에는 전달하지 않는다. */
+  allowedTags?: { CLIENT: readonly string[]; SUPPLIER: readonly string[] };
+  reviewerProfiles?: ReviewerProfilePort;
 }
+
+const MAX_REVIEW_COMMENT_LENGTH = 500;
+const MAX_REVIEW_TAGS = 5;
 
 export class ReviewService {
   private readonly repo: ReviewRepository;
   private readonly profilePorts: ProfileReviewPorts;
   private readonly clock: { now(): Date };
+  private readonly allowedTags?: { CLIENT: readonly string[]; SUPPLIER: readonly string[] };
+  private readonly reviewerProfiles?: ReviewerProfilePort;
 
   constructor(options: ReviewServiceOptions) {
     this.repo = options.repo;
     this.profilePorts = options.profilePorts;
     this.clock = options.clock ?? { now: () => new Date() };
+    this.allowedTags = options.allowedTags;
+    this.reviewerProfiles = options.reviewerProfiles;
   }
 
   async createReview(
@@ -144,23 +183,34 @@ export class ReviewService {
 
     let cleanComment: string | null = null;
     if (input.comment) {
-      if (input.comment.length > 500) {
+      if (input.comment.length > MAX_REVIEW_COMMENT_LENGTH) {
         throw new ReviewHttpError(400, "리뷰 본문은 최대 500자까지 작성할 수 있습니다.");
       }
       // C-07-T06: 연락처 마스킹
       cleanComment = maskContactInfo(input.comment);
     }
 
-    const review = await this.repo.createReview({
-      contractId: contract.id,
-      reviewerId: actor.userId,
-      revieweeId,
-      reviewerRole,
-      rating: input.rating,
-      comment: cleanComment,
-      tags: input.tags ?? [],
-      createdAt: this.clock.now(),
-    });
+    const tags = this.validateTags(input.tags ?? [], reviewerRole);
+
+    let review: ReviewEntity;
+    try {
+      review = await this.repo.createReview({
+        contractId: contract.id,
+        reviewerId: actor.userId,
+        revieweeId,
+        reviewerRole,
+        rating: input.rating,
+        comment: cleanComment,
+        tags,
+        createdAt: this.clock.now(),
+      });
+    } catch (err) {
+      // DB @@unique([contractId, reviewerId]) 충돌 → 409
+      if (err instanceof DuplicateReviewError) {
+        throw new ReviewHttpError(409, "이미 리뷰를 작성하셨습니다. 리뷰는 계약당 1회만 작성할 수 있습니다.");
+      }
+      throw err;
+    }
 
     // A 포트를 통한 프로필 평점 통계 갱신
     await this.profilePorts.updateProfileReviewStats({
@@ -171,15 +221,71 @@ export class ReviewService {
     return review;
   }
 
-  async listContractReviews(contractId: string): Promise<ReviewEntity[]> {
-    return this.repo.listReviewsByContract(contractId);
+  private validateTags(tags: unknown, role: ReviewerRole): string[] {
+    if (!Array.isArray(tags)) {
+      throw new ReviewHttpError(400, "태그는 문자열 배열이어야 합니다.");
+    }
+    if (tags.length > MAX_REVIEW_TAGS) {
+      throw new ReviewHttpError(400, "태그는 최대 5개까지 선택할 수 있습니다.");
+    }
+    for (const tag of tags) {
+      if (typeof tag !== "string" || tag.trim().length === 0) {
+        throw new ReviewHttpError(400, "태그는 비어 있지 않은 문자열이어야 합니다.");
+      }
+    }
+    if (new Set(tags).size !== tags.length) {
+      throw new ReviewHttpError(400, "같은 태그를 중복해서 선택할 수 없습니다.");
+    }
+    const allowed = this.allowedTags?.[role];
+    if (allowed) {
+      const invalid = tags.find((tag) => !allowed.includes(tag as string));
+      if (invalid !== undefined) {
+        throw new ReviewHttpError(400, `허용되지 않은 태그입니다: ${String(invalid)}`);
+      }
+    }
+    return tags as string[];
   }
 
-  async listSupplierReviews(supplierUserId: string): Promise<ReviewEntity[]> {
-    return this.repo.listReviewsByReviewee(supplierUserId);
+  /** #093 계약 리뷰: 계약 당사자만 조회. 공개 DTO만 반환한다. */
+  async listContractReviews(
+    actor: { userId: string },
+    contractId: string,
+  ): Promise<PublicReviewDto[]> {
+    const contract = await this.repo.getContract(contractId);
+    if (!contract) throw new ReviewHttpError(404, "계약을 찾을 수 없습니다.");
+    if (actor.userId !== contract.clientUserId && actor.userId !== contract.supplierUserId) {
+      throw new ReviewHttpError(403, "계약 당사자만 리뷰를 조회할 수 있습니다.");
+    }
+    return this.toPublicDtos(await this.repo.listReviewsByContract(contractId));
   }
 
-  async listClientReviews(clientUserId: string): Promise<ReviewEntity[]> {
-    return this.repo.listReviewsByReviewee(clientUserId);
+  /** #094 공급자 공개 리뷰 */
+  async listSupplierReviews(supplierUserId: string): Promise<PublicReviewDto[]> {
+    return this.toPublicDtos(await this.repo.listReviewsByReviewee(supplierUserId));
+  }
+
+  /** #095 의뢰인 공개 리뷰 */
+  async listClientReviews(clientUserId: string): Promise<PublicReviewDto[]> {
+    return this.toPublicDtos(await this.repo.listReviewsByReviewee(clientUserId));
+  }
+
+  private async toPublicDtos(reviews: ReviewEntity[]): Promise<PublicReviewDto[]> {
+    return Promise.all(
+      reviews.map(async (review) => {
+        const profile = this.reviewerProfiles
+          ? await this.reviewerProfiles.getReviewerProfile(review.reviewerId)
+          : null;
+        return {
+          id: review.id,
+          rating: review.rating,
+          comment: review.comment,
+          tags: review.tags,
+          reviewerRole: review.reviewerRole,
+          // 탈퇴했거나 프로필을 확인할 수 없으면 익명 처리
+          reviewerDisplayName: profile && !profile.withdrawn ? profile.displayName : "익명",
+          createdAt: review.createdAt,
+        };
+      }),
+    );
   }
 }
