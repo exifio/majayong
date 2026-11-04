@@ -6,6 +6,7 @@ import {
   NOTIFICATION_TYPES,
   NotificationError,
   chatRoomTargetId,
+  createChatNotificationPort,
   createNotificationOnceInTransaction,
   isDeadlineNotificationType,
   listNotifications,
@@ -861,5 +862,40 @@ describe('B-06-T06 계약 이후 불필요 알림 0', () => {
       (NOTIFICATION_TYPES as readonly string[]).includes('PAYMENT_DEPOSITED'),
       false,
     );
+  });
+});
+
+describe('B-06-T07 채팅 발신에 붙는 방별 알림 Port', () => {
+  it('같은 방의 연속 메시지는 상대에게 한 줄로 묶고 보낸 사람에게는 만들지 않는다', async () => {
+    const uow = new FakeUnitOfWork();
+    const port = createChatNotificationPort(uow);
+    const first = new Date('2026-11-03T00:00:00.000Z');
+    const second = new Date('2026-11-03T00:05:00.000Z');
+
+    await port.notifyNewMessage({
+      projectId: 'prj-1',
+      supplierId: SUPPLIER,
+      clientUserId: CLIENT,
+      supplierUserId: SUPPLIER,
+      senderId: CLIENT,
+      now: first,
+    });
+    await port.notifyNewMessage({
+      projectId: 'prj-1',
+      supplierId: SUPPLIER,
+      clientUserId: CLIENT,
+      supplierUserId: SUPPLIER,
+      senderId: CLIENT,
+      now: second,
+    });
+
+    assert.equal(uow.tx.rows.length, 1);
+    const row = uow.tx.rows[0];
+    assert.equal(row?.userId, SUPPLIER);
+    assert.equal(row?.type, 'NEW_MESSAGE');
+    assert.equal(row?.targetId, 'prj-1:supplier-1');
+    assert.equal(row?.targetUrl, '/chat/prj-1:supplier-1');
+    assert.equal(row?.createdAt.getTime(), second.getTime());
+    assert.equal(row?.isRead, false);
   });
 });

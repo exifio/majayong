@@ -532,3 +532,68 @@ describe('B-03-T07 읽음 처리와 안 읽은 수', () => {
     assert.equal(countUnread(messages, 'client-1'), 1);
   });
 });
+
+describe('B-03-T08 방별 새 메시지 알림 연결', () => {
+  it('저장된 메시지의 방 식별자·양 당사자·발신자·시각으로 알림을 한 번 요청한다', async () => {
+    const repository = new FakeChatRepository([chatApplication()], [
+      chatMessage({ id: 'msg-1' }),
+    ]);
+    const calls: {
+      projectId: string;
+      supplierId: string;
+      clientUserId: string;
+      supplierUserId: string;
+      senderId: string;
+      now: Date;
+    }[] = [];
+    const notifications = {
+      async notifyNewMessage(input: (typeof calls)[number]) {
+        calls.push(input);
+      },
+    };
+
+    const created = await sendMessage(repository, {
+      actor: CLIENT,
+      account: account(),
+      applicationId: 'app-1',
+      body: '알림 확인 부탁드립니다.',
+      now: FIXED_NOW,
+      notifications,
+    });
+
+    assert.equal(repository.messages.at(-1)?.id, created.id);
+    assert.deepEqual(calls, [{
+      projectId: 'prj-1',
+      supplierId: 'supplier-1',
+      clientUserId: 'client-1',
+      supplierUserId: 'supplier-1',
+      senderId: 'client-1',
+      now: FIXED_NOW,
+    }]);
+  });
+
+  it('발신이 거부되면 알림을 만들지 않는다', async () => {
+    const repository = new FakeChatRepository([
+      chatApplication({ status: 'REJECTED' }),
+    ]);
+    let calls = 0;
+    const notifications = {
+      async notifyNewMessage() {
+        calls += 1;
+      },
+    };
+
+    await assert.rejects(
+      sendMessage(repository, {
+        actor: CLIENT,
+        account: account(),
+        applicationId: 'app-1',
+        body: '거절된 지원입니다.',
+        now: FIXED_NOW,
+        notifications,
+      }),
+      isChatError(403, 'CHAT_READ_ONLY'),
+    );
+    assert.equal(calls, 0);
+  });
+});

@@ -93,6 +93,18 @@ export interface ChatEventPort {
   }): Promise<boolean>;
 }
 
+/** B-06 알림 모듈에 방 단위 새 메시지 알림을 요청하는 선택 포트. */
+export interface ChatNotificationPort {
+  notifyNewMessage(input: {
+    readonly projectId: string;
+    readonly supplierId: string;
+    readonly clientUserId: string;
+    readonly supplierUserId: string;
+    readonly senderId: string;
+    readonly now: Date;
+  }): Promise<void>;
+}
+
 export interface ConversationView {
   readonly messages: readonly ChatMessage[];
   readonly unreadCount: number;
@@ -157,6 +169,7 @@ export async function sendMessage(
     readonly applicationId: string;
     readonly body: string;
     readonly now: Date;
+    readonly notifications?: ChatNotificationPort;
   },
 ): Promise<ChatMessage> {
   const application = await repository.findApplication(input.applicationId);
@@ -199,7 +212,7 @@ export async function sendMessage(
     ? maskContacts(trimmed)
     : { text: trimmed, masked: false };
 
-  return repository.createMessage({
+  const created = await repository.createMessage({
     applicationId: application.id,
     senderId: input.actor.userId,
     kind: 'TEXT',
@@ -207,6 +220,17 @@ export async function sendMessage(
     isMasked: masked.masked,
     createdAt: input.now,
   });
+
+  await input.notifications?.notifyNewMessage({
+    projectId: application.projectId,
+    supplierId: application.supplierId,
+    clientUserId: application.clientUserId,
+    supplierUserId: application.supplierId,
+    senderId: input.actor.userId,
+    now: input.now,
+  });
+
+  return created;
 }
 
 export async function listConversation(

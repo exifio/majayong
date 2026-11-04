@@ -6,6 +6,7 @@
  *   기한 알림은 최초 1회만, `NEW_MESSAGE`는 방 단위 한 줄을 최신 시각으로 갱신한다.
  * - 결제 완료·납품·검수 결과·지급은 알림이 아니라 '내 계약' 상태로 보여 준다.
  */
+import type { ChatNotificationPort } from '../chat/conversation.js';
 export const NOTIFICATION_TYPES = [
   'APPLICATION_RECEIVED',
   'APPLICATION_ACCEPTED',
@@ -440,6 +441,17 @@ export async function notifyNewMessage(
     targetId: chatRoomTargetId(input.projectId, input.supplierId),
     now: input.now,
   });
+}
+
+/** B-03 채팅 발신에 B-06의 방별 묶음 알림을 붙이는 어댑터. */
+export function createChatNotificationPort(
+  uow: NotificationUnitOfWork,
+): ChatNotificationPort {
+  return {
+    async notifyNewMessage(input) {
+      await notifyNewMessage(uow, input);
+    },
+  };
 }
 
 /** C가 보내는 계약 이후 이벤트 중 알림을 만드는 것은 기한 5종뿐이다. */
