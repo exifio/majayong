@@ -1,0 +1,127 @@
+<helmet>
+<style>
+.pg{word-break:keep-all}
+.dupnote{background:var(--amber-50);border:1px solid #F2E0BE;border-radius:10px;padding:10px 14px;margin:8px 0 0;font-size:14px;color:#7A5A1C;line-height:1.6}
+.dupnote b{color:var(--amber-700)}
+.dupnote a{margin-left:10px;font-size:14px}
+.inp.warnline{border-color:#E6C68A}
+sc-if{display:contents}
+.div{display:flex;align-items:center;gap:14px;margin:22px 0;color:var(--s600);font-size:14px}
+.div::before,.div::after{content:"";height:1px;background:var(--s200);flex:1 1 auto}
+.formcard{max-width:520px;margin:0 auto}
+</style>
+<style>
+.pg{min-height:100vh;position:relative;padding-bottom:393px;box-sizing:border-box}
+.gf{position:absolute;left:0;right:0;bottom:0;background:var(--s50);border-top:1px solid var(--s200);padding:40px 0 36px;font-size:14px;color:var(--s600);word-break:keep-all}
+.gf-top{display:flex;justify-content:space-between;gap:32px;flex-wrap:wrap;padding-bottom:28px;border-bottom:1px solid var(--s200)}
+.gf-brand{flex:1 1 260px;min-width:0}
+.gf-logo{display:inline-flex;align-items:center;font-size:19px;font-weight:600;letter-spacing:-0.4px;color:var(--s900)}
+.gf-brand p{margin:10px 0 0;line-height:1.6}
+.gf-cols{display:flex;gap:48px;flex-wrap:wrap}
+.gf-cols>div{display:flex;flex-direction:column;gap:9px;min-width:0}
+.gf-cols b{font-size:14px;font-weight:600;color:var(--s900);margin-bottom:2px}
+.gf-cols a{color:var(--s600);text-decoration:none}
+.gf-cols a.em{color:var(--s900);font-weight:600}
+.gf-bot{padding-top:22px;font-size:13px;line-height:1.75}
+.gf-bot p{margin:0 0 8px}
+.gf-biz i{display:inline-block;width:1px;height:10px;background:var(--s300);margin:0 9px;vertical-align:-1px}
+.gf-copy{color:var(--s400)}
+</style>
+</helmet>
+
+<div class="pg">
+
+  <header class="gnb">
+    <div class="wrap">
+      <div class="gnbin">
+        <a class="brand" href="Main.dc.html"><span class="mark" aria-hidden="true"><i style="height:9px"></i><i style="height:17px"></i><i style="height:12px;opacity:.55"></i></span>마자용</a>
+        <nav class="nav" aria-label="주요 메뉴"><a href="Main.dc.html">작동 방식</a><a href="Main.dc.html">안전장치</a><a href="Main.dc.html">비용</a></nav>
+        <div class="gright"><span class="sec">이미 계정이 있으신가요?</span><a class="lk ft" href="Login.dc.html">로그인</a></div>
+      </div>
+    </div>
+  </header>
+
+  <main class="pad">
+    <div class="narrow">
+      <div class="formcard">
+
+        <ol class="steps">
+          <li class="on"><i>1</i>계정 만들기</li>
+          <li class="sep" aria-hidden="true">›</li>
+          <li><i>2</i>역할 선택</li>
+          <li class="sep" aria-hidden="true">›</li>
+          <li><i>3</i>프로필</li>
+        </ol>
+
+        <h1 class="t">계정을 만듭니다</h1>
+        <p class="sub">이메일과 비밀번호만 있으면 됩니다. 어떤 역할로 쓰실지는 다음 단계에서 고르시게 됩니다.</p>
+
+        <div class="card">
+          <a class="btn google" href="Signup-Role.dc.html">
+            <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path fill="#4285F4" d="M17.6 9.2c0-.6-.1-1.3-.2-1.9H9v3.5h4.8a4.1 4.1 0 0 1-1.8 2.7v2.2h2.9c1.7-1.6 2.7-3.9 2.7-6.5z"/><path fill="#34A853" d="M9 18c2.4 0 4.5-.8 6-2.2l-2.9-2.2c-.8.5-1.8.9-3.1.9-2.4 0-4.4-1.6-5.1-3.8H.9v2.3A9 9 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.9 10.7a5.4 5.4 0 0 1 0-3.4V5H.9a9 9 0 0 0 0 8l3-2.3z"/><path fill="#EA4335" d="M9 3.6c1.3 0 2.5.5 3.4 1.3l2.6-2.6A9 9 0 0 0 .9 5l3 2.3C4.6 5.2 6.6 3.6 9 3.6z"/></svg>
+            구글 계정으로 계속하기
+          </a>
+          <p class="hint" style="text-align:center">구글로 시작하면 이 단계를 건너뛰고 바로 역할 선택으로 갑니다.</p>
+
+          <div class="div">또는 이메일로</div>
+
+          <div class="f">
+            <label class="lbl" for="su-email">이메일<span class="req">*</span></label>
+            <input class="{{emailCls}}" id="su-email" type="email" value="minjae.ondo@example.com">
+            <sc-if value="{{dup}}" hint-placeholder-val="{{ false }}">
+              <div class="dupnote" role="alert"><b>이 이메일로 가입된 계정이 있습니다.</b> 그 계정으로 로그인하세요.<a class="ft" href="Login.dc.html">로그인</a><a class="ft" href="Reset.dc.html">비밀번호 찾기</a></div>
+            </sc-if>
+            <sc-if value="{{notDup}}" hint-placeholder-val="{{ true }}"><p class="hint">로그인에만 씁니다. 어디에도 공개되지 않습니다.</p></sc-if>
+          </div>
+
+          <div class="f">
+            <label class="lbl" for="su-pw">비밀번호<span class="req">*</span></label>
+            <input class="inp" id="su-pw" type="password" value="password1234">
+            <p class="hint">8자 이상, 숫자와 영문을 섞어주세요.</p>
+          </div>
+
+          <hr class="hr">
+
+          <div class="cbx">
+            <input type="checkbox" id="ag1" checked>
+            <label for="ag1">이용약관과 개인정보 처리방침에 동의합니다 <a class="ft" href="Terms.dc.html">보기</a></label>
+          </div>
+          <div class="cbx" style="margin-bottom:20px">
+            <input type="checkbox" id="ag2" checked>
+            <label for="ag2">마자용은 계약 당사자가 아닌 중개자임을 확인했습니다</label>
+          </div>
+
+          <a class="{{nextCls}}" href="Signup-Role.dc.html">계정 만들고 다음으로</a>
+        </div>
+
+        <div class="info">
+          이미 같은 이메일로 가입된 계정이 있으면 <b>기존 계정으로 로그인</b>됩니다. 그 계정의 역할이 그대로 유지되고, 다른 역할로 쓰시려면 다른 이메일이 필요합니다.
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <footer class="gf" aria-label="사이트 정보">
+    <div class="wrap">
+      <div class="gf-top">
+        <div class="gf-brand">
+          <span class="gf-logo"><span class="mark" aria-hidden="true"><i style="height:9px"></i><i style="height:17px"></i><i style="height:12px;opacity:.55"></i></span>마자용</span>
+          <p>소상공인을 위한 웹 외주 요구사항 정의 · 매칭 플랫폼</p>
+        </div>
+        <div class="gf-cols">
+          <div><b>서비스</b><a href="Main.dc.html">의뢰인 안내</a><a href="Supplier-Landing.dc.html">공급자 안내</a></div>
+          <div><b>고객센터</b><a href="Help.dc.html">자주 묻는 질문</a><a href="Help-Inquiry.dc.html">1:1 문의</a><a href="Help.dc.html">공지사항</a></div>
+          <div><b>정책</b><a href="Terms.dc.html">이용약관</a><a class="em" href="Terms.dc.html">개인정보 처리방침</a><a href="Terms.dc.html">명세 비밀유지</a><a href="Terms.dc.html">중개자 고지</a></div>
+          <div class="gf-cs"><b>고객센터 1600-0000</b><span>평일 10:00–18:00</span><span>점심 12:00–13:00 · 주말 · 공휴일 휴무</span><span>help@majayong.example</span></div>
+        </div>
+      </div>
+      <div class="gf-bot">
+        <p class="gf-biz">상호 로켓단<i></i>대표 김로켓<i></i>사업자등록번호 000-00-00000<i></i>통신판매업 신고 제2026-서울마포-0000호<br>주소 서울특별시 마포구 예시로 00, 0층<i></i>개인정보 보호책임자 박예시<i></i>이메일 help@majayong.example</p>
+        <p class="gf-note">마자용은 통신판매중개자로서 거래 당사자가 아니며, 의뢰인과 공급자 사이 계약의 이행 책임은 각 당사자에게 있습니다. 대금 예치와 정산은 마자용이 관리합니다.</p>
+        <p class="gf-copy">© 2026 로켓단. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+
+</div>

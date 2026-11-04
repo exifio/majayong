@@ -1,0 +1,261 @@
+<helmet>
+<style>
+.pg{word-break:keep-all}
+.es sc-for,.es sc-if{display:contents}
+.crumb{font-size:14px;color:var(--s600);margin:0 0 10px}
+.crumb a{color:var(--s600)}
+.head{margin:0 0 20px}
+.head h1.t{margin:0 0 6px}
+.head .sub{margin:0;max-width:760px}
+.lay{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:20px;align-items:start}
+.blk2{background:#fff;border:1px solid var(--s200);border-radius:12px;padding:20px 22px;margin:0 0 16px}
+.blk2 h2{font-size:17px;font-weight:600;margin:0 0 4px}
+.blk2 .hint{font-size:14px;color:var(--s600);margin:0 0 14px}
+/* 상태 띠 */
+.band4{border-radius:12px;padding:16px 20px;margin:0 0 16px;border:1px solid var(--s200);background:#fff}
+.band4 b{display:block;font-size:16px;margin:0 0 4px}
+.band4 p{margin:0;font-size:14px;line-height:1.6;color:var(--s600)}
+.band4.amber{background:var(--amber-50);border-color:#F2E0BE}
+.band4.amber b{color:var(--amber-700)}
+.band4.amber p{color:#7A5A1C}
+.band4.wait{background:var(--s50);border-color:var(--s300)}
+.band4.wait b{color:var(--navy-900)}
+.band4.done{background:#EAF6F4;border-color:#C7E6E0}
+.band4.done b{color:var(--teal-700)}
+/* 계약 요약 */
+.who2{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding:0 0 14px;border-bottom:1px solid var(--s200);margin:0 0 14px}
+.who2 .pf{display:flex;align-items:center;gap:12px}
+.who2 .av{width:40px;height:40px;border-radius:50%;background:var(--s100);border:1px solid var(--s200);display:flex;align-items:center;justify-content:center;font-weight:600;color:var(--navy-900);flex:none}
+.who2 .nm{font-size:16px;font-weight:600}
+.who2 .mt{font-size:13px;color:var(--s600);margin-top:2px}
+.kv{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:0 0 14px}
+.kv .k{font-size:13px;color:var(--s600)}
+.kv .v{font-size:17px;font-weight:600;margin-top:2px;font-variant-numeric:tabular-nums}
+.kv .s{font-size:12px;color:var(--s600);margin-top:2px}
+.stg2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.stg2>div{border:1px solid var(--s200);border-radius:10px;padding:12px 14px;background:var(--s50)}
+.stg2 .k{font-size:13px;font-weight:600;color:var(--s600)}
+.stg2 .n{font-size:14px;margin:4px 0 6px}
+.stg2 .v{font-size:16px;font-weight:600;font-variant-numeric:tabular-nums}
+/* 결제 수단 */
+.pm{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.pm label.lbl{display:flex;gap:12px;align-items:flex-start;border:1px solid var(--s300);border-radius:10px;padding:14px 16px;cursor:pointer;margin:0;font-weight:400}
+.pm label.lbl.on{border-color:var(--blue-600,#2563EB);background:var(--blue-50,#EEF4FF);box-shadow:0 0 0 1px var(--blue-600,#2563EB) inset}
+.pm label.lbl.off{opacity:.6;cursor:default}
+.pm input{margin:3px 0 0;flex:none}
+.pm b{display:block;font-size:15px;color:var(--s900)}
+.pm span.d{display:block;font-size:13px;color:var(--s600);margin-top:2px;line-height:1.5}
+/* 흐름 */
+.steps3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;counter-reset:st}
+.steps3>div{border:1px solid var(--s200);border-radius:10px;padding:14px 16px}
+.steps3 .no{display:inline-flex;width:22px;height:22px;border-radius:50%;background:var(--navy-900);color:#fff;font-size:12px;font-weight:600;align-items:center;justify-content:center;margin:0 0 8px}
+.steps3 b{display:block;font-size:15px;margin:0 0 4px}
+.steps3 p{margin:0;font-size:13px;color:var(--s600);line-height:1.6}
+.rules3{margin:0;padding-left:18px}
+.rules3 li{font-size:14px;color:var(--s600);line-height:1.75}
+.rules3 b{color:var(--s900);font-weight:600}
+/* 오른쪽 */
+.rail3{position:sticky;top:20px}
+.pay{background:#fff;border:1px solid var(--s200);border-radius:12px;padding:20px 22px}
+.pay h3{font-size:16px;font-weight:600;margin:0 0 12px}
+.pay .r{display:flex;justify-content:space-between;gap:12px;font-size:15px;padding:7px 0;font-variant-numeric:tabular-nums}
+.pay .r span{color:var(--s600)}
+.pay .r.tot{border-top:2px solid var(--s900);margin-top:6px;padding-top:12px}
+.pay .r.tot span{color:var(--s900);font-weight:600}
+.pay .r.tot b{font-size:24px;font-weight:600;color:var(--navy-900);letter-spacing:-0.5px}
+.pay .note3{font-size:13px;color:var(--s600);margin:8px 0 16px;line-height:1.6}
+.pay .cbx{margin:0 0 14px;align-items:flex-start}
+.pay .cbx label{font-size:14px;color:var(--s900);line-height:1.5}
+.pay .btn{width:100%;box-sizing:border-box;justify-content:center;text-align:center;white-space:nowrap}
+.pay .btn+.btn{margin-top:8px}
+.pay .tiny{font-size:12px;color:var(--s600);margin:10px 0 0;text-align:center;line-height:1.5}
+.rc{margin:0 0 14px;padding:12px 14px;border-radius:10px;background:var(--s50);border:1px solid var(--s200)}
+.rc .r2{display:flex;justify-content:space-between;gap:10px;font-size:13px;padding:3px 0}
+.rc .r2 span{color:var(--s600)}
+.rc .r2 b{font-weight:500;font-variant-numeric:tabular-nums}
+.dl3{margin:10px 0 0;padding:8px 12px;border-radius:8px;background:var(--amber-50);color:#7A5A1C;font-size:13px;line-height:1.5}
+.dl3 b{color:var(--amber-700);font-weight:600}
+</style>
+<style>
+.pg{min-height:100vh;position:relative;padding-bottom:393px;box-sizing:border-box}
+.gf{position:absolute;left:0;right:0;bottom:0;background:var(--s50);border-top:1px solid var(--s200);padding:40px 0 36px;font-size:14px;color:var(--s600);word-break:keep-all}
+.gf-top{display:flex;justify-content:space-between;gap:32px;flex-wrap:wrap;padding-bottom:28px;border-bottom:1px solid var(--s200)}
+.gf-brand{flex:1 1 260px;min-width:0}
+.gf-logo{display:inline-flex;align-items:center;font-size:19px;font-weight:600;letter-spacing:-0.4px;color:var(--s900)}
+.gf-brand p{margin:10px 0 0;line-height:1.6}
+.gf-cols{display:flex;gap:48px;flex-wrap:wrap}
+.gf-cols>div{display:flex;flex-direction:column;gap:9px;min-width:0}
+.gf-cols b{font-size:14px;font-weight:600;color:var(--s900);margin-bottom:2px}
+.gf-cols a{color:var(--s600);text-decoration:none}
+.gf-cols a.em{color:var(--s900);font-weight:600}
+.gf-bot{padding-top:22px;font-size:13px;line-height:1.75}
+.gf-bot p{margin:0 0 8px}
+.gf-biz i{display:inline-block;width:1px;height:10px;background:var(--s300);margin:0 9px;vertical-align:-1px}
+.gf-copy{color:var(--s400)}
+</style>
+</helmet>
+
+<div class="pg">
+
+  <header class="gnb">
+    <div class="wrap">
+      <div class="gnbin">
+        <a class="brand" href="Home-Client.dc.html"><span class="mark" aria-hidden="true"><i style="height:9px"></i><i style="height:17px"></i><i style="height:12px;opacity:.55"></i></span>마자용</a>
+        <nav class="nav" aria-label="주요 메뉴">
+          <a href="Home-Client.dc.html">홈</a><a href="Input-Client.dc.html">프로젝트 시작</a><a href="My-Client.dc.html">내 프로젝트</a><a class="on" href="Contracts-Client.dc.html">내 계약</a><a href="Settle-Client.dc.html">정산 내역</a>
+        </nav>
+        <div class="gright">
+          <a class="bell dot" href="Chat-Client.dc.html" aria-label="채팅 — 새 메시지 1건"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"></path></svg></a>
+          <a class="bell dot" href="Notify-Client.dc.html" aria-label="알림 — 안 읽은 알림 3건"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"></path><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"></path></svg></a>
+          <span class="who"><span class="ava">민</span><span class="uname">정민재</span></span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="pad es">
+    <div class="wrap">
+
+      <p class="crumb"><a href="Contracts-Client.dc.html">내 계약</a> › 예약 달력, 예약금 결제 외 2개 기능 › 예치</p>
+      <div class="head">
+        <h1 class="t">{{title}}</h1>
+        <p class="sub">{{sub}}</p>
+      </div>
+
+      <sc-if value="{{isFail}}" hint-placeholder-val="{{ false }}">
+        <div class="band4 amber">
+          <b>결제가 완료되지 않았습니다</b>
+          <p>11월 4일 14:12 · 카드사에서 승인을 거절했습니다. 돈은 빠져나가지 않았습니다. '다시 결제하기'를 누르면 새로 결제를 시도하고, 같은 결제가 두 번 되지 않도록 막습니다.</p>
+        </div>
+      </sc-if>
+      <sc-if value="{{isWait}}" hint-placeholder-val="{{ false }}">
+        <div class="band4 wait">
+          <b>결제사 확인을 기다리고 있습니다</b>
+          <p>11월 4일 14:18 · 결제는 접수되었고 결제사 확인을 기다리고 있습니다. 확인되기 전에는 예치 완료로 바꾸지 않습니다. 금액이 맞지 않으면 운영자가 확인합니다. 다시 결제하지 않으셔도 됩니다.</p>
+        </div>
+      </sc-if>
+      <sc-if value="{{isDone}}" hint-placeholder-val="{{ false }}">
+        <div class="band4 done">
+          <b>예치가 끝났습니다 · 11월 4일 14:20</b>
+          <p>작업이 시작됩니다 — 예치 다음 날부터 42일, 마감 12월 16일. 예치금은 마자용이 보관하고, 구간이 승인될 때만 최준호님에게 지급됩니다.</p>
+        </div>
+      </sc-if>
+
+      <div class="lay">
+        <div>
+          <section class="blk2" aria-labelledby="h-ct">
+            <h2 id="h-ct" style="margin-bottom:14px">계약 요약</h2>
+            <div class="who2">
+              <div class="pf"><span class="av" aria-hidden="true">최</span><div><div class="nm">최준호</div><div class="mt">웹 외주 프리랜서 5년 차 · ★ 4.8 · 리뷰 12건</div></div></div>
+              <span class="{{chipCls}}">{{chip}}</span>
+            </div>
+            <div class="kv">
+              <div><div class="k">합의 금액</div><div class="v">3,100,000원</div><div class="s">견적 2회차</div></div>
+              <div><div class="k">작업 기간</div><div class="v">42일</div><div class="s">{{periodSub}}</div></div>
+              <div><div class="k">지급 비율</div><div class="v">중간 50 : 최종 50</div><div class="s">계약서에서 정함</div></div>
+            </div>
+            <div class="stg2">
+              <div><div class="k">중간 구간</div><div class="n">예약 달력 · 예약금 결제</div><div class="v">1,550,000원</div></div>
+              <div><div class="k">최종 구간</div><div class="n">노쇼 기록 · 리마인드 알림</div><div class="v">1,550,000원</div></div>
+            </div>
+            <p class="sec" style="margin:12px 0 0"><a class="ft" href="Contract-Client.dc.html">계약서 보기</a> · 두 분 모두 11월 4일 서명</p>
+          </section>
+
+          <sc-if value="{{showPm}}" hint-placeholder-val="{{ true }}">
+            <section class="blk2" aria-labelledby="h-pm">
+              <h2 id="h-pm">결제 수단</h2>
+              <p class="hint">결제한 수단으로 환불됩니다.</p>
+              <div class="pm" role="radiogroup" aria-label="결제 수단">
+                <label class="{{pmCard}}"><input type="radio" name="pm" checked><span><b>카드</b><span class="d">신용 · 체크카드 · 바로 예치됩니다</span></span></label>
+                <label class="{{pmBank}}"><input type="radio" name="pm"><span><b>계좌이체</b><span class="d">실시간 이체 · 입금이 확인되면 예치됩니다</span></span></label>
+              </div>
+            </section>
+          </sc-if>
+
+          <section class="blk2" aria-labelledby="h-use">
+            <h2 id="h-use" style="margin-bottom:14px">예치금은 이렇게 쓰입니다</h2>
+            <div class="steps3">
+              <div><span class="no">1</span><b>마자용이 보관</b><p>예치한 금액은 공급자에게 바로 가지 않고 마자용이 보관합니다.</p></div>
+              <div><span class="no">2</span><b>승인된 구간만 지급</b><p>구간에 담긴 항목이 모두 승인되면 그 구간 금액만 공급자에게 넘어갑니다.</p></div>
+              <div><span class="no">3</span><b>취소하면 사유대로 정산</b><p>계약이 취소되면 사유에 따라 정산하고, 남은 금액은 돌려드립니다.</p></div>
+            </div>
+          </section>
+
+          <section class="blk2" aria-labelledby="h-cx">
+            <h2 id="h-cx" style="margin-bottom:10px">취소하면</h2>
+            <ul class="rules3">
+              <li>예치 후 <b>24시간 안</b>, 납품 전에 의뢰인 사유로 취소하면 <b>전액 환불</b>합니다.</li>
+              <li>그 뒤에 의뢰인 사유로 취소하면 진행 중인 구간 금액의 <b>50% 이상</b>을 공급자에게 보상합니다. 납품한 구간은 전액 지급합니다.</li>
+              <li>공급자 사유로 취소되면 지급되지 않은 구간을 <b>전액 환불</b>합니다.</li>
+              <li>수수료는 공급자에게 지급이 확정된 금액에만 붙고, 나머지 수수료는 돌려드립니다. 취소 정산은 계약당 한 번입니다.</li>
+            </ul>
+          </section>
+        </div>
+
+        <aside class="rail3">
+          <section class="pay" aria-labelledby="h-pay">
+            <h3 id="h-pay">{{payH}}</h3>
+            <div class="r"><span>합의 금액</span><b>3,100,000원</b></div>
+            <div class="r"><span>플랫폼 수수료 5%</span><b>155,000원</b></div>
+            <div class="r tot"><span>{{totK}}</span><b>3,255,000원</b></div>
+            <sc-if value="{{showDl}}" hint-placeholder-val="{{ true }}"><p class="dl3"><b>11월 7일 23:59까지 예치</b> · 지나면 자동 결렬</p></sc-if>
+            <p class="note3">수수료는 지급이 확정된 금액에만 남고, 계약이 취소되면 나머지는 돌려드립니다.</p>
+
+            <sc-if value="{{isDone}}" hint-placeholder-val="{{ false }}">
+              <div class="rc">
+                <div class="r2"><span>결제 수단</span><b>카드</b></div>
+                <div class="r2"><span>결제 건 번호</span><b>끝자리 4821</b></div>
+                <div class="r2"><span>예치 시각</span><b>11월 4일 14:20</b></div>
+              </div>
+              <a class="btn" href="Contracts-Client.dc.html">내 계약으로</a>
+              <a class="btn gh" href="Settle-Client.dc.html">정산 내역 보기</a>
+            </sc-if>
+
+            <sc-if value="{{showAgree}}" hint-placeholder-val="{{ true }}">
+              <div class="cbx">
+                <input type="checkbox" id="agree1" checked>
+                <label for="agree1">계약서와 정산 규칙을 확인했습니다.</label>
+              </div>
+            </sc-if>
+            <sc-if value="{{isBefore}}" hint-placeholder-val="{{ true }}">
+              <a class="btn" href="#pay">3,255,000원 예치하기</a>
+              <p class="tiny">누르면 결제 창이 열립니다.</p>
+            </sc-if>
+            <sc-if value="{{isFail}}" hint-placeholder-val="{{ false }}">
+              <a class="btn" href="#pay">다시 결제하기</a>
+              <p class="tiny">새 결제로 시도합니다 · 실패한 결제는 청구되지 않습니다</p>
+            </sc-if>
+            <sc-if value="{{isWait}}" hint-placeholder-val="{{ false }}">
+              <button type="button" class="btn off" disabled>확인 중</button>
+              <p class="tiny">확인되면 이 화면과 내 계약의 상태가 예치 완료로 바뀝니다</p>
+            </sc-if>
+          </section>
+        </aside>
+      </div>
+
+    </div>
+  </main>
+
+  <footer class="gf" aria-label="사이트 정보">
+    <div class="wrap">
+      <div class="gf-top">
+        <div class="gf-brand">
+          <span class="gf-logo"><span class="mark" aria-hidden="true"><i style="height:9px"></i><i style="height:17px"></i><i style="height:12px;opacity:.55"></i></span>마자용</span>
+          <p>소상공인을 위한 웹 외주 요구사항 정의 · 매칭 플랫폼</p>
+        </div>
+        <div class="gf-cols">
+          <div><b>서비스</b><a href="Main.dc.html">의뢰인 안내</a><a href="Supplier-Landing.dc.html">공급자 안내</a></div>
+          <div><b>고객센터</b><a href="Help.dc.html">자주 묻는 질문</a><a href="Help-Inquiry.dc.html">1:1 문의</a><a href="Help.dc.html">공지사항</a></div>
+          <div><b>정책</b><a href="Terms.dc.html">이용약관</a><a class="em" href="Terms.dc.html">개인정보 처리방침</a><a href="Terms.dc.html">명세 비밀유지</a><a href="Terms.dc.html">중개자 고지</a></div>
+          <div class="gf-cs"><b>고객센터 1600-0000</b><span>평일 10:00–18:00</span><span>점심 12:00–13:00 · 주말 · 공휴일 휴무</span><span>help@majayong.example</span></div>
+        </div>
+      </div>
+      <div class="gf-bot">
+        <p class="gf-biz">상호 로켓단<i></i>대표 김로켓<i></i>사업자등록번호 000-00-00000<i></i>통신판매업 신고 제2026-서울마포-0000호<br>주소 서울특별시 마포구 예시로 00, 0층<i></i>개인정보 보호책임자 박예시<i></i>이메일 help@majayong.example</p>
+        <p class="gf-note">마자용은 통신판매중개자로서 거래 당사자가 아니며, 의뢰인과 공급자 사이 계약의 이행 책임은 각 당사자에게 있습니다. 대금 예치와 정산은 마자용이 관리합니다.</p>
+        <p class="gf-copy">© 2026 로켓단. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+
+</div>

@@ -1,0 +1,227 @@
+<helmet>
+<style>
+.pg{word-break:keep-all}
+.st3 sc-for,.st3 sc-if{display:contents}
+.head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin:0 0 20px}
+.head h1.t{margin:0 0 6px}
+.head .sub{margin:0;max-width:720px}
+.head .lk{font-size:15px;white-space:nowrap}
+.sm{display:grid;gap:0;background:#fff;border:1px solid var(--s200);border-radius:12px;margin:0 0 18px}
+.sm.c4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.sm.c3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.sm>div{padding:18px 22px;border-left:1px solid var(--s200)}
+.sm>div:first-child{border-left:0}
+.sm .k{font-size:14px;color:var(--s600);margin:0 0 6px}
+.sm .v{font-size:24px;font-weight:600;letter-spacing:-0.5px;color:var(--navy-900);font-variant-numeric:tabular-nums}
+.sm .s{font-size:13px;color:var(--s600);margin-top:4px;line-height:1.5}
+.flow{list-style:none;margin:0;padding:0}
+.flow li{position:relative;padding:0 0 14px 24px;font-size:14px;color:var(--s600);line-height:1.5}
+.flow li::before{content:"";position:absolute;left:4px;top:6px;width:9px;height:9px;border-radius:50%;background:var(--teal-700)}
+.flow li::after{content:"";position:absolute;left:8px;top:17px;bottom:-2px;width:1px;background:var(--s200)}
+.flow li:last-child::after{display:none}
+.flow li.now::before{background:#fff;border:2px solid var(--amber-700);width:9px;height:9px;box-sizing:content-box;left:2px;top:4px}
+.flow li b{display:block;color:var(--s900);font-weight:600;font-size:14px}
+.flow li.now b{color:var(--amber-700)}
+.fl{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin:0 0 12px}
+.fl .l{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.sel{font-family:inherit;font-size:14px;color:var(--s900);background:#fff;border:1px solid var(--s300);border-radius:8px;padding:8px 34px 8px 12px;appearance:none;background-image:linear-gradient(45deg,transparent 50%,var(--s600) 50%),linear-gradient(135deg,var(--s600) 50%,transparent 50%);background-position:calc(100% - 17px) 50%,calc(100% - 12px) 50%;background-size:5px 5px;background-repeat:no-repeat}
+.kseg{display:inline-flex;border:1px solid var(--s300);border-radius:8px;overflow:hidden;background:#fff}
+.kseg a{font-size:14px;color:var(--s600);padding:8px 13px;border-left:1px solid var(--s300);text-decoration:none}
+.kseg a:first-child{border-left:0}
+.kseg a.on{background:var(--navy-900);color:#fff}
+.fl .n{font-size:14px;color:var(--s600)}
+.rule{background:#fff;border:1px solid var(--s200);border-radius:12px;padding:16px 20px}
+.rule b{display:block;font-size:15px;margin:0 0 6px}
+.rule ul{margin:0;padding-left:18px}
+.rule li{font-size:14px;color:var(--s600);line-height:1.75}
+.fchip{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:#EEF4FF;border:1px solid #D6E4FF;border-radius:10px;padding:10px 14px;margin:0 0 14px;font-size:14px;color:var(--s900)}
+.fchip a{font-size:14px;margin-left:auto}
+/* 계약 카드 */
+.pc{background:#fff;border:1px solid var(--s200);border-radius:12px;margin:0 0 14px;overflow:hidden}
+.pc.hl{border-color:#9DBBF5;box-shadow:0 0 0 3px #EEF4FF}
+.pc.cx{border-color:#F2E0BE}
+.pc .ph{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;padding:18px 22px 14px}
+.pc .ph .top{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 6px}
+.pc .ph .top .when{font-size:13px;color:var(--s600)}
+.pc .ph .ti{font-size:17px;font-weight:600;letter-spacing:-0.2px;margin:0 0 4px}
+.pc .ph .mt{font-size:14px;color:var(--s600)}
+.pc .ph .mt .sep{color:var(--s300);margin:0 7px}
+.pc .ph .rt{text-align:right;flex:none}
+.pc .ph .rt .k{font-size:13px;color:var(--s600)}
+.pc .ph .rt .v{font-size:22px;font-weight:600;letter-spacing:-0.4px;color:var(--navy-900);font-variant-numeric:tabular-nums}
+.pc .ph .rt a{font-size:13px;display:inline-block;margin-top:4px}
+.pc .ph .rt .lk2{white-space:nowrap}
+.pc .ph .rt .dot2{color:var(--s300);margin:0 6px;font-size:13px}
+.pc .ps sc-if{display:contents}
+.pc .ps .evc .v{font-size:14px}
+.pc .ps .evc .ok{color:var(--teal-700)}
+.pc .ps .evc .wt{color:var(--s600);font-weight:500}
+.pc .ps{display:grid;grid-template-columns:repeat(var(--n),minmax(0,1fr));border-top:1px solid var(--s200);border-bottom:1px solid var(--s200);background:var(--s50)}
+.pc .ps>div{padding:10px 22px;border-left:1px solid var(--s200)}
+.pc .ps>div:first-child{border-left:0}
+.pc .ps .k{font-size:12px;color:var(--s600)}
+.pc .ps .v{font-size:15px;font-weight:600;font-variant-numeric:tabular-nums;margin-top:2px}
+.pc .tl{padding:6px 22px 10px}
+.pc .tr{display:grid;grid-template-columns:96px 120px minmax(0,1fr) auto 92px;gap:14px;align-items:baseline;padding:10px 0;border-top:1px solid var(--s100);font-size:14px}
+.pc .tr:first-child{border-top:0}
+.pc .tr .d{color:var(--s600);white-space:nowrap}
+.pc .tr .kd{font-weight:600;color:var(--s900)}
+.pc .tr .nt{color:var(--s600);font-size:13px}
+.pc .tr .am{text-align:right;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+.pc .tr .am i{display:block;font-style:normal;font-weight:400;font-size:12px;color:var(--s600)}
+.pc .tr .st{text-align:right}
+.pc .tr .st .chip{font-size:12px;padding:2px 8px;white-space:nowrap}
+.pc .tr.plan .kd,.pc .tr.plan .am{color:var(--s600)}
+.pc .tr.info .kd{font-weight:500;color:var(--s600)}
+.pc .cxb{margin:4px 0 6px;background:var(--amber-50);border:1px solid #F2E0BE;border-radius:10px;padding:12px 16px}
+.pc .cxb b{display:block;font-size:14px;color:var(--amber-700);margin:0 0 6px}
+.pc .cxb .r{display:flex;justify-content:space-between;gap:12px;font-size:13px;padding:4px 0;color:#7A5A1C}
+.pc .cxb .r.tot{border-top:1px solid #F2E0BE;margin-top:4px;padding-top:8px;font-weight:600;color:var(--s900);font-size:14px}
+.pc .cxb .r span:last-child{font-variant-numeric:tabular-nums;white-space:nowrap}
+.pc.end .ph{padding-bottom:16px}
+.pc.end .ti{color:var(--s600)}
+.grp3{font-size:13px;font-weight:600;color:var(--s600);margin:22px 0 10px}
+</style>
+<style>
+.pg{min-height:100vh;position:relative;padding-bottom:393px;box-sizing:border-box}
+.gf{position:absolute;left:0;right:0;bottom:0;background:var(--s50);border-top:1px solid var(--s200);padding:40px 0 36px;font-size:14px;color:var(--s600);word-break:keep-all}
+.gf-top{display:flex;justify-content:space-between;gap:32px;flex-wrap:wrap;padding-bottom:28px;border-bottom:1px solid var(--s200)}
+.gf-brand{flex:1 1 260px;min-width:0}
+.gf-logo{display:inline-flex;align-items:center;font-size:19px;font-weight:600;letter-spacing:-0.4px;color:var(--s900)}
+.gf-brand p{margin:10px 0 0;line-height:1.6}
+.gf-cols{display:flex;gap:48px;flex-wrap:wrap}
+.gf-cols>div{display:flex;flex-direction:column;gap:9px;min-width:0}
+.gf-cols b{font-size:14px;font-weight:600;color:var(--s900);margin-bottom:2px}
+.gf-cols a{color:var(--s600);text-decoration:none}
+.gf-cols a.em{color:var(--s900);font-weight:600}
+.gf-bot{padding-top:22px;font-size:13px;line-height:1.75}
+.gf-bot p{margin:0 0 8px}
+.gf-biz i{display:inline-block;width:1px;height:10px;background:var(--s300);margin:0 9px;vertical-align:-1px}
+.gf-copy{color:var(--s400)}
+</style>
+</helmet>
+
+<div class="pg">
+
+  <sc-if value="{{isClient}}" hint-placeholder-val="{{ true }}">
+  <header class="gnb">
+    <div class="wrap">
+      <div class="gnbin">
+        <a class="brand" href="Home-Client.dc.html"><span class="mark" aria-hidden="true"><i style="height:9px"></i><i style="height:17px"></i><i style="height:12px;opacity:.55"></i></span>마자용</a>
+        <nav class="nav" aria-label="주요 메뉴">
+          <a href="Home-Client.dc.html">홈</a><a href="Input-Client.dc.html">프로젝트 시작</a><a href="My-Client.dc.html">내 프로젝트</a><a href="Contracts-Client.dc.html">내 계약</a><a class="on" href="Settle-Client.dc.html">정산 내역</a>
+        </nav>
+        <div class="gright">
+          <a class="bell dot" href="Chat-Client.dc.html" aria-label="채팅 — 새 메시지 1건"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"></path></svg></a>
+          <a class="bell dot" href="Notify-Client.dc.html" aria-label="알림 — 안 읽은 알림 3건"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"></path><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"></path></svg></a>
+          <span class="who"><span class="ava">민</span><span class="uname">정민재</span></span>
+        </div>
+      </div>
+    </div>
+  </header>
+  </sc-if>
+  <sc-if value="{{isSupplier}}" hint-placeholder-val="{{ false }}">
+  <header class="gnb dark">
+    <div class="wrap">
+      <div class="gnbin">
+        <a class="brand" href="Home-Supplier.dc.html"><span class="mark" aria-hidden="true"><i style="height:9px"></i><i style="height:17px"></i><i style="height:12px;opacity:.55"></i></span>마자용</a>
+        <nav class="nav" aria-label="주요 메뉴">
+          <a href="Home-Supplier.dc.html">홈</a><a href="Find-Supplier.dc.html">프로젝트 찾기</a><a href="Apps-Supplier.dc.html">내 지원</a><a href="Contracts-Client.dc.html">내 계약</a><a href="Find-Supplier.dc.html">북마크</a>
+        </nav>
+        <div class="gright">
+          <a class="bell dot" href="Chat-Supplier.dc.html" aria-label="채팅 — 새 메시지 1건"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"></path></svg></a>
+          <a class="bell dot" href="Notify-Client.dc.html" aria-label="알림 — 안 읽은 알림 3건"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"></path><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"></path></svg></a>
+          <span class="who"><span class="ava">최</span><span class="uname">최준호</span></span>
+        </div>
+      </div>
+    </div>
+  </header>
+  </sc-if>
+
+  <main class="pad st3">
+    <div class="wrap">
+      <p class="crumb" style="font-size:14px;color:var(--s600);margin:0 0 10px">{{crumb}}</p>
+      <div class="head">
+        <div>
+          <h1 class="t">{{title}}</h1>
+          <p class="sub">{{sub}}</p>
+        </div>
+        <a class="ft lk" href="{{contractsHref}}">내 계약 보기</a>
+      </div>
+      <div class="{{smCls}}">
+        <sc-for list="{{sum}}" as="m" hint-placeholder-count="4"><div><p class="k">{{m.k}}</p><div class="v">{{m.v}}</div><div class="s">{{m.s}}</div></div></sc-for>
+      </div>
+      <sc-if value="{{one}}" hint-placeholder-val="{{ false }}">
+        <div class="fchip"><span>계약 하나만 보는 중 — <b>{{oneName}}</b></span><a class="ft" href="{{selfHref}}">전체 계약 보기</a></div>
+      </sc-if>
+      <sc-if value="{{all}}" hint-placeholder-val="{{ true }}">
+        <div class="fl">
+          <div class="l">
+            <select class="sel" aria-label="기간"><option>전체 기간</option></select>
+            <div class="kseg" role="group" aria-label="상태"><a class="on" href="#settle">전체</a><a href="#settle">진행 중</a><a href="#settle">완료</a><a href="#settle">결렬 · 취소</a></div>
+          </div>
+          <span class="n">계약 {{nCards}}건 · 최근 순</span>
+        </div>
+      </sc-if>
+      <sc-for list="{{cards}}" as="p" hint-placeholder-count="3">
+        <sc-if value="{{p.isGrp}}" hint-placeholder-val="{{ false }}"><p class="grp3">{{p.grp}}</p></sc-if>
+        <section class="{{p.cls}}" aria-label="{{p.title}}">
+          <div class="ph">
+            <div>
+              <div class="top"><span class="{{p.chipCls}}">{{p.chip}}</span><span class="when">{{p.when}}</span></div>
+              <p class="ti">{{p.title}}</p>
+              <div class="mt">{{p.who}}<span class="sep">|</span>{{p.amt}}</div>
+            </div>
+            <div class="rt"><div class="k">{{p.bigK}}</div><div class="v">{{p.bigV}}</div><div class="lk2"><sc-if value="{{p.hasEv}}" hint-placeholder-val="{{ true }}"><a class="ft" href="#receipt" title="세금계산서 · 마자용 발행">수수료 증빙 받기</a><span class="dot2">·</span></sc-if><a class="ft" href="{{p.href}}">계약 보기</a></div></div>
+          </div>
+          <sc-if value="{{p.hasStats}}" hint-placeholder-val="{{ true }}">
+            <div class="ps" style="--n:{{p.nStats}}"><sc-for list="{{p.stats}}" as="s" hint-placeholder-count="4"><div><div class="k">{{s.k}}</div><div class="v">{{s.v}}</div></div></sc-for><sc-if value="{{p.hasEv}}" hint-placeholder-val="{{ true }}"><div class="evc"><div class="k">{{p.evK}}</div><div class="v"><span class="{{p.evCls}}">{{p.evV}}</span></div></div></sc-if></div>
+          </sc-if>
+          <sc-if value="{{p.hasRows}}" hint-placeholder-val="{{ true }}">
+            <div class="tl">
+              <sc-for list="{{p.rows}}" as="r" hint-placeholder-count="3">
+                <div class="{{r.cls}}"><span class="d">{{r.d}}</span><span class="kd">{{r.k}}</span><span class="nt">{{r.nt}}</span><span class="am">{{r.am}}<i>{{r.sub}}</i></span><span class="st"><span class="{{r.chipCls}}">{{r.chip}}</span></span></div>
+              </sc-for>
+              <sc-if value="{{p.hasCx}}" hint-placeholder-val="{{ false }}">
+                <div class="cxb"><b>{{p.cxH}}</b><sc-for list="{{p.cx}}" as="x" hint-placeholder-count="4"><div class="{{x.cls}}"><span>{{x.k}}</span><span>{{x.v}}</span></div></sc-for></div>
+              </sc-if>
+            </div>
+          </sc-if>
+        </section>
+      </sc-for>
+      <div class="rule">
+        <b>정산 규칙</b>
+        <ul>
+          <li>수수료는 의뢰인 5%(예치할 때 함께 냄)와 공급자 5%(지급할 때 뺌)입니다.</li>
+          <li>수수료는 공급자에게 지급이 확정된 금액에만 붙습니다. 계약이 취소되면 지급되지 않은 금액의 의뢰인 수수료는 돌려드립니다.</li>
+          <li>구간을 나눌 때 생기는 원 단위 끝수는 최종 구간에 더합니다.</li>
+          <li>예치 후 취소는 사유(의뢰인 · 공급자 · 합의)에 따라 정산하고, 정산은 계약당 한 번입니다.</li>
+          <li>증빙: 수수료는 마자용이 발행하고(사업자 세금계산서 · 개인 현금영수증), 대금은 사업자 공급자가 세금계산서를 직접 발행합니다. 개인 공급자는 지급 때 3.3% 원천징수. 화면의 금액은 모두 부가세 포함입니다.</li>
+        </ul>
+      </div>
+    </div>
+  </main>
+
+  <footer class="gf" aria-label="사이트 정보">
+    <div class="wrap">
+      <div class="gf-top">
+        <div class="gf-brand">
+          <span class="gf-logo"><span class="mark" aria-hidden="true"><i style="height:9px"></i><i style="height:17px"></i><i style="height:12px;opacity:.55"></i></span>마자용</span>
+          <p>소상공인을 위한 웹 외주 요구사항 정의 · 매칭 플랫폼</p>
+        </div>
+        <div class="gf-cols">
+          <div><b>서비스</b><a href="Main.dc.html">의뢰인 안내</a><a href="Supplier-Landing.dc.html">공급자 안내</a></div>
+          <div><b>고객센터</b><a href="Help.dc.html">자주 묻는 질문</a><a href="Help-Inquiry.dc.html">1:1 문의</a><a href="Help.dc.html">공지사항</a></div>
+          <div><b>정책</b><a href="Terms.dc.html">이용약관</a><a class="em" href="Terms.dc.html">개인정보 처리방침</a><a href="Terms.dc.html">명세 비밀유지</a><a href="Terms.dc.html">중개자 고지</a></div>
+          <div class="gf-cs"><b>고객센터 1600-0000</b><span>평일 10:00–18:00</span><span>점심 12:00–13:00 · 주말 · 공휴일 휴무</span><span>help@majayong.example</span></div>
+        </div>
+      </div>
+      <div class="gf-bot">
+        <p class="gf-biz">상호 로켓단<i></i>대표 김로켓<i></i>사업자등록번호 000-00-00000<i></i>통신판매업 신고 제2026-서울마포-0000호<br>주소 서울특별시 마포구 예시로 00, 0층<i></i>개인정보 보호책임자 박예시<i></i>이메일 help@majayong.example</p>
+        <p class="gf-note">마자용은 통신판매중개자로서 거래 당사자가 아니며, 의뢰인과 공급자 사이 계약의 이행 책임은 각 당사자에게 있습니다. 대금 예치와 정산은 마자용이 관리합니다.</p>
+        <p class="gf-copy">© 2026 로켓단. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+
+</div>

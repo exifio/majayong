@@ -1,0 +1,259 @@
+<helmet>
+<style>
+.pg{word-break:keep-all}
+.btn.warn{background:#fff;color:var(--amber-700);border:1px solid #E6C68A}
+.cs sc-for,.cs sc-if{display:contents}
+.crumb{font-size:14px;color:var(--s600);margin:0 0 10px}
+.crumb a{color:var(--s600)}
+.head{margin:0 0 18px}
+.head h1.t{margin:0 0 6px}
+.head .sub{margin:0;max-width:760px}
+.bandx{border-radius:12px;padding:15px 20px;margin:0 0 16px;border:1px solid var(--s200);background:#fff}
+.bandx b{display:block;font-size:16px;margin:0 0 3px}
+.bandx p{margin:0;font-size:14px;line-height:1.6;color:var(--s600)}
+.bandx.amber{background:var(--amber-50);border-color:#F2E0BE}
+.bandx.amber b{color:var(--amber-700)}
+.bandx.amber p{color:#7A5A1C}
+.bandx.wait{background:var(--s50);border-color:var(--s300)}
+.bandx.wait b{color:var(--navy-900)}
+.bandx.done{background:#EAF6F4;border-color:#C7E6E0}
+.bandx.done b{color:var(--teal-700)}
+.bandx .row3{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
+.lay{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:20px;align-items:start}
+.bx{background:#fff;border:1px solid var(--s200);border-radius:12px;padding:20px 22px;margin:0 0 16px}
+.bx h2{font-size:17px;font-weight:600;margin:0 0 12px}
+.rq{display:flex;gap:12px;align-items:flex-start}
+.rq .av{width:40px;height:40px;border-radius:50%;background:var(--s100);border:1px solid var(--s200);display:flex;align-items:center;justify-content:center;font-weight:600;color:var(--navy-900);flex:none}
+.rq .nm{font-size:16px;font-weight:600}
+.rq .mt{font-size:13px;color:var(--s600);margin-top:2px}
+.rq .tags{display:flex;gap:6px;margin:10px 0 0;flex-wrap:wrap}
+.quote{margin:12px 0 0;padding:12px 16px;border-left:3px solid var(--s300);background:var(--s50);border-radius:0 8px 8px 0;font-size:15px;line-height:1.65;color:var(--s900)}
+.kv2{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:14px 0 0;padding:14px 0 0;border-top:1px solid var(--s200)}
+.kv2 .k{font-size:13px;color:var(--s600)}
+.kv2 .v{font-size:15px;font-weight:600;margin-top:2px}
+.calc .r{display:flex;justify-content:space-between;gap:12px;font-size:15px;padding:9px 0;border-top:1px solid var(--s100);font-variant-numeric:tabular-nums}
+.calc .r:first-child{border-top:0}
+.calc .r span{color:var(--s600)}
+.calc .r span i{display:block;font-style:normal;font-size:12px;color:var(--s600);margin-top:2px}
+.calc .r b{font-weight:600;white-space:nowrap}
+.calc .r.tot{border-top:2px solid var(--s900);margin-top:4px;padding-top:12px}
+.calc .r.tot span{color:var(--s900);font-weight:600}
+.calc .r.tot b{font-size:22px;color:var(--navy-900);letter-spacing:-0.4px}
+.calc .cfoot{font-size:13px;color:var(--s600);margin:10px 0 0;line-height:1.6}
+.acts{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
+.acts p{margin:0;font-size:14px;color:var(--s600);max-width:520px;line-height:1.6}
+.acts .bt{display:flex;gap:10px;flex:none}
+.acts .btn{white-space:nowrap}
+.frm .q{font-size:14px;font-weight:600;margin:16px 0 8px}
+.frm .q:first-child{margin-top:0}
+.opt3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.opt3 label.lbl{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--s300);border-radius:10px;padding:12px 14px;margin:0;font-weight:400;cursor:pointer}
+.opt3 label.lbl.on{border-color:var(--blue-600,#2563EB);background:var(--blue-50,#EEF4FF)}
+.opt3 b{display:block;font-size:14px}
+.opt3 span.d{display:block;font-size:12px;color:var(--s600);margin-top:2px;line-height:1.5}
+.opt3 input{margin:3px 0 0;flex:none}
+.rate{display:flex;align-items:center;gap:10px;font-size:14px;margin:10px 0 0}
+.rate .inp{width:90px;text-align:right}
+.ev{list-style:none;margin:0;padding:0}
+.ev li{display:flex;gap:10px;align-items:flex-start;font-size:14px;padding:8px 0;border-top:1px solid var(--s100)}
+.ev li:first-child{border-top:0}
+.ev li input{margin:3px 0 0;flex:none}
+.ev li span.s{display:block;font-size:12px;color:var(--s600)}
+textarea.inp{width:100%;box-sizing:border-box;min-height:96px;font-size:15px;line-height:1.6;resize:vertical}
+.rail .bx{padding:18px 20px}
+.rail h3{font-size:15px;font-weight:600;margin:0 0 10px}
+.rail .r2{display:flex;justify-content:space-between;gap:10px;font-size:14px;padding:5px 0}
+.rail .r2 span{color:var(--s600)}
+.rail .r2 b{font-weight:500;font-variant-numeric:tabular-nums}
+.rules4{margin:0;padding-left:18px}
+.rules4 li{font-size:13px;color:var(--s600);line-height:1.7}
+.rules4 b{color:var(--s900);font-weight:600}
+.flow2{list-style:none;margin:0;padding:0}
+.flow2 li{position:relative;padding:0 0 12px 22px;font-size:13px;color:var(--s600);line-height:1.5}
+.flow2 li::before{content:"";position:absolute;left:3px;top:5px;width:8px;height:8px;border-radius:50%;background:var(--s300)}
+.flow2 li.done::before{background:var(--teal-700)}
+.flow2 li.now::before{background:#fff;border:2px solid var(--amber-700);width:8px;height:8px;left:1px;top:3px}
+.flow2 li b{display:block;color:var(--s900);font-size:14px;font-weight:600}
+.flow2 li.now b{color:var(--amber-700)}
+
+</style>
+<style>
+.pg{min-height:100vh;position:relative;padding-bottom:393px;box-sizing:border-box}
+.gf{position:absolute;left:0;right:0;bottom:0;background:var(--s50);border-top:1px solid var(--s200);padding:40px 0 36px;font-size:14px;color:var(--s600);word-break:keep-all}
+.gf-top{display:flex;justify-content:space-between;gap:32px;flex-wrap:wrap;padding-bottom:28px;border-bottom:1px solid var(--s200)}
+.gf-brand{flex:1 1 260px;min-width:0}
+.gf-logo{display:inline-flex;align-items:center;font-size:19px;font-weight:600;letter-spacing:-0.4px;color:var(--s900)}
+.gf-brand p{margin:10px 0 0;line-height:1.6}
+.gf-cols{display:flex;gap:48px;flex-wrap:wrap}
+.gf-cols>div{display:flex;flex-direction:column;gap:9px;min-width:0}
+.gf-cols b{font-size:14px;font-weight:600;color:var(--s900);margin-bottom:2px}
+.gf-cols a{color:var(--s600);text-decoration:none}
+.gf-cols a.em{color:var(--s900);font-weight:600}
+.gf-bot{padding-top:22px;font-size:13px;line-height:1.75}
+.gf-bot p{margin:0 0 8px}
+.gf-biz i{display:inline-block;width:1px;height:10px;background:var(--s300);margin:0 9px;vertical-align:-1px}
+.gf-copy{color:var(--s400)}
+</style>
+</helmet>
+
+<div class="pg">
+  <header class="gnb dark">
+    <div class="wrap">
+      <div class="gnbin">
+        <a class="brand" href="Home-Supplier.dc.html"><span class="mark" aria-hidden="true"><i style="height:9px"></i><i style="height:17px"></i><i style="height:12px;opacity:.55"></i></span>마자용</a>
+        <nav class="nav" aria-label="주요 메뉴">
+          <a href="Home-Supplier.dc.html">홈</a><a href="Find-Supplier.dc.html">프로젝트 찾기</a><a href="Apps-Supplier.dc.html">내 지원</a><a class="on" href="Contracts-Supplier.dc.html">내 계약</a><a href="Find-Supplier.dc.html">북마크</a>
+        </nav>
+        <div class="gright">
+          <a class="bell dot" href="Chat-Supplier.dc.html" aria-label="채팅 — 새 메시지 1건"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"></path></svg></a>
+          <a class="bell dot" href="Notify-Supplier.dc.html" aria-label="알림 — 안 읽은 알림 3건"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"></path><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"></path></svg></a>
+          <span class="who"><span class="ava">최</span><span class="uname">최준호</span></span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="pad cs">
+    <div class="wrap">
+      <p class="crumb"><a href="Contracts-Supplier.dc.html">내 계약</a> › 예약 달력, 예약금 결제 외 2개 기능 › 취소 요청</p>
+      <div class="head">
+        <h1 class="t">{{title}}</h1>
+        <p class="sub">{{sub}}</p>
+      </div>
+
+      <sc-if value="{{isOpen}}" hint-placeholder-val="{{ true }}">
+        <div class="bandx amber"><b>취소 요청 중 — 답할 때까지 작업과 검수가 멈춥니다</b><p>동의하면 아래 정산대로 바로 확정됩니다. 사유나 보상에 다른 의견이 있으면 이의를 제기하세요. 이의가 있으면 운영자가 근거를 보고 판정합니다.</p></div>
+      </sc-if>
+      <sc-if value="{{isWait}}" hint-placeholder-val="{{ false }}">
+        <div class="bandx wait"><b>운영자가 판정하고 있습니다 · 11월 9일 이의 보냄</b><p>양쪽 주장과 근거(계약서 조건 줄 · 채팅 · 작업 기록)를 보고 판정합니다. 판정이 나면 내 계약에 표시됩니다. 그동안 작업과 검수는 멈춰 있습니다.</p></div>
+      </sc-if>
+      <sc-if value="{{isDone}}" hint-placeholder-val="{{ false }}">
+        <div class="bandx done"><div class="row3"><div><b>정산이 확정되었습니다 · 11월 9일 · 동의</b><p>계약은 취소되었습니다. 받을 금액 736,250원은 운영자가 지급을 처리하고 있습니다. 끝나면 정산 내역에 지급 완료로 표시됩니다.</p></div><a class="btn" href="Settle-Supplier.dc.html" style="white-space:nowrap">정산 내역 보기</a></div></div>
+      </sc-if>
+
+      <div class="lay">
+        <div>
+          <section class="bx" aria-labelledby="h-rq">
+            <h2 id="h-rq">의뢰인의 취소 요청</h2>
+            <div class="rq">
+              <span class="av" aria-hidden="true">정</span>
+              <div style="flex:1 1 auto">
+                <div class="nm">정민재 · 온도 다이닝</div>
+                <div class="mt">11월 8일 10:40 요청</div>
+                <div class="tags"><span class="chip amber">사유 · 의뢰인 사정</span><span class="chip out">납품 전</span><span class="chip out">예치 24시간 지남</span></div>
+              </div>
+            </div>
+            <p class="quote">가게 리모델링 일정이 갑자기 잡혀서 내년 봄까지 예약을 받지 않게 되었습니다. 그동안 진행해 주신 작업은 규정대로 정산해 드리겠습니다. 죄송합니다.</p>
+            <div class="kv2">
+              <div><div class="k">예치</div><div class="v">11월 4일 · 3,255,000원</div></div>
+              <div><div class="k">작업</div><div class="v">11월 5일부터 · 4일째</div></div>
+              <div><div class="k">진행 중인 구간</div><div class="v">중간 · 납품 전</div></div>
+            </div>
+          </section>
+
+          <section class="bx calc" aria-labelledby="h-calc">
+            <h2 id="h-calc">{{calcH}}</h2>
+            <div class="r"><span>진행 중이던 구간 금액<i>중간 구간 · 예약 달력 · 예약금 결제</i></span><b>1,550,000원</b></div>
+            <div class="r"><span>보상 금액<i>의뢰인 사유 · 납품 전 · 24시간 지남 → 진행 중 구간의 50%</i></span><b>775,000원</b></div>
+            <div class="r"><span>− 수수료 5%<i>지급이 확정된 보상 금액에만</i></span><b>− 38,750원</b></div>
+            <div class="r tot"><span>받을 금액</span><b>736,250원</b></div>
+            <p class="cfoot">나머지 2,441,250원은 의뢰인에게 환불됩니다. 취소 정산은 계약당 한 번이고, 실제 지급은 운영자가 처리합니다.</p>
+          </section>
+
+          <sc-if value="{{isAsk}}" hint-placeholder-val="{{ true }}">
+            <section class="bx" aria-label="답하기">
+              <div class="acts">
+                <p>동의하면 계약이 취소되고 위 금액으로 정산됩니다. 동의한 뒤에는 되돌릴 수 없습니다.</p>
+                <div class="bt"><a class="btn gh" href="#objection">이의 제기</a><a class="btn tint" href="#agree">동의</a></div>
+              </div>
+            </section>
+          </sc-if>
+
+          <sc-if value="{{isForm}}" hint-placeholder-val="{{ false }}">
+            <section class="bx frm" aria-labelledby="h-ob">
+              <h2 id="h-ob">이의 제기</h2>
+              <p class="q">어떤 사유가 맞다고 보시나요?</p>
+              <div class="opt3" role="radiogroup" aria-label="주장하는 사유">
+                <label class="lbl on"><input type="radio" name="cause" checked><span><b>의뢰인 사정</b><span class="d">사유는 맞지만 보상 비율이 다릅니다</span></span></label>
+                <label class="lbl"><input type="radio" name="cause"><span><b>공급자 사정</b><span class="d">제 사정으로 취소되는 것입니다</span></span></label>
+                <label class="lbl"><input type="radio" name="cause"><span><b>합의</b><span class="d">양쪽이 정한 비율로 나눕니다</span></span></label>
+              </div>
+              <div class="rate"><span>요청하는 보상 비율</span><input class="inp" type="text" value="70" aria-label="보상 비율"><span>% · 진행 중 구간 기준(50% 이상)</span></div>
+              <p class="q">설명</p>
+              <textarea class="inp" aria-label="설명">예약 달력은 회차 설정 · 정원 마감까지 거의 끝냈고(테스트 주소 공유함), 예약금 결제도 PG 테스트 연동까지 진행했습니다. 진행 중 구간의 70%를 요청합니다.</textarea>
+              <p class="q">근거로 붙일 기록</p>
+              <ul class="ev">
+                <li><input type="checkbox" checked aria-label="채팅 11월 6일"><span>채팅 · 11월 6일 "회차 설정 화면 테스트 주소 보내 드립니다"<span class="s">연락처는 가려져 전달됩니다</span></span></li>
+                <li><input type="checkbox" checked aria-label="작업 기록"><span>작업 기록 · 예약 달력 테스트 주소 · 11월 7일<span class="s">계약 항목에 속한 기록만 붙일 수 있습니다</span></span></li>
+                <li><input type="checkbox" aria-label="채팅 11월 5일"><span>채팅 · 11월 5일 "예약금 PG 테스트 키 받았습니다"</span></li>
+              </ul>
+              <div class="acts" style="margin-top:16px">
+                <p>이의를 보내면 운영자가 양쪽 주장과 근거를 보고 판정합니다. 판정 전까지 작업과 검수는 멈춥니다.</p>
+                <div class="bt"><a class="btn gh" href="Cancel-Supplier.dc.html">취소</a><a class="btn warn" href="#send">이의 보내기</a></div>
+              </div>
+            </section>
+          </sc-if>
+
+          <sc-if value="{{isWait}}" hint-placeholder-val="{{ false }}">
+            <section class="bx" aria-labelledby="h-my">
+              <h2 id="h-my">보낸 이의</h2>
+              <div class="kv2" style="margin:0;padding:0;border:0">
+                <div><div class="k">주장하는 사유</div><div class="v">의뢰인 사정</div></div>
+                <div><div class="k">요청한 보상</div><div class="v">진행 중 구간의 70%</div></div>
+                <div><div class="k">붙인 근거</div><div class="v">2건</div></div>
+              </div>
+              <p class="quote">예약 달력은 회차 설정 · 정원 마감까지 거의 끝냈고(테스트 주소 공유함), 예약금 결제도 PG 테스트 연동까지 진행했습니다. 진행 중 구간의 70%를 요청합니다.</p>
+            </section>
+          </sc-if>
+        </div>
+
+        <aside class="rail">
+          <section class="bx" aria-labelledby="h-ct">
+            <h3 id="h-ct">계약</h3>
+            <p style="margin:0 0 8px;font-size:14px;font-weight:600;line-height:1.5">예약 달력, 예약금 결제 외 2개 기능</p>
+            <div class="r2"><span>합의 금액</span><b>3,100,000원</b></div>
+            <div class="r2"><span>지급 비율</span><b>중간 50 : 최종 50</b></div>
+            <div class="r2"><span>상태</span><b>{{stateTxt}}</b></div>
+            <p style="margin:10px 0 0"><a class="ft" href="Contract-Supplier.dc.html" style="font-size:14px">계약서 보기</a> · <a class="ft" href="Chat-Supplier.dc.html" style="font-size:14px">채팅</a></p>
+          </section>
+          <section class="bx" aria-labelledby="h-fl">
+            <h3 id="h-fl">진행</h3>
+            <ol class="flow2"><sc-for list="{{flow}}" as="f" hint-placeholder-count="4"><li class="{{f.cls}}"><b>{{f.b}}</b>{{f.s}}</li></sc-for></ol>
+          </section>
+          <section class="bx" aria-labelledby="h-rl">
+            <h3 id="h-rl">취소 정산 규칙</h3>
+            <ul class="rules4">
+              <li><b>의뢰인 사정</b> — 예치 후 24시간 안 · 납품 전이면 전액 환불. 그 뒤 납품 전이면 진행 중 구간의 50% 이상 보상, 납품한 구간은 전액</li>
+              <li><b>공급자 사정</b> — 지급되지 않은 구간을 의뢰인에게 전액 환불</li>
+              <li><b>합의</b> — 양쪽이 정한 비율</li>
+              <li>수수료는 지급이 확정된 금액에만 양쪽 5%</li>
+            </ul>
+          </section>
+        </aside>
+      </div>
+    </div>
+  </main>
+
+  <footer class="gf" aria-label="사이트 정보">
+    <div class="wrap">
+      <div class="gf-top">
+        <div class="gf-brand">
+          <span class="gf-logo"><span class="mark" aria-hidden="true"><i style="height:9px"></i><i style="height:17px"></i><i style="height:12px;opacity:.55"></i></span>마자용</span>
+          <p>소상공인을 위한 웹 외주 요구사항 정의 · 매칭 플랫폼</p>
+        </div>
+        <div class="gf-cols">
+          <div><b>서비스</b><a href="Main.dc.html">의뢰인 안내</a><a href="Supplier-Landing.dc.html">공급자 안내</a></div>
+          <div><b>고객센터</b><a href="Help.dc.html">자주 묻는 질문</a><a href="Help-Inquiry.dc.html">1:1 문의</a><a href="Help.dc.html">공지사항</a></div>
+          <div><b>정책</b><a href="Terms.dc.html">이용약관</a><a class="em" href="Terms.dc.html">개인정보 처리방침</a><a href="Terms.dc.html">명세 비밀유지</a><a href="Terms.dc.html">중개자 고지</a></div>
+          <div class="gf-cs"><b>고객센터 1600-0000</b><span>평일 10:00–18:00</span><span>점심 12:00–13:00 · 주말 · 공휴일 휴무</span><span>help@majayong.example</span></div>
+        </div>
+      </div>
+      <div class="gf-bot">
+        <p class="gf-biz">상호 로켓단<i></i>대표 김로켓<i></i>사업자등록번호 000-00-00000<i></i>통신판매업 신고 제2026-서울마포-0000호<br>주소 서울특별시 마포구 예시로 00, 0층<i></i>개인정보 보호책임자 박예시<i></i>이메일 help@majayong.example</p>
+        <p class="gf-note">마자용은 통신판매중개자로서 거래 당사자가 아니며, 의뢰인과 공급자 사이 계약의 이행 책임은 각 당사자에게 있습니다. 대금 예치와 정산은 마자용이 관리합니다.</p>
+        <p class="gf-copy">© 2026 로켓단. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+
+</div>

@@ -1,0 +1,281 @@
+<helmet>
+<style>
+.pg{word-break:keep-all;background:var(--s50)}
+.hc-hero{background:#fff;border-bottom:1px solid var(--s200);padding:44px 0 34px}
+.hc-hero h1{font-size:32px;font-weight:600;letter-spacing:-0.8px;margin:0 0 8px}
+.hc-hero .sub{font-size:16px;color:var(--s600);margin:0 0 22px}
+.hc-search{display:flex;align-items:center;gap:10px;max-width:720px;background:#fff;border:1px solid var(--s300);border-radius:12px;padding:6px 6px 6px 16px}
+.hc-search svg{width:20px;height:20px;color:var(--s400);flex:none}
+.hc-search input{flex:1;min-width:0;border:0;outline:0;font:inherit;font-size:16px;padding:8px 0;background:transparent;color:var(--s900)}
+.hc-quick{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:16px;font-size:14px}
+.hc-quick span{color:var(--s600);margin-right:4px}
+.hc-quick a{padding:6px 12px;border:1px solid var(--s200);border-radius:999px;color:var(--s900);text-decoration:none;background:var(--s50)}
+.hc-main{display:flex;gap:28px;flex-wrap:wrap;align-items:flex-start;padding-top:32px;padding-bottom:56px}
+.hc-l{flex:999 1 620px;min-width:0;display:flex;flex-direction:column;gap:28px}
+.hc-r{flex:1 1 320px;min-width:0;display:flex;flex-direction:column;gap:16px}
+.hc-h{display:flex;align-items:baseline;gap:10px;margin:0 0 14px}
+.hc-h h2{font-size:21px;font-weight:600;letter-spacing:-0.4px;margin:0}
+.hc-h .hc-cnt{font-size:14px;color:var(--s600)}
+.hc-h .ft{margin-left:auto;font-size:14px}
+.hc-tabs{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 14px}
+.hc-tabs a{padding:8px 14px;border-radius:9px;font-size:14px;color:var(--s600);text-decoration:none;border:1px solid var(--s200);background:#fff}
+.hc-tabs a.on{background:var(--navy-900);border-color:var(--navy-900);color:#fff;font-weight:600}
+.hc-faqs{background:#fff;border:1px solid var(--s200);border-radius:14px;overflow:hidden}
+.hc-q{border-top:1px solid var(--s200)}
+.hc-q:first-child{border-top:0}
+.hc-qh{display:flex;gap:12px;align-items:center;padding:17px 22px;cursor:pointer}
+.hc-cat{flex:none;font-size:12px;font-weight:600;color:var(--s600);background:var(--s100);border-radius:6px;padding:3px 8px}
+.hc-qt{flex:1;min-width:0;font-size:16px;font-weight:500;color:var(--s900)}
+.hc-ar{flex:none;color:var(--s400);font-size:13px}
+.hc-q.open .hc-qt{font-weight:600}
+.hc-a{padding:0 22px 20px 22px;font-size:15px;line-height:1.75;color:var(--s600)}
+.hc-a .ft{display:block;margin-top:6px;font-size:14px}
+.hc-miss{font-size:15px;color:var(--s600);margin:14px 0 0}
+.hc-card{background:#fff;border:1px solid var(--s200);border-radius:14px;padding:22px 24px}
+.hc-card h3{font-size:17px;font-weight:600;margin:0 0 8px}
+.hc-card p{font-size:14px;color:var(--s600);line-height:1.7;margin:0 0 12px}
+.hc-card .btn{display:block;text-align:center}
+.hc-tel{font-size:24px!important;font-weight:600;color:var(--s900)!important;letter-spacing:-0.4px;margin:0 0 6px!important}
+.hc-mine{font-size:14px;font-weight:600;color:var(--s900)!important;margin:18px 0 6px!important}
+.hc-list{list-style:none;margin:0;padding:0}
+.hc-list li{display:flex;gap:8px;align-items:center;padding:9px 0;border-top:1px solid var(--s200);font-size:14px}
+.hc-list li:first-child{border-top:0}
+.hc-list .t{flex:1;min-width:0;color:var(--s900);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hc-list .d,.hc-notice .d{flex:none;color:var(--s600);font-size:13px}
+.hc-guide{list-style:none;margin:0;padding:0}
+.hc-guide li{font-size:14px;color:var(--s600);line-height:1.65;padding:10px 0;border-top:1px solid var(--s200)}
+.hc-guide li:first-child{border-top:0;padding-top:0}
+.hc-guide b{display:block;color:var(--s900);font-weight:600;margin-bottom:2px}
+.hc-notice ul{list-style:none;margin:0;padding:0;background:#fff;border:1px solid var(--s200);border-radius:14px}
+.hc-notice li{display:flex;gap:12px;align-items:center;padding:15px 22px;border-top:1px solid var(--s200);font-size:15px}
+.hc-notice li:first-child{border-top:0}
+.hc-notice li a{flex:1;min-width:0;color:var(--s900);text-decoration:none}
+.hc-done{background:var(--teal-50);border:1px solid #C7E6E0;color:var(--teal-700);border-radius:12px;padding:15px 20px;font-size:15px}
+.hc-form .lb{font-size:14px;font-weight:600;margin:16px 0 8px}
+.hc-form .lb span{font-weight:400;color:var(--s600)}
+.hc-form .hc-h{margin-bottom:0}
+.hc-types{display:flex;gap:8px;flex-wrap:wrap}
+.hc-types span{padding:8px 14px;border:1px solid var(--s200);border-radius:9px;font-size:14px;color:var(--s600)}
+.hc-types span.on{border-color:var(--navy-900);color:var(--navy-900);font-weight:600;box-shadow:inset 0 0 0 1px var(--navy-900)}
+.hc-sel,.hc-in{border:1px solid var(--s300);border-radius:10px;padding:12px 14px;font-size:15px;color:var(--s900);display:flex;justify-content:space-between}
+.hc-sel span{color:var(--s400)}
+.hc-ta{min-height:120px;align-items:flex-start;line-height:1.7;white-space:pre-line}
+.hc-att{display:flex;gap:12px;align-items:center;margin:12px 0 0;font-size:13px;color:var(--s600)}
+.hc-nt{font-size:13px!important;margin:16px 0 0!important}
+.hc-btns{display:flex;gap:10px;justify-content:flex-end;margin-top:18px}
+.hc-gate{margin-top:14px;background:var(--s50);border:1px solid var(--s200);border-radius:12px;padding:20px 22px}
+.hc-gate b{font-size:16px}
+.hc-gate p{margin:8px 0 0}
+.hc-mylist{background:#fff;border:1px solid var(--s200);border-radius:14px;overflow:hidden}
+.hc-mr{display:flex;gap:10px;align-items:center;padding:15px 20px;border-top:1px solid var(--s200);text-decoration:none;color:inherit}
+.hc-mr:first-child{border-top:0}
+.hc-mr.sel{background:#EEF4FF;box-shadow:inset 3px 0 0 var(--blue-600)}
+.hc-mr .t{flex:1;min-width:0;font-size:15px;font-weight:500;color:var(--s900)}
+.hc-mr .d{flex:none;font-size:13px;color:var(--s600)}
+.hc-md{margin-top:14px}
+.hc-md .chips{display:flex;gap:6px;margin:0 0 8px}
+.hc-md h3{font-size:19px!important;margin:0 0 4px!important}
+.hc-md .meta{font-size:13px!important;margin:0 0 14px!important}
+.hc-md .meta a{color:var(--navy-900)}
+.hc-md p.hc-k{font-size:12px;font-weight:600;color:var(--s600);margin:18px 0 6px}
+.hc-body{background:var(--s50);border-radius:10px;padding:12px 14px;font-size:15px;line-height:1.7;white-space:pre-line;color:var(--s900)}
+.hc-file{display:inline-block;margin-top:8px;font-size:13px;color:var(--s900);border:1px solid var(--s200);border-radius:8px;padding:6px 10px}
+.hc-ans{border:1px solid #C7E6E0;border-radius:12px;overflow:hidden}
+.hc-ans .ah{display:flex;justify-content:space-between;font-size:13px;color:var(--s600);background:var(--teal-50);padding:9px 14px;border-bottom:1px solid #C7E6E0}
+.hc-ans .ah b{color:var(--teal-700)}
+.hc-ans p{margin:0!important;padding:12px 14px;font-size:15px!important;line-height:1.75!important;color:var(--s900)!important;white-space:pre-line}
+.hc-wait{background:var(--s50);border:1px solid var(--s300);border-radius:12px;padding:14px 18px}
+.hc-wait b{display:block;color:var(--navy-900);font-size:15px;margin:0 0 2px}
+.hc-wait span{font-size:14px;color:var(--s600)}
+.hc-more{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:16px;padding-top:14px;border-top:1px solid var(--s200)}
+.hc-more span{font-size:14px;color:var(--s600)}
+.hc-more .btn{display:inline-block;flex:none}
+.hc-list a{display:flex;gap:8px;align-items:center;flex:1;min-width:0;text-decoration:none;color:inherit}
+.hc-all{display:inline-block;margin-top:8px;font-size:14px}
+
+.hq-head{background:#fff;border-bottom:1px solid var(--s200);padding:32px 0 0}
+.hq-head .crumb{font-size:14px;color:var(--s600);margin:0 0 10px}
+.hq-head .crumb a{color:var(--s600)}
+.hq-head h1{font-size:28px;font-weight:600;letter-spacing:-0.6px;margin:0 0 6px}
+.hq-head .sub{font-size:15px;color:var(--s600);margin:0 0 20px}
+.hq-head .tabs{border-bottom:0;margin:0}
+.hq-faq a{display:block;padding:10px 0;border-top:1px solid var(--s200);font-size:14px;color:var(--s900);text-decoration:none}
+.hq-faq a:first-of-type{border-top:0;padding-top:0}
+</style>
+<style>
+.pg{min-height:100vh;position:relative;padding-bottom:393px;box-sizing:border-box}
+.gf{position:absolute;left:0;right:0;bottom:0;background:var(--s50);border-top:1px solid var(--s200);padding:40px 0 36px;font-size:14px;color:var(--s600);word-break:keep-all}
+.gf-top{display:flex;justify-content:space-between;gap:32px;flex-wrap:wrap;padding-bottom:28px;border-bottom:1px solid var(--s200)}
+.gf-brand{flex:1 1 260px;min-width:0}
+.gf-logo{display:inline-flex;align-items:center;font-size:19px;font-weight:600;letter-spacing:-0.4px;color:var(--s900)}
+.gf-brand p{margin:10px 0 0;line-height:1.6}
+.gf-cols{display:flex;gap:48px;flex-wrap:wrap}
+.gf-cols>div{display:flex;flex-direction:column;gap:9px;min-width:0}
+.gf-cols b{font-size:14px;font-weight:600;color:var(--s900);margin-bottom:2px}
+.gf-cols a{color:var(--s600);text-decoration:none}
+.gf-cols a.em{color:var(--s900);font-weight:600}
+.gf-bot{padding-top:22px;font-size:13px;line-height:1.75}
+.gf-bot p{margin:0 0 8px}
+.gf-biz i{display:inline-block;width:1px;height:10px;background:var(--s300);margin:0 9px;vertical-align:-1px}
+.gf-copy{color:var(--s400)}
+</style>
+</helmet>
+
+<div class="pg">
+
+  <sc-if value="{{guest}}" hint-placeholder-val="{{ false }}">
+  <header class="gnb">
+    <div class="wrap">
+      <div class="gnbin">
+        <a class="brand" href="Main.dc.html"><span class="mark" aria-hidden="true"><i style="height:9px"></i><i style="height:17px"></i><i style="height:12px;opacity:.55"></i></span>마자용</a>
+        <nav class="nav" aria-label="주요 메뉴"><a href="Main.dc.html">의뢰인 안내</a><a href="Supplier-Landing.dc.html">공급자 안내</a><a class="on" href="Help.dc.html">고객센터</a></nav>
+        <div class="gright">
+          <a class="lk" href="Login.dc.html">로그인</a>
+          <a class="btn sm gh" href="Signup.dc.html">회원가입</a>
+        </div>
+      </div>
+    </div>
+  </header>
+  </sc-if>
+  <sc-if value="{{isClient}}" hint-placeholder-val="{{ true }}">
+  <header class="gnb">
+    <div class="wrap">
+      <div class="gnbin">
+        <a class="brand" href="Home-Client.dc.html"><span class="mark" aria-hidden="true"><i style="height:9px"></i><i style="height:17px"></i><i style="height:12px;opacity:.55"></i></span>마자용</a>
+        <nav class="nav" aria-label="주요 메뉴"><a href="Home-Client.dc.html">홈</a><a href="Input-Client.dc.html">프로젝트 시작</a><a href="My-Client.dc.html">내 프로젝트</a><a href="Contracts-Client.dc.html">내 계약</a><a href="Settle-Client.dc.html">정산 내역</a></nav>
+        <div class="gright">
+          <a class="bell" href="Chat-Client.dc.html" aria-label="채팅"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"></path></svg></a>
+          <a class="bell" href="Notify-Client.dc.html" aria-label="알림"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg></a>
+          <span class="who"><span class="ava">민</span><span class="uname">정민재</span></span>
+        </div>
+      </div>
+    </div>
+  </header>
+  </sc-if>
+  <sc-if value="{{isSupplier}}" hint-placeholder-val="{{ false }}">
+  <header class="gnb dark">
+    <div class="wrap">
+      <div class="gnbin">
+        <a class="brand" href="Home-Supplier.dc.html"><span class="mark" aria-hidden="true"><i style="height:9px"></i><i style="height:17px"></i><i style="height:12px;opacity:.55"></i></span>마자용</a>
+        <nav class="nav" aria-label="주요 메뉴"><a href="Home-Supplier.dc.html">홈</a><a href="Find-Supplier.dc.html">프로젝트 찾기</a><a href="Apps-Supplier.dc.html">내 지원</a><a href="Contracts-Supplier.dc.html">내 계약</a><a href="Find-Supplier.dc.html">북마크</a></nav>
+        <div class="gright">
+          <a class="bell" href="Chat-Supplier.dc.html" aria-label="채팅"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"></path></svg></a>
+          <a class="bell" href="Notify-Supplier.dc.html" aria-label="알림"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg></a>
+          <span class="who"><span class="ava">최</span><span class="uname">최준호</span></span>
+        </div>
+      </div>
+    </div>
+  </header>
+  </sc-if>
+
+  <section class="hq-head">
+    <div class="wrap">
+      <p class="crumb"><a href="Help.dc.html">고객센터</a> › 1:1 문의</p>
+      <h1>1:1 문의</h1>
+      <p class="sub">운영자에게 직접 물어보세요. 평일 기준 하루 안에 답변 드립니다.</p>
+      <nav class="tabs" aria-label="1:1 문의 메뉴"><a class="{{tabAsk}}" href="Help-Inquiry.dc.html">문의하기</a><a class="{{tabMy}}" href="Help-Inquiry.dc.html">내 문의 {{myN}}</a></nav>
+    </div>
+  </section>
+
+  <main class="wrap hc-main">
+    <div class="hc-l">
+
+      <sc-if value="{{sent}}" hint-placeholder-val="{{ false }}">
+      <div class="hc-done" role="status"><b>문의를 보냈습니다</b> · 평일 기준 하루 안에 답변 드립니다. 답변이 오면 알림으로 알려 드립니다.</div>
+      </sc-if>
+
+      <sc-if value="{{guest}}" hint-placeholder-val="{{ false }}">
+      <section class="hc-card">
+        <div class="hc-gate" style="margin-top:0">
+          <b>1:1 문의는 로그인한 뒤 남길 수 있습니다</b>
+          <p>계약 · 결제 내용을 확인해 답하기 위해서입니다. 가입 전 질문은 이메일 help@majayong.example 이나 전화 1600-0000으로 보내 주세요.</p>
+          <div class="hc-btns"><a class="btn gh" href="Signup.dc.html">회원가입</a><a class="btn" href="Login.dc.html">로그인</a></div>
+        </div>
+      </section>
+      </sc-if>
+
+      <sc-if value="{{showForm}}" hint-placeholder-val="{{ true }}">
+      <section class="hc-card hc-form" aria-label="문의 작성">
+        <p class="lb" style="margin-top:0">문의 유형</p>
+        <div class="hc-types" role="radiogroup" aria-label="문의 유형"><sc-for list="{{types}}" as="t"><span class="{{t.cls}}" role="radio" aria-checked="{{t.on}}">{{t.name}}</span></sc-for></div>
+        <p class="lb">관련 계약 <span>(선택)</span></p>
+        <div class="hc-sel">{{relContract}}<span aria-hidden="true">▾</span></div>
+        <p class="lb">제목</p>
+        <div class="hc-in">{{formTitle}}</div>
+        <p class="lb">내용</p>
+        <div class="hc-in hc-ta">{{formBody}}</div>
+        <div class="hc-att"><button type="button" class="btn sm gh">파일 올리기</button><span>화면 캡처 등 최대 3개 · 각 10MB</span></div>
+        <p class="hc-nt">답변은 알림과 '내 문의'에서 볼 수 있습니다. 전화번호 등 연락처는 적지 않아도 됩니다.</p>
+        <div class="hc-btns"><a class="btn gh" href="Help.dc.html">취소</a><a class="btn" href="Help-Inquiry.dc.html">문의 보내기</a></div>
+      </section>
+      </sc-if>
+
+      <sc-if value="{{showMy}}" hint-placeholder-val="{{ false }}">
+      <section aria-label="내 문의">
+        <div class="hc-mylist">
+          <sc-for list="{{myItems}}" as="m"><a class="{{m.cls}}" href="Help-Inquiry.dc.html"><span class="{{m.sCls}}">{{m.st}}</span><span class="hc-cat">{{m.cat}}</span><span class="t">{{m.t}}</span><span class="d">{{m.d}}</span></a></sc-for>
+        </div>
+        <article class="hc-card hc-md" aria-label="문의 상세">
+          <div class="chips"><span class="hc-cat">{{md.cat}}</span><span class="{{md.sCls}}">{{md.st}}</span></div>
+          <h3>{{md.t}}</h3>
+          <p class="meta">{{md.when}} 접수 · 관련 계약 <a href="{{md.cHref}}">{{md.contract}}</a></p>
+          <p class="hc-k">문의 내용</p>
+          <div class="hc-body">{{md.body}}</div>
+          <sc-if value="{{md.hasFile}}" hint-placeholder-val="{{ true }}"><span class="hc-file">{{md.file}}</span></sc-if>
+          <p class="hc-k">답변</p>
+          <sc-if value="{{md.answered}}" hint-placeholder-val="{{ true }}">
+            <div class="hc-ans"><div class="ah"><b>마자용 운영팀</b><span>{{md.aWhen}}</span></div><p>{{md.answer}}</p></div>
+            <div class="hc-more"><span>답변으로 해결되지 않았다면 새로 문의해 주세요.</span><a class="btn gh" href="Help-Inquiry.dc.html">추가로 문의하기</a></div>
+          </sc-if>
+          <sc-if value="{{md.waiting}}" hint-placeholder-val="{{ false }}">
+            <div class="hc-wait"><b>답변을 기다리고 있습니다</b><span>평일 기준 하루 안에 답변 드립니다. 답변이 오면 알림으로 알려 드립니다.</span></div>
+          </sc-if>
+        </article>
+      </section>
+      </sc-if>
+    </div>
+
+    <aside class="hc-r">
+      <section class="hc-card hq-faq" aria-labelledby="hq-f">
+        <h3 id="hq-f">문의 전에 찾아보세요</h3>
+        <sc-for list="{{faqLinks}}" as="f"><a href="Help.dc.html">{{f}}</a></sc-for>
+        <a class="ft" href="Help.dc.html" style="color:var(--navy-900);text-decoration:underline">자주 묻는 질문 전체 보기</a>
+      </section>
+      <section class="hc-card" aria-labelledby="hc-call">
+        <h3 id="hc-call">전화 · 이메일</h3>
+        <p class="hc-tel">1600-0000</p>
+        <p>평일 10:00–18:00 (점심 12:00–13:00)<br>주말 · 공휴일 휴무</p>
+        <p>help@majayong.example</p>
+      </section>
+      <section class="hc-card" aria-labelledby="hc-dsp">
+        <h3 id="hc-dsp">이런 일은 문의 대신</h3>
+        <ul class="hc-guide">
+          <li><b>계약 · 납품 문제</b>내 계약에서 계약 취소를 요청하거나 이견을 남기면 운영자가 판정합니다.</li>
+          <li><b>부적절한 메시지</b>채팅의 메시지마다 있는 '신고'를 눌러 주세요. 상대에게는 알리지 않습니다.</li>
+        </ul>
+      </section>
+    </aside>
+  </main>
+
+  <footer class="gf" aria-label="사이트 정보">
+    <div class="wrap">
+      <div class="gf-top">
+        <div class="gf-brand">
+          <span class="gf-logo"><span class="mark" aria-hidden="true"><i style="height:9px"></i><i style="height:17px"></i><i style="height:12px;opacity:.55"></i></span>마자용</span>
+          <p>소상공인을 위한 웹 외주 요구사항 정의 · 매칭 플랫폼</p>
+        </div>
+        <div class="gf-cols">
+          <div><b>서비스</b><a href="Main.dc.html">의뢰인 안내</a><a href="Supplier-Landing.dc.html">공급자 안내</a></div>
+          <div><b>고객센터</b><a href="Help.dc.html">자주 묻는 질문</a><a href="Help-Inquiry.dc.html">1:1 문의</a><a href="Help.dc.html">공지사항</a></div>
+          <div><b>정책</b><a href="Terms.dc.html">이용약관</a><a class="em" href="Terms.dc.html">개인정보 처리방침</a><a href="Terms.dc.html">명세 비밀유지</a><a href="Terms.dc.html">중개자 고지</a></div>
+          <div class="gf-cs"><b>고객센터 1600-0000</b><span>평일 10:00–18:00</span><span>점심 12:00–13:00 · 주말 · 공휴일 휴무</span><span>help@majayong.example</span></div>
+        </div>
+      </div>
+      <div class="gf-bot">
+        <p class="gf-biz">상호 로켓단<i></i>대표 김로켓<i></i>사업자등록번호 000-00-00000<i></i>통신판매업 신고 제2026-서울마포-0000호<br>주소 서울특별시 마포구 예시로 00, 0층<i></i>개인정보 보호책임자 박예시<i></i>이메일 help@majayong.example</p>
+        <p class="gf-note">마자용은 통신판매중개자로서 거래 당사자가 아니며, 의뢰인과 공급자 사이 계약의 이행 책임은 각 당사자에게 있습니다. 대금 예치와 정산은 마자용이 관리합니다.</p>
+        <p class="gf-copy">© 2026 로켓단. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+</div>

@@ -1,0 +1,217 @@
+<helmet>
+<style>
+.pg{word-break:keep-all}
+.btn.warn{background:#fff;color:var(--amber-700);border:1px solid #E6C68A}
+.qv sc-for,.qv sc-if{display:contents}
+.crumb{font-size:14px;color:var(--s600);margin:0 0 10px}
+.crumb a{color:var(--s600)}
+.head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin:0 0 18px}
+.head h1.t{margin:6px 0 6px}
+.head .sub{margin:0;max-width:720px}
+.head .top{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px;color:var(--s600)}
+.bandx{border-radius:12px;padding:15px 20px;margin:0 0 16px;border:1px solid var(--s200);background:#fff;display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
+.bandx b{display:block;font-size:16px;margin:0 0 3px}
+.bandx p{margin:0;font-size:14px;line-height:1.6}
+.bandx.amber{background:var(--amber-50);border-color:#F2E0BE}
+.bandx.amber b{color:var(--amber-700)}
+.bandx.amber p{color:#7A5A1C}
+.bandx.wait{background:#FFF8EC;border-color:#F2E0BE}
+.bandx .btn{white-space:nowrap;flex:none}
+.lay{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:20px;align-items:start}
+.bx{background:#fff;border:1px solid var(--s200);border-radius:12px;padding:20px 22px;margin:0 0 16px}
+.bx h2{font-size:17px;font-weight:600;margin:0 0 12px}
+.cur{display:flex;justify-content:space-between;align-items:flex-start;gap:16px}
+.cur .k{font-size:13px;color:var(--s600)}
+.cur .amt{font-size:30px;font-weight:600;letter-spacing:-0.6px;color:var(--navy-900);font-variant-numeric:tabular-nums;margin:2px 0}
+.cur .amt.old{color:var(--s600);text-decoration:line-through}
+.cur .s{font-size:14px;color:var(--s600)}
+.kv3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:16px 0 0;padding:14px 0 0;border-top:1px solid var(--s200)}
+.kv3 .k{font-size:13px;color:var(--s600)}
+.kv3 .v{font-size:16px;font-weight:600;margin-top:2px;font-variant-numeric:tabular-nums}
+.why2{margin:14px 0 0;padding:10px 14px;background:var(--s50);border-radius:8px;font-size:14px;color:var(--s900);line-height:1.6}
+.why2 span{color:var(--s600);margin-right:6px}
+.it{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;padding:12px 0;border-top:1px solid var(--s100)}
+.it:first-child{border-top:0;padding-top:0}
+.it .nm{font-size:15px;font-weight:600}
+.it .ds{font-size:13px;color:var(--s600);margin-top:2px}
+.it .chip{flex:none;font-size:12px;padding:3px 9px}
+.msg2{font-size:15px;line-height:1.75;color:var(--s900);margin:0;white-space:pre-line}
+.msg2 .hid{display:inline-block;background:var(--s100);border:1px dashed var(--s300);border-radius:6px;padding:0 8px;font-size:13px;color:var(--s600)}
+.hist{list-style:none;margin:0;padding:0}
+.hist li{position:relative;padding:0 0 14px 22px}
+.hist li::before{content:"";position:absolute;left:3px;top:6px;width:8px;height:8px;border-radius:50%;background:var(--navy-900)}
+.hist li::after{content:"";position:absolute;left:7px;top:16px;bottom:0;width:1px;background:var(--s200)}
+.hist li:last-child::after{display:none}
+.hist li.old::before{background:var(--s300)}
+.hist .d{font-size:13px;color:var(--s600)}
+.hist .t2{font-size:15px;font-weight:600;margin:2px 0}
+.hist li.old .t2{color:var(--s600)}
+.hist .t2 .chip{font-size:11px;padding:1px 7px;margin-left:6px;vertical-align:1px}
+.hist .s2{font-size:13px;color:var(--s600)}
+.rail .bx{padding:18px 20px}
+.rail h3{font-size:15px;font-weight:600;margin:0 0 10px}
+.rail .note4{font-size:14px;color:var(--s600);line-height:1.65;margin:0 0 14px}
+.rail .btn{width:100%;box-sizing:border-box;justify-content:center;text-align:center;white-space:nowrap}
+.rail .btn+.btn{margin-top:8px}
+.rail .off2{font-size:13px;color:var(--s600);margin:8px 0 0;line-height:1.5}
+.rail .lnk{display:block;text-align:center;margin-top:14px;font-size:14px}
+.rail .r2{display:flex;justify-content:space-between;gap:10px;font-size:14px;padding:5px 0}
+.rail .r2 span{color:var(--s600)}
+.rail .r2 b{font-weight:500}
+
+</style>
+<style>
+.pg{min-height:100vh;position:relative;padding-bottom:393px;box-sizing:border-box}
+.gf{position:absolute;left:0;right:0;bottom:0;background:var(--s50);border-top:1px solid var(--s200);padding:40px 0 36px;font-size:14px;color:var(--s600);word-break:keep-all}
+.gf-top{display:flex;justify-content:space-between;gap:32px;flex-wrap:wrap;padding-bottom:28px;border-bottom:1px solid var(--s200)}
+.gf-brand{flex:1 1 260px;min-width:0}
+.gf-logo{display:inline-flex;align-items:center;font-size:19px;font-weight:600;letter-spacing:-0.4px;color:var(--s900)}
+.gf-brand p{margin:10px 0 0;line-height:1.6}
+.gf-cols{display:flex;gap:48px;flex-wrap:wrap}
+.gf-cols>div{display:flex;flex-direction:column;gap:9px;min-width:0}
+.gf-cols b{font-size:14px;font-weight:600;color:var(--s900);margin-bottom:2px}
+.gf-cols a{color:var(--s600);text-decoration:none}
+.gf-cols a.em{color:var(--s900);font-weight:600}
+.gf-bot{padding-top:22px;font-size:13px;line-height:1.75}
+.gf-bot p{margin:0 0 8px}
+.gf-biz i{display:inline-block;width:1px;height:10px;background:var(--s300);margin:0 9px;vertical-align:-1px}
+.gf-copy{color:var(--s400)}
+</style>
+</helmet>
+
+<div class="pg">
+  <header class="gnb dark">
+    <div class="wrap">
+      <div class="gnbin">
+        <a class="brand" href="Home-Supplier.dc.html"><span class="mark" aria-hidden="true"><i style="height:9px"></i><i style="height:17px"></i><i style="height:12px;opacity:.55"></i></span>마자용</a>
+        <nav class="nav" aria-label="주요 메뉴">
+          <a href="Home-Supplier.dc.html">홈</a><a href="Find-Supplier.dc.html">프로젝트 찾기</a><a class="on" href="Apps-Supplier.dc.html">내 지원</a><a href="Contracts-Supplier.dc.html">내 계약</a><a href="Find-Supplier.dc.html">북마크</a>
+        </nav>
+        <div class="gright">
+          <a class="bell dot" href="Chat-Supplier.dc.html" aria-label="채팅 — 새 메시지 1건"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"></path></svg></a>
+          <a class="bell dot" href="Notify-Supplier.dc.html" aria-label="알림 — 안 읽은 알림 3건"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"></path><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"></path></svg></a>
+          <span class="who"><span class="ava">최</span><span class="uname">최준호</span></span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="pad qv">
+    <div class="wrap">
+      <p class="crumb"><a href="Apps-Supplier.dc.html">내 지원</a> › <a href="Project-Supplier.dc.html">예약 달력, 예약금 결제 외 2개 기능</a> › 내 견적</p>
+      <div class="head">
+        <div>
+          <div class="top"><span class="{{chipCls}}">{{chip}}</span><span>의뢰인 온도 다이닝 · 음식점(코스 레스토랑)</span></div>
+          <h1 class="t">내 견적</h1>
+          <p class="sub">보낸 견적을 읽기 전용으로 봅니다. 견적은 의뢰인과의 채팅에서 '견적 수정'으로만 고칠 수 있습니다.</p>
+        </div>
+      </div>
+
+      <sc-if value="{{isStale}}" hint-placeholder-val="{{ false }}">
+        <div class="bandx amber"><div><b>11월 2일 의뢰인이 명세를 고쳤습니다 — 이 견적은 선택될 수 없습니다</b><p>'리마인드 알림' 설명이 바뀌고 '단골 표시'가 새로 더해졌습니다. 바뀐 명세로 다시 견적을 내면 새 회차로 들어갑니다.</p></div><a class="btn tint" href="QuoteWrite-Supplier.dc.html">다시 견적 내기</a></div>
+      </sc-if>
+      <sc-if value="{{isHeld}}" hint-placeholder-val="{{ false }}">
+        <div class="bandx wait"><div><b style="color:var(--amber-700)">선택되었습니다 — 임시 계약 · 서명 기한 11월 10일</b><p style="color:#7A5A1C">임시 계약 중에는 견적을 고치거나 지원을 철회할 수 없습니다. 계약서에서 합의한 기능과 조건을 확인하고 서명해 주세요.</p></div></div>
+      </sc-if>
+
+      <div class="lay">
+        <div>
+          <section class="bx" aria-labelledby="h-cur">
+            <h2 id="h-cur">{{curH}}</h2>
+            <div class="cur">
+              <div>
+                <div class="k">견적 총액 · 수수료 전</div>
+                <div class="amt">3,100,000원</div>
+                <div class="s">11월 1일 채팅에서 수정 · 1회차 3,000,000원에서 바뀜</div>
+              </div>
+              <span class="{{chipCls}}">{{chip}}</span>
+            </div>
+            <div class="kv3">
+              <div><div class="k">작업 기간</div><div class="v">42일</div></div>
+              <div><div class="k">할 수 있는 항목</div><div class="v">4 / 4</div></div>
+              <div><div class="k">예상 수령액 · 수수료 5% 뺀 금액</div><div class="v">2,945,000원</div></div>
+            </div>
+            <p class="why2"><span>수정 사유</span>회차별로 환불 기준을 다르게 두려면 관리 화면 작업이 늘어 금액을 조정했습니다.</p>
+          </section>
+
+          <section class="bx" aria-labelledby="h-it">
+            <h2 id="h-it">항목별 가능 여부</h2>
+            <div class="it"><div><div class="nm">예약 달력</div><div class="ds">회차별로 예약받고 정원이 차면 마감</div></div><span class="chip teal">가능</span></div>
+            <div class="it"><div><div class="nm">예약금 결제</div><div class="ds">예약할 때 예약금을 받고 환불 규정 안내</div></div><span class="chip teal">가능</span></div>
+            <div class="it"><div><div class="nm">노쇼 기록</div><div class="ds">노쇼 손님을 기록해 다음 예약 때 표시</div></div><span class="chip teal">가능</span></div>
+            <div class="it"><div><div class="nm">리마인드 알림</div><div class="ds">예약 전날 손님에게 안내 자동 발송</div></div><span class="chip teal">가능</span></div>
+          </section>
+
+          <section class="bx" aria-labelledby="h-msg">
+            <h2 id="h-msg">지원 메시지</h2>
+            <p class="msg2">소규모 식당 예약 사이트를 12곳 만들었습니다. 회차제 코스 레스토랑 예약 달력과 PG 예약금 결제를 함께 붙인 경험이 있어, 환불 규정처럼 정해야 할 부분을 먼저 여쭤보며 진행하겠습니다. 궁금하신 점은 <span class="hid">연락처 가림</span> 대신 채팅으로 편하게 물어봐 주세요.</p>
+            <p class="sec" style="margin:10px 0 0">메시지의 연락처 형식은 저장 전에 가려졌습니다. 연락처는 계약 체결 뒤 채팅에서 주고받을 수 있습니다.</p>
+          </section>
+
+          <section class="bx" aria-labelledby="h-hist">
+            <h2 id="h-hist">회차 이력</h2>
+            <ol class="hist">
+              <li><div class="d">11월 1일 · 채팅에서 견적 수정</div><div class="t2">2회차 · 3,100,000원 · 42일<span class="{{chipCls}}">{{chip}}</span></div><div class="s2">4 / 4 가능 · 의뢰인 채팅에 수정 기록이 남았습니다</div></li>
+              <li class="old"><div class="d">10월 29일 · 지원</div><div class="t2">1회차 · 3,000,000원 · 42일<span class="chip out">대체됨</span></div><div class="s2">4 / 4 가능 · 제안 비교에는 최신 회차만 보입니다</div></li>
+            </ol>
+          </section>
+        </div>
+
+        <aside class="rail">
+          <section class="bx" aria-labelledby="h-act">
+            <h3 id="h-act">견적 고치기</h3>
+            <p class="note4">견적은 채팅의 '견적 수정'으로만 고칩니다. 고치면 새 회차가 되고, 지금 회차는 '대체됨'으로 남습니다.</p>
+            <sc-if value="{{isAsk}}" hint-placeholder-val="{{ true }}">
+              <a class="btn tint" href="Chat-Supplier.dc.html">채팅에서 견적 수정</a>
+              <a class="btn gh" href="Project-Supplier.dc.html">프로젝트 보기</a>
+            </sc-if>
+            <sc-if value="{{isStale}}" hint-placeholder-val="{{ false }}">
+              <a class="btn gh" href="Project-Supplier.dc.html">바뀐 명세 보기</a>
+              <p class="off2">이전 명세 기준 견적은 채팅에서 고칠 수 없습니다. '다시 견적 내기'로 새 회차를 내 주세요.</p>
+            </sc-if>
+            <sc-if value="{{isHeld}}" hint-placeholder-val="{{ false }}">
+              <a class="btn" href="Contract-Supplier.dc.html">계약서 확인하고 서명</a>
+              <button type="button" class="btn off" disabled>채팅에서 견적 수정</button>
+              <p class="off2">임시 계약 중에는 견적을 고칠 수 없습니다.</p>
+            </sc-if>
+          </section>
+          <section class="bx" aria-labelledby="h-pj">
+            <h3 id="h-pj">프로젝트</h3>
+            <div class="r2"><span>모집 마감</span><b>11월 3일</b></div>
+            <div class="r2"><span>희망 예산</span><b>5,000,000원</b></div>
+            <div class="r2"><span>지원</span><b>10월 29일</b></div>
+            <sc-if value="{{canWithdraw}}" hint-placeholder-val="{{ true }}">
+              <a class="btn warn sm lnk" href="#withdraw" style="display:inline-flex;width:auto;margin-top:12px">지원 철회</a>
+            </sc-if>
+            <sc-if value="{{isHeld}}" hint-placeholder-val="{{ false }}">
+              <p class="off2" style="margin-top:12px">임시 계약 중에는 지원을 철회할 수 없습니다. 원하지 않으면 계약서에서 서명을 거절하세요.</p>
+            </sc-if>
+          </section>
+        </aside>
+      </div>
+    </div>
+  </main>
+
+  <footer class="gf" aria-label="사이트 정보">
+    <div class="wrap">
+      <div class="gf-top">
+        <div class="gf-brand">
+          <span class="gf-logo"><span class="mark" aria-hidden="true"><i style="height:9px"></i><i style="height:17px"></i><i style="height:12px;opacity:.55"></i></span>마자용</span>
+          <p>소상공인을 위한 웹 외주 요구사항 정의 · 매칭 플랫폼</p>
+        </div>
+        <div class="gf-cols">
+          <div><b>서비스</b><a href="Main.dc.html">의뢰인 안내</a><a href="Supplier-Landing.dc.html">공급자 안내</a></div>
+          <div><b>고객센터</b><a href="Help.dc.html">자주 묻는 질문</a><a href="Help-Inquiry.dc.html">1:1 문의</a><a href="Help.dc.html">공지사항</a></div>
+          <div><b>정책</b><a href="Terms.dc.html">이용약관</a><a class="em" href="Terms.dc.html">개인정보 처리방침</a><a href="Terms.dc.html">명세 비밀유지</a><a href="Terms.dc.html">중개자 고지</a></div>
+          <div class="gf-cs"><b>고객센터 1600-0000</b><span>평일 10:00–18:00</span><span>점심 12:00–13:00 · 주말 · 공휴일 휴무</span><span>help@majayong.example</span></div>
+        </div>
+      </div>
+      <div class="gf-bot">
+        <p class="gf-biz">상호 로켓단<i></i>대표 김로켓<i></i>사업자등록번호 000-00-00000<i></i>통신판매업 신고 제2026-서울마포-0000호<br>주소 서울특별시 마포구 예시로 00, 0층<i></i>개인정보 보호책임자 박예시<i></i>이메일 help@majayong.example</p>
+        <p class="gf-note">마자용은 통신판매중개자로서 거래 당사자가 아니며, 의뢰인과 공급자 사이 계약의 이행 책임은 각 당사자에게 있습니다. 대금 예치와 정산은 마자용이 관리합니다.</p>
+        <p class="gf-copy">© 2026 로켓단. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+
+</div>

@@ -1,0 +1,293 @@
+<helmet>
+<style>
+.hint2.askq{background:var(--s50);border:1px solid var(--s200);border-radius:8px;padding:10px 12px;margin-top:10px;text-align:left}
+.hint2.askq b{color:var(--s900);font-weight:600}
+.pg{word-break:keep-all}
+.pd sc-for,.pd sc-if{display:contents}
+.crumb{font-size:14px;color:var(--s600);margin:0 0 10px}
+.crumb a{color:var(--s600)}
+.viewband svg{width:18px;height:18px;flex:none;color:var(--navy-900)}
+.viewband b{font-weight:600}
+.head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;margin:0 0 20px}
+.head .chips{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:0 0 10px;font-size:14px;color:var(--s600)}
+.head .chips .soon{color:var(--amber-700);font-weight:600}
+.head h1.t{margin:0 0 6px}
+.head .sub{margin:0;font-size:15px}
+.bmt{display:inline-flex;align-items:center;gap:7px;white-space:nowrap;flex:none}
+.bmt svg{width:17px;height:17px}
+.bmt.on{background:var(--blue-50);border-color:#D7E5FF;color:var(--navy-900);font-weight:600}
+.lay{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:20px;align-items:start}
+/* 상태 띠 */
+.band2{border-radius:12px;padding:16px 20px;margin:0 0 16px;border:1px solid var(--s200);background:#fff}
+.band2 b{display:block;font-size:16px;margin:0 0 3px}
+.band2 p{margin:0;font-size:14px;color:var(--s600);line-height:1.6}
+.band2.amber{background:var(--amber-50);border-color:#F2E0BE}
+.band2.amber b{color:var(--amber-700)}
+.band2.amber p{color:#7A5A1C}
+.band2.grey{background:var(--s100)}
+/* 기능 카드 */
+.secH{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin:0 0 10px}
+.secH h2{font-size:19px;font-weight:600;letter-spacing:-0.3px;margin:0}
+.secH p{font-size:14px;color:var(--s600);margin:0}
+.fc{background:#fff;border:1px solid var(--s200);border-radius:12px;padding:18px 20px;margin:0 0 12px}
+.fc .nmrow{display:flex;align-items:center;gap:8px;margin:0 0 2px}
+.fc .no{font-size:13px;color:var(--s400);font-variant-numeric:tabular-nums;width:18px}
+.fc .nm{font-size:17px;font-weight:600}
+.fc .ds{font-size:15px;color:var(--s600);margin:0 0 12px 26px;line-height:1.6}
+.fc .dec{margin-left:26px;background:var(--s50);border:1px solid var(--s200);border-radius:8px;padding:11px 14px}
+.fc .dec .k{font-size:13px;font-weight:600;color:var(--s600);margin:0 0 6px}
+.fc .dec .tg2{display:flex;gap:6px;flex-wrap:wrap}
+.fc .dec .tg2 span{font-size:14px;background:#fff;border:1px solid var(--s200);border-radius:6px;padding:3px 10px}
+.fc .dec .tg2 span.new{border-color:#F2E0BE;background:var(--amber-50);color:var(--amber-700)}
+.fc .memo{font-size:14px;color:var(--s900);margin:9px 0 0;line-height:1.6}
+.fc .memo i{font-style:normal;font-size:13px;font-weight:600;color:var(--s600);margin-right:8px}
+.fc.pay .ds{margin-bottom:0}
+/* 화면 초안 */
+.wfs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:0 0 10px}
+.wf{border:1px solid var(--s200);border-radius:10px;background:#fff;padding:10px}
+.wf .scr{height:150px;border-radius:6px;background:var(--s50);border:1px solid var(--s200);padding:10px;box-sizing:border-box;display:flex;flex-direction:column;gap:6px}
+.wf .scr i{display:block;background:var(--s200);border-radius:3px;height:8px}
+.wf .scr i.h{height:12px;width:55%;background:var(--s300)}
+.wf .scr .gr{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;flex:1}
+.wf .scr .gr i{height:auto}
+.wf .scr .gr i.on{background:#C9DBFF}
+.wf .scr .bx{flex:1;border:1px dashed var(--s300);border-radius:4px;background:#fff}
+.wf .scr .bt{height:16px;width:40%;background:#C9DBFF;border-radius:4px;align-self:flex-end}
+.wf .cap{font-size:13px;color:var(--s600);margin:8px 2px 0}
+.wf .cap b{color:var(--s900);font-weight:600}
+/* 오른쪽 */
+.rail2 .card{margin:0 0 16px}
+.rail2 h3{font-size:16px;font-weight:600;margin:0 0 4px}
+.budget .k{font-size:14px;color:var(--s600);margin:0}
+.budget .big{font-size:28px;font-weight:600;letter-spacing:-0.6px;color:var(--navy-900);margin:2px 0 6px;font-variant-numeric:tabular-nums}
+.budget .meta{font-size:14px;color:var(--s600);line-height:1.7;border-top:1px solid var(--s200);padding-top:10px;margin-top:12px}
+.budget .meta div{display:flex;justify-content:space-between}
+.budget .meta b{color:var(--s900);font-weight:500}
+.cta .btn{margin-top:14px}
+.cta .btn + .btn{margin-top:8px}
+.cta .hint2{font-size:13px;color:var(--s600);margin:10px 0 0;line-height:1.6}
+.myq{border:1px solid var(--s200);border-radius:10px;padding:12px 14px;margin-top:14px}
+.myq .row{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:0 0 6px}
+.myq .row .k{font-size:13px;font-weight:600;color:var(--s600)}
+.myq .amt{font-size:20px;font-weight:600;font-variant-numeric:tabular-nums}
+.myq .amt.old{color:var(--s400);text-decoration:line-through}
+.myq .m{font-size:13px;color:var(--s600);margin:2px 0 0}
+.unread{display:inline-block;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--blue-600);color:#fff;font-size:12px;font-weight:600;line-height:18px;text-align:center;margin-left:6px}
+.cl .who2{display:flex;align-items:center;gap:12px;margin:6px 0 14px}
+.cl .av{width:44px;height:44px;border-radius:50%;background:var(--s100);border:1px solid var(--s200);display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:600;color:var(--navy-900);flex:none}
+.cl .who2 b{display:block;font-size:16px}
+.cl .who2 span{font-size:14px;color:var(--s600)}
+.cl dl{margin:0;font-size:14px}
+.cl dl div{display:grid;grid-template-columns:72px minmax(0,1fr);gap:8px;padding:6px 0;border-top:1px solid var(--s200)}
+.cl dt{color:var(--s600)}
+.cl dd{margin:0;color:var(--s900);line-height:1.6}
+.cl .nocontact{font-size:13px;color:var(--s600);background:var(--s50);border-radius:8px;padding:10px 12px;margin:12px 0 0;line-height:1.6}
+.after{margin:0;padding-left:18px}
+.after li{font-size:14px;color:var(--s600);line-height:1.7}
+.after b{color:var(--s900);font-weight:600}
+/* 추천 */
+.rec{margin-top:16px}
+.rec .pr{padding:16px 22px;border-top:1px solid var(--s200);display:flex;gap:16px;align-items:center}
+.rec .pr:first-child{border-top:0}
+.rec .pr .lt{flex:1 1 auto;min-width:0}
+.rec .pr .ti{font-size:16px;font-weight:600;margin:6px 0 3px}
+.rec .pr .mt{font-size:14px;color:var(--s600)}
+.rec .pr .btn{white-space:nowrap;flex:none}
+</style>
+<style>
+.pg{min-height:100vh;position:relative;padding-bottom:393px;box-sizing:border-box}
+.gf{position:absolute;left:0;right:0;bottom:0;background:var(--s50);border-top:1px solid var(--s200);padding:40px 0 36px;font-size:14px;color:var(--s600);word-break:keep-all}
+.gf-top{display:flex;justify-content:space-between;gap:32px;flex-wrap:wrap;padding-bottom:28px;border-bottom:1px solid var(--s200)}
+.gf-brand{flex:1 1 260px;min-width:0}
+.gf-logo{display:inline-flex;align-items:center;font-size:19px;font-weight:600;letter-spacing:-0.4px;color:var(--s900)}
+.gf-brand p{margin:10px 0 0;line-height:1.6}
+.gf-cols{display:flex;gap:48px;flex-wrap:wrap}
+.gf-cols>div{display:flex;flex-direction:column;gap:9px;min-width:0}
+.gf-cols b{font-size:14px;font-weight:600;color:var(--s900);margin-bottom:2px}
+.gf-cols a{color:var(--s600);text-decoration:none}
+.gf-cols a.em{color:var(--s900);font-weight:600}
+.gf-bot{padding-top:22px;font-size:13px;line-height:1.75}
+.gf-bot p{margin:0 0 8px}
+.gf-biz i{display:inline-block;width:1px;height:10px;background:var(--s300);margin:0 9px;vertical-align:-1px}
+.gf-copy{color:var(--s400)}
+</style>
+</helmet>
+
+<div class="pg">
+
+  <header class="gnb dark">
+    <div class="wrap">
+      <div class="gnbin">
+        <a class="brand" href="Home-Supplier.dc.html"><span class="mark" aria-hidden="true"><i style="height:9px"></i><i style="height:17px"></i><i style="height:12px;opacity:.55"></i></span>마자용</a>
+        <nav class="nav" aria-label="주요 메뉴">
+          <a href="Home-Supplier.dc.html">홈</a><a class="on" href="Find-Supplier.dc.html">프로젝트 찾기</a><a href="Apps-Supplier.dc.html">내 지원</a><a href="Contracts-Supplier.dc.html">내 계약</a><a href="Find-Supplier.dc.html">북마크</a>
+        </nav>
+        <div class="gright">
+          <a class="bell dot" href="Chat-Supplier.dc.html" aria-label="채팅 — 새 메시지 1건"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"></path></svg></a>
+          <a class="bell dot" href="Notify-Supplier.dc.html" aria-label="알림 — 안 읽은 알림 3건"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"></path><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"></path></svg></a>
+          <span class="who"><span class="ava">최</span><span class="uname">최준호</span></span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="pad pd">
+    <div class="wrap">
+
+      <p class="crumb"><a href="Find-Supplier.dc.html">프로젝트 찾기</a> › 명세 상세</p>
+
+      <div class="viewband" role="note">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+        <span><b>열람 기록이 남습니다.</b> 이 명세에는 가입 때 동의하신 비밀유지 의무가 적용됩니다. 의뢰인의 정보와 기능 설명을 마자용 밖으로 옮기지 말아 주세요.</span>
+      </div>
+
+      <div class="head">
+        <div>
+          <div class="chips"><span class="chip">음식점 · 코스 레스토랑</span><span class="{{stChipCls}}">{{stChip}}</span><span class="{{dlCls}}">{{dl}}</span></div>
+          <h1 class="t">예약 달력, 예약금 결제 외 2개 기능</h1>
+          <p class="sub">명세 항목 {{nFn}}개 · 10월 27일 등록{{subMore}}</p>
+        </div>
+        <button type="button" class="{{bmCls}}" aria-pressed="{{bmPressed}}"><svg viewBox="0 0 24 24" fill="{{bmFill}}" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M6 3.5h12v17l-6-4-6 4z"></path></svg>{{bmLabel}}</button>
+      </div>
+
+      <div class="lay">
+        <div>
+          <sc-if value="{{isRe}}" hint-placeholder-val="{{ false }}">
+            <div class="band2 amber">
+              <b>의뢰인이 명세를 고쳐 다시 견적을 요청했습니다</b>
+              <p>11월 2일 ‘리마인드 알림’ 설명이 바뀌고 ‘단골 표시’가 새로 더해졌습니다. 이전에 내신 견적은 ‘이전 명세 기준’이 되어 의뢰인이 고를 수 없습니다. 바뀐 명세로 다시 견적을 내 주세요.</p>
+            </div>
+          </sc-if>
+          <sc-if value="{{isClosed}}" hint-placeholder-val="{{ false }}">
+            <div class="band2 grey">
+              <b>모집이 마감되었습니다</b>
+              <p>11월 3일에 모집이 끝나 새 견적을 낼 수 없습니다. 북마크해 두셨다면 북마크 목록에 마감 표시로 남습니다.</p>
+            </div>
+          </sc-if>
+
+          <div class="secH"><h2>기능 {{nFn}}개</h2><p>공급자와 정할 것은 의뢰인이 문의 채팅을 열면 함께 정합니다</p></div>
+          <sc-for list="{{fns}}" as="f" hint-placeholder-count="4">
+            <section class="fc" aria-label="{{f.name}}">
+              <div class="nmrow"><span class="no">{{f.no}}</span><span class="nm">{{f.name}}</span><sc-if value="{{f.changed}}" hint-placeholder-val="{{ false }}"><span class="chip amber" style="font-size:12px;padding:2px 8px">{{f.chg}}</span></sc-if></div>
+              <p class="ds">{{f.desc}}</p>
+              <div class="dec">
+                <p class="k">공급자와 정할 것</p>
+                <div class="tg2"><sc-for list="{{f.decs}}" as="d" hint-placeholder-count="2"><span class="{{d.cls}}">{{d.name}}</span></sc-for></div>
+                <sc-if value="{{f.hasMemo}}" hint-placeholder-val="{{ false }}"><p class="memo"><i>의뢰인 메모</i>{{f.memo}}</p></sc-if>
+              </div>
+            </section>
+          </sc-for>
+          <section class="fc pay" aria-label="지급 구간과 비율">
+            <div class="nmrow"><span class="no"></span><span class="nm" style="font-size:16px">지급 구간 · 비율</span></div>
+            <p class="ds">중간 · 최종 두 구간으로 나눠 지급합니다. 어느 기능을 어느 구간에 넣을지와 비율도 채팅에서 정하고, 정하지 않으면 50 : 50 · 명세 순서대로 나뉩니다.</p>
+          </section>
+
+          <div class="secH" style="margin-top:22px"><h2>화면 초안</h2><p>의뢰인이 초안을 고치며 만든 화면입니다 · 참고용</p></div>
+          <div class="wfs">
+            <div class="wf">
+              <div class="scr"><i class="h"></i><div class="gr"><i></i><i></i><i class="on"></i><i></i><i></i><i class="on"></i><i></i><i></i><i></i><i></i><i class="on"></i><i></i><i></i><i></i><i></i><i class="on"></i><i></i><i></i><i></i><i></i><i></i></div><i style="width:70%"></i></div>
+              <p class="cap"><b>예약 달력</b> · 날짜와 회차 고르기</p>
+            </div>
+            <div class="wf">
+              <div class="scr"><i class="h"></i><i style="width:80%"></i><i style="width:60%"></i><div class="bx"></div><div class="bt"></div></div>
+              <p class="cap"><b>예약금 결제</b> · 금액 확인과 환불 안내</p>
+            </div>
+            <div class="wf">
+              <div class="scr"><i class="h"></i><i></i><i style="width:85%"></i><i></i><i style="width:75%"></i><i></i><i style="width:65%"></i></div>
+              <p class="cap"><b>관리 화면</b> · 노쇼 기록과 알림 발송</p>
+            </div>
+          </div>
+          <p class="sec" style="margin:0">디자인 지시가 아니라 기능을 이해하기 위한 그림입니다. 화면 구성은 채팅에서 의뢰인과 정하시면 됩니다.</p>
+        </div>
+
+        <aside class="rail2">
+          <section class="card budget cta" aria-labelledby="b-h">
+            <p class="k" id="b-h">희망 예산</p>
+            <div class="big">5,000,000원</div>
+            <p class="sec" style="margin:0">의뢰인이 적은 희망 예산입니다. 견적은 할 수 있는 항목과 총액 · 기간으로 냅니다.</p>
+            <div class="meta">
+              <div><span>모집 마감</span><b>11월 3일</b></div>
+              <div><span>명세 항목</span><b>{{nFn}}개</b></div>
+            </div>
+
+            <sc-if value="{{isBefore}}" hint-placeholder-val="{{ true }}">
+              <a class="btn full" href="QuoteWrite-Supplier.dc.html">견적 작성하기</a>
+              <p class="hint2">항목마다 할 수 있는지 고르고, 총액과 기간만 적습니다. 항목별 금액은 받지 않습니다.</p>
+              <p class="hint2 askq"><b>지원 전에는 채팅할 수 없습니다</b>(상세 공개 범위). 궁금한 점은 견적을 내며 '의뢰인에게 묻고 싶은 것'으로 남기면, 의뢰인이 문의 채팅을 열어 답합니다.</p>
+            </sc-if>
+
+            <sc-if value="{{isApplied}}" hint-placeholder-val="{{ false }}">
+              <div class="myq">
+                <div class="row"><span class="k">내 견적 · 2회차</span><span class="chip blue" style="font-size:12px;padding:2px 8px">문의 중</span></div>
+                <div class="amt">3,100,000원</div>
+                <p class="m">42일 · 할 수 있는 항목 4/4 · 11월 1일 채팅에서 수정</p>
+              </div>
+              <a class="btn tint full" href="Chat-Supplier.dc.html">채팅 보기<span class="unread">1</span></a>
+              <a class="btn gh full" href="Apps-Supplier.dc.html">내 지원 보기</a>
+              <p class="hint2">견적은 채팅의 ‘견적 수정’으로 고칩니다. 새 회차가 되고 의뢰인에게 바로 보입니다.</p>
+            </sc-if>
+
+            <sc-if value="{{isRe}}" hint-placeholder-val="{{ false }}">
+              <div class="myq">
+                <div class="row"><span class="k">내 견적 · 2회차</span><span class="chip amber" style="font-size:12px;padding:2px 8px">이전 명세 기준</span></div>
+                <div class="amt old">3,100,000원</div>
+                <p class="m">42일 · 할 수 있는 항목 4/4 · 11월 1일 채팅에서 수정</p>
+              </div>
+              <a class="btn full" href="QuoteWrite-Supplier.dc.html">다시 견적 내기</a>
+              <p class="hint2">새 견적을 내면 3회차가 되고 이전 견적은 ‘대체됨’으로 남습니다.</p>
+            </sc-if>
+
+            <sc-if value="{{isClosed}}" hint-placeholder-val="{{ false }}">
+              <button type="button" class="btn off full" disabled>모집이 마감되었습니다</button>
+            </sc-if>
+          </section>
+
+          <section class="card cl" aria-labelledby="c-h">
+            <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px"><h3 id="c-h">의뢰인</h3><a class="ft" href="PublicClient.dc.html" style="font-size:14px">프로필 보기</a></div>
+            <div class="who2"><span class="av" aria-hidden="true">민</span><div><b>정민재</b><span>온도 다이닝</span></div></div>
+            <dl>
+              <div><dt>업종</dt><dd>음식점 · 코스 레스토랑</dd></div>
+              <div><dt>가게 주소</dt><dd>서울 마포구 와우산로 00길 00</dd></div>
+              <div><dt>웹사이트</dt><dd><a class="ft" href="#">ondo-dining.kr</a></dd></div>
+              <div><dt>자기소개</dt><dd>마포에서 10석 코스 레스토랑을 운영합니다. 전화 예약을 줄이고 싶어요.</dd></div>
+            </dl>
+            <p class="nocontact">연락처는 받지 않습니다. 연락은 의뢰인이 문의 채팅을 열면 할 수 있고, 연락처는 계약 체결 뒤에 주고받습니다.</p>
+          </section>
+
+          <section class="card" aria-labelledby="n-h">
+            <h3 id="n-h" style="margin-bottom:8px">알아두실 것</h3>
+            <ul class="after">
+              <li>공급자가 먼저 채팅을 걸 수는 없습니다. 견적을 내면 의뢰인이 <b>문의</b>해 옵니다.</li>
+              <li>의뢰인이 고르면 <b>7일 안에 서명</b>해야 계약이 됩니다.</li>
+              <li>계약 범위는 서명할 때 고정되고, 그 뒤에 늘어나지 않습니다.</li>
+            </ul>
+          </section>
+        </aside>
+      </div>
+
+    </div>
+  </main>
+
+  <footer class="gf" aria-label="사이트 정보">
+    <div class="wrap">
+      <div class="gf-top">
+        <div class="gf-brand">
+          <span class="gf-logo"><span class="mark" aria-hidden="true"><i style="height:9px"></i><i style="height:17px"></i><i style="height:12px;opacity:.55"></i></span>마자용</span>
+          <p>소상공인을 위한 웹 외주 요구사항 정의 · 매칭 플랫폼</p>
+        </div>
+        <div class="gf-cols">
+          <div><b>서비스</b><a href="Main.dc.html">의뢰인 안내</a><a href="Supplier-Landing.dc.html">공급자 안내</a></div>
+          <div><b>고객센터</b><a href="Help.dc.html">자주 묻는 질문</a><a href="Help-Inquiry.dc.html">1:1 문의</a><a href="Help.dc.html">공지사항</a></div>
+          <div><b>정책</b><a href="Terms.dc.html">이용약관</a><a class="em" href="Terms.dc.html">개인정보 처리방침</a><a href="Terms.dc.html">명세 비밀유지</a><a href="Terms.dc.html">중개자 고지</a></div>
+          <div class="gf-cs"><b>고객센터 1600-0000</b><span>평일 10:00–18:00</span><span>점심 12:00–13:00 · 주말 · 공휴일 휴무</span><span>help@majayong.example</span></div>
+        </div>
+      </div>
+      <div class="gf-bot">
+        <p class="gf-biz">상호 로켓단<i></i>대표 김로켓<i></i>사업자등록번호 000-00-00000<i></i>통신판매업 신고 제2026-서울마포-0000호<br>주소 서울특별시 마포구 예시로 00, 0층<i></i>개인정보 보호책임자 박예시<i></i>이메일 help@majayong.example</p>
+        <p class="gf-note">마자용은 통신판매중개자로서 거래 당사자가 아니며, 의뢰인과 공급자 사이 계약의 이행 책임은 각 당사자에게 있습니다. 대금 예치와 정산은 마자용이 관리합니다.</p>
+        <p class="gf-copy">© 2026 로켓단. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+
+</div>

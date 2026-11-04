@@ -1,0 +1,160 @@
+<helmet>
+<style>
+.pg{word-break:keep-all}
+.ad sc-for,.ad sc-if{display:contents}
+.ad{position:relative;background:var(--s50);min-height:100%}
+.ad-top{height:64px;background:#fff;border-bottom:1px solid var(--s200);display:flex;align-items:center;justify-content:space-between;padding:0 28px;box-sizing:border-box}
+.ad-top .lg{display:flex;align-items:center;gap:10px;font-size:19px;font-weight:600;color:var(--s900);text-decoration:none;letter-spacing:-0.4px}
+.ad-top .lg .mark{margin-right:0}
+.ad-top .cp{font-size:12px;font-weight:500;color:var(--s600);background:var(--s100);border:1px solid var(--s200);border-radius:6px;padding:2px 8px;letter-spacing:0}
+.ad-top .me{display:flex;align-items:center;gap:10px;font-size:14px;color:var(--s600)}
+.ad-top .me b{color:var(--s900);font-weight:600}
+.ad-top .me .av{width:32px;height:32px;border-radius:50%;background:var(--navy-900);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600}
+.ad-body{display:grid;grid-template-columns:232px minmax(0,1fr);align-items:stretch}
+.ad-nav{background:var(--navy-900);padding:20px 12px;display:flex;flex-direction:column;gap:2px;min-height:calc(100% - 0px)}
+.ad-nav .h{font-size:12px;color:var(--on-sub);padding:0 12px 8px;letter-spacing:0.2px}
+.ad-nav a{display:flex;justify-content:space-between;align-items:center;font-size:15px;color:#fff;text-decoration:none;padding:10px 12px;border-radius:8px;border-left:3px solid transparent}
+.ad-nav a.on{background:rgba(255,255,255,.10);border-left-color:var(--blue-600);font-weight:600}
+.ad-nav a .bd{font-size:12px;font-weight:600;min-width:20px;height:20px;border-radius:10px;background:rgba(255,255,255,.16);color:#fff;display:inline-flex;align-items:center;justify-content:center;padding:0 6px;box-sizing:border-box}
+.ad-nav .sp{height:1px;background:var(--on-line);margin:12px 8px}
+.ad-nav a.mut{color:var(--on-sub);font-size:14px}
+.ad-nav .ft2{margin-top:auto;font-size:12px;color:var(--on-sub);line-height:1.6;padding:24px 12px 4px}
+.ad-main{padding:28px 32px 40px;min-width:0}
+.ad-main h1.t{margin:0 0 6px}
+.ad-main .sub{margin:0 0 20px;color:var(--s600);font-size:15px}
+.ad-tabs{display:flex;gap:6px;margin:0 0 14px;flex-wrap:wrap}
+.ad-tabs a{font-size:14px;padding:6px 13px;border-radius:16px;border:1px solid var(--s200);background:#fff;color:var(--s600);text-decoration:none}
+.ad-tabs a.on{background:var(--navy-900);border-color:var(--navy-900);color:#fff;font-weight:600}
+.ad-tabs a .n{margin-left:5px;font-weight:600}
+.ad-lbl{display:block;font-size:14px;font-weight:600;color:var(--s900);margin:14px 0 6px}
+.ad-lbl i{font-style:normal;font-weight:400;color:var(--amber-700);font-size:13px;margin-left:6px}
+.ad-in{width:100%;box-sizing:border-box;font-family:inherit;font-size:15px;color:var(--s900);background:#fff;border:1px solid var(--s300);border-radius:8px;padding:10px 12px}
+textarea.ad-in{min-height:76px;resize:vertical;line-height:1.6}
+.ad-log{font-size:13px;color:var(--s600);display:flex;align-items:center;gap:6px}
+.ad-log::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--s400)}
+.btn.warn{background:#fff;color:var(--amber-700);border:1px solid #E6C68A}
+
+.iq-grid{display:grid;grid-template-columns:360px minmax(0,1fr);gap:20px;align-items:start}
+.iq-list{background:#fff;border:1px solid var(--s200);border-radius:12px;overflow:hidden}
+.iq-fl{display:flex;gap:8px;padding:12px 14px;border-bottom:1px solid var(--s200);background:var(--s50)}
+.iq-fl select,.iq-fl input{font-family:inherit;font-size:13px;border:1px solid var(--s300);border-radius:8px;padding:7px 10px;background:#fff;color:var(--s900)}
+.iq-fl input{flex:1;min-width:0}
+.iq-li{display:block;padding:14px 16px;border-top:1px solid var(--s200);text-decoration:none;color:inherit}
+.iq-li.first{border-top:0}
+.iq-li.sel{background:#EEF4FF;box-shadow:inset 3px 0 0 var(--blue-600)}
+.iq-li .tp{display:flex;gap:6px;align-items:center;margin:0 0 6px}
+.iq-li .tp .chip{font-size:11px;padding:1px 7px;font-weight:600}
+.iq-li .tp .age{margin-left:auto;font-size:12px;color:var(--s600)}
+.iq-li .tp .age.late{color:var(--amber-700);font-weight:600}
+.iq-li b{display:block;font-size:15px;color:var(--s900);margin:0 0 3px}
+.iq-li .mt{font-size:13px;color:var(--s600);line-height:1.5}
+.iq-more{font-size:13px;color:var(--s600);padding:12px 16px;border-top:1px solid var(--s200);background:var(--s50);margin:0}
+.iq-dt{background:#fff;border:1px solid var(--s200);border-radius:12px;padding:20px 22px}
+.iq-dt .chips{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 8px}
+.iq-dt .chips .chip{font-size:12px;padding:2px 8px}
+.iq-dt h2{font-size:20px;font-weight:600;margin:0 0 4px;letter-spacing:-0.3px}
+.iq-dt .mt3{font-size:13px;color:var(--s600);margin:0}
+.iq-sec{border-top:1px solid var(--s200);padding:14px 0 0;margin:14px 0 0}
+.iq-k{display:flex;justify-content:space-between;align-items:center;font-size:12px;font-weight:600;color:var(--s600);margin:0 0 8px}
+.iq-k a{font-size:13px;font-weight:500}
+.iq-body{margin:0;font-size:15px;color:var(--s900);line-height:1.7;background:var(--s50);border-radius:8px;padding:12px 14px;white-space:pre-line}
+.iq-att{display:inline-flex;align-items:center;gap:8px;margin:10px 0 0;font-size:13px;color:var(--s900);background:#fff;border:1px solid var(--s200);border-radius:8px;padding:7px 11px;text-decoration:none}
+.iq-att i{font-style:normal;color:var(--s600)}
+.iq-kv{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.iq-kv div{background:var(--s50);border:1px solid var(--s200);border-radius:8px;padding:9px 11px;min-width:0}
+.iq-kv span{display:block;font-size:12px;color:var(--s600)}
+.iq-kv b{display:block;font-size:14px;color:var(--s900);font-weight:600;margin-top:2px}
+.iq-kv b.ok{color:var(--teal-700)}
+.iq-tpl{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 8px}
+.iq-tpl a{font-size:12px;color:var(--s600);background:#fff;border:1px solid var(--s200);border-radius:14px;padding:3px 10px;text-decoration:none}
+.iq-foot{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:14px 0 0}
+.iq-foot p{margin:0;font-size:13px;color:var(--s600);line-height:1.6}
+.iq-foot .btn{white-space:nowrap;flex:none}
+.iq-off{font-size:13px;color:var(--s600);margin:6px 0 0;text-align:right}
+.iq-done{background:#EAF6F4;border:1px solid #C7E6E0;border-radius:12px;padding:14px 18px;margin:0 0 16px}
+.iq-done b{display:block;color:var(--teal-700);font-size:15px;margin:0 0 2px}
+.iq-done p{margin:0;font-size:14px;color:var(--s600);line-height:1.6}
+.iq-ans{border:1px solid #C7E6E0;border-radius:10px;overflow:hidden}
+.iq-ans .ah{display:flex;justify-content:space-between;font-size:12px;color:var(--s600);background:#F3FAF8;padding:8px 12px;border-bottom:1px solid #C7E6E0}
+.iq-ans .ah b{color:var(--teal-700)}
+.iq-ans p{margin:0;padding:12px 14px;font-size:15px;line-height:1.7;white-space:pre-line}
+</style>
+</helmet>
+
+<div class="pg ad">
+  <header class="ad-top">
+    <a class="lg" href="Admin-Blocks.dc.html"><span class="mark" aria-hidden="true"><i style="height:9px"></i><i style="height:17px"></i><i style="height:12px;opacity:.55"></i></span>마자용 운영<span class="cp">운영자 콘솔</span></a>
+    <div class="me"><span>운영자</span><b>김하늘</b><span class="av" aria-hidden="true">하</span></div>
+  </header>
+  <div class="ad-body">
+    <nav class="ad-nav" aria-label="운영 메뉴">
+      <p class="h">처리할 일</p>
+      <a href="Admin-Blocks.dc.html">블록 검토<span class="bd">7</span></a><a href="Admin-Payments.dc.html">보류된 결제<span class="bd">2</span></a><a href="Admin-Refunds.dc.html">환불 처리<span class="bd">1</span></a><a href="Admin-Disputes.dc.html">이견 개입<span class="bd">1</span></a><a href="Admin-Reports.dc.html">신고 처리<span class="bd">2</span></a><a class="on" aria-current="page" href="Admin-Inquiries.dc.html">1:1 문의<span class="bd">{{nWait}}</span></a>
+      <div class="sp"></div>
+      <a class="mut" href="Admin-Events.dc.html">이벤트 기록</a>
+      <p class="ft2">운영자 행위는 모두 이벤트 기록에 남습니다</p>
+    </nav>
+    <main class="ad-main">
+      <h1 class="t">1:1 문의</h1>
+      <p class="sub">고객센터에서 들어온 문의에 답합니다. 평일 기준 하루 안에 답하고, 관련 계약이 있으면 상태를 확인한 뒤 답합니다.</p>
+      <nav class="ad-tabs" aria-label="문의 보기"><a class="{{tabWait}}" href="#wait">답변 대기<span class="n">{{nWait}}</span></a><a class="{{tabDone}}" href="#done">답변 완료<span class="n">{{nDone}}</span></a></nav>
+      <sc-if value="{{justSent}}" hint-placeholder-val="{{ false }}">
+        <div class="iq-done"><b>답변을 보냈습니다 · 11월 4일 15:02 · 운영자 김하늘</b><p>정민재님에게 알림이 갔고, 고객센터 '내 문의'에 답변 완료로 보입니다. 답변은 <a class="ft" href="Admin-Events.dc.html">이벤트 기록</a>에 남았습니다.</p></div>
+      </sc-if>
+      <div class="iq-grid">
+        <section class="iq-list" aria-label="문의 목록">
+          <div class="iq-fl"><select aria-label="유형"><option>모든 유형</option></select><input type="search" placeholder="제목 · 이름으로 찾기" aria-label="찾기"></div>
+          <sc-for list="{{items}}" as="it" hint-placeholder-count="4">
+            <a class="{{it.cls}}" href="Admin-Inquiries.dc.html">
+              <div class="tp"><span class="chip">{{it.cat}}</span><span class="{{it.sCls}}">{{it.status}}</span><span class="{{it.ageCls}}">{{it.age}}</span></div>
+              <b>{{it.title}}</b>
+              <div class="mt">{{it.who}}</div>
+            </a>
+          </sc-for>
+          <p class="iq-more">{{moreNote}}</p>
+        </section>
+
+        <section class="iq-dt" aria-label="문의 상세">
+          <div class="chips"><span class="chip">결제 · 예치</span><span class="{{dChipCls}}">{{dChip}}</span></div>
+          <h2>예치했는데 내 계약에 확인 중으로 나와요</h2>
+          <p class="mt3">의뢰인 정민재(온도 다이닝) · 11월 4일 14:41 접수 · 이전 문의 1건</p>
+
+          <div class="iq-sec">
+            <p class="iq-k">문의 내용</p>
+            <p class="iq-body">11월 4일 14:20에 카드로 3,255,000원을 결제했습니다.
+내 계약에는 아직 '확인 중'으로 보여서 문의드립니다.</p>
+            <a class="iq-att" href="Admin-Inquiries.dc.html">결제 문자 캡처.png <i>· 214KB</i></a>
+          </div>
+
+          <div class="iq-sec">
+            <p class="iq-k">관련 계약 — 예약 달력, 예약금 결제 외 2개 기능 · 최준호<a class="ft" href="Admin-Events.dc.html">이벤트 기록에서 보기</a></p>
+            <div class="iq-kv">
+              <div><span>계약 상태</span><b class="ok">진행 중 · 예치 완료</b></div>
+              <div><span>예치 금액</span><b>3,255,000원</b></div>
+              <div><span>결제사 통지</span><b>11월 4일 14:20</b></div>
+              <div><span>결제 카드</span><b>끝자리 4821</b></div>
+            </div>
+          </div>
+
+          <div class="iq-sec">
+            <sc-if value="{{showForm}}" hint-placeholder-val="{{ true }}">
+              <label class="ad-lbl" for="iq-ans" style="margin-top:0">답변<i>필수</i></label>
+              <div class="iq-tpl" aria-label="자주 쓰는 문구"><a href="Admin-Inquiries.dc.html">인사말</a><a href="Admin-Inquiries.dc.html">결제 확인 중 안내</a><a href="Admin-Inquiries.dc.html">추가 정보 요청</a></div>
+              <textarea id="iq-ans" class="ad-in" style="min-height:184px" placeholder="문의한 분이 바로 이해할 수 있게 적어 주세요. 계약 · 결제 정보는 끝자리만 적습니다.">{{answer}}</textarea>
+              <div class="iq-foot">
+                <p>보내면 문의한 분에게 알림이 가고 '내 문의'에 표시됩니다 · 답변은 이벤트 기록에 남습니다</p>
+                <sc-if value="{{canSend}}" hint-placeholder-val="{{ false }}"><a class="btn" href="Admin-Inquiries.dc.html">답변 보내기</a></sc-if>
+                <sc-if value="{{cantSend}}" hint-placeholder-val="{{ true }}"><button type="button" class="btn off" disabled>답변 보내기</button></sc-if>
+              </div>
+              <sc-if value="{{cantSend}}" hint-placeholder-val="{{ true }}"><p class="iq-off">답변을 적으면 보낼 수 있습니다</p></sc-if>
+            </sc-if>
+            <sc-if value="{{showAns}}" hint-placeholder-val="{{ false }}">
+              <p class="iq-k">보낸 답변</p>
+              <div class="iq-ans"><div class="ah"><b>답변 완료</b><span>11월 4일 15:02 · 운영자 김하늘</span></div><p>{{answer}}</p></div>
+            </sc-if>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+</div>

@@ -5,7 +5,9 @@
   "scripts": {
     "build": "tsc",
     "typecheck": "tsc --noEmit",
-    "start": "node dist/index.js"
+    "start": "node dist/index.js",
+    "dev": "tsc && NODE_ENV=development node dist/index.js",
+    "snapshot": "node dist/snapshot.js"
   },
   "devDependencies": {
     "@types/node": "^26.6.5",

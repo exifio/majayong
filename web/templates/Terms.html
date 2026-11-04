@@ -1,0 +1,155 @@
+<helmet>
+<style>
+.pg{word-break:keep-all}
+.btn.warn{background:#fff;color:var(--amber-700);border:1px solid #E6C68A}
+.tm sc-for,.tm sc-if,.pg>sc-if{display:contents}
+.tm .head{margin:0 0 20px}
+.tm .head h1.t{margin:0 0 6px}
+.tm .head .sub{margin:0}
+.lay2{display:grid;grid-template-columns:240px minmax(0,1fr);gap:24px;align-items:start}
+.toc{background:#fff;border:1px solid var(--s200);border-radius:12px;padding:8px;position:sticky;top:20px}
+.toc a{display:block;padding:10px 12px;border-radius:8px;font-size:15px;color:var(--s900);text-decoration:none}
+.toc a.on{background:var(--navy-900);color:#fff;font-weight:600}
+.toc .d2{font-size:12px;color:var(--s600);padding:10px 12px 4px;border-top:1px solid var(--s200);margin-top:6px;line-height:1.6}
+.doc{background:#fff;border:1px solid var(--s200);border-radius:12px;padding:28px 32px}
+.doc .dh{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;border-bottom:1px solid var(--s200);padding:0 0 14px;margin:0 0 18px}
+.doc .dh h2{font-size:22px;font-weight:600;letter-spacing:-0.4px;margin:0}
+.doc .dh span{font-size:13px;color:var(--s600)}
+.draft{display:inline-block;font-size:12px;font-weight:600;color:var(--amber-700);background:var(--amber-50);border:1px solid #F2E0BE;border-radius:6px;padding:2px 8px;margin:0 0 14px}
+.doc .lead{font-size:15px;color:var(--s900);line-height:1.75;margin:0 0 18px;background:var(--s50);border-radius:10px;padding:14px 16px}
+.art2{margin:0 0 18px}
+.art2 h3{font-size:16px;font-weight:600;margin:0 0 6px}
+.art2 p,.art2 li{font-size:15px;color:var(--s900);line-height:1.8;margin:0}
+.art2 ul{margin:4px 0 0;padding-left:20px}
+.tbl{width:100%;border-collapse:collapse;margin:6px 0 0;font-size:14px}
+.tbl th,.tbl td{text-align:left;padding:9px 12px;border:1px solid var(--s200);vertical-align:top;line-height:1.6}
+.tbl th{background:var(--s50);font-weight:600;color:var(--s600);font-size:13px}
+.doc .ft3{font-size:13px;color:var(--s600);border-top:1px solid var(--s200);padding:14px 0 0;margin:6px 0 0}
+
+</style>
+<style>
+.pg{min-height:100vh;position:relative;padding-bottom:393px;box-sizing:border-box}
+.gf{position:absolute;left:0;right:0;bottom:0;background:var(--s50);border-top:1px solid var(--s200);padding:40px 0 36px;font-size:14px;color:var(--s600);word-break:keep-all}
+.gf-top{display:flex;justify-content:space-between;gap:32px;flex-wrap:wrap;padding-bottom:28px;border-bottom:1px solid var(--s200)}
+.gf-brand{flex:1 1 260px;min-width:0}
+.gf-logo{display:inline-flex;align-items:center;font-size:19px;font-weight:600;letter-spacing:-0.4px;color:var(--s900)}
+.gf-brand p{margin:10px 0 0;line-height:1.6}
+.gf-cols{display:flex;gap:48px;flex-wrap:wrap}
+.gf-cols>div{display:flex;flex-direction:column;gap:9px;min-width:0}
+.gf-cols b{font-size:14px;font-weight:600;color:var(--s900);margin-bottom:2px}
+.gf-cols a{color:var(--s600);text-decoration:none}
+.gf-cols a.em{color:var(--s900);font-weight:600}
+.gf-bot{padding-top:22px;font-size:13px;line-height:1.75}
+.gf-bot p{margin:0 0 8px}
+.gf-biz i{display:inline-block;width:1px;height:10px;background:var(--s300);margin:0 9px;vertical-align:-1px}
+.gf-copy{color:var(--s400)}
+</style>
+</helmet>
+
+<div class="pg">
+  <sc-if value="{{guest}}" hint-placeholder-val="{{ false }}">
+  <header class="gnb">
+    <div class="wrap">
+      <div class="gnbin">
+        <a class="brand" href="Main.dc.html"><span class="mark" aria-hidden="true"><i style="height:9px"></i><i style="height:17px"></i><i style="height:12px;opacity:.55"></i></span>마자용</a>
+        <nav class="nav" aria-label="주요 메뉴"><a href="Main.dc.html">의뢰인 안내</a><a href="Supplier-Landing.dc.html">공급자 안내</a><a href="Help.dc.html">고객센터</a></nav>
+        <div class="gright">
+          <a class="lk" href="Login.dc.html">로그인</a>
+          <a class="btn sm gh" href="Signup.dc.html">회원가입</a>
+        </div>
+      </div>
+    </div>
+  </header>
+  </sc-if>
+  <sc-if value="{{isClient}}" hint-placeholder-val="{{ true }}">
+  <header class="gnb">
+    <div class="wrap">
+      <div class="gnbin">
+        <a class="brand" href="Home-Client.dc.html"><span class="mark" aria-hidden="true"><i style="height:9px"></i><i style="height:17px"></i><i style="height:12px;opacity:.55"></i></span>마자용</a>
+        <nav class="nav" aria-label="주요 메뉴"><a href="Home-Client.dc.html">홈</a><a href="Input-Client.dc.html">프로젝트 시작</a><a href="My-Client.dc.html">내 프로젝트</a><a href="Contracts-Client.dc.html">내 계약</a><a href="Settle-Client.dc.html">정산 내역</a></nav>
+        <div class="gright">
+          <a class="bell" href="Chat-Client.dc.html" aria-label="채팅"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"></path></svg></a>
+          <a class="bell" href="Notify-Client.dc.html" aria-label="알림"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg></a>
+          <span class="who"><span class="ava">민</span><span class="uname">정민재</span></span>
+        </div>
+      </div>
+    </div>
+  </header>
+  </sc-if>
+  <sc-if value="{{isSupplier}}" hint-placeholder-val="{{ false }}">
+  <header class="gnb dark">
+    <div class="wrap">
+      <div class="gnbin">
+        <a class="brand" href="Home-Supplier.dc.html"><span class="mark" aria-hidden="true"><i style="height:9px"></i><i style="height:17px"></i><i style="height:12px;opacity:.55"></i></span>마자용</a>
+        <nav class="nav" aria-label="주요 메뉴"><a href="Home-Supplier.dc.html">홈</a><a href="Find-Supplier.dc.html">프로젝트 찾기</a><a href="Apps-Supplier.dc.html">내 지원</a><a href="Contracts-Supplier.dc.html">내 계약</a><a href="Find-Supplier.dc.html">북마크</a></nav>
+        <div class="gright">
+          <a class="bell" href="Chat-Supplier.dc.html" aria-label="채팅"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"></path></svg></a>
+          <a class="bell" href="Notify-Supplier.dc.html" aria-label="알림"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg></a>
+          <span class="who"><span class="ava">최</span><span class="uname">최준호</span></span>
+        </div>
+      </div>
+    </div>
+  </header>
+  </sc-if>
+
+
+  <main class="pad tm">
+    <div class="wrap">
+      <div class="head">
+        <h1 class="t">약관 · 정책</h1>
+        <p class="sub">가입할 때 동의하는 문서입니다. 바뀌면 시행 7일 전에 알려 드립니다 [임시].</p>
+      </div>
+      <div class="lay2">
+        <nav class="toc" aria-label="문서">
+          <sc-for list="{{tabs}}" as="t" hint-placeholder-count="4"><a class="{{t.cls}}" href="Terms.dc.html">{{t.n}}</a></sc-for>
+          <p class="d2">시행일 2026년 12월 1일 [임시]<br>문의는 고객센터 1:1 문의로</p>
+        </nav>
+        <article class="doc" aria-label="{{h}}">
+          <div class="dh"><h2>{{h}}</h2><span>{{who}}</span></div>
+          <span class="draft">[초안 — 법률 검토 전]</span>
+          <p class="lead">{{lead}}</p>
+          <sc-for list="{{arts}}" as="a" hint-placeholder-count="4">
+            <section class="art2"><h3>{{a.h}}</h3><p>{{a.p}}</p><sc-if value="{{a.hasList}}" hint-placeholder-val="{{ false }}"><ul><sc-for list="{{a.list}}" as="l" hint-placeholder-count="3"><li>{{l}}</li></sc-for></ul></sc-if></section>
+          </sc-for>
+          <sc-if value="{{hasTbl}}" hint-placeholder-val="{{ false }}">
+            <section class="art2"><h3>수집하는 정보와 쓰임</h3>
+              <table class="tbl">
+                <thead><tr><th scope="col">대상</th><th scope="col">받는 정보</th><th scope="col">받지 않는 정보</th></tr></thead>
+                <tbody>
+                  <tr><td>공통</td><td>이메일(로그인용, 누구에게도 공개하지 않음) · 이름 · 프로필 이미지 · 자기소개</td><td>주민등록번호</td></tr>
+                  <tr><td>의뢰인</td><td>상호 · 업종 · 가게 주소 · 웹사이트</td><td>연락처 · 개인 이메일</td></tr>
+                  <tr><td>공급자</td><td>활동 업종 · 기술 스택 · 경력 · 포트폴리오 링크와 파일 · 정산 계좌</td><td>—</td></tr>
+                  <tr><td>이용 기록</td><td>명세 상세 열람 기록(공급자) · 채팅 · 계약 · 결제 상태</td><td>카드 번호 전체(결제사가 보관)</td></tr>
+                </tbody>
+              </table>
+            </section>
+          </sc-if>
+          <p class="ft3">이 문서는 디자인 시안용 초안입니다. 실제 약관은 법률 검토를 거쳐 확정합니다.</p>
+        </article>
+      </div>
+    </div>
+  </main>
+
+  <footer class="gf" aria-label="사이트 정보">
+    <div class="wrap">
+      <div class="gf-top">
+        <div class="gf-brand">
+          <span class="gf-logo"><span class="mark" aria-hidden="true"><i style="height:9px"></i><i style="height:17px"></i><i style="height:12px;opacity:.55"></i></span>마자용</span>
+          <p>소상공인을 위한 웹 외주 요구사항 정의 · 매칭 플랫폼</p>
+        </div>
+        <div class="gf-cols">
+          <div><b>서비스</b><a href="Main.dc.html">의뢰인 안내</a><a href="Supplier-Landing.dc.html">공급자 안내</a></div>
+          <div><b>고객센터</b><a href="Help.dc.html">자주 묻는 질문</a><a href="Help-Inquiry.dc.html">1:1 문의</a><a href="Help.dc.html">공지사항</a></div>
+          <div><b>정책</b><a href="Terms.dc.html">이용약관</a><a class="em" href="Terms.dc.html">개인정보 처리방침</a><a href="Terms.dc.html">명세 비밀유지</a><a href="Terms.dc.html">중개자 고지</a></div>
+          <div class="gf-cs"><b>고객센터 1600-0000</b><span>평일 10:00–18:00</span><span>점심 12:00–13:00 · 주말 · 공휴일 휴무</span><span>help@majayong.example</span></div>
+        </div>
+      </div>
+      <div class="gf-bot">
+        <p class="gf-biz">상호 로켓단<i></i>대표 김로켓<i></i>사업자등록번호 000-00-00000<i></i>통신판매업 신고 제2026-서울마포-0000호<br>주소 서울특별시 마포구 예시로 00, 0층<i></i>개인정보 보호책임자 박예시<i></i>이메일 help@majayong.example</p>
+        <p class="gf-note">마자용은 통신판매중개자로서 거래 당사자가 아니며, 의뢰인과 공급자 사이 계약의 이행 책임은 각 당사자에게 있습니다. 대금 예치와 정산은 마자용이 관리합니다.</p>
+        <p class="gf-copy">© 2026 로켓단. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+
+</div>
