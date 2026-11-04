@@ -47,7 +47,9 @@ export function routeFor(id: string): string {
 // in-page change (a selected star, an expanded section) doesn't jump to the top.
 // Other targets (opening a modal state, switching a tab) start at the top, where the
 // designs place their dialogs.
-const ACTION_SCRIPT = `<script>
+const ACTION_SCRIPT = `<script src="/assets/api.js?v=20261105"></script>
+<script src="/assets/flow.js?v=20261105"></script>
+<script>
 (() => {
   const key = 'majayong:scroll:' + location.pathname;
   try { const y = sessionStorage.getItem(key); if (y) { sessionStorage.removeItem(key); scrollTo(0, +y); } } catch {}

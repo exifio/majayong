@@ -160,7 +160,7 @@ table.tb td .sec{display:block;font-weight:400}
 
       <div class="foot2">
         <a class="btn gh" href="Draft-Client.dc.html">초안으로 돌아가기</a>
-        <sc-if value="{{canSubmit}}" hint-placeholder-val="{{ true }}"><a class="btn lg" href="Spec-Client.dc.html">확정하고 공급자 모집 시작</a></sc-if>
+        <sc-if value="{{canSubmit}}" hint-placeholder-val="{{ true }}"><a class="btn lg" data-flow="publish" href="Spec-Client.dc.html">확정하고 공급자 모집 시작</a></sc-if>
         <sc-if value="{{profileMissing}}" hint-placeholder-val="{{ false }}"><a class="btn lg" href="Signup-Client.dc.html">가게 정보 입력하고 돌아오기</a></sc-if>
         <sc-if value="{{blockedByDate}}" hint-placeholder-val="{{ false }}"><button type="button" class="btn lg off" disabled="">확정하고 공급자 모집 시작</button></sc-if>
       </div>
