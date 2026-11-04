@@ -98,6 +98,26 @@ export interface NotificationPorts {
   }): Promise<{ created: boolean }>;
 }
 
+export interface SettlementApprovalPort {
+  approveInstallment(input: { contractId: string; installmentId: string }): Promise<unknown>;
+}
+
+export interface InspectionOpsPorts {
+  createSystemMessage?(input: {
+    contractId: string;
+    targetId: string;
+    type: string;
+    body: string;
+  }): Promise<void>;
+  recordEvent?(input: {
+    actionType: string;
+    targetType: string;
+    targetId: string;
+    reason: string;
+    payload?: unknown;
+  }): Promise<void>;
+}
+
 export class DeliveryHttpError extends Error {
   readonly status: number;
   constructor(status: number, message: string) {
@@ -120,6 +140,7 @@ export interface DeliveryRepository {
   createDelivery(data: Omit<DeliveryEntity, "id">): Promise<DeliveryEntity>;
   getDelivery(id: string): Promise<DeliveryEntity | null>;
   listDeliveries(installmentId: string): Promise<DeliveryEntity[]>;
+  listInstallments(contractId: string): Promise<DeliveryInstallmentInfo[]>;
   updateDelivery(id: string, patch: Partial<DeliveryEntity>): Promise<DeliveryEntity>;
   createInspectionRequest(data: Omit<InspectionRequestEntity, "id">): Promise<InspectionRequestEntity>;
   getInspectionRequest(id: string): Promise<InspectionRequestEntity | null>;
@@ -188,6 +209,9 @@ export function createInMemoryDeliveryRepository(): DeliveryRepository {
         .filter((d) => d.installmentId === installmentId)
         .sort((a, b) => a.attemptNo - b.attemptNo);
     },
+    async listInstallments(contractId) {
+      return Array.from(installments.values()).filter((i) => i.contractId === contractId);
+    },
     async updateDelivery(id, patch) {
       const d = deliveries.get(id);
       if (!d) throw new DeliveryHttpError(404, "납품을 찾을 수 없습니다.");
@@ -223,15 +247,60 @@ export function createInMemoryDeliveryRepository(): DeliveryRepository {
 export interface DeliveryServiceOptions {
   repo: DeliveryRepository;
   clock?: { now(): Date };
+  settlementPort?: SettlementApprovalPort;
+  opsPorts?: InspectionOpsPorts;
+}
+
+async function applyAutoEscalation(
+  repo: DeliveryRepository,
+  clock: { now(): Date },
+  contractItemId: string,
+  inspectionRequestId: string,
+): Promise<InspectionRequestEntity> {
+  const inspections = await repo.listInspectionRequestsByItem(contractItemId);
+  const target = await repo.getInspectionRequest(inspectionRequestId);
+  if (!target) throw new DeliveryHttpError(404, "보완 요청을 찾을 수 없습니다.");
+
+  if (inspections.length >= 3 && target.status !== "ESCALATED") {
+    return repo.updateInspectionRequest(target.id, {
+      status: "ESCALATED",
+      escalatedAt: clock.now(),
+      escalation: {
+        requestedBy: "SYSTEM",
+        reason: "동일 항목 보완 요청 3회 누적에 따른 자동 이견 개입",
+      },
+    });
+  }
+
+  return target;
 }
 
 export class DeliveryService {
   private readonly repo: DeliveryRepository;
   private readonly clock: { now(): Date };
+  private readonly settlementPort?: SettlementApprovalPort;
+  private readonly opsPorts?: InspectionOpsPorts;
 
   constructor(options: DeliveryServiceOptions) {
     this.repo = options.repo;
     this.clock = options.clock ?? { now: () => new Date() };
+    this.settlementPort = options.settlementPort;
+    this.opsPorts = options.opsPorts;
+  }
+
+  private async announceEscalation(contractId: string, targetId: string, reason: string): Promise<void> {
+    await this.opsPorts?.createSystemMessage?.({
+      contractId,
+      targetId,
+      type: "DISPUTE_ESCALATED",
+      body: `운영자 검토로 넘어갑니다: ${reason}`,
+    });
+    await this.opsPorts?.recordEvent?.({
+      actionType: "DISPUTE_ESCALATED",
+      targetType: "INSPECTION",
+      targetId,
+      reason,
+    });
   }
 
   private async assertParty(
@@ -430,6 +499,12 @@ export class DeliveryService {
       status: allApproved ? "APPROVED" : "PARTIALLY_APPROVED",
       reviewedAt: this.clock.now(),
     });
+    if (allApproved && this.settlementPort) {
+      await this.settlementPort.approveInstallment({
+        contractId: contract.id,
+        installmentId: delivery.installmentId,
+      });
+    }
 
     return updated;
   }
@@ -509,7 +584,63 @@ export class DeliveryService {
     });
     await this.repo.updateInstallment(delivery.installmentId, { status: "REWORK_REQUESTED" });
 
-    return created;
+    let result = created;
+    const inspections = await this.repo.listInspectionRequestsByItem(item.id);
+    if (inspections.length >= 3) {
+      result = await applyAutoEscalation(this.repo, this.clock, item.id, created.id);
+      if (result.status === "ESCALATED") {
+        await this.announceEscalation(contract.id, result.id, "동일 항목 보완 요청 3회 누적");
+      }
+    }
+
+    return result;
+  }
+
+  async escalateInspection(
+    actor: { userId: string; role: string },
+    inspectionRequestId: string,
+    input: {
+      reason: string;
+      what: string;
+      claims?: { client: string; supplier: string };
+      evidence?: unknown;
+    },
+  ): Promise<InspectionRequestEntity> {
+    const inspection = await this.repo.getInspectionRequest(inspectionRequestId);
+    if (!inspection) throw new DeliveryHttpError(404, "보완 요청을 찾을 수 없습니다.");
+
+    const delivery = await this.repo.getDelivery(inspection.deliveryId);
+    if (!delivery) throw new DeliveryHttpError(404, "납품을 찾을 수 없습니다.");
+    const installment = await this.repo.getInstallment(delivery.installmentId);
+    if (!installment) throw new DeliveryHttpError(404, "구간을 찾을 수 없습니다.");
+    const contract = await this.repo.getContract(installment.contractId);
+    if (!contract) throw new DeliveryHttpError(404, "계약을 찾을 수 없습니다.");
+
+    await this.assertParty(actor, contract);
+    if (!input.reason || input.reason.trim().length === 0) {
+      throw new DeliveryHttpError(400, "도움 요청 사유는 필수입니다.");
+    }
+    if (!input.what || input.what.trim().length === 0) {
+      throw new DeliveryHttpError(400, "도움 요청 내용은 필수입니다.");
+    }
+    if (inspection.status === "ESCALATED") return inspection;
+    if (inspection.status !== "OPEN") {
+      throw new DeliveryHttpError(409, "진행 중(OPEN) 보완 요청만 이견 개입할 수 있습니다.");
+    }
+
+    const updated = await this.repo.updateInspectionRequest(inspection.id, {
+      status: "ESCALATED",
+      escalatedAt: this.clock.now(),
+      escalation: {
+        requestedBy: actor.userId,
+        reason: input.reason,
+        what: input.what,
+        claims: input.claims ?? null,
+        evidence: input.evidence ?? null,
+      },
+    });
+    await this.announceEscalation(contract.id, updated.id, input.reason);
+    return updated;
   }
 }
 
@@ -517,17 +648,44 @@ export interface InspectionBatchOptions {
   repo: DeliveryRepository;
   notificationPorts: NotificationPorts;
   clock?: { now(): Date };
+  settlementPort?: SettlementApprovalPort;
+  opsPorts?: InspectionOpsPorts;
 }
 
 export class InspectionBatchService {
   private readonly repo: DeliveryRepository;
   private readonly notificationPorts: NotificationPorts;
   private readonly clock: { now(): Date };
+  private readonly settlementPort?: SettlementApprovalPort;
+  private readonly opsPorts?: InspectionOpsPorts;
 
   constructor(options: InspectionBatchOptions) {
     this.repo = options.repo;
     this.notificationPorts = options.notificationPorts;
     this.clock = options.clock ?? { now: () => new Date() };
+    this.settlementPort = options.settlementPort;
+    this.opsPorts = options.opsPorts;
+  }
+
+  private async announceDecision(
+    contractId: string,
+    targetId: string,
+    decisionLabel: string,
+    reason: string,
+  ): Promise<void> {
+    await this.opsPorts?.createSystemMessage?.({
+      contractId,
+      targetId,
+      type: "DISPUTE_DECIDED",
+      body: `운영자 판정(${decisionLabel}): ${reason}`,
+    });
+    await this.opsPorts?.recordEvent?.({
+      actionType: "DISPUTE_DECIDED",
+      targetType: "INSPECTION",
+      targetId,
+      reason,
+      payload: { decision: decisionLabel },
+    });
   }
 
   async processAutoApproval(deliveryId: string, now: Date): Promise<{ autoApprovedCount: number }> {
@@ -548,6 +706,13 @@ export class InspectionBatchService {
       return { autoApprovedCount: 0 };
     }
 
+    // 자동 승인은 그 구간의 가장 최근 납품만 대상으로 한다.
+    const deliveries = await this.repo.listDeliveries(installment.id);
+    const latest = deliveries[deliveries.length - 1];
+    if (!latest || latest.id !== delivery.id) {
+      return { autoApprovedCount: 0 };
+    }
+
     let count = 0;
     for (const itemPayload of delivery.items) {
       const item = await this.repo.getContractItem(itemPayload.contractItemId);
@@ -556,7 +721,9 @@ export class InspectionBatchService {
       }
 
       const inspections = await this.repo.listInspectionRequestsByItem(item.id);
-      const hasBlocker = inspections.some((i) => i.status === "OPEN" || i.status === "ESCALATED");
+      const hasBlocker = inspections.some(
+        (i) => i.status === "ESCALATED" || (i.status === "OPEN" && i.deliveryId === delivery.id),
+      );
       if (hasBlocker) {
         continue;
       }
@@ -569,6 +736,17 @@ export class InspectionBatchService {
     }
 
     if (count > 0) {
+      await this.notificationPorts.createOnce({
+        userId: contract.clientUserId,
+        type: "AUTO_APPROVED",
+        targetId: delivery.id,
+      });
+      await this.notificationPorts.createOnce({
+        userId: contract.supplierUserId,
+        type: "AUTO_APPROVED",
+        targetId: delivery.id,
+      });
+
       const itemsInStage = (await this.repo.listContractItemsByContractId(contract.id)).filter(
         (i) => i.stage === installment.stage,
       );
@@ -578,15 +756,9 @@ export class InspectionBatchService {
           status: "APPROVED",
           reviewedAt: now,
         });
-        await this.notificationPorts.createOnce({
-          userId: contract.clientUserId,
-          type: "AUTO_APPROVED",
-          targetId: delivery.id,
-        });
-        await this.notificationPorts.createOnce({
-          userId: contract.supplierUserId,
-          type: "AUTO_APPROVED",
-          targetId: delivery.id,
+        await this.settlementPort?.approveInstallment({
+          contractId: contract.id,
+          installmentId: installment.id,
         });
       }
     }
@@ -598,22 +770,7 @@ export class InspectionBatchService {
     contractItemId: string,
     inspectionRequestId: string,
   ): Promise<InspectionRequestEntity> {
-    const inspections = await this.repo.listInspectionRequestsByItem(contractItemId);
-    const target = await this.repo.getInspectionRequest(inspectionRequestId);
-    if (!target) throw new DeliveryHttpError(404, "보완 요청을 찾을 수 없습니다.");
-
-    if (inspections.length >= 3) {
-      return this.repo.updateInspectionRequest(target.id, {
-        status: "ESCALATED",
-        escalatedAt: this.clock.now(),
-        escalation: {
-          requestedBy: "SYSTEM",
-          reason: "동일 항목 보완 요청 3회 누적에 따른 자동 이견 개입",
-        },
-      });
-    }
-
-    return target;
+    return applyAutoEscalation(this.repo, this.clock, contractItemId, inspectionRequestId);
   }
 
   async decideDispute(input: {
@@ -625,35 +782,69 @@ export class InspectionBatchService {
     if (!input.reason || input.reason.trim().length === 0) {
       throw new DeliveryHttpError(400, "운영자 판정 사유는 필수입니다.");
     }
+    if (!input.decisionNotes?.client?.trim() || !input.decisionNotes?.supplier?.trim()) {
+      throw new DeliveryHttpError(400, "의뢰인·공급자에게 보일 판정 문구가 모두 필요합니다.");
+    }
 
     const inspReq = await this.repo.getInspectionRequest(input.inspectionRequestId);
     if (!inspReq) throw new DeliveryHttpError(404, "보완 요청을 찾을 수 없습니다.");
+    if (inspReq.status !== "ESCALATED") {
+      throw new DeliveryHttpError(409, "운영자 이견 개입(ESCALATED) 상태만 판정할 수 있습니다.");
+    }
+
+    const delivery = await this.repo.getDelivery(inspReq.deliveryId);
+    if (!delivery) throw new DeliveryHttpError(404, "납품을 찾을 수 없습니다.");
+    const installment = await this.repo.getInstallment(delivery.installmentId);
+    if (!installment) throw new DeliveryHttpError(404, "구간을 찾을 수 없습니다.");
+    const contract = await this.repo.getContract(installment.contractId);
+    if (!contract) throw new DeliveryHttpError(404, "계약을 찾을 수 없습니다.");
 
     const now = this.clock.now();
+    const decisionLabel: Record<DisputeDecision, string> = {
+      REWORK_VALID: "보완",
+      APPROVE: "승인",
+      UNDECIDED_CONDITION: "정하지 않은 조건",
+    };
 
     if (input.decision === "REWORK_VALID") {
-      return this.repo.updateInspectionRequest(inspReq.id, {
+      const updated = await this.repo.updateInspectionRequest(inspReq.id, {
         status: "OPEN",
         decision: "REWORK_VALID",
         decisionNotes: input.decisionNotes,
+        resolvedAt: null,
       });
+      await this.repo.updateDelivery(delivery.id, { status: "REWORK_REQUESTED" });
+      await this.repo.updateInstallment(installment.id, { status: "REWORK_REQUESTED" });
+      await this.announceDecision(contract.id, inspReq.id, decisionLabel.REWORK_VALID, input.reason);
+      return updated;
     }
 
-    if (input.decision === "APPROVE" || input.decision === "UNDECIDED_CONDITION") {
-      await this.repo.updateContractItem(inspReq.contractItemId, {
-        approvedAt: now,
-        autoApproved: false,
-      });
+    await this.repo.updateContractItem(inspReq.contractItemId, {
+      approvedAt: now,
+      autoApproved: false,
+    });
+    const updated = await this.repo.updateInspectionRequest(inspReq.id, {
+      status: "RESOLVED",
+      decision: input.decision,
+      decisionNotes: input.decisionNotes,
+      resolvedAt: now,
+    });
 
-      return this.repo.updateInspectionRequest(inspReq.id, {
-        status: "RESOLVED",
-        decision: input.decision,
-        decisionNotes: input.decisionNotes,
-        resolvedAt: now,
+    const itemsInStage = (await this.repo.listContractItemsByContractId(contract.id)).filter(
+      (i) => i.stage === installment.stage,
+    );
+    if (itemsInStage.every((i) => i.approvedAt !== null)) {
+      await this.repo.updateDelivery(delivery.id, { status: "APPROVED", reviewedAt: now });
+      await this.settlementPort?.approveInstallment({
+        contractId: contract.id,
+        installmentId: installment.id,
       });
+    } else {
+      await this.repo.updateDelivery(delivery.id, { status: "PARTIALLY_APPROVED", reviewedAt: now });
     }
 
-    return inspReq;
+    await this.announceDecision(contract.id, inspReq.id, decisionLabel[input.decision], input.reason);
+    return updated;
   }
 
   async sendDueNotifications(contractId: string, now: Date): Promise<void> {
@@ -661,8 +852,10 @@ export class InspectionBatchService {
     if (!contract || contract.status !== "ACTIVE") return;
 
     const oneDayMs = 24 * 60 * 60 * 1000;
+    const installments = await this.repo.listInstallments(contract.id);
 
-    if (contract.depositDeadline) {
+    // 예치 완료 뒤에는 예치 기한 안내를 보내지 않는다.
+    if (contract.paymentStatus === "PENDING" && contract.depositDeadline) {
       const diffMs = contract.depositDeadline.getTime() - now.getTime();
       if (diffMs > 0 && diffMs <= oneDayMs) {
         await this.notificationPorts.createOnce({
@@ -673,15 +866,53 @@ export class InspectionBatchService {
       }
     }
 
+    // 검수 기한 하루 전: 각 구간의 가장 최근 납품 기준, 미승인 항목이 남아 있을 때만.
+    for (const installment of installments) {
+      if (["APPROVED", "RELEASED", "REFUNDED"].includes(installment.status)) continue;
+      const deliveries = await this.repo.listDeliveries(installment.id);
+      const latest = deliveries[deliveries.length - 1];
+      if (!latest) continue;
+
+      const diffMs = latest.inspectionDueAt.getTime() - now.getTime();
+      if (diffMs <= 0 || diffMs > oneDayMs) continue;
+
+      let pendingItem = false;
+      for (const row of latest.items) {
+        const item = await this.repo.getContractItem(row.contractItemId);
+        if (!item || item.approvedAt === null) {
+          pendingItem = true;
+          break;
+        }
+      }
+      if (!pendingItem) continue;
+
+      await this.notificationPorts.createOnce({
+        userId: contract.clientUserId,
+        type: "INSPECTION_DUE",
+        targetId: latest.id,
+      });
+    }
+
+    const finalInstallment = installments.find((i) => i.stage === "FINAL");
+    const finalStageStatus = finalInstallment?.status ?? "PENDING";
+    const finalDone = ["DELIVERED", "APPROVED", "RELEASED", "REFUNDED"].includes(finalStageStatus);
     if (contract.workDueAt) {
       const diffMs = contract.workDueAt.getTime() - now.getTime();
       if (diffMs > 0 && diffMs <= oneDayMs) {
-        await this.notificationPorts.createOnce({
-          userId: contract.supplierUserId,
-          type: "WORK_DUE",
-          targetId: contract.id,
-        });
-      } else if (now > contract.workDueAt) {
+        if (!finalDone) {
+          await this.notificationPorts.createOnce({
+            userId: contract.supplierUserId,
+            type: "WORK_DUE",
+            targetId: contract.id,
+          });
+        }
+      } else if (
+        this.isWorkOverdue({
+          workDueAt: contract.workDueAt,
+          finalStageStatus,
+          now,
+        })
+      ) {
         await this.notificationPorts.createOnce({
           userId: contract.clientUserId,
           type: "WORK_OVERDUE",
@@ -697,7 +928,7 @@ export class InspectionBatchService {
   }
 
   isWorkOverdue(input: { workDueAt: Date; finalStageStatus: string; now: Date }): boolean {
-    if (input.finalStageStatus === "APPROVED" || input.finalStageStatus === "DELIVERED") {
+    if (["DELIVERED", "APPROVED", "RELEASED", "REFUNDED"].includes(input.finalStageStatus)) {
       return false;
     }
     return input.now.getTime() > input.workDueAt.getTime();
