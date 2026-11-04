@@ -86,6 +86,14 @@ export class NotificationError extends Error {
   }
 }
 
+/** DB unique 위반을 도메인 재조회 경로로 바꿀 때 쓴다. */
+export class NotificationUniqueViolation extends Error {
+  constructor() {
+    super('notification unique violation');
+    this.name = 'NotificationUniqueViolation';
+  }
+}
+
 export interface NotificationRecord {
   readonly id: string;
   readonly userId: string;
@@ -306,6 +314,20 @@ export function chatRoomTargetId(projectId: string, supplierId: string): string 
   return `${projectId}:${supplierId}`;
 }
 
+function refreshOrKeep(
+  tx: NotificationTx,
+  existing: NotificationRecord,
+  input: {
+    readonly type: NotificationType;
+    readonly now: Date;
+  },
+): Promise<NotificationRecord> {
+  if (input.type === 'NEW_MESSAGE') {
+    return tx.refreshBundled({ id: existing.id, createdAt: input.now });
+  }
+  return Promise.resolve(existing);
+}
+
 async function deliver(
   tx: NotificationTx,
   input: {
@@ -321,21 +343,29 @@ async function deliver(
     type: input.type,
     targetId: input.targetId,
   });
-  if (existing !== null) {
-    if (input.type === 'NEW_MESSAGE') {
-      return tx.refreshBundled({ id: existing.id, createdAt: input.now });
-    }
-    return existing;
-  }
+  if (existing !== null) return refreshOrKeep(tx, existing, input);
 
-  return tx.create({
-    userId: input.userId,
-    type: input.type,
-    targetUrl: targetUrlFor(input.type, input.targetId),
-    targetId: input.targetId,
-    payload: input.payload,
-    createdAt: input.now,
-  });
+  try {
+    return await tx.create({
+      userId: input.userId,
+      type: input.type,
+      targetUrl: targetUrlFor(input.type, input.targetId),
+      targetId: input.targetId,
+      payload: input.payload,
+      createdAt: input.now,
+    });
+  } catch (error) {
+    if (!(error instanceof NotificationUniqueViolation)) throw error;
+
+    // 다른 요청이 먼저 만들었다. 경쟁에서 진 쪽은 기존 행을 갱신/유지한다.
+    const raced = await tx.findByKey({
+      userId: input.userId,
+      type: input.type,
+      targetId: input.targetId,
+    });
+    if (raced === null) throw error;
+    return refreshOrKeep(tx, raced, input);
+  }
 }
 
 /** C/통합이 전달한 트랜잭션에 참여하는 1회성 기한 알림 Port. */
@@ -359,14 +389,21 @@ export async function createNotificationOnceInTransaction(
   const existing = await tx.findByKey({ userId, type: input.type, targetId });
   if (existing !== null) return { created: false };
 
-  await tx.create({
-    userId,
-    type: input.type,
-    targetUrl: targetUrlFor(input.type, targetId),
-    targetId,
-    payload,
-    createdAt: input.now,
-  });
+  try {
+    await tx.create({
+      userId,
+      type: input.type,
+      targetUrl: targetUrlFor(input.type, targetId),
+      targetId,
+      payload,
+      createdAt: input.now,
+    });
+  } catch (error) {
+    if (!(error instanceof NotificationUniqueViolation)) throw error;
+    const raced = await tx.findByKey({ userId, type: input.type, targetId });
+    if (raced === null) throw error;
+    return { created: false };
+  }
   return { created: true };
 }
 

@@ -5,6 +5,7 @@ import {
   NOTIFICATION_CATEGORIES,
   NOTIFICATION_TYPES,
   NotificationError,
+  NotificationUniqueViolation,
   chatRoomTargetId,
   createChatNotificationPort,
   createNotificationOnceInTransaction,
@@ -897,5 +898,118 @@ describe('B-06-T07 채팅 발신에 붙는 방별 알림 Port', () => {
     assert.equal(row?.targetUrl, '/chat/prj-1:supplier-1');
     assert.equal(row?.createdAt.getTime(), second.getTime());
     assert.equal(row?.isRead, false);
+  });
+});
+
+function racedRow(
+  type: NotificationType,
+  targetId: string,
+  createdAt: Date,
+): NotificationRecord {
+  return {
+    id: 'notification-raced',
+    userId: type === 'DEPOSIT_DUE' ? CLIENT : SUPPLIER,
+    type,
+    targetUrl: type === 'DEPOSIT_DUE' ? `/contracts/${targetId}/deposit` : `/chat/${targetId}`,
+    targetId,
+    payload: type === 'DEPOSIT_DUE' ? { dueAt: '2026-11-06T14:59:59.999Z' } : null,
+    isRead: false,
+    createdAt,
+  };
+}
+
+/** 첫 조회는 null, create는 unique 위반, 재조회는 경쟁 행을 돌려주는 fake. */
+class RacingNotificationTx extends FakeNotificationTx {
+  readonly raced: NotificationRecord;
+  private finds = 0;
+
+  constructor(raced: NotificationRecord) {
+    super();
+    this.raced = raced;
+    this.rows.push(raced);
+  }
+
+  override async findByKey(): Promise<NotificationRecord | null> {
+    this.finds += 1;
+    return this.finds === 1 ? null : this.raced;
+  }
+
+  override async create(): Promise<NotificationRecord> {
+    throw new NotificationUniqueViolation();
+  }
+}
+
+class AlwaysMissingNotificationTx extends FakeNotificationTx {
+  override async findByKey(): Promise<NotificationRecord | null> {
+    return null;
+  }
+
+  override async create(): Promise<NotificationRecord> {
+    throw new NotificationUniqueViolation();
+  }
+}
+
+describe('B-06-T08 동시 생성 unique 경쟁 재시도', () => {
+  it('새 메시지는 경쟁에서 진 행을 한 줄로 갱신한다', async () => {
+    const first = new Date('2026-11-03T00:00:00.000Z');
+    const now = new Date('2026-11-03T00:05:00.000Z');
+    const tx = new RacingNotificationTx(racedRow('NEW_MESSAGE', 'prj-1:supplier-1', first));
+
+    const created = await notifyNewMessage(new FakeUnitOfWork(tx), {
+      projectId: 'prj-1',
+      supplierId: SUPPLIER,
+      clientUserId: CLIENT,
+      supplierUserId: SUPPLIER,
+      senderId: CLIENT,
+      now,
+    });
+
+    assert.equal(created.length, 1);
+    assert.equal(created[0]?.id, 'notification-raced');
+    assert.equal(created[0]?.createdAt.getTime(), now.getTime());
+    assert.equal(created[0]?.isRead, false);
+    assert.equal(tx.rows.length, 1);
+  });
+
+  it('기한 알림은 경쟁에서 진 행을 유지하고 created:false를 돌려준다', async () => {
+    const tx = new RacingNotificationTx(
+      racedRow('DEPOSIT_DUE', 'contract-1', FIXED_NOW),
+    );
+
+    const result = await createNotificationOnceInTransaction(tx, {
+      userId: CLIENT,
+      type: 'DEPOSIT_DUE',
+      targetId: 'contract-1',
+      payload: { dueAt: '2026-11-06T14:59:59.999Z' },
+      now: new Date('2026-11-03T00:05:00.000Z'),
+    });
+
+    assert.deepEqual(result, { created: false });
+    assert.equal(tx.rows.length, 1);
+    assert.equal(tx.rows[0]?.createdAt.getTime(), FIXED_NOW.getTime());
+  });
+
+  it('재조회에서도 행이 없으면 unique 오류를 숨기지 않는다', async () => {
+    const tx = new AlwaysMissingNotificationTx();
+
+    await assert.rejects(
+      notify(new FakeUnitOfWork(tx), {
+        type: 'PROJECT_CLOSED',
+        userId: CLIENT,
+        targetId: 'prj-1',
+        now: FIXED_NOW,
+      }),
+      (error: unknown) => error instanceof NotificationUniqueViolation,
+    );
+    await assert.rejects(
+      createNotificationOnceInTransaction(tx, {
+        userId: CLIENT,
+        type: 'INSPECTION_DUE',
+        targetId: 'contract-1',
+        payload: { dueAt: '2026-11-06T14:59:59.999Z' },
+        now: FIXED_NOW,
+      }),
+      (error: unknown) => error instanceof NotificationUniqueViolation,
+    );
   });
 });
