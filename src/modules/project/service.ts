@@ -1,5 +1,10 @@
-import { DraftStatus, Prisma, PrismaClient, ProjectStatus, SpecItemStatus } from "@prisma/client";
+import { BlockOrigin, DraftStatus, EventType, Prisma, PrismaClient, ProjectStatus, SpecItemStatus } from "@prisma/client";
 import { DraftError } from "../draft/rules.js";
+import {
+  canDeleteProject, canEditSpec, canExtendDeadline, isWithinExtensionCap, publicProjectDetail, publicProjectSummary, resolveClosingOutcome,
+  type PublicProjectDetail, type PublicProjectSummary,
+} from "./policy.js";
+import type { ProjectPorts, ProjectSearchPort, ProjectSearchQuery } from "./ports.js";
 
 export const PROJECT_DISCLOSURE_CONSENT_DRAFT_VERSION = "project-disclosure-v0.1-draft";
 
@@ -194,5 +199,317 @@ export async function publishDraft(
       deadline: input.deadline,
       itemCount: inserted.count,
     };
+  });
+}
+
+// ── A-06: my projects / public list & detail / spec revision / close ──────────
+export type SpecRevisionItem = {
+  blockId: string;
+  title: string;
+  description: string;
+  conditions?: unknown;
+  wireframe?: unknown;
+  sortOrder?: number;
+};
+
+export type MyProjectView = {
+  projectId: string;
+  title: string;
+  status: ProjectStatus;
+  displayState: string;
+  deadline: string | null;
+  selectionEndsAt: string | null;
+  currentVersion: number;
+  applicationCount: number;
+  detailViewCount: number;
+};
+
+export type PublicProjectListPage = { items: PublicProjectSummary[]; total: number };
+export type SpecRevisionResult = { projectId: string; currentVersion: number; itemCount: number };
+export type DeadlineExtensionResult = { projectId: string; deadline: string; status: ProjectStatus };
+export type DeadlineBatchResult = { recruiting: number; selecting: number; expired: number };
+
+const selectionWindowMs = 7 * 24 * 60 * 60 * 1000;
+
+function projectDisplayState(status: ProjectStatus, applicationCount: number): string {
+  switch (status) {
+    case ProjectStatus.SCHEDULED:
+      return "모집 예정";
+    case ProjectStatus.RECRUITING:
+      return applicationCount > 0 ? "지원 있음" : "모집 중";
+    case ProjectStatus.SELECTING:
+      return "선택 중";
+    case ProjectStatus.EXPIRED:
+      return applicationCount > 0 ? "선택 종료" : "지원 0건 · 마감";
+    default:
+      return "계약 진행 중";
+  }
+}
+
+function jsonInput(value: unknown): Prisma.InputJsonValue | typeof Prisma.DbNull {
+  if (value === undefined || value === null) return Prisma.DbNull;
+  return value as Prisma.InputJsonValue;
+}
+
+async function ownedProject(
+  tx: Prisma.TransactionClient,
+  projectId: string,
+  clientId: string,
+): Promise<{ currentVersion: number; status: ProjectStatus; deadline: Date | null }> {
+  await tx.$queryRaw`SELECT id FROM projects WHERE id = ${projectId} FOR UPDATE`;
+  const project = await tx.project.findFirst({
+    where: { id: projectId, deletedAt: null },
+    select: { currentVersion: true, status: true, deadline: true, draft: { select: { clientId: true } } },
+  });
+  if (!project || project.draft.clientId !== clientId) throw new DraftError("PROJECT_NOT_FOUND", 404);
+  return { currentVersion: project.currentVersion, status: project.status, deadline: project.deadline };
+}
+
+export async function listMyProjects(db: PrismaClient, clientId: string): Promise<MyProjectView[]> {
+  const projects = await db.project.findMany({
+    where: { deletedAt: null, draft: { clientId } },
+    orderBy: [{ publishedAt: "desc" }, { id: "asc" }],
+    select: {
+      id: true, title: true, status: true, deadline: true, selectionEndsAt: true, currentVersion: true,
+      _count: { select: { applications: true } },
+    },
+  });
+  const ids = projects.map(project => project.id);
+  const views = ids.length
+    ? await db.eventLog.groupBy({ by: ["projectId"], where: { type: EventType.SPEC_DETAIL_VIEWED, projectId: { in: ids } }, _count: { _all: true } })
+    : [];
+  const viewByProject = new Map(views.map(view => [view.projectId, view._count._all]));
+  return projects.map(project => ({
+    projectId: project.id,
+    title: project.title,
+    status: project.status,
+    displayState: projectDisplayState(project.status, project._count.applications),
+    deadline: project.deadline === null ? null : project.deadline.toISOString(),
+    selectionEndsAt: project.selectionEndsAt === null ? null : project.selectionEndsAt.toISOString(),
+    currentVersion: project.currentVersion,
+    applicationCount: project._count.applications,
+    detailViewCount: viewByProject.get(project.id) ?? 0,
+  }));
+}
+
+export async function listPublicProjects(
+  db: PrismaClient,
+  search: ProjectSearchPort | undefined,
+  query: ProjectSearchQuery,
+): Promise<PublicProjectListPage> {
+  if (!search) throw new DraftError("PROJECT_SEARCH_UNAVAILABLE", 503);
+  const { projectIds, total } = await search.searchPublicProjects(query);
+  if (projectIds.length === 0) return { items: [], total };
+  const projects = await db.project.findMany({
+    where: { id: { in: projectIds }, deletedAt: null, status: { in: [ProjectStatus.RECRUITING, ProjectStatus.SELECTING, ProjectStatus.EXPIRED] } },
+    select: {
+      id: true, title: true, industryCode: true, requiredSkills: true, status: true, deadline: true, hopeBudget: true, currentVersion: true,
+      items: { where: { status: SpecItemStatus.INCLUDED }, select: { versionNo: true } },
+    },
+  });
+  const byId = new Map(projects.map(project => [project.id, project]));
+  const items: PublicProjectSummary[] = [];
+  for (const id of projectIds) {
+    const project = byId.get(id);
+    if (!project) continue;
+    const itemCount = project.items.filter(item => item.versionNo === project.currentVersion).length;
+    items.push(publicProjectSummary(project, itemCount));
+  }
+  return { items, total };
+}
+
+export async function getPublicProjectDetail(
+  db: PrismaClient,
+  ports: ProjectPorts,
+  projectId: string,
+  supplierId: string,
+  now: Date,
+): Promise<PublicProjectDetail> {
+  if (!ports.view) throw new DraftError("PROJECT_VIEW_UNAVAILABLE", 503);
+  if (!ports.supplierNdaVersion) throw new DraftError("NDA_UNAVAILABLE", 503);
+  const supplier = await db.supplierProfile.findUnique({ where: { userId: supplierId }, select: { ndaAgreedAt: true, ndaVersion: true } });
+  if (!supplier?.ndaAgreedAt || supplier.ndaVersion !== ports.supplierNdaVersion) throw new DraftError("SUPPLIER_NDA_REQUIRED", 403);
+
+  const project = await db.project.findFirst({
+    where: { id: projectId, deletedAt: null, status: { in: [ProjectStatus.RECRUITING, ProjectStatus.SELECTING, ProjectStatus.EXPIRED] } },
+    select: {
+      id: true, title: true, industryCode: true, requiredSkills: true, status: true, deadline: true, hopeBudget: true,
+      currentVersion: true, summary: true, draft: { select: { clientId: true } },
+    },
+  });
+  if (!project) throw new DraftError("PROJECT_NOT_FOUND", 404);
+
+  const [items, clientProfile] = await Promise.all([
+    db.specItem.findMany({
+      where: { projectId, versionNo: project.currentVersion, status: SpecItemStatus.INCLUDED },
+      orderBy: { sortOrder: "asc" },
+      select: { title: true, description: true, conditions: true, wireframe: true },
+    }),
+    db.clientProfile.findUnique({
+      where: { userId: project.draft.clientId },
+      include: { user: { select: { name: true, bio: true } } },
+    }),
+  ]);
+  if (!clientProfile?.profileCompleted || !clientProfile.businessName) throw new DraftError("CLIENT_PROFILE_NOT_FOUND", 404);
+
+  await ports.view.recordFirstView({ projectId, supplierId, at: now });
+
+  return publicProjectDetail(project, {
+    summary: project.summary,
+    items: items.map(item => ({ title: item.title, description: item.description, conditions: item.conditions, wireframe: item.wireframe })),
+    client: {
+      name: clientProfile.user.name,
+      businessName: clientProfile.businessName,
+      industryField: clientProfile.industryField,
+      storeAddress: clientProfile.storeAddress,
+      bio: clientProfile.user.bio,
+      websiteUrl: clientProfile.websiteUrl,
+      ratingAvg: clientProfile.ratingAvg,
+      reviewCount: clientProfile.reviewCount,
+    },
+  });
+}
+
+export async function softDeleteProject(
+  db: PrismaClient,
+  ports: ProjectPorts,
+  projectId: string,
+  clientId: string,
+  now: Date,
+): Promise<void> {
+  if (!ports.application) throw new DraftError("PROJECT_APPLICATION_PORT_UNAVAILABLE", 503);
+  await db.$transaction(async tx => {
+    await tx.$queryRaw`SELECT id FROM projects WHERE id = ${projectId} FOR UPDATE`;
+    const project = await tx.project.findFirst({ where: { id: projectId, deletedAt: null }, select: { status: true, draft: { select: { clientId: true } } } });
+    if (!project || project.draft.clientId !== clientId) throw new DraftError("PROJECT_NOT_FOUND", 404);
+    if (!canDeleteProject(project.status)) throw new DraftError("PROJECT_NOT_DELETABLE", 409);
+    await tx.project.update({ where: { id: projectId }, data: { deletedAt: now } });
+    await ports.application!.rejectPendingOnDelete(tx, { projectId, at: now });
+  });
+}
+
+export async function reviseSpec(
+  db: PrismaClient,
+  ports: ProjectPorts,
+  projectId: string,
+  clientId: string,
+  input: { items: SpecRevisionItem[] },
+  now: Date,
+): Promise<SpecRevisionResult> {
+  if (input.items.length === 0) throw new DraftError("NO_SELECTED_BLOCKS", 409);
+  return db.$transaction(async tx => {
+    const project = await ownedProject(tx, projectId, clientId);
+    if (!canEditSpec(project.status)) throw new DraftError("PROJECT_SPEC_LOCKED", 409);
+    const nextVersion = project.currentVersion + 1;
+    const priorItems = await tx.specItem.findMany({
+      where: { projectId, versionNo: project.currentVersion },
+      select: { blockId: true, origin: true, unitPrice: true },
+    });
+    const priorByBlock = new Map(priorItems.map(item => [item.blockId, item]));
+    const missing = input.items.filter(item => !priorByBlock.has(item.blockId)).map(item => item.blockId);
+    const catalog = missing.length
+      ? await tx.blockCatalog.findMany({ where: { id: { in: missing } }, select: { id: true, unitPrice: true } })
+      : [];
+    const priceByBlock = new Map(catalog.map(block => [block.id, block.unitPrice]));
+
+    await tx.specItem.createMany({
+      data: input.items.map((item, index) => {
+        const prior = priorByBlock.get(item.blockId);
+        const unitPrice = prior ? prior.unitPrice : priceByBlock.get(item.blockId);
+        if (unitPrice === undefined) throw new DraftError("CATALOG_BLOCK_NOT_FOUND", 404);
+        return {
+          projectId,
+          versionNo: nextVersion,
+          blockId: item.blockId,
+          title: item.title,
+          description: item.description,
+          wireframe: jsonInput(item.wireframe),
+          conditions: jsonInput(item.conditions),
+          origin: prior ? prior.origin : BlockOrigin.FIRST_SENTENCE,
+          status: SpecItemStatus.INCLUDED,
+          unitPrice,
+          sortOrder: item.sortOrder ?? index,
+        };
+      }),
+    });
+    await tx.project.update({ where: { id: projectId }, data: { currentVersion: nextVersion } });
+    if (ports.application) await ports.application.markSpecStale(tx, { projectId, newVersionNo: nextVersion, at: now });
+    await tx.eventLog.create({ data: { userId: clientId, projectId, type: EventType.SPEC_REVISED, payload: { versionNo: nextVersion }, occurredAt: now } });
+    return { projectId, currentVersion: nextVersion, itemCount: input.items.length };
+  });
+}
+
+export async function extendDeadline(
+  db: PrismaClient,
+  ports: ProjectPorts,
+  projectId: string,
+  clientId: string,
+  newDeadline: Date,
+  now: Date,
+): Promise<DeadlineExtensionResult> {
+  return db.$transaction(async tx => {
+    const project = await ownedProject(tx, projectId, clientId);
+    if (!canExtendDeadline(project.status)) throw new DraftError("PROJECT_DEADLINE_NOT_EXTENDABLE", 409);
+    if (project.deadline === null) throw new DraftError("PROJECT_DEADLINE_MISSING", 409);
+    if (Number.isNaN(newDeadline.getTime()) || !isWithinExtensionCap(project.deadline, newDeadline)) {
+      throw new DraftError("INVALID_DEADLINE_EXTENSION", 422);
+    }
+    await tx.project.update({
+      where: { id: projectId },
+      data: { deadline: newDeadline, status: ProjectStatus.RECRUITING, selectionEndsAt: null },
+    });
+    await tx.eventLog.create({ data: { userId: clientId, projectId, type: EventType.DEADLINE_EXTENDED, payload: { deadline: newDeadline.toISOString() }, occurredAt: now } });
+    if (ports.notification) await ports.notification.enqueue(tx, { userId: clientId, type: "DEADLINE_EXTENDED", projectId, at: now });
+    return { projectId, deadline: newDeadline.toISOString(), status: ProjectStatus.RECRUITING };
+  });
+}
+
+export async function runProjectDeadlineBatch(
+  db: PrismaClient,
+  ports: ProjectPorts,
+  now: Date,
+): Promise<DeadlineBatchResult> {
+  return db.$transaction(async tx => {
+    const recruiting = await tx.project.updateMany({
+      where: { status: ProjectStatus.SCHEDULED, deletedAt: null, recruitStartAt: { lte: now } },
+      data: { status: ProjectStatus.RECRUITING, publishedAt: now },
+    });
+
+    const closing = await tx.project.findMany({
+      where: { status: ProjectStatus.RECRUITING, deletedAt: null, deadline: { lte: now } },
+      select: { id: true, draft: { select: { clientId: true } } },
+    });
+    let selecting = 0;
+    let expired = 0;
+    for (const project of closing) {
+      const pending = ports.application ? await ports.application.countPending(tx, project.id) : 0;
+      const isSelecting = resolveClosingOutcome(pending) === "SELECTING";
+      const updated = await tx.project.updateMany({
+        where: { id: project.id, status: ProjectStatus.RECRUITING },
+        data: isSelecting
+          ? { status: ProjectStatus.SELECTING, selectionEndsAt: new Date(now.getTime() + selectionWindowMs) }
+          : { status: ProjectStatus.EXPIRED },
+      });
+      if (updated.count !== 1) continue;
+      if (isSelecting) selecting += 1;
+      else expired += 1;
+      if (ports.notification) await ports.notification.enqueue(tx, { userId: project.draft.clientId, type: "PROJECT_CLOSED", projectId: project.id, at: now });
+    }
+
+    const closingSelection = await tx.project.findMany({
+      where: { status: ProjectStatus.SELECTING, deletedAt: null, selectionEndsAt: { lte: now } },
+      select: { id: true },
+    });
+    for (const project of closingSelection) {
+      const updated = await tx.project.updateMany({
+        where: { id: project.id, status: ProjectStatus.SELECTING },
+        data: { status: ProjectStatus.EXPIRED, selectionEndsAt: null },
+      });
+      if (updated.count !== 1) continue;
+      expired += 1;
+      if (ports.application) await ports.application.rejectPendingOnDelete(tx, { projectId: project.id, at: now });
+    }
+
+    return { recruiting: recruiting.count, selecting, expired };
   });
 }
