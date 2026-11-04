@@ -9,7 +9,14 @@ export type DraftBlockSnapshot = {
 export type PendingFeature = { key: string; summary: string; attempts: number; lastTriedAt: string | null };
 
 export class DraftError extends Error {
-  constructor(readonly code: string, readonly status: number) { super(code); }
+  readonly code: string;
+  readonly status: number;
+
+  constructor(code: string, status: number) {
+    super(code);
+    this.code = code;
+    this.status = status;
+  }
 }
 
 export { sanitizeUserText as sanitizeDraftText } from "../../core/privacy.js";
