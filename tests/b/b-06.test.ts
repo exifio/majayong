@@ -25,6 +25,13 @@ import {
   type NotificationUnitOfWork,
 } from '../../src/modules/notification/notifications.ts';
 import { FIXED_NOW } from './fixtures.ts';
+import {
+  createPrismaNotificationUnitOfWork,
+  type NotificationDbRow,
+  type NotificationDelegate,
+  type NotificationPrismaClient,
+  type NotificationWhere,
+} from '../../src/modules/notification/prisma-adapter.ts';
 
 const CLIENT = 'client-1';
 const SUPPLIER = 'supplier-1';
@@ -1010,6 +1017,208 @@ describe('B-06-T08 동시 생성 unique 경쟁 재시도', () => {
         now: FIXED_NOW,
       }),
       (error: unknown) => error instanceof NotificationUniqueViolation,
+    );
+  });
+});
+
+function matchesWhere(row: NotificationDbRow, where: NotificationWhere): boolean {
+  if (where.userId !== undefined && row.userId !== where.userId) return false;
+  if (where.id !== undefined && row.id !== where.id) return false;
+  if (where.type !== undefined && row.type !== where.type) return false;
+  if (where.targetId !== undefined && row.targetId !== where.targetId) return false;
+  if (where.isRead !== undefined && row.isRead !== where.isRead) return false;
+  if (
+    where.createdAt?.gte !== undefined &&
+    row.createdAt.getTime() < where.createdAt.gte.getTime()
+  ) {
+    return false;
+  }
+  if (
+    where.createdAt?.lte !== undefined &&
+    row.createdAt.getTime() > where.createdAt.lte.getTime()
+  ) {
+    return false;
+  }
+  return true;
+}
+
+/** Prisma delegate와 $transaction만 흉내 내는 in-memory DB. */
+class FakeNotificationDb implements NotificationPrismaClient {
+  rows: NotificationDbRow[] = [];
+  competingOnCreate: NotificationDbRow | null = null;
+  transactions = 0;
+  private nextId = 1;
+
+  readonly notification: NotificationDelegate = {
+    findUnique: async ({ where }) => {
+      const key = where.userId_type_targetId;
+      return (
+        this.rows.find(
+          (row) =>
+            row.userId === key.userId &&
+            row.type === key.type &&
+            row.targetId === key.targetId,
+        ) ?? null
+      );
+    },
+    create: async ({ data }) => {
+      if (this.competingOnCreate !== null) {
+        this.rows.push(this.competingOnCreate);
+        this.competingOnCreate = null;
+        throw Object.assign(new Error('unique constraint'), { code: 'P2002' });
+      }
+      const created: NotificationDbRow = {
+        ...data,
+        id: `db-${this.nextId}`,
+        isRead: false,
+      };
+      this.nextId += 1;
+      this.rows.push(created);
+      return created;
+    },
+    update: async ({ where, data }) => {
+      const index = this.rows.findIndex((row) => row.id === where.id);
+      const current = this.rows[index];
+      if (current === undefined) throw new Error('missing notification');
+      const updated: NotificationDbRow = { ...current, ...data };
+      this.rows[index] = updated;
+      return updated;
+    },
+    findMany: async ({ where }) =>
+      this.rows
+        .filter((row) => matchesWhere(row, where))
+        .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()),
+    count: async ({ where }) =>
+      this.rows.filter((row) => matchesWhere(row, where)).length,
+    updateMany: async ({ where, data }) => {
+      let count = 0;
+      this.rows = this.rows.map((row) => {
+        if (!matchesWhere(row, where)) return row;
+        count += 1;
+        return { ...row, ...data };
+      });
+      return { count };
+    },
+  };
+
+  async $transaction<T>(
+    work: (tx: { notification: NotificationDelegate }) => Promise<T>,
+  ): Promise<T> {
+    this.transactions += 1;
+    return work({ notification: this.notification });
+  }
+}
+
+describe('B-06-T09 Prisma 어댑터', () => {
+  it('P2002를 도메인 경쟁으로 바꿔 새 메시지를 한 줄로 갱신한다', async () => {
+    const db = new FakeNotificationDb();
+    db.competingOnCreate = {
+      id: 'db-raced',
+      userId: SUPPLIER,
+      type: 'NEW_MESSAGE',
+      targetUrl: '/chat/prj-1:supplier-1',
+      targetId: 'prj-1:supplier-1',
+      payload: null,
+      isRead: false,
+      createdAt: new Date('2026-11-03T00:00:00.000Z'),
+    };
+    const uow = createPrismaNotificationUnitOfWork(db);
+    const now = new Date('2026-11-03T00:05:00.000Z');
+
+    const created = await notifyNewMessage(uow, {
+      projectId: 'prj-1',
+      supplierId: SUPPLIER,
+      clientUserId: CLIENT,
+      supplierUserId: SUPPLIER,
+      senderId: CLIENT,
+      now,
+    });
+
+    assert.equal(db.transactions, 1);
+    assert.equal(db.rows.length, 1);
+    assert.equal(db.rows[0]?.id, 'db-raced');
+    assert.equal(db.rows[0]?.createdAt.getTime(), now.getTime());
+    assert.equal(created[0]?.createdAt.getTime(), now.getTime());
+  });
+
+  it('기한 알림 P2002도 기존 행을 유지한다', async () => {
+    const db = new FakeNotificationDb();
+    db.competingOnCreate = {
+      id: 'db-deadline',
+      userId: CLIENT,
+      type: 'DEPOSIT_DUE',
+      targetUrl: '/contracts/contract-1/deposit',
+      targetId: 'contract-1',
+      payload: { dueAt: '2026-11-06T14:59:59.999Z' },
+      isRead: false,
+      createdAt: FIXED_NOW,
+    };
+    const uow = createPrismaNotificationUnitOfWork(db);
+
+    const result = await notify(uow, {
+      type: 'DEPOSIT_DUE',
+      userId: CLIENT,
+      targetId: 'contract-1',
+      payload: { dueAt: '2026-11-06T14:59:59.999Z' },
+      now: new Date('2026-11-03T00:05:00.000Z'),
+    });
+
+    assert.equal(db.rows.length, 1);
+    assert.equal(result.id, 'db-deadline');
+    assert.equal(db.rows[0]?.createdAt.getTime(), FIXED_NOW.getTime());
+  });
+
+  it('최근 목록·안 읽은 수·전체 읽음을 Prisma where로 위임한다', async () => {
+    const db = new FakeNotificationDb();
+    db.rows.push(
+      {
+        id: 'db-client',
+        userId: CLIENT,
+        type: 'NEW_MESSAGE',
+        targetUrl: '/chat/prj-1:supplier-1',
+        targetId: 'prj-1:supplier-1',
+        payload: null,
+        isRead: false,
+        createdAt: new Date('2026-11-02T00:00:00.000Z'),
+      },
+      {
+        id: 'db-unread',
+        userId: SUPPLIER,
+        type: 'NEW_MESSAGE',
+        targetUrl: '/chat/prj-1:supplier-1',
+        targetId: 'prj-1:supplier-1',
+        payload: null,
+        isRead: false,
+        createdAt: new Date('2026-11-02T00:00:00.000Z'),
+      },
+      {
+        id: 'db-read',
+        userId: SUPPLIER,
+        type: 'PROJECT_CLOSED',
+        targetUrl: '/projects/prj-1',
+        targetId: 'prj-1',
+        payload: null,
+        isRead: true,
+        createdAt: new Date('2026-11-01T00:00:00.000Z'),
+      },
+    );
+    const uow = createPrismaNotificationUnitOfWork(db);
+
+    const list = await listNotifications(uow, { userId: SUPPLIER, now: FIXED_NOW });
+    assert.deepEqual(
+      list.items.map((row) => row.id),
+      ['db-unread', 'db-read'],
+    );
+    assert.equal(list.unreadCount, 1);
+
+    assert.equal(await markAllNotificationsRead(uow, { userId: SUPPLIER, now: FIXED_NOW }), 1);
+    assert.equal(
+      (await listNotifications(uow, { userId: SUPPLIER, now: FIXED_NOW })).unreadCount,
+      0,
+    );
+    assert.equal(
+      (await listNotifications(uow, { userId: CLIENT, now: FIXED_NOW })).unreadCount,
+      1,
     );
   });
 });
