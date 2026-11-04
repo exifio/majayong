@@ -83,29 +83,58 @@ export interface DepositContractInfo {
 }
 
 export interface DepositContractsPort {
-  getContract(contractId: string): Promise<DepositContractInfo | null>;
-  updateContract?(contractId: string, patch: Partial<DepositContractInfo>): Promise<DepositContractInfo>;
+  getContract(contractId: string, tx?: DepositTransaction): Promise<DepositContractInfo | null>;
+  updateContract?(
+    contractId: string,
+    patch: Partial<DepositContractInfo>,
+    tx?: DepositTransaction,
+  ): Promise<DepositContractInfo>;
 }
 
 export interface MarketplacePorts {
-  autoRejectCompetingApplications(input: {
-    projectId: string;
-    acceptedApplicationId: string;
-  }): Promise<{ rejectedCount: number }>;
+  autoRejectCompetingApplications(
+    input: {
+      projectId: string;
+      acceptedApplicationId: string;
+    },
+    tx?: DepositTransaction,
+  ): Promise<{ rejectedCount: number }>;
+}
+
+/**
+ * Opaque handle owned by the integration layer (e.g. a Prisma transaction client).
+ * C only guarantees it is the same reference for every write in one deposit completion.
+ */
+export interface DepositTransaction {
+  readonly id?: string;
+}
+
+export interface DepositTransactionRunner {
+  run<T>(work: (tx: DepositTransaction) => Promise<T>): Promise<T>;
 }
 
 export interface DepositRepository {
-  createDeposit(deposit: Omit<EscrowDeposit, "id" | "createdAt">): Promise<EscrowDeposit>;
-  findByIdempotencyKey(key: string): Promise<EscrowDeposit | null>;
-  findById(id: string): Promise<EscrowDeposit | null>;
-  findByContractId(contractId: string): Promise<EscrowDeposit[]>;
-  updateDeposit(id: string, patch: Partial<EscrowDeposit>): Promise<EscrowDeposit>;
-  createPaymentEvent(event: Omit<PaymentEvent, "id" | "occurredAt">): Promise<PaymentEvent>;
-  findPaymentEventByDedupKey(depositId: string, dedupKey: string): Promise<PaymentEvent | null>;
-  listPaymentEvents(depositId: string): Promise<PaymentEvent[]>;
-  createInstallments(installments: Omit<PaymentInstallment, "id">[]): Promise<PaymentInstallment[]>;
-  listInstallments(contractId: string): Promise<PaymentInstallment[]>;
-  deleteInstallments(contractId: string): Promise<void>;
+  createDeposit(deposit: Omit<EscrowDeposit, "id" | "createdAt">, tx?: DepositTransaction): Promise<EscrowDeposit>;
+  findByIdempotencyKey(key: string, tx?: DepositTransaction): Promise<EscrowDeposit | null>;
+  findById(id: string, tx?: DepositTransaction): Promise<EscrowDeposit | null>;
+  findByContractId(contractId: string, tx?: DepositTransaction): Promise<EscrowDeposit[]>;
+  updateDeposit(id: string, patch: Partial<EscrowDeposit>, tx?: DepositTransaction): Promise<EscrowDeposit>;
+  createPaymentEvent(
+    event: Omit<PaymentEvent, "id" | "occurredAt">,
+    tx?: DepositTransaction,
+  ): Promise<PaymentEvent>;
+  findPaymentEventByDedupKey(
+    depositId: string,
+    dedupKey: string,
+    tx?: DepositTransaction,
+  ): Promise<PaymentEvent | null>;
+  listPaymentEvents(depositId: string, tx?: DepositTransaction): Promise<PaymentEvent[]>;
+  createInstallments(
+    installments: Omit<PaymentInstallment, "id">[],
+    tx?: DepositTransaction,
+  ): Promise<PaymentInstallment[]>;
+  listInstallments(contractId: string, tx?: DepositTransaction): Promise<PaymentInstallment[]>;
+  deleteInstallments(contractId: string, tx?: DepositTransaction): Promise<void>;
 }
 
 export interface TossVerifyAdapter {
@@ -538,10 +567,16 @@ export class DepositService {
 export interface DepositCompletionOptions {
   repo: DepositRepository;
   contractsPort: {
-    getContract(id: string): Promise<DepositContractInfo | null>;
-    updateContract(id: string, patch: Partial<DepositContractInfo>): Promise<DepositContractInfo>;
+    getContract(id: string, tx?: DepositTransaction): Promise<DepositContractInfo | null>;
+    updateContract(
+      id: string,
+      patch: Partial<DepositContractInfo>,
+      tx?: DepositTransaction,
+    ): Promise<DepositContractInfo>;
   };
   marketplacePort: MarketplacePorts;
+  transactionRunner?: DepositTransactionRunner;
+  tossAdapter?: TossVerifyAdapter;
   clock?: { now(): Date };
 }
 
@@ -549,12 +584,16 @@ export class DepositCompletionService {
   private readonly repo: DepositRepository;
   private readonly contractsPort: DepositCompletionOptions["contractsPort"];
   private readonly marketplacePort: MarketplacePorts;
+  private readonly transactionRunner?: DepositTransactionRunner;
+  private readonly tossAdapter?: TossVerifyAdapter;
   private readonly clock: { now(): Date };
 
   constructor(options: DepositCompletionOptions) {
     this.repo = options.repo;
     this.contractsPort = options.contractsPort;
     this.marketplacePort = options.marketplacePort;
+    this.transactionRunner = options.transactionRunner;
+    this.tossAdapter = options.tossAdapter;
     this.clock = options.clock ?? { now: () => new Date() };
   }
 
@@ -567,15 +606,34 @@ export class DepositCompletionService {
     contract: DepositContractInfo;
     installments: PaymentInstallment[];
   }> {
-    const deposit = await this.repo.findById(input.depositId);
+    // 통합 담당이 Prisma 트랜잭션을 주입하면 모든 쓰기가 같은 컨텍스트로 묶인다.
+    if (this.transactionRunner) {
+      return this.transactionRunner.run((tx) => this.executeCompletion(input, tx));
+    }
+    return this.executeCompletion(input);
+  }
+
+  private async executeCompletion(
+    input: {
+      depositId: string;
+      pgKey: string;
+      paymentEvent?: { dedupKey: string; payload: TossWebhookPayload };
+    },
+    tx?: DepositTransaction,
+  ): Promise<{
+    deposit: EscrowDeposit;
+    contract: DepositContractInfo;
+    installments: PaymentInstallment[];
+  }> {
+    const deposit = await this.repo.findById(input.depositId, tx);
     if (!deposit) throw new DepositHttpError(404, "예치 건을 찾을 수 없습니다.");
 
-    const contract = await this.contractsPort.getContract(deposit.contractId);
+    const contract = await this.contractsPort.getContract(deposit.contractId, tx);
     if (!contract) throw new DepositHttpError(404, "계약을 찾을 수 없습니다.");
 
     // 이미 완료된 경우 멱등 반환
     if (deposit.status === "COMPLETED" && contract.paymentStatus === "DEPOSITED") {
-      const existingInstallments = await this.repo.listInstallments(contract.id);
+      const existingInstallments = await this.repo.listInstallments(contract.id, tx);
       return { deposit, contract, installments: existingInstallments };
     }
 
@@ -632,6 +690,7 @@ export class DepositCompletionService {
             taxInvoiceIssuedAt: null,
           },
         ],
+        tx,
       );
 
       // 2. 계약 상태 갱신
@@ -642,6 +701,7 @@ export class DepositCompletionService {
           totalDeposited: deposit.amount,
           workDueAt,
         },
+        tx,
       );
 
       // 3. 예치 상태 갱신
@@ -652,6 +712,7 @@ export class DepositCompletionService {
           pgKey: input.pgKey,
           depositedAt: completionTime,
         },
+        tx,
       );
 
       // 4. B 포트 호출: 타 보류 지원 자동 거절
@@ -661,6 +722,7 @@ export class DepositCompletionService {
             projectId: contract.projectId,
             acceptedApplicationId: contract.applicationId,
           },
+          tx,
         );
       }
 
@@ -673,24 +735,140 @@ export class DepositCompletionService {
             payload: input.paymentEvent.payload,
             resultNote: "결제 검증 성공",
           },
+          tx,
         );
       }
 
       return { deposit: updatedDeposit, contract: updatedContract, installments };
     } catch (err) {
-      await this.repo.deleteInstallments(contract.id);
-      await this.repo.updateDeposit(deposit.id, {
-        status: originalDepositStatus,
-        depositedAt: originalDepositedAt,
-        pgKey: originalPgKey,
-      });
-      await this.contractsPort.updateContract(contract.id, {
-        paymentStatus: originalContractPaymentStatus,
-        totalDeposited: originalTotalDeposited,
-        workDueAt: originalWorkDueAt,
-      });
+      // 트랜잭션 컨텍스트가 없을 때만 메모리 보상 쓰기로 되돌린다.
+      // ponytail: in-memory 보상은 단일 프로세스 한정. DB에서는 transactionRunner가 원자성을 보장한다.
+      if (!tx) {
+        await this.repo.deleteInstallments(contract.id);
+        await this.repo.updateDeposit(deposit.id, {
+          status: originalDepositStatus,
+          depositedAt: originalDepositedAt,
+          pgKey: originalPgKey,
+        });
+        await this.contractsPort.updateContract(contract.id, {
+          paymentStatus: originalContractPaymentStatus,
+          totalDeposited: originalTotalDeposited,
+          workDueAt: originalWorkDueAt,
+        });
+      }
       throw err;
     }
+  }
+
+  async resolveHeldDeposit(input: {
+    depositId: string;
+    decision: "OPERATOR_CONFIRMED" | "OPERATOR_VOIDED";
+    reason: string;
+    actorUserId?: string;
+    paymentKey?: string;
+  }): Promise<{
+    deposit: EscrowDeposit;
+    deadline: { expired: boolean };
+    contract?: DepositContractInfo;
+    installments?: PaymentInstallment[];
+  }> {
+    if (!input.reason || input.reason.trim().length === 0) {
+      throw new DepositHttpError(400, "운영자 조치 사유는 필수입니다.");
+    }
+    const deposit = await this.repo.findById(input.depositId);
+    if (!deposit) throw new DepositHttpError(404, "예치 건을 찾을 수 없습니다.");
+
+    if (input.decision === "OPERATOR_CONFIRMED") {
+      return this.confirmHeldDeposit(deposit, input);
+    }
+
+    if (deposit.status === "COMPLETED") {
+      throw new DepositHttpError(409, "이미 완료된 예치 건은 무효 처리할 수 없습니다.");
+    }
+    if (deposit.status !== "HELD" && deposit.status !== "FAILED") {
+      throw new DepositHttpError(409, "보류(HELD) 상태의 예치만 운영자 판정할 수 있습니다.");
+    }
+
+    let updated = deposit;
+    if (deposit.status === "HELD") {
+      const dedupKey = `operator-voided:${deposit.id}`;
+      const existing = await this.repo.findPaymentEventByDedupKey(deposit.id, dedupKey);
+      if (!existing) {
+        await this.repo.createPaymentEvent({
+          depositId: deposit.id,
+          eventType: "OPERATOR_VOIDED",
+          dedupKey,
+          payload: { reason: input.reason, actorUserId: input.actorUserId ?? null },
+          resultNote: input.reason,
+        });
+      }
+      updated = await this.repo.updateDeposit(deposit.id, {
+        status: "FAILED",
+        heldReason: input.reason,
+      });
+    }
+
+    // 예치 시도가 닫혔으므로 기한 판정을 다시 실행한다(기한 경과 시 계약 결렬).
+    const { expired } = await this.expireDepositIfDue(deposit.contractId, this.clock.now());
+    return { deposit: updated, deadline: { expired } };
+  }
+
+  private async confirmHeldDeposit(
+    deposit: EscrowDeposit,
+    input: { reason: string; actorUserId?: string; paymentKey?: string },
+  ): Promise<{
+    deposit: EscrowDeposit;
+    deadline: { expired: boolean };
+    contract?: DepositContractInfo;
+    installments?: PaymentInstallment[];
+  }> {
+    if (deposit.status === "COMPLETED") {
+      return { deposit, deadline: { expired: false } };
+    }
+    if (deposit.status !== "HELD") {
+      throw new DepositHttpError(409, "보류(HELD) 상태의 예치만 운영자 확정할 수 있습니다.");
+    }
+    if (!input.paymentKey) {
+      throw new DepositHttpError(400, "PG 재조회를 위한 paymentKey가 필요합니다.");
+    }
+    if (!this.tossAdapter?.verifyPayment) {
+      throw new DepositHttpError(422, "PG 거래 근거 없이는 예치를 확정할 수 없습니다.");
+    }
+
+    const payload: TossWebhookPayload = {
+      orderId: deposit.id,
+      paymentKey: input.paymentKey,
+      amount: deposit.amount,
+      status: "DONE",
+    };
+    let evidence: unknown;
+    try {
+      evidence = await this.tossAdapter.verifyPayment(deposit.id, input.paymentKey, deposit.amount);
+    } catch {
+      evidence = { verified: false };
+    }
+    if (pgEvidenceRejects(evidence, payload)) {
+      throw new DepositHttpError(422, "PG 거래 근거를 확인할 수 없어 예치를 확정할 수 없습니다.");
+    }
+
+    const dedupKey = `operator-confirmed:${deposit.id}`;
+    const existing = await this.repo.findPaymentEventByDedupKey(deposit.id, dedupKey);
+    if (!existing) {
+      await this.repo.createPaymentEvent({
+        depositId: deposit.id,
+        eventType: "OPERATOR_CONFIRMED",
+        dedupKey,
+        payload: { reason: input.reason, actorUserId: input.actorUserId ?? null, paymentKey: input.paymentKey },
+        resultNote: input.reason,
+      });
+    }
+
+    const completion = await this.completeDeposit({
+      depositId: deposit.id,
+      pgKey: input.paymentKey,
+      paymentEvent: { dedupKey: `${dedupKey}:verified`, payload },
+    });
+    return { ...completion, deadline: { expired: false } };
   }
 
   async evaluateDepositDeadline(

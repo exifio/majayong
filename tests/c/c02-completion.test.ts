@@ -2,16 +2,57 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
   DepositCompletionService,
+  DepositHttpError,
   calculateWorkDueAt,
   createInMemoryDepositRepository,
   type DepositContractInfo,
+  type DepositTransaction,
+  type DepositTransactionRunner,
 } from "../../src/modules/deposit/index.ts";
 
 describe("C-02: 예치 확정·2구간 생성·보류 지원 처리", () => {
   const depositTime = new Date("2026-11-04T05:20:00.000Z"); // 14:20 KST
 
-  function createTestSetup() {
-    const repo = createInMemoryDepositRepository();
+  type DepositTransactionTrace = { port: string; tx: unknown };
+
+  function createTestSetup(options?: {
+    transactionRunner?: DepositTransactionRunner;
+    tossAdapter?: { verifyPayment(orderId: string, paymentKey: string, amount: number): Promise<unknown> };
+    autoRejectFails?: boolean;
+    trace?: DepositTransactionTrace[];
+  }) {
+    const baseRepo = createInMemoryDepositRepository();
+    const trace = options?.trace;
+    const repo = {
+      ...baseRepo,
+      async createInstallments(
+        items: Parameters<typeof baseRepo.createInstallments>[0],
+        tx?: DepositTransaction,
+      ) {
+        trace?.push({ port: "repo.createInstallments", tx });
+        return baseRepo.createInstallments(items);
+      },
+      async updateDeposit(
+        id: string,
+        patch: Partial<Parameters<typeof baseRepo.updateDeposit>[1]>,
+        tx?: DepositTransaction,
+      ) {
+        trace?.push({ port: "repo.updateDeposit", tx });
+        return baseRepo.updateDeposit(id, patch);
+      },
+      async createPaymentEvent(
+        event: Parameters<typeof baseRepo.createPaymentEvent>[0],
+        tx?: DepositTransaction,
+      ) {
+        trace?.push({ port: "repo.createPaymentEvent", tx });
+        return baseRepo.createPaymentEvent(event);
+      },
+      async deleteInstallments(contractId: string, tx?: DepositTransaction) {
+        trace?.push({ port: "repo.deleteInstallments", tx });
+        return baseRepo.deleteInstallments(contractId);
+      },
+    };
+    let now = depositTime;
 
     const contract: DepositContractInfo & {
       projectId: string;
@@ -39,7 +80,12 @@ describe("C-02: 예치 확정·2구간 생성·보류 지원 처리", () => {
 
     let competingRejectedCount = 0;
     const marketplacePort = {
-      async autoRejectCompetingApplications(input: { projectId: string; acceptedApplicationId: string }) {
+      async autoRejectCompetingApplications(
+        input: { projectId: string; acceptedApplicationId: string },
+        tx?: DepositTransaction,
+      ) {
+        trace?.push({ port: "marketplace.autoRejectCompetingApplications", tx });
+        if (options?.autoRejectFails) throw new Error("MARKETPLACE_WRITE_FAILED");
         if (input.projectId === contract.projectId && input.acceptedApplicationId === contract.applicationId) {
           competingRejectedCount += 2; // 2건의 다른 보류 지원 거절
           return { rejectedCount: 2 };
@@ -49,11 +95,13 @@ describe("C-02: 예치 확정·2구간 생성·보류 지원 처리", () => {
     };
 
     const contractsPort = {
-      async getContract(id: string) {
+      async getContract(id: string, tx?: DepositTransaction) {
+        trace?.push({ port: "contracts.getContract", tx });
         if (id === contract.id) return contract;
         return null;
       },
-      async updateContract(id: string, patch: Partial<typeof contract>) {
+      async updateContract(id: string, patch: Partial<typeof contract>, tx?: DepositTransaction) {
+        trace?.push({ port: "contracts.updateContract", tx });
         if (id === contract.id) {
           Object.assign(contract, patch);
           return contract;
@@ -66,10 +114,23 @@ describe("C-02: 예치 확정·2구간 생성·보류 지원 처리", () => {
       repo,
       contractsPort,
       marketplacePort,
-      clock: { now: () => depositTime },
+      clock: { now: () => now },
+      transactionRunner: options?.transactionRunner,
+      tossAdapter: options?.tossAdapter,
     });
 
-    return { repo, contract, marketplacePort, getCompetingRejected: () => competingRejectedCount, completionService };
+    return {
+      repo,
+      contract,
+      contractsPort,
+      marketplacePort,
+      clock: { now: () => now },
+      setNow: (next: Date) => {
+        now = next;
+      },
+      getCompetingRejected: () => competingRejectedCount,
+      completionService,
+    };
   }
 
   it("C-02-T01 서명 후 보류 유지", async () => {
@@ -271,5 +332,178 @@ describe("C-02: 예치 확정·2구간 생성·보류 지원 처리", () => {
     const workDueAt = calculateWorkDueAt(depositedAt, 42);
 
     assert.equal(workDueAt.toISOString(), "2026-12-16T14:59:59.999Z");
+  });
+
+  it("C-02-F02 완료 작업이 하나의 트랜잭션 컨텍스트를 모든 포트에 전달하고, 실패 시 수동 보상을 하지 않음", async () => {
+    const trace: DepositTransactionTrace[] = [];
+    let committed = 0;
+    let rolledBack = 0;
+    let lastTx: DepositTransaction | null = null;
+    const runner: DepositTransactionRunner = {
+      async run(work) {
+        const tx: DepositTransaction = { id: "tx-c02-f02" };
+        lastTx = tx;
+        try {
+          const result = await work(tx);
+          committed += 1;
+          return result;
+        } catch (err) {
+          rolledBack += 1;
+          throw err;
+        }
+      },
+    };
+
+    const ok = createTestSetup({ transactionRunner: runner, trace });
+    const deposit = await ok.repo.createDeposit({
+      contractId: ok.contract.id,
+      principal: ok.contract.agreedAmount,
+      clientFee: ok.contract.clientFee,
+      amount: 3_255_000,
+      method: "CARD",
+      status: "PENDING",
+      idempotencyKey: "idem-c02-f02",
+      pgKey: null,
+      depositedAt: null,
+    });
+
+    await ok.completionService.completeDeposit({ depositId: deposit.id, pgKey: "pk-f02" });
+
+    assert.equal(committed, 1);
+    assert.equal(rolledBack, 0);
+    assert.ok(lastTx);
+    assert.ok(trace.length > 0);
+    for (const entry of trace) {
+      assert.equal(entry.tx, lastTx, `${entry.port} 이 트랜잭션 컨텍스트를 받지 않음`);
+    }
+    assert.ok(trace.some((entry) => entry.port === "repo.createInstallments"));
+    assert.ok(trace.some((entry) => entry.port === "contracts.updateContract"));
+    assert.ok(trace.some((entry) => entry.port === "marketplace.autoRejectCompetingApplications"));
+
+    const failingTrace: DepositTransactionTrace[] = [];
+    const failing = createTestSetup({ transactionRunner: runner, trace: failingTrace, autoRejectFails: true });
+    const failingDeposit = await failing.repo.createDeposit({
+      contractId: failing.contract.id,
+      principal: failing.contract.agreedAmount,
+      clientFee: failing.contract.clientFee,
+      amount: 3_255_000,
+      method: "CARD",
+      status: "PENDING",
+      idempotencyKey: "idem-c02-f02-fail",
+      pgKey: null,
+      depositedAt: null,
+    });
+
+    await assert.rejects(
+      () => failing.completionService.completeDeposit({ depositId: failingDeposit.id, pgKey: "pk-f02-fail" }),
+      /MARKETPLACE_WRITE_FAILED/,
+    );
+
+    assert.equal(committed, 1);
+    assert.equal(rolledBack, 1);
+    // 트랜잭션 컨텍스트가 있으면 서비스가 수동 보상 쓰기를 하지 않고 DB 트랜잭션 롤백에 맡긴다.
+    assert.equal(
+      failingTrace.some((entry) => entry.port === "repo.deleteInstallments"),
+      false,
+    );
+  });
+
+  async function seedHeldDeposit(setup: ReturnType<typeof createTestSetup>) {
+    const created = await setup.repo.createDeposit({
+      contractId: setup.contract.id,
+      principal: setup.contract.agreedAmount,
+      clientFee: setup.contract.clientFee,
+      amount: 3_255_000,
+      method: "CARD",
+      status: "PENDING",
+      idempotencyKey: `idem-held-${Math.random()}`,
+      pgKey: null,
+      depositedAt: null,
+    });
+    await setup.repo.updateDeposit(created.id, { status: "HELD", heldReason: "AMOUNT_MISMATCH" });
+    const held = await setup.repo.findById(created.id);
+    assert.ok(held);
+    return held;
+  }
+
+  it("C-02-F03 HELD OPERATOR_VOIDED는 이벤트를 기록하고 예치 기한 판정을 재실행함", async () => {
+    const setup = createTestSetup();
+    const deposit = await seedHeldDeposit(setup);
+    setup.setNow(new Date("2026-11-08T00:00:00.000Z")); // 예치 기한(11/7) 경과
+
+    const result = await setup.completionService.resolveHeldDeposit({
+      depositId: deposit.id,
+      decision: "OPERATOR_VOIDED",
+      reason: "가상계좌 미입금 확인",
+      actorUserId: "admin-1",
+    });
+
+    assert.equal(result.deposit.status, "FAILED");
+    assert.equal(result.deadline.expired, true);
+    assert.equal(setup.contract.status, "CANCELLED");
+    assert.equal(setup.contract.paymentStatus, "PENDING");
+    const voided = (await setup.repo.listPaymentEvents(deposit.id)).filter(
+      (event) => event.eventType === "OPERATOR_VOIDED",
+    );
+    assert.equal(voided.length, 1);
+
+    const again = await setup.completionService.resolveHeldDeposit({
+      depositId: deposit.id,
+      decision: "OPERATOR_VOIDED",
+      reason: "가상계좌 미입금 확인",
+      actorUserId: "admin-1",
+    });
+    assert.equal(again.deposit.status, "FAILED");
+    assert.equal(
+      (await setup.repo.listPaymentEvents(deposit.id)).filter((event) => event.eventType === "OPERATOR_VOIDED")
+        .length,
+      1,
+    );
+  });
+
+  it("C-02-F03b OPERATOR_CONFIRMED는 검증된 PG 근거 없이는 거부됨", async () => {
+    const noEvidence = createTestSetup({
+      tossAdapter: {
+        async verifyPayment() {
+          return { verified: false };
+        },
+      },
+    });
+    const held = await seedHeldDeposit(noEvidence);
+
+    await assert.rejects(
+      () =>
+        noEvidence.completionService.resolveHeldDeposit({
+          depositId: held.id,
+          decision: "OPERATOR_CONFIRMED",
+          reason: "운영자 확인",
+          paymentKey: "pk-held",
+        }),
+      (err: unknown) => err instanceof DepositHttpError && err.status === 422,
+    );
+    assert.equal((await noEvidence.repo.findById(held.id))?.status, "HELD");
+    assert.equal((await noEvidence.repo.listInstallments(noEvidence.contract.id)).length, 0);
+
+    const verified = createTestSetup({
+      tossAdapter: {
+        async verifyPayment(orderId, paymentKey, amount) {
+          return { verified: true, orderId, paymentKey, amount, status: "DONE" };
+        },
+      },
+    });
+    const confirmedHeld = await seedHeldDeposit(verified);
+
+    const confirmed = await verified.completionService.resolveHeldDeposit({
+      depositId: confirmedHeld.id,
+      decision: "OPERATOR_CONFIRMED",
+      reason: "PG 거래 확인",
+      paymentKey: "pk-held-ok",
+    });
+
+    assert.equal(confirmed.deposit.status, "COMPLETED");
+    assert.equal(verified.contract.paymentStatus, "DEPOSITED");
+    assert.equal(confirmed.installments?.length, 2);
+    const events = await verified.repo.listPaymentEvents(confirmedHeld.id);
+    assert.equal(events.filter((event) => event.eventType === "OPERATOR_CONFIRMED").length, 1);
   });
 });
