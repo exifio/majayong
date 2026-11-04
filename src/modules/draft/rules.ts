@@ -12,16 +12,7 @@ export class DraftError extends Error {
   constructor(readonly code: string, readonly status: number) { super(code); }
 }
 
-function escapeRegExp(value: string): string { return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); }
-
-export function sanitizeDraftText(value: string, privateValues: string[]): string {
-  let text = value.replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, "[비공개]")
-    .replace(/(?:\+?82[-\s]?)?0\d{1,2}[-.\s]?\d{3,4}[-.\s]?\d{4}/g, "[비공개]");
-  for (const secret of privateValues) {
-    if (secret.trim().length >= 2) text = text.replace(new RegExp(escapeRegExp(secret.trim()), "gi"), "[비공개]");
-  }
-  return text;
-}
+export { sanitizeUserText as sanitizeDraftText } from "../../core/privacy.js";
 
 export function initialPendingFeature(key: string): PendingFeature {
   return { key, summary: "기능 분석 대기 중", attempts: 0, lastTriedAt: null };
