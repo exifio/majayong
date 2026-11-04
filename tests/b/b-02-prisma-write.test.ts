@@ -4,6 +4,7 @@ import { describe, it } from 'node:test';
 import {
   ApplicationUniqueViolation,
 } from '../../src/modules/application/submission.ts';
+import type { NotificationDbRow } from '../../src/modules/notification/prisma-adapter.ts';
 import {
   createApplicationTx,
   createPrismaApplicationUnitOfWork,
@@ -45,6 +46,7 @@ function makeDb(initial: readonly ApplicationRow[]) {
   let failCreate = false;
 
   const db: ApplicationDbClient = {
+    $queryRaw: async <T = unknown>() => [] as T,
     application: {
       async findMany(input) {
         const where = input.where as {
@@ -117,6 +119,16 @@ function makeDb(initial: readonly ApplicationRow[]) {
         return { count: 1 };
       },
     },
+    project: {
+      async findUnique() {
+        return { currentVersion: 1, status: 'RECRUITING' };
+      },
+    },
+    specItem: {
+      async findMany() {
+        return [{ id: 'spec-1' }, { id: 'spec-2' }];
+      },
+    },
     applicationMessage: {
       async create(input) {
         messages.push(input.data as Record<string, unknown>);
@@ -131,8 +143,8 @@ function makeDb(initial: readonly ApplicationRow[]) {
     notification: {
       findUnique: async () => null,
       async create(input) {
-        notifications.push(input.data as Record<string, unknown>);
-        return { ...input.data, id: 'n1', isRead: false };
+        notifications.push({ ...input.data });
+        return { ...input.data, id: 'n1', isRead: false } satisfies NotificationDbRow;
       },
       update: unused,
       findMany: async () => [],
@@ -259,5 +271,42 @@ describe('B-02 Prisma 쓰기 어댑터', () => {
       tx.findLatestRevision({ projectId: 'prj-1', supplierId: 'supplier-1' }),
     );
     assert.equal(latest?.id, 'app-1');
+  });
+
+  it('지원 트랜잭션은 프로젝트를 잠그고 현재 버전의 포함 항목만 읽는다', async () => {
+    const fixture = makeDb([]);
+    const queries: string[] = [];
+    const txDb: ApplicationDbClient = {
+      ...fixture.db,
+      $queryRaw: async <T = unknown>(strings: TemplateStringsArray) => {
+        queries.push(strings.join('?'));
+        return [] as T;
+      },
+      project: {
+        async findUnique(input) {
+          assert.deepEqual(input, {
+            where: { id: 'prj-1' },
+            select: { currentVersion: true, status: true },
+          });
+          return { currentVersion: 3, status: 'RECRUITING' };
+        },
+      },
+      specItem: {
+        async findMany(input) {
+          assert.deepEqual(input, {
+            where: { projectId: 'prj-1', versionNo: 3, status: 'INCLUDED' },
+            select: { id: true },
+          });
+          return [{ id: 'spec-current' }];
+        },
+      },
+    };
+
+    assert.deepEqual(await createApplicationTx(txDb).findProjectSpec('prj-1'), {
+      currentVersion: 3,
+      status: 'RECRUITING',
+      specItemIds: ['spec-current'],
+    });
+    assert.deepEqual(queries, ['SELECT id FROM projects WHERE id = ? FOR UPDATE']);
   });
 });

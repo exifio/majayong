@@ -31,8 +31,11 @@ import {
 import { createPrismaWithdrawalStore } from "./modules/identity/withdrawal.js";
 import { mountProfileApi, type ProfilePorts } from "./modules/profile/api.js";
 import { ProfileError } from "./modules/profile/errors.js";
+import { mountDraftApi } from "./modules/draft/api.js";
+import type { DraftPorts } from "./modules/draft/service.js";
 import { mountPricingApi } from "./modules/pricing/api.js";
 import { mountProjectApi } from "./modules/project/api.js";
+import type { ProjectPorts } from "./modules/project/ports.js";
 import type { PrismaClient } from "@prisma/client";
 
 export type AppOptions = {
@@ -45,6 +48,10 @@ export type AppOptions = {
   sendEmailChange?: (email: string, token: string) => Promise<void>;
   projectDisclosureConsentVersion?: () => string | null;
   profile?: ProfilePorts;
+  /** 공개 프로젝트 검색·열람·지원·알림 Port. 미주입 시 해당 라우트는 503으로 실패한다. */
+  project?: ProjectPorts;
+  /** 초안 생성·편집 Port(A-03 카탈로그 어댑터). 미주입 시 초안 라우트는 mount되지 않는다. */
+  draft?: DraftPorts;
   /** B/C 라우터. A와 같은 세션 인증으로 `/api/v1` 아래에 mount한다. */
   routers?: readonly Router[];
   /** B/C 라우터가 처리하지 못한 요청을 넘길 하위 핸들러(C의 node:http 라우터 등). */
@@ -338,12 +345,16 @@ export function createApp(options: AppOptions): Express {
 
   mountProfileApi(router, options.db, options.profile ?? {}, now, handler => authenticated(options, handler));
   mountPricingApi(router, options.db, now, handler => authenticated(options, handler));
+  if (options.draft) {
+    mountDraftApi(router, options.db, options.draft, now, handler => authenticated(options, handler));
+  }
   mountProjectApi(
     router,
     options.db,
     now,
     options.projectDisclosureConsentVersion ?? (() => null),
     handler => authenticated(options, handler),
+    options.project ?? {},
   );
 
   app.use("/api/v1", router);

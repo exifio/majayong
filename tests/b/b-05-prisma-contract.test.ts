@@ -8,6 +8,7 @@ import {
   type ContractRow,
 } from '../../src/modules/contract/prisma-adapter.ts';
 import { FIXED_NOW } from './fixtures.ts';
+import type { NotificationDbRow } from '../../src/modules/notification/prisma-adapter.ts';
 
 const unused = async (): Promise<never> => {
   throw new Error('unused');
@@ -64,6 +65,12 @@ function makeDb(rows: ContractRow[]) {
     if (statusIn?.in !== undefined && !statusIn.in.includes(row.status)) return false;
     return true;
   };
+  const matches = (row: ContractRow, where: Record<string, unknown>): boolean => {
+    if (!statusMatches(row, where)) return false;
+    if (where.clientSignedAt === null && row.clientSignedAt !== null) return false;
+    if (where.supplierSignedAt === null && row.supplierSignedAt !== null) return false;
+    return true;
+  };
 
   const db: ContractDbClient = {
     contract: {
@@ -74,7 +81,7 @@ function makeDb(rows: ContractRow[]) {
         const where = input.where as Record<string, unknown>;
         const or = where.OR as readonly Record<string, unknown>[] | undefined;
         const application = where.application as
-          | { project?: { clientId?: string }; supplierId?: string }
+          | { project?: { draft?: { clientId?: string } }; supplierId?: string }
           | undefined;
         return rows.filter((row) => {
           if (or !== undefined) {
@@ -89,8 +96,8 @@ function makeDb(rows: ContractRow[]) {
               return true;
             });
           }
-          if (application?.project?.clientId !== undefined) {
-            return row.application.project.clientId === application.project.clientId;
+          if (application?.project?.draft?.clientId !== undefined) {
+            return row.application.project.draft.clientId === application.project.draft.clientId;
           }
           if (application?.supplierId !== undefined) {
             return row.application.supplierId === application.supplierId;
@@ -128,7 +135,7 @@ function makeDb(rows: ContractRow[]) {
       },
       async updateMany(input) {
         const where = input.where as Record<string, unknown>;
-        const index = rows.findIndex((row) => row.id === where.id && statusMatches(row, where));
+        const index = rows.findIndex((row) => row.id === where.id && matches(row, where));
         const current = rows[index];
         if (index < 0 || current === undefined) return { count: 0 };
         rows[index] = { ...current, ...(input.data as Partial<ContractRow>) };
@@ -169,8 +176,8 @@ function makeDb(rows: ContractRow[]) {
     notification: {
       findUnique: async () => null,
       async create(input) {
-        notifications.push(input.data as Record<string, unknown>);
-        return { ...input.data, id: 'n1', isRead: false };
+        notifications.push({ ...input.data });
+        return { ...input.data, id: 'n1', isRead: false } satisfies NotificationDbRow;
       },
       update: unused,
       findMany: async () => [],
@@ -249,6 +256,18 @@ describe('B-05 Prisma 계약 어댑터', () => {
     assert.equal(signed?.status, 'ACTIVE');
     assert.equal(signed?.supplierSignedAt?.toISOString(), FIXED_NOW.toISOString());
     assert.equal(signed?.depositDeadline?.toISOString(), depositDeadline.toISOString());
+  });
+
+  it('서명은 이미 서명된 당사자의 중복 조건부 갱신을 거부한다', async () => {
+    const { db } = makeDb([contractRow({ clientSignedAt: FIXED_NOW })]);
+    const tx = createContractTx(db, { hasDepositAttempt: async () => false });
+
+    const result = await tx.applySignature({
+      contractId: 'contract-1', party: 'CLIENT', signedAt: FIXED_NOW,
+      activate: false, depositDeadline: null,
+    });
+
+    assert.equal(result, null);
   });
 
   it('상태 조건부 갱신은 현재 상태가 허용될 때만 성공한다', async () => {

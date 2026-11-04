@@ -446,48 +446,47 @@ describe("C-06: 예치 후 계약 취소·이의·운영자 수동 처리", () =
     }
   });
 
-  it("C-06-T09 24시간 내 무납품 전액 환불은 보상 비율 null", async () => {
-    const { service, contract, repo } = createTestSetup();
+  it("C-06-T09 D-16 승인 전 24시간 내 무납품 전액 환불 판정을 차단", async () => {
+    const agreed = createTestSetup();
     const within24h = new Date(depositTime.getTime() + 2 * 60 * 60 * 1000);
 
-    await repo.updateContract(contract.id, {
+    await agreed.repo.updateContract(agreed.contract.id, {
       status: "CANCEL_REQUESTED",
       cancelCause: "CLIENT",
-      cancelRequestedBy: contract.clientUserId,
+      cancelRequestedBy: agreed.contract.clientUserId,
       cancelRequestedAt: within24h,
       cancelNote: "24시간 이내 전액 환불 요청",
-      cancelEscalatedAt: within24h,
     });
 
-    const decided = await service.decideCancellation({
-      contractId: contract.id,
-      compensationRate: 0,
-      reason: "24시간 내 무납품 전액환불",
-    });
-    assert.equal(decided.compensationRate, null);
-    assert.equal(decided.refundAmount, contract.totalDeposited);
-    assert.equal(decided.settledAmount, 0);
-    assert.equal(decided.clientFeeRefund, contract.clientFee);
+    await assert.rejects(
+      () =>
+        agreed.service.agreeCancellation(
+          { userId: agreed.contract.supplierUserId, role: "SUPPLIER" },
+          { contractId: agreed.contract.id },
+        ),
+      (err: unknown) =>
+        err instanceof CancellationHttpError && err.status === 409 && err.message === "D16_BLOCKED",
+    );
 
-    const delivered = createTestSetup();
-    await delivered.repo.updateInstallment(delivered.interimInstallment.id, { status: "DELIVERED" });
-    await delivered.repo.updateContract(delivered.contract.id, {
+    const decided = createTestSetup();
+    await decided.repo.updateContract(decided.contract.id, {
       status: "CANCEL_REQUESTED",
       cancelCause: "CLIENT",
-      cancelRequestedBy: delivered.contract.clientUserId,
+      cancelRequestedBy: decided.contract.clientUserId,
       cancelRequestedAt: within24h,
       cancelEscalatedAt: within24h,
     });
     await assert.rejects(
       () =>
-        delivered.service.decideCancellation({
-          contractId: delivered.contract.id,
+        decided.service.decideCancellation({
+          contractId: decided.contract.id,
           compensationRate: 0,
-          reason: "납품 후 0%",
+          reason: "24시간 내 무납품 전액환불",
         }),
       (err: unknown) => {
         if (!(err instanceof CancellationHttpError)) return false;
-        assert.equal(err.status, 422);
+        assert.equal(err.status, 409);
+        assert.equal(err.message, "D16_BLOCKED");
         return true;
       },
     );

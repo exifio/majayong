@@ -28,9 +28,11 @@ describe("C-09: 관리자 블록/예치/분쟁/정산/감사 API", () => {
     const repo = createInMemoryAdminRepository();
 
     let catalogActionCalled = false;
+    let catalogActionInput: Parameters<CatalogAdminPort["executeBlockAction"]>[0] | undefined;
     const catalogPort: CatalogAdminPort = {
-      async executeBlockAction(input: { blockId: string; action: string; reason: string; unitPrice?: number; mergedIntoId?: string }) {
+      async executeBlockAction(input: { actorId: string; blockId: string; action: string; reason: string; unitPrice?: number; mergedIntoId?: string }) {
         catalogActionCalled = true;
+        catalogActionInput = input;
         return { success: true, blockId: input.blockId, action: input.action };
       },
     };
@@ -238,6 +240,7 @@ describe("C-09: 관리자 블록/예치/분쟁/정산/감사 API", () => {
       repo,
       service,
       getCatalogActionCalled: () => catalogActionCalled,
+      getCatalogActionInput: () => catalogActionInput,
       heldDeposit,
       heldDepositId: heldDeposit?.id ?? "",
       addHeldDeposit,
@@ -307,7 +310,7 @@ describe("C-09: 관리자 블록/예치/분쟁/정산/감사 API", () => {
   });
 
   it("C-09-T03 블록 운영 변경 시 사본 가격 불변", async () => {
-    const { service, getCatalogActionCalled } = await createTestSetup();
+    const { service, getCatalogActionCalled, getCatalogActionInput } = await createTestSetup();
     const adminActor = { userId: "admin-1", role: "ADMIN" };
 
     // 블록 단가 수정 (A의 catalogPort 호출)
@@ -319,6 +322,7 @@ describe("C-09: 관리자 블록/예치/분쟁/정산/감사 API", () => {
 
     assert.equal(res.success, true);
     assert.equal(getCatalogActionCalled(), true);
+    assert.equal(getCatalogActionInput()?.actorId, adminActor.userId);
   });
 
   it("C-09-T04 보류 입금 확정/취소 멱등성", async () => {
@@ -469,7 +473,7 @@ describe("C-09: 관리자 블록/예치/분쟁/정산/감사 API", () => {
     assert.equal(decisionLogs[0]?.reason, "착수 보상 판정");
   });
 
-  it("C-09-T05c 24시간 내 무납품은 관리자 판정도 보상 비율 null", async () => {
+  it("C-09-T05c D-16 승인 전 24시간 내 무납품 관리자 판정을 차단", async () => {
     const { service, repo, cancellationRepo } = await createTestSetup();
     const depositedAt = new Date(baseTime.getTime() - 2 * 60 * 60 * 1000);
 
@@ -527,15 +531,16 @@ describe("C-09: 관리자 블록/예치/분쟁/정산/감사 API", () => {
 
     await seedCancellation("contract-cancel-24h", ["PENDING", "PENDING"]);
 
-    const decided = await service.decideCancellation(
-      { userId: "admin-1", role: "ADMIN" },
-      "contract-cancel-24h",
-      { compensationRate: 0, reason: "24시간 내 무납품" },
+    await assert.rejects(
+      () =>
+        service.decideCancellation(
+          { userId: "admin-1", role: "ADMIN" },
+          "contract-cancel-24h",
+          { compensationRate: 0, reason: "24시간 내 무납품" },
+        ),
+      (err: unknown) =>
+        err instanceof AdminHttpError && err.status === 409 && err.message === "D16_BLOCKED",
     );
-    assert.equal(decided.compensationRate, null);
-    assert.equal(decided.refundAmount, 3_255_000);
-    assert.equal(decided.settledAmount, 0);
-    assert.equal(decided.clientFeeRefund, 155_000);
 
     await seedCancellation("contract-cancel-delivered", ["DELIVERED", "PENDING"]);
     await assert.rejects(

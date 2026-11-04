@@ -185,9 +185,12 @@ export async function publishDraft(
       data: {
         userId: clientId,
         projectId: project.id,
-        type: "PROJECT_PUBLISHED",
+        type: EventType.PROJECT_PUBLISHED,
         payload: { disclosureScope: input.disclosureScope, disclosureConsentVersion: PROJECT_DISCLOSURE_CONSENT_DRAFT_VERSION },
       },
+    });
+    await tx.eventLog.create({
+      data: { userId: clientId, projectId: project.id, type: EventType.SPEC_CONFIRMED, occurredAt: now },
     });
     return {
       projectId: project.id,

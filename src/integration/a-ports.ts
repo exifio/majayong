@@ -5,9 +5,12 @@
  * 구조적으로 연결한다. A 코드는 import하지 않는다.
  */
 import type {
+  ProjectCandidatePort,
   ProjectSearchPort,
   RecruitmentStatusFilter,
 } from '../modules/market/project-search.js';
+import type { ProjectStatus } from '../modules/market/public-project.js';
+import { hopeBudgetRange } from '../modules/project/policy.js';
 import {
   recordProjectDetailView,
   type ProjectViewPort,
@@ -38,8 +41,8 @@ export interface AProjectSearchQuery {
 
 export interface AProjectSearchPort {
   searchPublicProjects(query: AProjectSearchQuery): Promise<{
-    readonly projectIds: readonly string[];
-    readonly total: number;
+    projectIds: string[];
+    total: number;
   }>;
 }
 
@@ -76,6 +79,70 @@ export function createAProjectSearchPort(search: ProjectSearchPort): AProjectSea
         page: query.page,
       });
       return { projectIds: page.items.map((item) => item.id), total: page.meta.total };
+    },
+  };
+}
+
+/**
+ * A가 B 검색 Port(`createProjectSearchPort`)에 넘기는 공개 후보 목록.
+ *
+ * 정확 예산은 노출하지 않고 A에서 승인한 `hopeBudgetRange`(구간 경계)로만 변환한다.
+ * 삭제된 프로젝트와 비공개 상태는 제외한다(전체 공개 대상: 모집/선택/마감).
+ */
+export interface CandidateProjectRow {
+  readonly id: string;
+  readonly title: string;
+  readonly summary: string;
+  readonly industryCode: string;
+  readonly requiredSkills: readonly string[];
+  readonly hopeBudget: number | null;
+  readonly deadline: Date | null;
+  readonly publishedAt: Date | null;
+  readonly currentVersion: number;
+  readonly status: ProjectStatus;
+  readonly items: readonly { readonly title: string; readonly versionNo: number }[];
+}
+
+export interface ProjectCandidateDb {
+  readonly project: {
+    findMany(input: {
+      readonly where: Readonly<Record<string, unknown>>;
+      readonly include: {
+        readonly items: {
+          readonly where: Readonly<Record<string, unknown>>;
+          readonly select: { readonly title: true; readonly versionNo: true };
+        };
+      };
+    }): Promise<readonly CandidateProjectRow[]>;
+  };
+}
+
+const PUBLIC_CANDIDATE_STATUSES = ['RECRUITING', 'SELECTING', 'EXPIRED'] as const;
+
+export function createProjectCandidatePort(db: ProjectCandidateDb): ProjectCandidatePort {
+  return {
+    async listPublicProjectCandidates() {
+      const rows = await db.project.findMany({
+        where: { deletedAt: null, status: { in: [...PUBLIC_CANDIDATE_STATUSES] } },
+        include: { items: { where: { status: 'INCLUDED' }, select: { title: true, versionNo: true } } },
+      });
+      return rows.map((row) => {
+        const current = row.items.filter((item) => item.versionNo === row.currentVersion);
+        return {
+          id: row.id,
+          title: row.title,
+          summary: row.summary,
+          industryCode: row.industryCode,
+          requiredSkills: [...row.requiredSkills],
+          hopeBudgetRange: hopeBudgetRange(row.hopeBudget),
+          deadline: row.deadline,
+          status: row.status,
+          publishedAt: row.publishedAt,
+          currentSpecVersion: row.currentVersion,
+          specItemCount: current.length,
+          specItemTitles: current.map((item) => item.title),
+        };
+      });
     },
   };
 }

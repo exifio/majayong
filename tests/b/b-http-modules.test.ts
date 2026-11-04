@@ -210,3 +210,61 @@ describe('Gate 0 HTTP: 나머지 모듈 라우터 장착', () => {
     });
   });
 });
+
+describe('G2-02 계약 미리보기 권한', () => {
+  it('당사자만 합의 미리보기를 읽고 비당사자에게는 존재를 숨긴다', async () => {
+    const router = createContractRouter({
+      uow: { run: unused },
+      reads: { listForUser: async () => [], findById: unused },
+      applications: {
+        async findRevision(id) {
+          return id === 'app-1'
+            ? {
+                id: 'app-1', projectId: 'prj-1', clientUserId: 'client-1', supplierId: 'supplier-1',
+                revisionNo: 1, specVersionNo: 1, status: 'SUBMITTED', totalAmount: 10_000,
+                durationDays: 1, message: null, questions: [], isMessageMasked: false,
+                revisionReason: null, firstViewedAt: FIXED_NOW, submittedAt: FIXED_NOW, items: [],
+              }
+            : null;
+        },
+      },
+      agreements: { get: async () => null, save: unused, invalidate: unused },
+      items: { listSources: async () => [] },
+      preview: {
+        getSpec: async () => ({ items: [], defaultInterimRatio: 50 }),
+        getMessages: async () => [],
+      },
+      now: () => FIXED_NOW,
+    });
+    const app = createApp({
+      auth: createDevAuthVerifier([
+        { token: 'client-token', actor: CLIENT },
+        { token: 'supplier-token', actor: SUPPLIER },
+        { token: 'outsider-token', actor: { userId: 'outsider-1', role: 'CLIENT' } },
+      ]),
+      routers: [{ basePath: '', router }],
+    });
+
+    await withServer(app, async (call) => {
+      const own = await call({
+        method: 'GET', path: '/api/v1/applications/app-1/agreement-preview', token: 'client-token',
+      });
+      assert.equal(own.status, 200);
+
+      const other = await call({
+        method: 'GET', path: '/api/v1/applications/app-1/agreement-preview', token: 'supplier-token',
+      });
+      assert.equal(other.status, 200);
+
+      const outsider = await call({
+        method: 'GET', path: '/api/v1/applications/app-1/agreement-preview', token: 'outsider-token',
+      });
+      assert.equal(outsider.status, 404);
+
+      const missing = await call({
+        method: 'GET', path: '/api/v1/applications/ghost/agreement-preview', token: 'client-token',
+      });
+      assert.equal(missing.status, 404);
+    });
+  });
+});

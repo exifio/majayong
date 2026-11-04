@@ -103,6 +103,47 @@ describe('B-02 Prisma 읽기 어댑터', () => {
     assert.equal((await port.listRevisionsByProject('prj-1')).length, 2);
   });
 
+  it('비교 카드는 공개 동의·게시된 요약만 노출하고 연락처를 가린다', async () => {
+    const fixture = db([row()]);
+    const calls: unknown[] = [];
+    const port = createPrismaApplicationReadPort({
+      ...fixture.client,
+      supplierProfile: {
+        async findMany(input) {
+          calls.push(input);
+          return [
+            {
+              userId: 'supplier-1', careerYears: 8, ratingAvg: 4.8, reviewCount: 3,
+              portfolioSummary: '메일 a@b.com', portfolioSummaryStatus: 'PUBLISHED',
+              portfolioConsentAt: FIXED_NOW, user: { withdrawnAt: null }, applications: [{ id: 'completed-1' }],
+            },
+            {
+              userId: 'supplier-2', careerYears: 2, ratingAvg: null, reviewCount: 0,
+              portfolioSummary: '비공개 요약', portfolioSummaryStatus: 'HIDDEN',
+              portfolioConsentAt: FIXED_NOW, user: { withdrawnAt: null }, applications: [],
+            },
+            {
+              userId: 'supplier-3', careerYears: 2, ratingAvg: null, reviewCount: 0,
+              portfolioSummary: '철회 사용자', portfolioSummaryStatus: 'PUBLISHED',
+              portfolioConsentAt: FIXED_NOW, user: { withdrawnAt: FIXED_NOW }, applications: [],
+            },
+          ];
+        },
+      },
+    });
+
+    const summaries = await port.listSupplierProfileSummaries(['supplier-1', 'supplier-2', 'supplier-3']);
+
+    assert.equal(calls.length, 1);
+    assert.deepEqual(summaries, [{
+      supplierId: 'supplier-1', careerYears: 8, ratingAvg: 4.8, reviewCount: 3,
+      completedContractCount: 1, portfolioSummary: '메일 [연락처 비공개]',
+    }, {
+      supplierId: 'supplier-2', careerYears: 2, ratingAvg: null, reviewCount: 0,
+      completedContractCount: 0, portfolioSummary: null,
+    }]);
+  });
+
   it('깨진 questions JSON은 조용히 버리지 않고 거부한다', async () => {
     const port = createPrismaApplicationReadPort(db([row({ questions: 'broken' })]).client);
 

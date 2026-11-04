@@ -4,11 +4,13 @@ import { describe, it } from 'node:test';
 import {
   createChatAccountPort,
   createChatEventPort,
+  createAgreementPreviewPort,
   createContractItemSourcePort,
   createDepositAttemptPort,
   createIntegrationPorts,
   createProjectStatePort,
   type IntegrationDb,
+  type IntegrationTransactionDb,
 } from '../../src/integration/external-ports.ts';
 import { HttpError } from '../../src/http/envelope.ts';
 import { FIXED_NOW } from './fixtures.ts';
@@ -46,7 +48,7 @@ describe('A/C 읽기 Port 어댑터', () => {
     assert.deepEqual(state, {
       clientUserId: 'client-1',
       status: 'RECRUITING',
-      specVersionNo: 2,
+      currentVersion: 2,
       specItemIds: ['spec-2'],
     });
   });
@@ -78,6 +80,49 @@ describe('A/C 읽기 Port 어댑터', () => {
     assert.deepEqual(sources, [
       { blockId: 'block-1', description: '예약', origin: 'FIRST_SENTENCE', sortOrder: 0 },
     ]);
+  });
+
+  it('합의 미리보기는 지원 명세 스냅샷 순서로 기본 지급 구간을 만들고 메시지 연락처를 가린다', async () => {
+    const db: IntegrationDb = {
+      project: { findUnique: unused },
+      application: {
+        async findUnique(input) {
+          assert.equal(input.where.id, 'app-1');
+          return { projectId: 'prj-1', specVersionNo: 3 };
+        },
+      },
+      specItem: {
+        findMany: unused,
+        async findAgreementItems(input) {
+          assert.equal(input.where.versionNo, 3);
+          assert.deepEqual(input.orderBy, [{ sortOrder: 'asc' }, { id: 'asc' }]);
+          return [
+            { id: 's1', blockId: 'b1', title: '첫 항목', conditions: [{ key: 'scope', text: '범위' }], sortOrder: 0 },
+            { id: 's2', blockId: 'b2', title: '둘째 항목', conditions: null, sortOrder: 1 },
+            { id: 's3', blockId: 'b3', title: '셋째 항목', conditions: null, sortOrder: 2 },
+          ];
+        },
+      },
+      applicationMessage: {
+        async findMany() {
+          return [{ id: 'm1', senderId: 'supplier-1', body: 'email a@b.com', createdAt: FIXED_NOW }];
+        },
+      },
+      user: { findUnique: unused },
+      escrowDeposit: { count: unused },
+      eventLog: { findFirst: unused, create: unused },
+    };
+    const preview = createAgreementPreviewPort(db);
+
+    assert.deepEqual(await preview.getSpec('app-1'), {
+      items: [
+        { blockId: 'b1', specItemId: 's1', title: '첫 항목', stage: 'INTERIM', conditions: [{ key: 'scope', text: '범위' }] },
+        { blockId: 'b2', specItemId: 's2', title: '둘째 항목', stage: 'INTERIM', conditions: [] },
+        { blockId: 'b3', specItemId: 's3', title: '셋째 항목', stage: 'FINAL', conditions: [] },
+      ],
+      defaultInterimRatio: 50,
+    });
+    assert.equal((await preview.getMessages('app-1'))[0]?.body, 'email [연락처 비공개]');
   });
 
   it('채팅 계정 상태는 User 제재 필드만 읽고, 없는 계정은 401이다', async () => {
@@ -131,6 +176,7 @@ describe('A/C 읽기 Port 어댑터', () => {
   it('최초 문의 이벤트는 프로젝트당 한 번만 만든다', async () => {
     const created: Record<string, unknown>[] = [];
     let existing = false;
+    let transactionTail = Promise.resolve();
     const db: IntegrationDb = {
       project: { findUnique: unused },
       specItem: { findMany: unused },
@@ -146,6 +192,20 @@ describe('A/C 읽기 Port 어댑터', () => {
           existing = true;
           return input.data;
         },
+      },
+      $transaction: async (work) => {
+        const previous = transactionTail;
+        let unlock!: () => void;
+        transactionTail = new Promise<void>((resolve) => { unlock = resolve; });
+        await previous;
+        try {
+          return await work({
+            eventLog: db.eventLog,
+            $queryRaw: async <T>() => [] as unknown as T,
+          });
+        } finally {
+          unlock();
+        }
       },
     };
     const port = createChatEventPort(db);
@@ -167,6 +227,50 @@ describe('A/C 읽기 Port 어댑터', () => {
       }),
       false,
     );
+  });
+
+  it('동시에 열린 같은 프로젝트의 문의 중 최초 이벤트 하나만 기록한다', async () => {
+    const created: Record<string, unknown>[] = [];
+    let existing = false;
+    let transactionTail = Promise.resolve();
+    const db: IntegrationDb = {
+      project: { findUnique: unused },
+      specItem: { findMany: unused },
+      application: { findUnique: unused },
+      user: { findUnique: unused },
+      escrowDeposit: { count: unused },
+      eventLog: {
+        async findFirst() {
+          return existing ? { id: 'evt-1' } : null;
+        },
+        async create(input) {
+          created.push(input.data as Record<string, unknown>);
+          existing = true;
+          return input.data;
+        },
+      },
+      $transaction: async (work) => {
+        const previous = transactionTail;
+        let unlock!: () => void;
+        transactionTail = new Promise<void>((resolve) => { unlock = resolve; });
+        await previous;
+        try {
+          return await work({ eventLog: db.eventLog, $queryRaw: async <T>() => [] as unknown as T });
+        } finally {
+          unlock();
+        }
+      },
+    };
+    const port = createChatEventPort(db);
+    const input = { projectId: 'prj-1', clientUserId: 'client-1', openedAt: FIXED_NOW };
+
+    const opened = await Promise.all([
+      port.recordInquiryOpenedOnce(input),
+      port.recordInquiryOpenedOnce(input),
+    ]);
+
+    assert.deepEqual(opened.sort(), [false, true]);
+    assert.equal(created.length, 1);
   });
 
   it('계약이 없는 Port는 호출 시 503 INTEGRATION_PENDING으로 실패한다', async () => {

@@ -95,6 +95,8 @@ export interface NotificationPorts {
     type: string;
     targetId: string;
     targetUrl?: string;
+    /** 기한 알림(DEPOSIT_DUE/INSPECTION_DUE/WORK_DUE/WORK_OVERDUE)은 dueAt이 필수다. */
+    dueAt?: Date;
   }): Promise<{ created: boolean }>;
 }
 
@@ -865,6 +867,7 @@ export class InspectionBatchService {
           userId: contract.clientUserId,
           type: "DEPOSIT_DUE",
           targetId: contract.id,
+          dueAt: contract.depositDeadline,
         });
       }
     }
@@ -893,6 +896,7 @@ export class InspectionBatchService {
         userId: contract.clientUserId,
         type: "INSPECTION_DUE",
         targetId: latest.id,
+        dueAt: latest.inspectionDueAt,
       });
     }
 
@@ -907,6 +911,7 @@ export class InspectionBatchService {
             userId: contract.supplierUserId,
             type: "WORK_DUE",
             targetId: contract.id,
+            dueAt: contract.workDueAt,
           });
         }
       } else if (
@@ -920,11 +925,13 @@ export class InspectionBatchService {
           userId: contract.clientUserId,
           type: "WORK_OVERDUE",
           targetId: contract.id,
+          dueAt: contract.workDueAt,
         });
         await this.notificationPorts.createOnce({
           userId: contract.supplierUserId,
           type: "WORK_OVERDUE",
           targetId: contract.id,
+          dueAt: contract.workDueAt,
         });
       }
     }

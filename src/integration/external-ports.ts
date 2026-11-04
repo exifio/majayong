@@ -1,7 +1,7 @@
 /**
  * Gate 2: A/C 소유 데이터를 읽어 B 라우터에 주입하는 어댑터.
  *
- * 읽기 전용이며, 소유 서비스의 규칙을 복제하지 않는다. 아직 계약이 없는 Port는
+ * 읽기는 owner projection을 쓰고 쓰기는 전달받은 transaction에 참여한다. 아직 계약이 없는 Port는
  * 호출 시점에 503 `INTEGRATION_PENDING`으로 실패해 조용히 틀린 값을 만들지 않는다.
  */
 import { HttpError } from '../http/envelope.js';
@@ -13,6 +13,10 @@ import type { ReportAccountActionPort } from '../modules/report/prisma-adapter.j
 import type { AgreementMessage, AgreementSpec } from '../modules/agreement/draft.js';
 import type { ExternalPorts } from '../server.js';
 import type { ProjectStatus } from '../modules/market/public-project.js';
+import { toPublicProjectSummary, type PublicProjectSummary } from '../modules/market/public-project.js';
+import type { ProjectCandidatePort, SupplierRecommendationProfile } from '../modules/market/project-search.js';
+import type { SupplierProfileSummary } from '../modules/application/submission.js';
+import { maskContacts } from '../modules/chat/masking.js';
 
 interface ProjectRow {
   readonly id: string;
@@ -59,12 +63,35 @@ export interface IntegrationDb {
       };
       readonly orderBy?: readonly Readonly<Record<string, 'asc' | 'desc'>>[];
     }): Promise<readonly SpecItemRow[]>;
+    findAgreementItems?(input: {
+      readonly where: Readonly<Record<string, unknown>>;
+      readonly select: { readonly id: true; readonly blockId: true; readonly title: true; readonly conditions: true; readonly sortOrder: true };
+      readonly orderBy: readonly Readonly<Record<string, 'asc' | 'desc'>>[];
+    }): Promise<readonly AgreementSpecItemRow[]>;
+  };
+  readonly applicationMessage?: {
+    findMany(input: {
+      readonly where: Readonly<Record<string, unknown>>;
+      readonly select: { readonly id: true; readonly senderId: true; readonly body: true; readonly createdAt: true };
+      readonly orderBy: readonly Readonly<Record<string, 'asc' | 'desc'>>[];
+    }): Promise<readonly AgreementMessage[]>;
   };
   readonly application: {
     findUnique(input: {
       readonly where: { readonly id: string };
       readonly select: { readonly projectId: true; readonly specVersionNo: true };
     }): Promise<{ readonly projectId: string; readonly specVersionNo: number } | null>;
+    findMany?(input: {
+      readonly where: Readonly<Record<string, unknown>>;
+      readonly select: { readonly projectId: true };
+    }): Promise<readonly { readonly projectId: string }[]>;
+  };
+  readonly supplierProfile?: {
+    findUnique(input: { readonly where: { readonly userId: string } }): Promise<{
+      readonly userId: string;
+      readonly industryCodes: readonly string[];
+      readonly skills: readonly string[];
+    } | null>;
   };
   readonly user: {
     findUnique(input: {
@@ -75,6 +102,10 @@ export interface IntegrationDb {
         readonly chatRestrictedUntil: true;
       };
     }): Promise<UserStateRow | null>;
+    updateMany?(input: {
+      readonly where: Readonly<Record<string, unknown>>;
+      readonly data: Readonly<Record<string, unknown>>;
+    }): Promise<{ readonly count: number }>;
   };
   readonly escrowDeposit: {
     count(input: {
@@ -88,6 +119,63 @@ export interface IntegrationDb {
     }): Promise<{ readonly id: string } | null>;
     create(input: { readonly data: Readonly<Record<string, unknown>> }): Promise<unknown>;
   };
+  readonly $transaction?: <T>(work: (tx: IntegrationTransactionDb) => Promise<T>) => Promise<T>;
+}
+
+export interface PublicProfileDb extends IntegrationDb {
+  readonly application: IntegrationDb['application'] & {
+    findMany(input: {
+      readonly where: Readonly<Record<string, unknown>>;
+      readonly select: { readonly projectId: true };
+    }): Promise<readonly { readonly projectId: string }[]>;
+  };
+  readonly supplierProfile: {
+    findUnique(input: { readonly where: { readonly userId: string } }): Promise<{
+      readonly userId: string;
+      readonly industryCodes: readonly string[];
+      readonly skills: readonly string[];
+    } | null>;
+    findMany(input: {
+      readonly where: { readonly userId: { readonly in: readonly string[] } };
+      readonly select: {
+        readonly userId: true;
+        readonly careerYears: true;
+        readonly ratingAvg: true;
+        readonly reviewCount: true;
+        readonly portfolioSummary: true;
+        readonly portfolioSummaryStatus: true;
+        readonly portfolioConsentAt: true;
+        readonly user: { readonly select: { readonly withdrawnAt: true } };
+        readonly applications: {
+          readonly where: { readonly contract: { readonly is: { readonly status: 'COMPLETED' } } };
+          readonly select: { readonly id: true };
+        };
+      };
+    }): Promise<readonly {
+      readonly userId: string;
+      readonly careerYears: number | null;
+      readonly ratingAvg: number | null;
+      readonly reviewCount: number;
+      readonly portfolioSummary: string | null;
+      readonly portfolioSummaryStatus: string | null;
+      readonly portfolioConsentAt: Date | null;
+      readonly user: { readonly withdrawnAt: Date | null };
+      readonly applications: readonly { readonly id: string }[];
+    }[]>;
+  };
+}
+
+export interface IntegrationTransactionDb {
+  readonly eventLog: IntegrationDb['eventLog'];
+  $queryRaw<T = unknown>(query: TemplateStringsArray, ...values: unknown[]): Promise<T>;
+}
+
+interface AgreementSpecItemRow {
+  readonly id: string;
+  readonly blockId: string;
+  readonly title: string;
+  readonly conditions: unknown;
+  readonly sortOrder: number;
 }
 
 const INCLUDED = { status: 'INCLUDED' } as const;
@@ -118,7 +206,7 @@ export function createProjectStatePort(db: IntegrationDb): ProjectStateReadPort 
       return {
         clientUserId: project.draft.clientId,
         status: project.status,
-        specVersionNo: project.currentVersion,
+        currentVersion: project.currentVersion,
         specItemIds: items.map((item) => item.id),
       };
     },
@@ -189,27 +277,134 @@ export function createDepositAttemptPort(db: IntegrationDb): DepositAttemptPort 
   };
 }
 
-/**
- * 최초 문의 이벤트. A의 recordEvent Port가 동결되기 전까지 EventLog에 직접 남긴다.
- * ponytail: find-then-create라 동시 호출 원자성은 A Port 연결 후 보장한다.
- */
+/** 같은 프로젝트 행을 잠그고 최초 문의 이벤트를 기록한다. */
 export function createChatEventPort(db: IntegrationDb): ChatEventPort {
   return {
     async recordInquiryOpenedOnce(input) {
-      const existing = await db.eventLog.findFirst({
-        where: { type: 'INQUIRY_OPENED', projectId: input.projectId },
-        select: { id: true },
+      if (db.$transaction === undefined) pendingPort('ChatEvent.Transaction');
+      return db.$transaction(async (tx) => {
+        // Lock the project row so concurrent opens serialize without a schema/index change.
+        await tx.$queryRaw`SELECT id FROM projects WHERE id = ${input.projectId} FOR UPDATE`;
+        const existing = await tx.eventLog.findFirst({
+          where: { type: 'INQUIRY_OPENED', projectId: input.projectId },
+          select: { id: true },
+        });
+        if (existing !== null) return false;
+        await tx.eventLog.create({
+          data: {
+            userId: input.clientUserId,
+            type: 'INQUIRY_OPENED',
+            projectId: input.projectId,
+            occurredAt: input.openedAt,
+          },
+        });
+        return true;
       });
-      if (existing !== null) return false;
-      await db.eventLog.create({
-        data: {
-          userId: input.clientUserId,
-          type: 'INQUIRY_OPENED',
-          projectId: input.projectId,
-          occurredAt: input.openedAt,
-        },
+    },
+  };
+}
+
+function specConditions(value: unknown): AgreementSpec['items'][number]['conditions'] {
+  if (value === null) return [];
+  if (!Array.isArray(value)) throw new HttpError(503, 'AGREEMENT_SPEC_INVALID', '명세 조건을 읽을 수 없습니다.');
+  return value.map((condition) => {
+    if (typeof condition !== 'object' || condition === null ||
+      typeof (condition as { key?: unknown }).key !== 'string' ||
+      typeof (condition as { text?: unknown }).text !== 'string') {
+      throw new HttpError(503, 'AGREEMENT_SPEC_INVALID', '명세 조건을 읽을 수 없습니다.');
+    }
+    return { key: (condition as { key: string }).key, text: (condition as { text: string }).text };
+  });
+}
+
+export function createAgreementPreviewPort(db: IntegrationDb): NonNullable<IntegrationPortOptions['agreementPreview']> {
+  return {
+    async getSpec(applicationId) {
+      if (db.specItem.findAgreementItems === undefined) pendingPort('AgreementSpec');
+      const application = await db.application.findUnique({
+        where: { id: applicationId },
+        select: { projectId: true, specVersionNo: true },
       });
-      return true;
+      if (application === null) return null;
+      const rows = await db.specItem.findAgreementItems({
+        where: { projectId: application.projectId, versionNo: application.specVersionNo, status: 'INCLUDED' },
+        select: { id: true, blockId: true, title: true, conditions: true, sortOrder: true },
+        orderBy: [{ sortOrder: 'asc' }, { id: 'asc' }],
+      });
+      const interimCount = Math.ceil(rows.length / 2);
+      return {
+        items: rows.map((row, index) => ({
+          blockId: row.blockId,
+          specItemId: row.id,
+          title: row.title,
+          stage: index < interimCount ? 'INTERIM' : 'FINAL',
+          conditions: specConditions(row.conditions),
+        })),
+        defaultInterimRatio: 50,
+      };
+    },
+    async getMessages(applicationId) {
+      if (db.applicationMessage === undefined) pendingPort('AgreementMessage');
+      const rows = await db.applicationMessage.findMany({
+        where: { applicationId, kind: 'TEXT', senderId: { not: null } },
+        select: { id: true, senderId: true, body: true, createdAt: true },
+        orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+      });
+      return rows.map((row) => ({ ...row, body: maskContacts(row.body).text }));
+    },
+  };
+}
+
+export function createPublicProjectPorts(
+  db: PublicProfileDb,
+  candidates: ProjectCandidatePort,
+): {
+  readonly projects: ExternalPorts['projects'];
+  readonly recommendations: ExternalPorts['recommendations'];
+} {
+  async function listPublicProjects(): Promise<readonly PublicProjectSummary[]> {
+    const value = await candidates.listPublicProjectCandidates();
+    if (!Array.isArray(value)) throw new HttpError(502, 'PUBLIC_PROJECT_CONTRACT_VIOLATION', '공개 프로젝트 응답이 올바르지 않습니다.');
+    return value.map(toPublicProjectSummary);
+  }
+
+  return {
+    projects: {
+      async listPublicProjectsByIds(ids) {
+        const wanted = new Set(ids);
+        return (await listPublicProjects()).filter((project) => wanted.has(project.id));
+      },
+    },
+    recommendations: {
+      async getSupplier(userId): Promise<SupplierRecommendationProfile | null> {
+        if (db.supplierProfile === undefined) pendingPort('SupplierRecommendation');
+        const row = await db.supplierProfile.findUnique({ where: { userId } });
+        return row === null ? null : { supplierId: row.userId, industryCodes: row.industryCodes, skills: row.skills };
+      },
+      async listOpenProjects() {
+        return (await listPublicProjects()).filter((project) => project.status === 'RECRUITING');
+      },
+      async listAppliedProjectIds(supplierId) {
+        if (db.application.findMany === undefined) pendingPort('Application');
+        const rows = await db.application.findMany({ where: { supplierId }, select: { projectId: true } });
+        return [...new Set(rows.map((row) => row.projectId))];
+      },
+    },
+  };
+}
+
+export function createReportAccountActionPort(db: IntegrationDb): ReportAccountActionPort {
+  return {
+    async applyAccountAction(input, tx) {
+      const user = tx?.user ?? db.user;
+      const where = input.action === 'SUSPEND'
+        ? { id: input.userId }
+        : { id: input.userId, OR: [{ chatRestrictedUntil: null }, { chatRestrictedUntil: { lt: input.until } }] };
+      const data = input.action === 'SUSPEND'
+        ? { suspendedAt: input.at }
+        : { chatRestrictedUntil: input.until };
+      if (user.updateMany === undefined) pendingPort('AccountAction');
+      await user.updateMany({ where, data });
     },
   };
 }
@@ -229,32 +424,17 @@ export function createIntegrationPorts(
 ): ExternalPorts {
   return {
     projectState: createProjectStatePort(db),
-    projects:
-      options.projects ??
-      ({
-        listPublicProjectsByIds: async () => pendingPort('ProjectPublic'),
-      } satisfies ExternalPorts['projects']),
-    recommendations:
-      options.recommendations ??
-      ({
-        getSupplier: async () => pendingPort('SupplierRecommendation'),
-        listOpenProjects: async () => pendingPort('ProjectPublic'),
-        listAppliedProjectIds: async () => pendingPort('Application'),
-      } satisfies ExternalPorts['recommendations']),
+    projects: options.projects ?? { listPublicProjectsByIds: async () => pendingPort('ProjectPublic') },
+    recommendations: options.recommendations ?? {
+      getSupplier: async () => pendingPort('SupplierRecommendation'),
+      listOpenProjects: async () => pendingPort('ProjectPublic'),
+      listAppliedProjectIds: async () => pendingPort('Application'),
+    },
     chatAccounts: createChatAccountPort(db),
     chatEvents: createChatEventPort(db),
-    reportAccounts:
-      options.reportAccounts ??
-      ({
-        applyAccountAction: async () => pendingPort('AccountAction'),
-      } satisfies ReportAccountActionPort),
+    reportAccounts: options.reportAccounts ?? createReportAccountActionPort(db),
     contractItems: createContractItemSourcePort(db),
-    agreementPreview:
-      options.agreementPreview ??
-      ({
-        getSpec: async () => pendingPort('AgreementSpec'),
-        getMessages: async () => pendingPort('AgreementMessage'),
-      } satisfies { getSpec(id: string): Promise<AgreementSpec | null>; getMessages(id: string): Promise<readonly AgreementMessage[]> }),
+    agreementPreview: options.agreementPreview ?? createAgreementPreviewPort(db),
     depositAttempts: createDepositAttemptPort(db),
     now: options.now,
   };

@@ -80,6 +80,9 @@ export interface ReportDbClient {
     create(input: { readonly data: Readonly<Record<string, unknown>> }): Promise<unknown>;
   };
   readonly notification: NotificationTx;
+  readonly user?: {
+    updateMany(input: { readonly where: Readonly<Record<string, unknown>>; readonly data: Readonly<Record<string, unknown>> }): Promise<{ readonly count: number }>;
+  };
 }
 
 export interface ReportPrismaClient extends ReportDbClient {
@@ -92,7 +95,7 @@ export interface ReportAccountActionPort {
     readonly action: 'CHAT_RESTRICT_7D' | 'SUSPEND';
     readonly at: Date;
     readonly until: Date | null;
-  }): Promise<void>;
+  }, tx?: { readonly user: NonNullable<ReportDbClient['user']> }): Promise<void>;
 }
 
 function toRecord(row: ReportRow): ReportRecord {
@@ -195,7 +198,8 @@ export function createReportTx(
     },
 
     applyAccountAction(input) {
-      return accounts.applyAccountAction(input);
+      if (db.user === undefined) throw new Error('Report account action database delegate is missing');
+      return accounts.applyAccountAction(input, { user: db.user });
     },
 
     async notifyReporter(input) {

@@ -74,6 +74,7 @@ export interface EventLogEntity {
 
 export interface CatalogAdminPort {
   executeBlockAction(input: {
+    actorId: string;
     blockId: string;
     action: string;
     reason: string;
@@ -293,6 +294,7 @@ export class AdminOpsService {
     }
 
     const result = await this.catalogPort.executeBlockAction({
+      actorId: actor.userId,
       blockId,
       action,
       reason: input.reason,

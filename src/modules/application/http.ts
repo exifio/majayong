@@ -8,7 +8,7 @@ import { Router, type Request } from 'express';
 
 import type { Actor, ApplicationRecord } from './dto.js';
 import { ApplicationAccessError } from './dto.js';
-import type { ProjectStatus } from '../market/public-project.js';
+import type { ProjectSpecVersion } from '../market/public-project.js';
 import {
   getApplicationDetail,
   listMyApplications,
@@ -33,11 +33,8 @@ import {
   text,
 } from '../../http/parse.js';
 
-export interface ProjectStateForApplication {
+export interface ProjectStateForApplication extends ProjectSpecVersion {
   readonly clientUserId: string;
-  readonly status: ProjectStatus;
-  readonly specVersionNo: number;
-  readonly specItemIds: readonly string[];
 }
 
 /** A 소유 Project/SpecItem 읽기 Port. */
@@ -123,7 +120,7 @@ export function createApplicationRouter(ports: ApplicationHttpPorts): Router {
       clientUserId: state.clientUserId,
       supplierId: actor.userId,
       projectStatus: state.status,
-      specVersionNo: state.specVersionNo,
+      specVersionNo: state.currentVersion,
       specItemIds: state.specItemIds,
       totalAmount: parsed.totalAmount,
       durationDays: parsed.durationDays,
@@ -188,7 +185,7 @@ export function createApplicationRouter(ports: ApplicationHttpPorts): Router {
     const result = await reviseApplication(ports.uow, {
       applicationId,
       supplierId: actor.userId,
-      specVersionNo: state.specVersionNo,
+      specVersionNo: state.currentVersion,
       specItemIds: state.specItemIds,
       totalAmount: parsed.totalAmount,
       durationDays: parsed.durationDays,

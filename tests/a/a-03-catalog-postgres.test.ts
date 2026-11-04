@@ -1,10 +1,11 @@
 import { afterAll, describe, expect, it } from "@jest/globals";
 import { randomUUID } from "node:crypto";
 import { BlockOrigin, BlockSource, DraftEntryType, PrismaClient, Role } from "@prisma/client";
-import { generateOrReuseCatalogBlock } from "../../src/modules/catalog/service.ts";
+import { extractCatalogFeatures, generateOrReuseCatalogBlock } from "../../src/modules/catalog/service.ts";
 import { mergeCatalogBlock, setCatalogBlockActive, updateCatalogBlockPrice } from "../../src/modules/catalog/admin.ts";
 import type { CatalogBlockGenerator } from "../../src/modules/catalog/service.ts";
 import { reservationRestaurantSeedBlocks, seedReservationRestaurantCatalog } from "../../src/modules/catalog/seed.ts";
+import { createCatalogAdminPort } from "../../src/integration/catalog-admin-port.ts";
 
 const testDatabaseUrl = process.env.TEST_DATABASE_URL;
 if (!testDatabaseUrl) throw new Error("A-03 tests require the dedicated local majayong_a00_test database");
@@ -223,6 +224,61 @@ describe("A-03 catalog generation and reuse", () => {
       { payload: { purpose: "BLOCK_CREATE", model: "gpt-5.4-mini", tokens: { input: 100, output: 50 }, costKrw: 2, latencyMs: 30, succeeded: true } },
     ]);
   });
+
+  it("redacts private input values and meters feature extraction", async () => {
+    const client = await createClient();
+    const industryCode = testIndustryCode();
+    const sent: string[] = [];
+    const features = await extractCatalogFeatures(prisma, {
+      ...generationInput(client.id, industryCode),
+      text: "Cafe Blue 김하나 서울 마포구 월드컵로 12 010-1234-5678 hana@example.invalid 예약 서비스",
+    }, async input => {
+      sent.push(input.text);
+      return {
+        features: ["예약 달력", "예약금 결제", "노쇼 기록"],
+        metadata: { model: "gpt-5.4-mini", tokens: { input: 100, output: 50 }, costKrw: 2, latencyMs: 30 },
+      };
+    });
+
+    for (const value of ["Cafe Blue", "김하나", "서울 마포구 월드컵로 12", "010-1234-5678", "hana@example.invalid"]) {
+      expect(sent[0]).not.toContain(value);
+    }
+    expect(features).toEqual(["예약 달력", "예약금 결제", "노쇼 기록"]);
+    expect(await prisma.eventLog.findMany({ where: { userId: client.id, type: "LLM_CALLED" }, select: { payload: true } }))
+      .toEqual([{ payload: { purpose: "BLOCK_CLASSIFY", model: "gpt-5.4-mini", tokens: { input: 100, output: 50 }, costKrw: 2, latencyMs: 30, succeeded: true } }]);
+  });
+
+  it("rejects malformed or failed feature extraction without returning model output", async () => {
+    const client = await createClient();
+    const industryCode = testIndustryCode();
+    const malformed = await extractCatalogFeatures(prisma, generationInput(client.id, industryCode), async () => ({
+      features: ["x".repeat(201)],
+      metadata: { model: "gpt-5.4-mini", tokens: { input: 100, output: 50 }, costKrw: 2, latencyMs: 30 },
+    }));
+    const failed = await extractCatalogFeatures(prisma, generationInput(client.id, industryCode), async () => {
+      throw new Error("provider response must not escape");
+    });
+
+    expect(malformed).toEqual([]);
+    expect(failed).toEqual([]);
+    expect(await prisma.blockCatalog.count({ where: { industryCode } })).toBe(0);
+    expect(await prisma.eventLog.findMany({ where: { userId: client.id, type: "LLM_CALLED" }, select: { payload: true } }))
+      .toEqual([
+        { payload: { purpose: "BLOCK_CLASSIFY", model: "gpt-5.4-mini", tokens: { input: 100, output: 50 }, costKrw: 2, latencyMs: 30, succeeded: false } },
+        { payload: { purpose: "BLOCK_CLASSIFY", model: "unknown", tokens: { input: 0, output: 0 }, costKrw: 0, latencyMs: 0, succeeded: false } },
+      ]);
+  });
+
+  it("redacts profile-known private values repeated in extracted feature summaries", async () => {
+    const client = await createClient();
+    const industryCode = testIndustryCode();
+    const features = await extractCatalogFeatures(prisma, generationInput(client.id, industryCode), async () => ({
+      features: ["예약 달력", "Cafe Blue 예약 관리"],
+      metadata: { model: "gpt-5.4-mini", tokens: { input: 100, output: 50 }, costKrw: 2, latencyMs: 30 },
+    }));
+    expect(features).toEqual(["예약 달력", "[비공개] 예약 관리"]);
+  });
+
   it("returns generic pending after exactly two invalid generation attempts", async () => {
     const client = await createClient();
     const industryCode = testIndustryCode();
@@ -255,6 +311,7 @@ describe("A-03 catalog admin mutations", () => {
     const industryCode = testIndustryCode();
     const source = await createExistingBlock(industryCode, 7000, "source function");
     const target = await createExistingBlock(industryCode, 9000, "target function");
+    const catalogAdmin = createCatalogAdminPort(prisma);
     const draftId = randomUUID();
     const projectId = randomUUID();
     draftIds.add(draftId);
@@ -291,18 +348,10 @@ describe("A-03 catalog admin mutations", () => {
       actorId: admin.id, blockId: source.id, unitPrice: 10000, reason: "  ",
     })).rejects.toMatchObject({ code: "REASON_REQUIRED", status: 400 });
 
-    await updateCatalogBlockPrice(prisma, {
-      actorId: admin.id, blockId: source.id, unitPrice: 10000, reason: "approved price update",
-    });
-    await mergeCatalogBlock(prisma, {
-      actorId: admin.id, sourceId: source.id, targetId: target.id, reason: "duplicate block",
-    });
-    await setCatalogBlockActive(prisma, {
-      actorId: admin.id, blockId: target.id, isActive: false, reason: "temporarily unavailable",
-    });
-    await setCatalogBlockActive(prisma, {
-      actorId: admin.id, blockId: target.id, isActive: true, reason: "restored after review",
-    });
+    await catalogAdmin.executeBlockAction({ actorId: admin.id, blockId: source.id, action: "UPDATE_PRICE", unitPrice: 10000, reason: "approved price update" });
+    await catalogAdmin.executeBlockAction({ actorId: admin.id, blockId: source.id, action: "MERGE", mergedIntoId: target.id, reason: "duplicate block" });
+    await catalogAdmin.executeBlockAction({ actorId: admin.id, blockId: target.id, action: "DISABLE", reason: "temporarily unavailable" });
+    await catalogAdmin.executeBlockAction({ actorId: admin.id, blockId: target.id, action: "ENABLE", reason: "restored after review" });
 
     expect(await prisma.blockCatalog.findUniqueOrThrow({ where: { id: source.id } })).toMatchObject({
       unitPrice: 10000, isActive: false, mergedIntoId: target.id,

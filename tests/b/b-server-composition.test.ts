@@ -21,15 +21,28 @@ const notificationDelegate = {
   updateMany: unused,
 };
 
+const notificationTx = {
+  findByKey: async () => null,
+  create: unused,
+  refreshBundled: unused,
+  listRecent: async () => [],
+  countUnread: async () => 0,
+  markRead: async () => false,
+  markAllRead: async () => 0,
+};
+
 function prismaPorts(): BPrismaPorts {
   return {
     application: {
+      $queryRaw: async <T = unknown>() => [] as T,
       application: {
         findMany: unused,
         findUnique: unused,
         create: unused,
         updateMany: unused,
       },
+      project: { findUnique: unused },
+      specItem: { findMany: unused },
       applicationMessage: { create: unused },
       eventLog: { findFirst: unused },
       notification: notificationDelegate,
@@ -75,7 +88,7 @@ function prismaPorts(): BPrismaPorts {
         count: unused,
       },
       eventLog: { create: unused },
-      notification: notificationDelegate,
+      notification: notificationTx,
       $transaction: unused,
     },
     support: {
@@ -87,7 +100,7 @@ function prismaPorts(): BPrismaPorts {
       },
       contract: { findFirst: unused },
       eventLog: { create: unused },
-      notification: notificationDelegate,
+      notification: notificationTx,
       $transaction: unused,
     },
     market: {

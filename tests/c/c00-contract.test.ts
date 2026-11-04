@@ -17,7 +17,6 @@ import {
   calculateClientDeposit,
   calculateSupplierRelease,
   canOpenDeposit,
-  clientFullRefundStorage,
   isClientFullRefund,
   competingRejectOnSign,
   createMemoryAccounts,
@@ -177,7 +176,7 @@ describe("C-00", () => {
     }
   });
 
-  it("취소 예시 수식과 보상 비율 CHECK, 24시간 저장은 D-16", () => {
+  it("취소 예시 수식과 보상 비율 CHECK; 24시간 예외는 D-16 승인 대기", () => {
     assert.deepEqual(
       calculateCancelSettlement({
         principal: 3_100_000,
@@ -225,12 +224,6 @@ describe("C-00", () => {
       }),
       false,
     );
-    assert.deepEqual(clientFullRefundStorage(3_255_000, 155_000), {
-      compensationRate: null,
-      refundAmount: 3_255_000,
-      settledAmount: 0,
-      clientFeeRefund: 155_000,
-    });
   });
 
   it("서명에는 타 지원을 거절하지 않고 예치 완료에만 거절", () => {

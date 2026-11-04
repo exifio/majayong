@@ -540,6 +540,7 @@ describe('B-08 보조: 프로젝트 지원 비교 목록 (#050)', () => {
     return {
       findProjectClientId: async (projectId) => (projectId === 'prj-1' ? 'client-1' : null),
       listRevisionsByProject: async () => revisions,
+      listSupplierProfileSummaries: async () => [],
       ...overrides,
     };
   }
@@ -571,14 +572,49 @@ describe('B-08 보조: 프로젝트 지원 비교 목록 (#050)', () => {
 
     assert.deepEqual(Object.keys(card ?? {}).sort(), [
       'applicationId',
+      'careerYears',
+      'completedContractCount',
       'durationDays',
+      'portfolioSummary',
       'questionCount',
+      'ratingAvg',
+      'reviewCount',
       'revisionCount',
       'revisionNo',
       'submittedAt',
       'supplierId',
       'totalAmount',
     ]);
+  });
+
+  it('의뢰인 본인에게 공개 프로필 요약만 비교 카드에 결합한다', async () => {
+    const calls: string[][] = [];
+    const cards = await listProjectApplicationCards(port({
+      listSupplierProfileSummaries: async (supplierIds) => {
+        calls.push([...supplierIds]);
+        return [{
+          supplierId: 'supplier-1',
+          careerYears: 8,
+          ratingAvg: 4.8,
+          reviewCount: 12,
+          completedContractCount: 3,
+          portfolioSummary: '공개 포트폴리오',
+        }];
+      },
+    }), { actor: CLIENT_ACTOR, projectId: 'prj-1' });
+
+    assert.deepEqual(calls, [['supplier-1', 'supplier-2']]);
+    assert.equal(cards[0]?.careerYears, 8);
+    assert.equal(cards[0]?.portfolioSummary, '공개 포트폴리오');
+    assert.equal(Object.keys(cards[0] ?? {}).includes('email'), false);
+  });
+
+  it('비당사자에게 프로필 요약 조회도 하지 않는다', async () => {
+    let profileCalls = 0;
+    await assert.rejects(listProjectApplicationCards(port({
+      listSupplierProfileSummaries: async () => { profileCalls += 1; return []; },
+    }), { actor: { userId: 'intruder', role: 'CLIENT' }, projectId: 'prj-1' }));
+    assert.equal(profileCalls, 0);
   });
 
   it('다른 의뢰인·공급자·없는 프로젝트는 404로 숨긴다', async () => {

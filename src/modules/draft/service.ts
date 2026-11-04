@@ -1,16 +1,23 @@
-import { BlockOrigin, DraftEntryType, DraftStatus, Prisma, PrismaClient } from "@prisma/client";
+import { BlockOrigin, DraftEntryType, DraftStatus, EventType, Prisma, PrismaClient } from "@prisma/client";
 import { randomUUID } from "node:crypto";
 import {
   assertActionAllowed, assertDraftCapacity, assertDraftOwner, changesUserActivity, DraftError,
   initialPendingFeature, PendingFeature, retryPendingAttempt, sanitizeDraftText, snapshotDraftBlock, visibleDrafts,
 } from "./rules.js";
 
-export type DraftCatalogResolution = { blockIds: string[]; pendingFeatures: PendingFeature[] };
+export type DraftCatalogResolution = {
+  blockIds: string[];
+  pendingFeatures: PendingFeature[];
+  reusedBlocks?: number;
+  generatedBlocks?: number;
+  durationMs?: number;
+};
 // A-04-local seam; adapt it to A-03 exports during integration instead of treating it as a shared contract.
+export type DraftCatalogUtterance = { kind: "FIRST_SENTENCE" | "CHAT"; text: string };
 export type DraftCatalogAdapter = {
-  resolveExisting(input: { entryType: DraftEntryType; utterances: { kind: "FIRST_SENTENCE" | "CHAT"; text: string }[] }): Promise<DraftCatalogResolution>;
-  generatePending(input: { entryType: DraftEntryType; utterances: { kind: "FIRST_SENTENCE" | "CHAT"; text: string }[]; pendingFeatures: PendingFeature[] }): Promise<DraftCatalogResolution>;
-  recommend(input: { entryType: DraftEntryType; utterances: { kind: "FIRST_SENTENCE" | "CHAT"; text: string }[] }): Promise<string[]>;
+  resolveExisting(input: { clientId: string; entryType: DraftEntryType; utterances: DraftCatalogUtterance[] }): Promise<DraftCatalogResolution>;
+  generatePending(input: { clientId: string; entryType: DraftEntryType; utterances: DraftCatalogUtterance[]; pendingFeatures: PendingFeature[] }): Promise<DraftCatalogResolution>;
+  recommend(input: { clientId: string; entryType: DraftEntryType; utterances: DraftCatalogUtterance[] }): Promise<string[]>;
 };
 export type DraftPorts = { catalog?: DraftCatalogAdapter };
 
@@ -64,6 +71,27 @@ async function lockClient(tx: DraftTx, clientId: string): Promise<void> {
 
 async function touchDraft(tx: DraftTx, draftId: string, action: Parameters<typeof changesUserActivity>[0], now: Date): Promise<void> {
   if (changesUserActivity(action)) await tx.draft.update({ where: { id: draftId }, data: { lastActiveAt: now } });
+}
+
+async function recordDraftRendered(tx: DraftTx, draftId: string, now: Date, resolution: DraftCatalogResolution): Promise<void> {
+  const draft = await tx.draft.findUniqueOrThrow({ where: { id: draftId }, select: { clientId: true, renderedAt: true, firstInputAt: true } });
+  if (draft.renderedAt) return;
+  const claimed = await tx.draft.updateMany({ where: { id: draftId, renderedAt: null }, data: { renderedAt: now } });
+  if (claimed.count === 0) return;
+  await tx.eventLog.create({
+    data: {
+      userId: draft.clientId,
+      draftId,
+      type: EventType.DRAFT_RENDERED,
+      occurredAt: now,
+      payload: {
+        reusedBlocks: resolution.reusedBlocks ?? 0,
+        generatedBlocks: resolution.generatedBlocks ?? 0,
+        pendingFeatures: resolution.pendingFeatures.length,
+        durationMs: resolution.durationMs ?? Math.max(0, now.getTime() - (draft.firstInputAt?.getTime() ?? now.getTime())),
+      },
+    },
+  });
 }
 
 async function ownedDraft(tx: DraftTx, draftId: string, clientId: string): Promise<DraftRow> {
@@ -132,15 +160,20 @@ async function applyResolution(
     });
   }
   const pending = cleanPending(resolution.pendingFeatures, secrets);
-  await tx.draft.update({ where: { id: draftId }, data: { pendingFeatures: pending, ...(catalogRows.length ? { renderedAt: now } : {}) } });
+  await tx.draft.update({ where: { id: draftId }, data: { pendingFeatures: pending } });
+  await recordDraftRendered(tx, draftId, now, { ...resolution, pendingFeatures: pending });
 }
 
-async function preserveFailure(db: PrismaClient, draftId: string, secrets: string[], now: Date, previous: PendingFeature[]): Promise<void> {
+async function preserveFailure(db: PrismaClient, draftId: string, secrets: string[], now: Date, previous: PendingFeature[], durationMs: number): Promise<void> {
   const pending = previous.length ? previous.map(item => retryPendingAttempt(item, now)) : [retryPendingAttempt(initialPendingFeature(randomUUID()), now)];
-  await db.draft.update({ where: { id: draftId }, data: { pendingFeatures: cleanPending(pending, secrets) } });
+  await db.$transaction(async tx => {
+    await tx.$queryRaw`SELECT id FROM drafts WHERE id = ${draftId} FOR UPDATE`;
+    await tx.draft.update({ where: { id: draftId }, data: { pendingFeatures: cleanPending(pending, secrets) } });
+    await recordDraftRendered(tx, draftId, now, { blockIds: [], pendingFeatures: pending, durationMs });
+  });
 }
 
-async function resolveExistingAndSave(db: PrismaClient, draftId: string, clientId: string, ports: DraftPorts, now: Date): Promise<void> {
+async function resolveExistingAndSave(db: PrismaClient, draftId: string, clientId: string, ports: DraftPorts, now: Date, startedAt = performance.now()): Promise<void> {
   const row = await db.draft.findFirst({ where: { id: draftId, clientId, deletedAt: null }, select: { entryType: true, pendingFeatures: true } });
   if (!row) return;
   const secrets = await privateValues(db, clientId);
@@ -150,12 +183,13 @@ async function resolveExistingAndSave(db: PrismaClient, draftId: string, clientI
   let resolution: DraftCatalogResolution;
   try {
     if (!ports.catalog) throw new Error("CATALOG_ADAPTER_UNAVAILABLE");
-    resolution = await ports.catalog.resolveExisting({ entryType: row.entryType, utterances: utterances.map(({ kind, text }) => ({ kind, text })) });
+    resolution = await ports.catalog.resolveExisting({ clientId, entryType: row.entryType, utterances: utterances.map(({ kind, text }) => ({ kind, text })) });
   } catch {
-    await preserveFailure(db, draftId, secrets, now, readPending(row.pendingFeatures));
+    await preserveFailure(db, draftId, secrets, now, readPending(row.pendingFeatures), Math.max(0, Math.round(performance.now() - startedAt)));
     return;
   }
-  await db.$transaction(tx => applyResolution(tx, draftId, utterances.at(-1)?.id ?? null, origin, resolution, secrets, now));
+  const timedResolution = { ...resolution, durationMs: Math.max(0, Math.round(performance.now() - startedAt)) };
+  await db.$transaction(tx => applyResolution(tx, draftId, utterances.at(-1)?.id ?? null, origin, timedResolution, secrets, now));
 }
 
 async function generatePendingAndSave(db: PrismaClient, draftId: string, clientId: string, ports: DraftPorts, now: Date): Promise<void> {
@@ -167,25 +201,29 @@ async function generatePendingAndSave(db: PrismaClient, draftId: string, clientI
   const utterances = await currentUtterances(db, draftId, secrets);
   const origin = row.entryType === DraftEntryType.DEFAULT_DRAFT ? BlockOrigin.DEFAULT_DRAFT :
     utterances.at(-1)?.kind === "CHAT" ? BlockOrigin.CHAT : BlockOrigin.FIRST_SENTENCE;
+  const startedAt = performance.now();
   let resolution: DraftCatalogResolution;
   try {
     if (!ports.catalog) throw new Error("CATALOG_ADAPTER_UNAVAILABLE");
     resolution = await ports.catalog.generatePending({
+      clientId,
       entryType: row.entryType,
       utterances: utterances.map(({ kind, text }) => ({ kind, text })),
       pendingFeatures: previous,
     });
   } catch {
-    await preserveFailure(db, draftId, secrets, now, previous);
+    await preserveFailure(db, draftId, secrets, now, previous, Math.max(0, Math.round(performance.now() - startedAt)));
     return;
   }
-  await db.$transaction(tx => applyResolution(tx, draftId, utterances.at(-1)?.id ?? null, origin, resolution, secrets, now));
+  const timedResolution = { ...resolution, durationMs: Math.max(0, Math.round(performance.now() - startedAt)) };
+  await db.$transaction(tx => applyResolution(tx, draftId, utterances.at(-1)?.id ?? null, origin, timedResolution, secrets, now));
 }
 
 export async function createDraft(db: PrismaClient, clientId: string, input: { entryType: DraftEntryType; text?: string }, ports: DraftPorts, now: Date) {
   if (Number.isNaN(now.getTime())) throw new DraftError("INVALID_TIME", 500);
   if (input.entryType === DraftEntryType.SENTENCE && (!input.text?.trim() || input.text.length > 8000)) throw new DraftError("INVALID_REQUEST", 400);
   if (input.entryType === DraftEntryType.DEFAULT_DRAFT && input.text !== undefined) throw new DraftError("INVALID_REQUEST", 400);
+  const startedAt = performance.now();
   const id = await db.$transaction(async tx => {
     await lockClient(tx, clientId);
     const activeCount = await tx.draft.count({ where: { clientId, status: DraftStatus.IN_PROGRESS, deletedAt: null } });
@@ -199,9 +237,18 @@ export async function createDraft(db: PrismaClient, clientId: string, input: { e
     if (input.entryType === DraftEntryType.SENTENCE && input.text) {
       await tx.clientUtterance.create({ data: { draftId: draft.id, kind: "FIRST_SENTENCE", content: input.text.trim() } });
     }
+    await tx.eventLog.create({
+      data: {
+        userId: clientId,
+        draftId: draft.id,
+        type: EventType.DRAFT_INPUT_SUBMITTED,
+        occurredAt: now,
+        payload: { entryType: input.entryType },
+      },
+    });
     return draft.id;
   });
-  await resolveExistingAndSave(db, id, clientId, ports, now);
+  await resolveExistingAndSave(db, id, clientId, ports, now, startedAt);
   return toView(await loadOwned(db, id, clientId));
 }
 
@@ -246,6 +293,7 @@ export async function deleteDraft(db: PrismaClient, draftId: string, clientId: s
 
 export async function editDraftChat(db: PrismaClient, draftId: string, clientId: string, text: string, ports: DraftPorts, now: Date) {
   if (!text.trim() || text.length > 8000) throw new DraftError("INVALID_REQUEST", 400);
+  const startedAt = performance.now();
   await db.$transaction(async tx => {
     const draft = await ownedDraft(tx, draftId, clientId);
     requireInProgress(draft);
@@ -255,7 +303,7 @@ export async function editDraftChat(db: PrismaClient, draftId: string, clientId:
     await tx.draft.update({ where: { id: draftId }, data: { chatEditCount: { increment: 1 } } });
     await touchDraft(tx, draftId, "CHAT", now);
   });
-  await resolveExistingAndSave(db, draftId, clientId, ports, now);
+  await resolveExistingAndSave(db, draftId, clientId, ports, now, startedAt);
   return getDraft(db, draftId, clientId);
 }
 
@@ -290,7 +338,7 @@ export async function getRecommendations(db: PrismaClient, draftId: string, clie
   const utterances = await currentUtterances(db, draftId, secrets);
   let selected: string[];
   try {
-    selected = await ports.catalog.recommend({ entryType: context.entryType, utterances: utterances.map(({ kind, text }) => ({ kind, text })) });
+    selected = await ports.catalog.recommend({ clientId, entryType: context.entryType, utterances: utterances.map(({ kind, text }) => ({ kind, text })) });
   } catch {
     throw new DraftError("CATALOG_UNAVAILABLE", 503);
   }

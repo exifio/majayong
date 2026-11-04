@@ -1,6 +1,6 @@
 import { afterAll, describe, expect, it, jest } from "@jest/globals";
 import { BlockOrigin, DraftEntryType, PrismaClient, ProjectStatus, Role, SpecItemStatus } from "@prisma/client";
-import express, { type NextFunction, type Request, type Response } from "express";
+import express, { type NextFunction, type Request, type Response as ExpressResponse } from "express";
 import { createServer, type Server } from "node:http";
 import { randomUUID } from "node:crypto";
 import { createApp } from "../../src/app.ts";
@@ -39,7 +39,7 @@ async function startServer(ports: ProjectPorts): Promise<string> {
   const router = express.Router();
   mountProjectApi(router, db, () => now, () => "project-disclosure-v0.1-draft", authenticated, ports);
   app.use("/api/v1", router);
-  app.use((error: unknown, _req: Request, res: Response, _next: NextFunction) => {
+  app.use((error: unknown, _req: Request, res: ExpressResponse, _next: NextFunction) => {
     res.status(500).json({ error: error instanceof Error ? error.message : "INTERNAL_ERROR" });
   });
   const server = createServer(app);
@@ -50,7 +50,7 @@ async function startServer(ports: ProjectPorts): Promise<string> {
   return `http://127.0.0.1:${address.port}/api/v1`;
 }
 
-function request(baseUrl: string, method: string, path: string, actor: Actor, body?: unknown): Promise<Response> {
+function request(baseUrl: string, method: string, path: string, actor: Actor, body?: unknown): Promise<globalThis.Response> {
   return fetch(`${baseUrl}${path}`, {
     method,
     headers: {
@@ -259,5 +259,38 @@ describe("A-06 common-app wiring", () => {
 
     const softDelete = await fetch(`${baseUrl}/projects/${projectId}`, { method: "DELETE", headers: { authorization: `Bearer ${clientToken}` } });
     expect(softDelete.status).toBe(503);
+  });
+
+  it("A-06-T05/T06 injects view and application ports from createApp when provided", async () => {
+    const client = await makeClient();
+    const supplier = await makeSupplier();
+    const projectId = await makeProject(client.userId);
+    await addSpecItem(projectId, 1);
+    const recordFirstView = jest.fn(async () => undefined);
+    const rejectPendingOnDelete = jest.fn(async () => 0);
+
+    const server = createServer(createApp({
+      db, tokenSecret, now: () => now,
+      project: {
+        supplierNdaVersion: nda,
+        view: { recordFirstView },
+        application: { countPending: jest.fn(async () => 0), markSpecStale: jest.fn(async () => 0), rejectPendingOnDelete },
+      },
+    }));
+    await new Promise<void>(resolve => server.listen(0, "127.0.0.1", resolve));
+    servers.push(server);
+    const address = server.address();
+    if (!address || typeof address === "string") throw new Error("HTTP server did not bind");
+    const baseUrl = `http://127.0.0.1:${address.port}/api/v1`;
+
+    const supplierToken = issueAccessToken({ userId: supplier.userId, role: Role.SUPPLIER, expiresAt: now.getTime() + 60_000 }, tokenSecret);
+    const detail = await fetch(`${baseUrl}/projects/${projectId}`, { headers: { authorization: `Bearer ${supplierToken}` } });
+    expect(detail.status).toBe(200);
+    expect(recordFirstView).toHaveBeenCalledTimes(1);
+
+    const clientToken = issueAccessToken({ userId: client.userId, role: Role.CLIENT, expiresAt: now.getTime() + 60_000 }, tokenSecret);
+    const softDelete = await fetch(`${baseUrl}/projects/${projectId}`, { method: "DELETE", headers: { authorization: `Bearer ${clientToken}` } });
+    expect(softDelete.status).toBe(200);
+    expect(rejectPendingOnDelete).toHaveBeenCalledTimes(1);
   });
 });

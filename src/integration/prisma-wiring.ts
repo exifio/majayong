@@ -9,18 +9,25 @@ import type { Prisma, PrismaClient } from '@prisma/client';
 import { Prisma as PrismaRuntime } from '@prisma/client';
 
 import type { BPrismaPorts } from '../server.js';
-import type { IntegrationDb } from './external-ports.js';
+import type { AProjectDb, ProjectCandidateDb } from './a-ports.js';
+import type { PublicProfileDb } from './external-ports.js';
 
 type Db = PrismaClient | Prisma.TransactionClient;
 
 function delegates(db: Db) {
   return {
     application: {
+      $queryRaw: db.$queryRaw.bind(db),
       findMany: db.application.findMany.bind(db.application),
       findUnique: db.application.findUnique.bind(db.application),
       findFirst: db.application.findFirst.bind(db.application),
       create: db.application.create.bind(db.application),
       updateMany: db.application.updateMany.bind(db.application),
+      project: { findUnique: db.project.findUnique.bind(db.project) },
+      specItem: { findMany: db.specItem.findMany.bind(db.specItem) },
+      applicationMessage: { create: db.applicationMessage.create.bind(db.applicationMessage) },
+      eventLog: { findFirst: db.eventLog.findFirst.bind(db.eventLog) },
+      notification: db.notification,
     },
     applicationRead: {
       application: {
@@ -28,6 +35,7 @@ function delegates(db: Db) {
         findUnique: db.application.findUnique.bind(db.application),
       },
       project: { findUnique: db.project.findUnique.bind(db.project) },
+      supplierProfile: { findMany: db.supplierProfile.findMany.bind(db.supplierProfile) },
     },
     agreement: {
       application: {
@@ -67,6 +75,7 @@ function delegates(db: Db) {
       applicationMessage: { create: db.applicationMessage.create.bind(db.applicationMessage) },
       eventLog: { create: db.eventLog.create.bind(db.eventLog) },
       notification: db.notification,
+      $queryRaw: db.$queryRaw.bind(db),
     },
     report: {
       applicationMessage: { findUnique: db.applicationMessage.findUnique.bind(db.applicationMessage) },
@@ -79,6 +88,7 @@ function delegates(db: Db) {
         count: db.report.count.bind(db.report),
       },
       eventLog: { create: db.eventLog.create.bind(db.eventLog) },
+      user: { updateMany: db.user.updateMany.bind(db.user) },
       notification: db.notification,
     },
     support: {
@@ -117,7 +127,11 @@ export function createPrismaPorts(prisma: PrismaClient): BPrismaPorts {
     applicationRead: base.applicationRead,
     agreement: base.agreement,
     chat: base.chat,
-    contract: withTransaction(base.contract),
+    contract: {
+      ...base.contract,
+      $transaction: (work: (tx: unknown) => Promise<unknown>) =>
+        prisma.$transaction((tx) => work(delegates(tx).contract)),
+    },
     report: withTransaction(base.report),
     support: withTransaction(base.support),
     market: base.market,
@@ -128,17 +142,77 @@ export function createPrismaPorts(prisma: PrismaClient): BPrismaPorts {
   return raw as unknown as BPrismaPorts;
 }
 
-export function createPrismaIntegrationDb(prisma: PrismaClient): IntegrationDb {
+/**
+ * A `ProjectViewPort`/`ProjectApplicationPort`가 쓰는 delegate로 좁힌다.
+ * 도메인 어댑터는 테스트 가능하도록 얇은 구조 타입만 받으므로 여기서 한 번 캐스팅한다.
+ */
+export function createAProjectDb(prisma: PrismaClient): AProjectDb {
   const raw = {
-    project: { findUnique: prisma.project.findUnique.bind(prisma.project) },
-    specItem: { findMany: prisma.specItem.findMany.bind(prisma.specItem) },
-    application: { findUnique: prisma.application.findUnique.bind(prisma.application) },
-    user: { findUnique: prisma.user.findUnique.bind(prisma.user) },
+    application: prisma.application,
+    eventLog: prisma.eventLog,
+    notification: prisma.notification,
+  };
+  return raw as unknown as AProjectDb;
+}
+
+/** A 공개 목록 후보(project + 포함된 specItem)를 구조 타입으로 좁힌다. */
+export function createProjectCandidateDb(prisma: PrismaClient): ProjectCandidateDb {
+  const raw = { project: { findMany: prisma.project.findMany.bind(prisma.project) } };
+  return raw as unknown as ProjectCandidateDb;
+}
+
+export function createPrismaIntegrationDb(prisma: PrismaClient): PublicProfileDb {
+  const raw = {
+    project: {
+      findUnique: prisma.project.findUnique.bind(prisma.project),
+      findMany: prisma.project.findMany.bind(prisma.project),
+    },
+    specItem: {
+      findMany: prisma.specItem.findMany.bind(prisma.specItem),
+      findAgreementItems: prisma.specItem.findMany.bind(prisma.specItem),
+    },
+    application: {
+      findUnique: prisma.application.findUnique.bind(prisma.application),
+      findMany: prisma.application.findMany.bind(prisma.application),
+    },
+    user: {
+      findUnique: prisma.user.findUnique.bind(prisma.user),
+      updateMany: prisma.user.updateMany.bind(prisma.user),
+    },
     escrowDeposit: { count: prisma.escrowDeposit.count.bind(prisma.escrowDeposit) },
     eventLog: {
       findFirst: prisma.eventLog.findFirst.bind(prisma.eventLog),
       create: prisma.eventLog.create.bind(prisma.eventLog),
     },
+    applicationMessage: { findMany: prisma.applicationMessage.findMany.bind(prisma.applicationMessage) },
+    supplierProfile: {
+      findUnique: prisma.supplierProfile.findUnique.bind(prisma.supplierProfile),
+      findMany: prisma.supplierProfile.findMany.bind(prisma.supplierProfile),
+    },
+    $transaction: (work: (tx: unknown) => Promise<unknown>) =>
+      prisma.$transaction((tx) => work({
+        $queryRaw: tx.$queryRaw.bind(tx),
+        project: { findUnique: tx.project.findUnique.bind(tx.project) },
+        specItem: {
+          findMany: tx.specItem.findMany.bind(tx.specItem),
+          findAgreementItems: tx.specItem.findMany.bind(tx.specItem),
+        },
+        application: {
+          findUnique: tx.application.findUnique.bind(tx.application),
+          findMany: tx.application.findMany.bind(tx.application),
+        },
+        supplierProfile: { findUnique: tx.supplierProfile.findUnique.bind(tx.supplierProfile) },
+        applicationMessage: { findMany: tx.applicationMessage.findMany.bind(tx.applicationMessage) },
+        user: {
+          findUnique: tx.user.findUnique.bind(tx.user),
+          updateMany: tx.user.updateMany.bind(tx.user),
+        },
+        escrowDeposit: { count: tx.escrowDeposit.count.bind(tx.escrowDeposit) },
+        eventLog: {
+          findFirst: tx.eventLog.findFirst.bind(tx.eventLog),
+          create: tx.eventLog.create.bind(tx.eventLog),
+        },
+      })),
   };
-  return raw as unknown as IntegrationDb;
+  return raw as unknown as PublicProfileDb;
 }

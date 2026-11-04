@@ -270,7 +270,8 @@ describe("A-02 profile and disclosure API", () => {
     const fileKey = `${vendor.id}/portfolio/work.pdf`;
     const sourceReader = { read: jest.fn(async () => ["safe mock source"]) };
     const generator = { generate: jest.fn(async () => ({ summary: "Public summary private@example.invalid", model: "mock", tokens: { input: 1, output: 2 }, costKrw: 0 })) };
-    const fileSigner = { createSignedUrl: jest.fn(async () => "https://storage.example.invalid/signed?token=short") };
+    const createSignedUrl = jest.fn(async (_userId: string, _objectKey: string, _expiresInSeconds: number) => "https://storage.example.invalid/signed?token=short");
+    const fileSigner = { createSignedUrl };
     await withServer({ portfolioSourceReader: sourceReader, portfolioSummaryGenerator: generator, portfolioFileSigner: fileSigner }, async baseUrl => {
       const unsafeFile = await request(baseUrl, "PATCH", "/me/supplier-profile", vendor.token, {
         portfolioItems: [{ type: "FILE", url: `${vendor.id}/portfolio/%2e%2e/work.pdf` }],
@@ -303,7 +304,7 @@ describe("A-02 profile and disclosure API", () => {
         expect(publicData).not.toHaveProperty(forbidden);
       }
       expect(JSON.stringify(publicData)).not.toContain(fileKey);
-      expect(fileSigner.createSignedUrl).toHaveBeenCalledWith(vendor.id, fileKey, 300);
+      expect(createSignedUrl).toHaveBeenCalledWith(vendor.id, fileKey, 300);
       const hidden = await request(baseUrl, "POST", "/me/portfolio-summary/hide", vendor.token, {});
       expect(hidden.status).toBe(200);
       const hiddenPublic = await request(baseUrl, "GET", `/profiles/suppliers/${vendor.id}`, vendor.token);

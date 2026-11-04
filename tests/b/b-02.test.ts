@@ -51,11 +51,14 @@ class FakeApplicationTx implements ApplicationTx {
 
   constructor(
     rows: readonly ApplicationRevision[] = [],
-    options: { readonly viewedAt?: Date | null } = {},
+    options: { readonly viewedAt?: Date | null; readonly status?: 'RECRUITING' | 'EXPIRED' } = {},
   ) {
     this.rows = [...rows];
     this.viewedAt = options.viewedAt === undefined ? null : options.viewedAt;
+    this.status = options.status ?? 'RECRUITING';
   }
+
+  status: 'RECRUITING' | 'EXPIRED';
 
   failNextCreateWithUnique(): void {
     this.forceUnique = true;
@@ -63,6 +66,14 @@ class FakeApplicationTx implements ApplicationTx {
 
   async findFirstDetailView(): Promise<Date | null> {
     return this.viewedAt;
+  }
+
+  async findProjectSpec() {
+    return {
+      status: this.status,
+      currentVersion: 1,
+      specItemIds: SPEC_ITEM_IDS,
+    };
   }
 
   async findLatestRevision(input: {
@@ -219,7 +230,7 @@ function reviseInput(overrides: Partial<ReviseApplicationInput> = {}): ReviseApp
   return {
     applicationId: 'app-1',
     supplierId: 'supplier-1',
-    specVersionNo: 2,
+    specVersionNo: 1,
     specItemIds: SPEC_ITEM_IDS,
     totalAmount: 3_300_000,
     durationDays: 40,
@@ -242,10 +253,10 @@ describe('B-02-T01 상세 미열람 지원 거부', () => {
   });
 
   it('모집 중이 아니면 409 PROJECT_NOT_RECRUITING이다', async () => {
-    const tx = new FakeApplicationTx([], { viewedAt: FIXED_NOW });
+    const tx = new FakeApplicationTx([], { viewedAt: FIXED_NOW, status: 'EXPIRED' });
 
     await assert.rejects(
-      submitApplication(new FakeUnitOfWork(tx), submitInput({ projectStatus: 'EXPIRED' })),
+      submitApplication(new FakeUnitOfWork(tx), submitInput({ projectStatus: 'RECRUITING' })),
       isAppError(409, 'PROJECT_NOT_RECRUITING'),
     );
   });
@@ -446,7 +457,7 @@ describe('B-02-T05 견적 수정 회차', () => {
     assert.equal(result.previous.status, 'SUPERSEDED');
     assert.equal(result.current.revisionNo, 2);
     assert.equal(result.current.status, 'SUBMITTED');
-    assert.equal(result.current.specVersionNo, 2);
+    assert.equal(result.current.specVersionNo, 1);
     assert.equal(result.current.totalAmount, 3_300_000);
     assert.equal(result.current.durationDays, 40);
     assert.equal(

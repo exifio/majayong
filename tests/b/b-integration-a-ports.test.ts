@@ -34,10 +34,10 @@ function summary(id: string) {
 
 describe('A가 호출하는 B 검색 Port', () => {
   it('A 쿼리를 B 필터로 옮기고 id 목록과 총계를 돌려준다', async () => {
-    let received: ProjectSearchInput | null = null;
+    const received: ProjectSearchInput[] = [];
     const search: ProjectSearchPort = {
       async searchPublicProjects(input) {
-        received = input;
+        received.push(input);
         return { items: [summary('prj-1'), summary('prj-2')], meta: { page: 2, pageSize: 10, total: 12, totalPages: 2 } };
       },
     };
@@ -50,7 +50,7 @@ describe('A가 호출하는 B 검색 Port', () => {
     });
 
     assert.deepEqual(result, { projectIds: ['prj-1', 'prj-2'], total: 12 });
-    assert.deepEqual(received, {
+    assert.deepEqual(received[0], {
       filters: {
         industryCode: 'FOOD',
         requiredSkills: ['React'],
@@ -62,10 +62,10 @@ describe('A가 호출하는 B 검색 Port', () => {
   });
 
   it('모집 중이 아닌 상태 필터는 CLOSED로 매핑한다', async () => {
-    let received: ProjectSearchInput | null = null;
+    const received: ProjectSearchInput[] = [];
     const search: ProjectSearchPort = {
       async searchPublicProjects(input) {
-        received = input;
+        received.push(input);
         return { items: [], meta: { page: 1, pageSize: 10, total: 0, totalPages: 0 } };
       },
     };
@@ -76,7 +76,7 @@ describe('A가 호출하는 B 검색 Port', () => {
       pageSize: 10,
     });
 
-    assert.equal(received?.filters?.recruitmentStatus, 'CLOSED');
+    assert.equal(received[0]?.filters?.recruitmentStatus, 'CLOSED');
   });
 });
 
@@ -137,7 +137,7 @@ function makeDb(rows: ApplicationRow[]) {
     notification: {
       findUnique: async () => null,
       async create(input) {
-        notifications.push(input.data as Record<string, unknown>);
+        notifications.push({ ...input.data });
         return { ...input.data, id: 'n1', isRead: false };
       },
       update: unused,

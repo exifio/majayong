@@ -64,3 +64,35 @@ describe("A-03 OpenAI block generator", () => {
     });
   });
 });
+
+describe("A-03 OpenAI feature extractor", () => {
+  it("returns extracted feature purposes with metered cost", async () => {
+    const extracted = { features: ["예약 달력", "예약금 결제", "노쇼 기록", "예약 알림", "리뷰 요청"] };
+    const fetcher = jest.fn<typeof fetch>().mockResolvedValue(response(JSON.stringify(extracted)));
+    const create = catalog.createOpenAiCatalogFeatureExtractor;
+    expect(typeof create).toBe("function");
+    if (typeof create !== "function") return;
+    const extractor = create("test-secret-never-print", "gpt-5.4-mini", "1341", fetcher);
+    expect(extractor).toBeDefined();
+    if (!extractor) return;
+
+    const result = await extractor({ industryCode: "RESTAURANT_RESERVATION", text: "예약 서비스가 필요해요" });
+    const request = JSON.parse(String(fetcher.mock.calls[0]?.[1]?.body)) as Record<string, unknown>;
+    expect(request).toMatchObject({ model: "gpt-5.4-mini", store: false, text: { format: { type: "json_schema", name: "catalog_features", strict: true } } });
+    expect(result.features).toEqual(extracted.features);
+    expect(result.metadata).toEqual({
+      model: "gpt-5.4-mini-2026-03-17",
+      tokens: { input: 1000, output: 100 },
+      costKrw: 2,
+      latencyMs: expect.any(Number),
+    });
+  });
+
+  it("returns an invalid empty result for malformed JSON instead of leaking parser errors", async () => {
+    const fetcher = jest.fn<typeof fetch>().mockResolvedValue(response("not json"));
+    const extractor = catalog.createOpenAiCatalogFeatureExtractor("test-key", "gpt-5.4-mini", "1341", fetcher);
+    expect(extractor).toBeDefined();
+    if (!extractor) return;
+    await expect(extractor({ industryCode: "TEST", text: "예약" })).resolves.toMatchObject({ features: [] });
+  });
+});

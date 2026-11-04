@@ -81,13 +81,41 @@ export function isWithinExtensionCap(from: Date, to: Date): boolean {
   return delta > 0 && delta <= EXTENSION_CAP_MS;
 }
 
+export type HopeBudgetBand = {
+  readonly below: number;
+  readonly label: string;
+  readonly minKrw: number;
+  readonly maxKrw: number;
+};
+
+/** 공개 희망 예산 구간. 전체 공개 카드(라벨)와 검색 필터(숫자)가 같은 경계를 쓰도록 단일 원천으로 둔다. */
+export const HOPE_BUDGET_BANDS: readonly HopeBudgetBand[] = [
+  { below: 1_000_000, label: "100만원 미만", minKrw: 0, maxKrw: 999_999 },
+  { below: 3_000_000, label: "100만원~300만원", minKrw: 1_000_000, maxKrw: 2_999_999 },
+  { below: 5_000_000, label: "300만원~500만원", minKrw: 3_000_000, maxKrw: 4_999_999 },
+  { below: 10_000_000, label: "500만원~1000만원", minKrw: 5_000_000, maxKrw: 9_999_999 },
+];
+
+const HOPE_BUDGET_TOP: HopeBudgetBand = {
+  below: Number.POSITIVE_INFINITY,
+  label: "1000만원 이상",
+  minKrw: 10_000_000,
+  maxKrw: Number.MAX_SAFE_INTEGER,
+};
+
+function hopeBudgetEntry(hopeBudget: number): HopeBudgetBand {
+  return HOPE_BUDGET_BANDS.find((band) => hopeBudget < band.below) ?? HOPE_BUDGET_TOP;
+}
+
 export function hopeBudgetBand(hopeBudget: number | null): string | null {
+  return hopeBudget === null ? null : hopeBudgetEntry(hopeBudget).label;
+}
+
+/** 검색 필터용 숫자 구간. 정확 예산은 노출하지 않고 구간 경계만 넘긴다. */
+export function hopeBudgetRange(hopeBudget: number | null): { minKrw: number; maxKrw: number } | null {
   if (hopeBudget === null) return null;
-  if (hopeBudget < 1_000_000) return "100만원 미만";
-  if (hopeBudget < 3_000_000) return "100만원~300만원";
-  if (hopeBudget < 5_000_000) return "300만원~500만원";
-  if (hopeBudget < 10_000_000) return "500만원~1000만원";
-  return "1000만원 이상";
+  const entry = hopeBudgetEntry(hopeBudget);
+  return { minKrw: entry.minKrw, maxKrw: entry.maxKrw };
 }
 
 export function publicProjectSummary(row: PublicProjectRow, itemCount: number): PublicProjectSummary {

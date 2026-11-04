@@ -14,6 +14,7 @@ import {
   type InquiryRow,
 } from '../../src/modules/support/prisma-adapter.ts';
 import { FIXED_NOW } from './fixtures.ts';
+import type { NotificationDbRow } from '../../src/modules/notification/prisma-adapter.ts';
 
 const unused = async (): Promise<never> => {
   throw new Error('unused');
@@ -94,15 +95,15 @@ function reportDb(rows: ReportRow[]) {
     eventLog: { create: unused },
     notification: {
       findByKey: async () => null,
-      findUnique: async () => null,
       async create(input) {
-        notifications.push(input as Record<string, unknown>);
-        return { ...input, id: 'n1', isRead: false };
+        notifications.push({ ...input });
+        return { ...input, id: 'n1', isRead: false } satisfies NotificationDbRow;
       },
-      update: unused,
-      findMany: async () => [],
-      count: async () => 0,
-      updateMany: async () => ({ count: 0 }),
+      refreshBundled: unused,
+      listRecent: async () => [],
+      countUnread: async () => 0,
+      markRead: async () => false,
+      markAllRead: async () => 0,
     },
   };
   return { db, notifications };
@@ -219,15 +220,15 @@ function inquiryDb(rows: InquiryRow[]) {
     eventLog: { create: unused },
     notification: {
       findByKey: async () => null,
-      findUnique: async () => null,
       async create(input) {
-        notifications.push(input as Record<string, unknown>);
-        return { ...input, id: 'n1', isRead: false };
+        notifications.push({ ...input });
+        return { ...input, id: 'n1', isRead: false } satisfies NotificationDbRow;
       },
-      update: unused,
-      findMany: async () => [],
-      count: async () => 0,
-      updateMany: async () => ({ count: 0 }),
+      refreshBundled: unused,
+      listRecent: async () => [],
+      countUnread: async () => 0,
+      markRead: async () => false,
+      markAllRead: async () => 0,
     },
   };
   return { db, notifications };

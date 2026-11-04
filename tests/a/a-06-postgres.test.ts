@@ -89,10 +89,14 @@ async function currentItems(projectId: string): Promise<SpecRevisionItem[]> {
 
 function applicationPort(overrides: Partial<{ countPending: number; markSpecStale: number; rejectPendingOnDelete: number }> = {}) {
   return {
-    countPending: jest.fn(async () => overrides.countPending ?? 0),
-    markSpecStale: jest.fn(async () => overrides.markSpecStale ?? 0),
-    rejectPendingOnDelete: jest.fn(async () => overrides.rejectPendingOnDelete ?? 0),
+    countPending: jest.fn(async (_tx: import("@prisma/client").Prisma.TransactionClient, _projectId: string) => overrides.countPending ?? 0),
+    markSpecStale: jest.fn(async (_tx: import("@prisma/client").Prisma.TransactionClient, _input: { projectId: string; newVersionNo: number; at: Date }) => overrides.markSpecStale ?? 0),
+    rejectPendingOnDelete: jest.fn(async (_tx: import("@prisma/client").Prisma.TransactionClient, _input: { projectId: string; at: Date }) => overrides.rejectPendingOnDelete ?? 0),
   };
+}
+
+function notificationPort() {
+  return { enqueue: jest.fn(async (_tx: import("@prisma/client").Prisma.TransactionClient, _input: { userId: string; type: "DEADLINE_EXTENDED" | "PROJECT_CLOSED"; projectId: string; at: Date }) => undefined) };
 }
 
 afterAll(async () => {
@@ -154,7 +158,7 @@ describe("A-06 deadline batch", () => {
     const projectId = await makeProject(clientId, { deadline: pastDeadline });
     const port = applicationPort({ countPending: 3 });
 
-    const result = await runProjectDeadlineBatch(db, { application: port, notification: { enqueue: jest.fn() } }, now);
+    const result = await runProjectDeadlineBatch(db, { application: port, notification: notificationPort() }, now);
 
     const project = await db.project.findUniqueOrThrow({ where: { id: projectId } });
     expect(project.status).toBe(ProjectStatus.SELECTING);
@@ -165,7 +169,7 @@ describe("A-06 deadline batch", () => {
   it("A-06-T04 expires when no applicant waits", async () => {
     const clientId = await makeClient();
     const projectId = await makeProject(clientId, { deadline: pastDeadline });
-    await runProjectDeadlineBatch(db, { application: applicationPort({ countPending: 0 }), notification: { enqueue: jest.fn() } }, now);
+    await runProjectDeadlineBatch(db, { application: applicationPort({ countPending: 0 }), notification: notificationPort() }, now);
     expect(await db.project.findUniqueOrThrow({ where: { id: projectId } })).toMatchObject({ status: ProjectStatus.EXPIRED, selectionEndsAt: null });
   });
 
@@ -173,7 +177,7 @@ describe("A-06 deadline batch", () => {
     const clientId = await makeClient();
     const projectId = await makeProject(clientId, { status: ProjectStatus.SELECTING, selectionEndsAt: pastDeadline });
     const port = applicationPort({ rejectPendingOnDelete: 2 });
-    await runProjectDeadlineBatch(db, { application: port, notification: { enqueue: jest.fn() } }, now);
+    await runProjectDeadlineBatch(db, { application: port, notification: notificationPort() }, now);
     expect(await db.project.findUniqueOrThrow({ where: { id: projectId } })).toMatchObject({ status: ProjectStatus.EXPIRED });
     expect(port.rejectPendingOnDelete).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ projectId }));
   });
@@ -183,7 +187,7 @@ describe("A-06 deadline batch", () => {
     const accepted = await makeProject(clientId, { deadline: pastDeadline, status: ProjectStatus.ACCEPTED });
     const contracted = await makeProject(clientId, { deadline: pastDeadline, status: ProjectStatus.CONTRACTED });
     const port = applicationPort({ countPending: 5 });
-    await runProjectDeadlineBatch(db, { application: port, notification: { enqueue: jest.fn() } }, now);
+    await runProjectDeadlineBatch(db, { application: port, notification: notificationPort() }, now);
     expect(await db.project.findUniqueOrThrow({ where: { id: accepted } })).toMatchObject({ status: ProjectStatus.ACCEPTED });
     expect(await db.project.findUniqueOrThrow({ where: { id: contracted } })).toMatchObject({ status: ProjectStatus.CONTRACTED });
   });
@@ -192,7 +196,7 @@ describe("A-06 deadline batch", () => {
     const clientId = await makeClient();
     const projectId = await makeProject(clientId, { deadline: pastDeadline });
     const port = applicationPort({ countPending: 0 });
-    const enqueue = jest.fn(async () => undefined);
+    const enqueue = notificationPort().enqueue;
     const first = await runProjectDeadlineBatch(db, { application: port, notification: { enqueue } }, now);
     const second = await runProjectDeadlineBatch(db, { application: port, notification: { enqueue } }, now);
     expect(await db.project.findUniqueOrThrow({ where: { id: projectId } })).toMatchObject({ status: ProjectStatus.EXPIRED });
@@ -206,7 +210,7 @@ describe("A-06 deadline batch", () => {
     const clientId = await makeClient();
     const future = await makeProject(clientId, { status: ProjectStatus.SCHEDULED, recruitStartAt: new Date(now.getTime() + day) });
     const due = await makeProject(clientId, { status: ProjectStatus.SCHEDULED, recruitStartAt: new Date(now.getTime() - day) });
-    await runProjectDeadlineBatch(db, { application: applicationPort(), notification: { enqueue: jest.fn() } }, now);
+    await runProjectDeadlineBatch(db, { application: applicationPort(), notification: notificationPort() }, now);
     expect(await db.project.findUniqueOrThrow({ where: { id: future } })).toMatchObject({ status: ProjectStatus.SCHEDULED });
     expect(await db.project.findUniqueOrThrow({ where: { id: due } })).toMatchObject({ status: ProjectStatus.RECRUITING });
   });
@@ -306,7 +310,7 @@ describe("A-06 deadline extension", () => {
   it("A-06-T05 caps the extension at fourteen days and reopens recruitment", async () => {
     const clientId = await makeClient();
     const projectId = await makeProject(clientId, { status: ProjectStatus.SELECTING, selectionEndsAt: pastDeadline });
-    const ports: ProjectPorts = { notification: { enqueue: jest.fn() } };
+    const ports: ProjectPorts = { notification: notificationPort() };
 
     await expect(extendDeadline(db, ports, projectId, clientId, new Date(futureDeadline.getTime() + 14 * day + 1), now))
       .rejects.toMatchObject({ code: "INVALID_DEADLINE_EXTENSION", status: 422 });

@@ -21,6 +21,13 @@ export const PROJECT_STATUSES = [
 
 export type ProjectStatus = (typeof PROJECT_STATUSES)[number];
 
+/** A/B가 공유하는 현재 명세 버전 스냅샷. 정확한 금액이나 내부 SpecItem은 포함하지 않는다. */
+export interface ProjectSpecVersion {
+  readonly currentVersion: number;
+  readonly status: ProjectStatus;
+  readonly specItemIds: readonly string[];
+}
+
 export interface HopeBudgetRange {
   readonly minKrw: number;
   readonly maxKrw: number;

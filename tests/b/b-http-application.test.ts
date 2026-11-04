@@ -7,6 +7,7 @@ import type { Actor, ApplicationRecord } from '../../src/modules/application/dto
 import {
   createApplicationRouter,
   type ApplicationHttpPorts,
+  type ProjectStateForApplication,
 } from '../../src/modules/application/http.ts';
 import type { ApplicationReadPort } from '../../src/modules/application/queries.ts';
 import {
@@ -70,6 +71,12 @@ class NoopNotificationTx implements NotificationTx {
 
 class MemoryAppTx implements ApplicationTx {
   rows: ApplicationRevision[] = [];
+  projectSpec: ProjectStateForApplication = {
+    clientUserId: 'client-1',
+    status: 'RECRUITING',
+    currentVersion: 1,
+    specItemIds: ['spec-1', 'spec-2'],
+  };
   readonly notificationTx = new NoopNotificationTx();
   readonly notifications: ApplicationNotificationPort = createApplicationNotificationPort(
     this.notificationTx,
@@ -77,6 +84,11 @@ class MemoryAppTx implements ApplicationTx {
 
   async findFirstDetailView(): Promise<Date | null> {
     return FIXED_NOW;
+  }
+
+  async findProjectSpec() {
+    const { currentVersion, status, specItemIds } = this.projectSpec;
+    return { currentVersion, status, specItemIds };
   }
 
   async findLatestRevision(input: {
@@ -139,7 +151,7 @@ class MemoryUow implements ApplicationUnitOfWork {
   }
 }
 
-function buildApp(): {
+function buildApp(options: { readonly advanceSpecAfterRead?: boolean } = {}): {
   app: ReturnType<typeof createApp>;
   tx: MemoryAppTx;
 } {
@@ -162,12 +174,17 @@ function buildApp(): {
       findProjectClientId: async (projectId) => (projectId === 'prj-1' ? 'client-1' : null),
       listRevisionsByProject: async (projectId) =>
         tx.rows.filter((row) => row.projectId === projectId),
+      listSupplierProfileSummaries: async () => [],
     },
     projectState: {
-      getForApplication: async (projectId) =>
-        projectId === 'prj-1'
-          ? { clientUserId: 'client-1', status: 'RECRUITING', specVersionNo: 1, specItemIds: ['spec-1', 'spec-2'] }
-          : null,
+      getForApplication: async (projectId) => {
+        if (projectId !== 'prj-1') return null;
+        const state = { ...tx.projectSpec, specItemIds: [...tx.projectSpec.specItemIds] };
+        if (options.advanceSpecAfterRead === true) {
+          tx.projectSpec = { ...tx.projectSpec, currentVersion: 2, specItemIds: ['spec-new'] };
+        }
+        return state;
+      },
     },
     now: () => FIXED_NOW,
   };
@@ -205,6 +222,51 @@ describe('Gate 0 HTTP: 지원·견적 라우터', () => {
       assert.equal(tx.notificationTx.rows.length, 1);
       assert.equal(tx.notificationTx.rows[0]?.userId, 'client-1');
       assert.equal(response.headers.get('x-request-id')?.length, 36);
+    });
+  });
+
+  it('명세가 HTTP 읽기와 지원 쓰기 사이에 바뀌면 제출하지 않는다', async () => {
+    const { app, tx } = buildApp({ advanceSpecAfterRead: true });
+
+    await withServer(app, async (call) => {
+      const response = await call({
+        method: 'POST',
+        path: '/api/v1/projects/prj-1/applications',
+        token: 'supplier-token',
+        body: {
+          totalAmount: 3_100_000,
+          durationDays: 42,
+          items: [{ specItemId: 'spec-1', isAvailable: true }],
+        },
+      });
+
+      assert.equal(response.status, 409);
+      assert.equal((response.body as { error: { code: string } }).error.code, 'PROJECT_SPEC_CHANGED');
+      assert.equal(tx.rows.length, 1);
+    });
+  });
+
+  it('명세가 HTTP 읽기와 견적 수정 사이에 바뀌면 회차를 대체하지 않는다', async () => {
+    const { app, tx } = buildApp({ advanceSpecAfterRead: true });
+    tx.rows[0] = applicationRevision({ id: 'app-1', status: 'SUBMITTED' });
+
+    await withServer(app, async (call) => {
+      const response = await call({
+        method: 'POST',
+        path: '/api/v1/applications/app-1/revisions',
+        token: 'supplier-token',
+        body: {
+          totalAmount: 3_300_000,
+          durationDays: 40,
+          revisionReason: '명세 변경 반영',
+          items: [{ specItemId: 'spec-1', isAvailable: true }],
+        },
+      });
+
+      assert.equal(response.status, 409);
+      assert.equal((response.body as { error: { code: string } }).error.code, 'PROJECT_SPEC_CHANGED');
+      assert.equal(tx.rows.length, 1);
+      assert.equal(tx.rows[0]?.status, 'SUBMITTED');
     });
   });
 

@@ -254,20 +254,6 @@ export function isClientFullRefund(input: {
   return input.installmentStatuses.every((status) => status === "PENDING");
 }
 
-export function clientFullRefundStorage(totalDeposited: number, clientFee: number): {
-  compensationRate: null;
-  refundAmount: number;
-  settledAmount: 0;
-  clientFeeRefund: number;
-} {
-  return {
-    compensationRate: null,
-    refundAmount: totalDeposited,
-    settledAmount: 0,
-    clientFeeRefund: clientFee,
-  };
-}
-
 export function canOpenDeposit(status: ContractStatus, paymentStatus: PaymentStatus): boolean {
   return status === "ACTIVE" && paymentStatus === "PENDING";
 }

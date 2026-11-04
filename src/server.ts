@@ -100,8 +100,9 @@ export interface ExternalPorts {
 export function createBRouters(
   prisma: BPrismaPorts,
   external: ExternalPorts,
+  applicationReadOverride?: ReturnType<typeof createPrismaApplicationReadPort>,
 ): MountedRouter[] {
-  const applicationRead = createPrismaApplicationReadPort(prisma.applicationRead);
+  const applicationRead = applicationReadOverride ?? createPrismaApplicationReadPort(prisma.applicationRead);
   const notificationUow = createPrismaNotificationUnitOfWork(prisma.notification);
   const agreements: AgreementDraftStore = createPrismaAgreementDraftStore(
     prisma.agreement,
@@ -146,7 +147,10 @@ export function createBRouters(
     {
       basePath: '',
       router: createContractRouter({
-        uow: createPrismaContractUnitOfWork(prisma.contract, external.depositAttempts),
+        uow: createPrismaContractUnitOfWork(
+          prisma.contract,
+          external.depositAttempts,
+        ),
         reads: createPrismaContractReadPort(prisma.contract),
         applications: applicationRead,
         agreements,

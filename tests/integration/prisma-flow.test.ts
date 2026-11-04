@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import { describe, it } from "node:test";
 import { PrismaClient } from "@prisma/client";
 import { createPrismaRepositories } from "../../src/infrastructure/prisma-store.ts";
+import { CancellationHttpError, CancellationService } from "../../src/modules/cancellation/index.ts";
 import { DepositCompletionService } from "../../src/modules/deposit/index.ts";
 import { DeliveryService } from "../../src/modules/delivery/index.ts";
 import { SettlementService } from "../../src/modules/settlement/policy.ts";
@@ -123,6 +124,58 @@ describe("INT-C-02: Prisma 저장소 골든 패스", { skip: hasDatabase ? false
         depositedAt: null,
       });
       await completion.completeDeposit({ depositId: deposit.id, pgKey: "pk-flow" });
+
+      const cancellation = new CancellationService({ repo: repos.cancellationRepository, clock });
+      await prisma.contract.update({
+        where: { id: contractId },
+        data: {
+          status: "CANCEL_REQUESTED",
+          cancelCause: "CLIENT",
+          cancelRequestedBy: clientId,
+          cancelRequestedAt: clock.now(),
+          cancelNote: "D-16 regression",
+        },
+      });
+      await assert.rejects(
+        () =>
+          cancellation.agreeCancellation(
+            { userId: supplierId, role: "SUPPLIER" },
+            { contractId },
+          ),
+        (err: unknown) =>
+          err instanceof CancellationHttpError && err.status === 409 && err.message === "D16_BLOCKED",
+      );
+      const blockedCancellation = await prisma.contract.findUnique({ where: { id: contractId } });
+      assert.equal(blockedCancellation?.status, "CANCEL_REQUESTED");
+      assert.equal(blockedCancellation?.cancelResolution, null);
+      assert.equal(blockedCancellation?.refundAmount, null);
+
+      await prisma.contract.update({
+        where: { id: contractId },
+        data: { cancelEscalatedAt: clock.now() },
+      });
+      await assert.rejects(
+        () =>
+          cancellation.decideCancellation({
+            contractId,
+            compensationRate: 0,
+            reason: "D-16 regression",
+          }),
+        (err: unknown) =>
+          err instanceof CancellationHttpError && err.status === 409 && err.message === "D16_BLOCKED",
+      );
+
+      await prisma.contract.update({
+        where: { id: contractId },
+        data: {
+          status: "ACTIVE",
+          cancelCause: null,
+          cancelRequestedBy: null,
+          cancelRequestedAt: null,
+          cancelNote: null,
+          cancelEscalatedAt: null,
+        },
+      });
 
       const installments = await repos.settlementRepository.listInstallments(contractId);
       assert.equal(installments.length, 2);

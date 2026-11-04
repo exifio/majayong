@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it, jest } from "@jest/globals";
 import { DraftEntryType, PrismaClient, Role } from "@prisma/client";
-import express, { type Request, type Response } from "express";
+import express, { type Request, type Response as ExpressResponse } from "express";
 import { createServer, type Server } from "node:http";
 import { randomUUID } from "node:crypto";
 import { issueAccessToken } from "../../src/modules/identity/auth.ts";
@@ -34,7 +34,7 @@ postgresDescribe("A-04 PostgreSQL integration (safe only for majayong_a00_test)"
     recommend: async () => [],
   };
 
-  async function makeAccount(role = Role.CLIENT, name: string | null = null): Promise<Account> {
+  async function makeAccount(role: Role = Role.CLIENT, name: string | null = null): Promise<Account> {
     const id = randomUUID();
     const row = await db.user.create({ data: { id, email: `a04-${id}@example.invalid`, role, name } });
     const token = issueAccessToken({ userId: row.id, role, expiresAt: currentTime.getTime() + 365 * 86_400_000 }, secret);
@@ -65,7 +65,7 @@ postgresDescribe("A-04 PostgreSQL integration (safe only for majayong_a00_test)"
     };
     mountDraftApi(router, db, ports, () => new Date(currentTime), authenticated);
     app.use("/api/v1", router);
-    app.use((error: unknown, _req: Request, res: Response, _next: express.NextFunction) => {
+    app.use((error: unknown, _req: Request, res: ExpressResponse, _next: express.NextFunction) => {
       res.status(500).json({ error: { code: error instanceof Error ? error.message : "INTERNAL_ERROR" } });
     });
     const server = createServer(app);
@@ -78,7 +78,7 @@ postgresDescribe("A-04 PostgreSQL integration (safe only for majayong_a00_test)"
   async function stopServer(server: Server): Promise<void> {
     await new Promise<void>((resolve, reject) => server.close(error => error ? reject(error) : resolve()));
   }
-  async function call(base: string, method: string, path: string, token: string, data?: unknown): Promise<Response> {
+  async function call(base: string, method: string, path: string, token: string, data?: unknown): Promise<globalThis.Response> {
     return fetch(`${base}${path}`, {
       method,
       headers: { authorization: `Bearer ${token}`, ...(data === undefined ? {} : { "content-type": "application/json" }) },
@@ -96,6 +96,7 @@ postgresDescribe("A-04 PostgreSQL integration (safe only for majayong_a00_test)"
       const ownerIds = accounts.map(item => item.id);
       const drafts = await db.draft.findMany({ where: { clientId: { in: ownerIds } }, select: { id: true } });
       const ids = drafts.map(item => item.id);
+      await db.eventLog.deleteMany({ where: { OR: [{ userId: { in: ownerIds } }, ...(ids.length ? [{ draftId: { in: ids } }] : [])] } });
       if (ids.length) {
         await db.draftBlock.deleteMany({ where: { draftId: { in: ids } } });
         await db.clientUtterance.deleteMany({ where: { draftId: { in: ids } } });
@@ -117,15 +118,66 @@ postgresDescribe("A-04 PostgreSQL integration (safe only for majayong_a00_test)"
     try {
       const response = await create(running.baseUrl, client, "예약 시스템 test-private@example.invalid");
       expect(response.status).toBe(201);
-      const data = (await response.json() as { data: { id: string; pendingFeatures: { attempts: number }[]; utterances: { content: string }[] } }).data;
+      const data = ((await response.json()) as { data: { id: string; pendingFeatures: { attempts: number }[]; utterances: { content: string }[] } }).data;
       expect(data.pendingFeatures[0]?.attempts).toBe(1);
       expect(data.utterances[0]?.content).toContain("test-private@example.invalid");
+      const firstRender = await db.eventLog.findFirstOrThrow({ where: { draftId: data.id, type: "DRAFT_RENDERED" } });
+      expect(firstRender.userId).toBe(client.id);
+      expect(firstRender.payload).toMatchObject({ reusedBlocks: 0, generatedBlocks: 0, pendingFeatures: 1, durationMs: expect.any(Number) });
       const retry = await call(running.baseUrl, "POST", `/drafts/${data.id}/retry`, client.token, {});
       expect(retry.status).toBe(200);
-      const retried = (await retry.json() as { data: { pendingFeatures: unknown[]; blocks: { unitPrice: number }[] } }).data;
+      const retried = ((await retry.json()) as { data: { pendingFeatures: unknown[]; blocks: { unitPrice: number }[] } }).data;
       expect(retried.pendingFeatures).toEqual([]);
       expect(retried.blocks.map(block => block.unitPrice)).toEqual([7100]);
+      expect(await db.eventLog.count({ where: { draftId: data.id, type: "DRAFT_RENDERED" } })).toBe(1);
       expect(generatePending).toHaveBeenCalledTimes(1);
+    } finally { await stopServer(running.server); }
+  });
+
+  it("records one draft-rendered metric for the first persisted draft view", async () => {
+    const client = await makeAccount();
+    const blockId = await makeBlock();
+    const resolveExisting = jest.fn<DraftCatalogAdapter["resolveExisting"]>().mockResolvedValue({ blockIds: [blockId], pendingFeatures: [], reusedBlocks: 1 });
+    activePorts = { catalog: { ...defaultCatalog, resolveExisting } };
+    const running = await runServer();
+    try {
+      const created = await create(running.baseUrl, client);
+      expect(created.status).toBe(201);
+      const draft = ((await created.json()) as { data: { id: string } }).data;
+      const rendered = await db.eventLog.findFirstOrThrow({ where: { draftId: draft.id, type: "DRAFT_RENDERED" } });
+      expect(rendered.payload).toMatchObject({ reusedBlocks: 1, generatedBlocks: 0, pendingFeatures: 0, durationMs: expect.any(Number) });
+      expect(await db.eventLog.count({ where: { draftId: draft.id, type: "DRAFT_INPUT_SUBMITTED" } })).toBe(1);
+
+      await call(running.baseUrl, "POST", `/drafts/${draft.id}/messages`, client.token, { text: "예약 변경" });
+      expect(await db.eventLog.count({ where: { draftId: draft.id, type: "DRAFT_RENDERED" } })).toBe(1);
+    } finally { await stopServer(running.server); }
+  });
+
+  it("records one first-render event when draft creation and chat resolution overlap", async () => {
+    const client = await makeAccount();
+    const blockId = await makeBlock();
+    let resolveCount = 0;
+    let startFirst!: () => void;
+    let releaseBoth!: () => void;
+    const firstStarted = new Promise<void>(resolve => { startFirst = resolve; });
+    const bothReady = new Promise<void>(resolve => { releaseBoth = resolve; });
+    const resolveExisting: DraftCatalogAdapter["resolveExisting"] = async () => {
+      resolveCount += 1;
+      if (resolveCount === 1) startFirst();
+      if (resolveCount === 2) releaseBoth();
+      await bothReady;
+      return { blockIds: [blockId], pendingFeatures: [], reusedBlocks: 1 };
+    };
+    const running = await runServer({ catalog: { ...defaultCatalog, resolveExisting } });
+    try {
+      const creating = create(running.baseUrl, client);
+      await firstStarted;
+      const draft = await db.draft.findFirstOrThrow({ where: { clientId: client.id, status: "IN_PROGRESS" }, orderBy: { createdAt: "desc" } });
+      const editing = call(running.baseUrl, "POST", `/drafts/${draft.id}/messages`, client.token, { text: "예약 변경" });
+      const [created, edited] = await Promise.all([creating, editing]);
+      expect(created.status).toBe(201);
+      expect(edited.status).toBe(200);
+      expect(await db.eventLog.count({ where: { draftId: draft.id, type: "DRAFT_RENDERED" } })).toBe(1);
     } finally { await stopServer(running.server); }
   });
 
@@ -136,14 +188,14 @@ postgresDescribe("A-04 PostgreSQL integration (safe only for majayong_a00_test)"
     activePorts = { catalog: { ...defaultCatalog, resolveExisting: async () => ({ blockIds: [assigned], pendingFeatures: [] }), recommend: async () => recommendations } };
     const running = await runServer();
     try {
-      const data = (await (await create(running.baseUrl, client)).json() as { data: { id: string } }).data;
+      const data = ((await (await create(running.baseUrl, client)).json()) as { data: { id: string } }).data;
       for (let index = 0; index < 30; index += 1) {
         expect((await call(running.baseUrl, "POST", `/drafts/${data.id}/messages`, client.token, { text: `수정 ${index}` })).status).toBe(200);
       }
       expect((await call(running.baseUrl, "POST", `/drafts/${data.id}/messages`, client.token, { text: "31번째 수정" })).status).toBe(409);
       const suggested = await call(running.baseUrl, "GET", `/drafts/${data.id}/recommendations`, client.token);
       expect(suggested.status).toBe(200);
-      expect((await suggested.json() as { data: unknown[] }).data).toHaveLength(4);
+      expect(((await suggested.json()) as { data: unknown[] }).data).toHaveLength(4);
       expect((await call(running.baseUrl, "DELETE", `/drafts/${data.id}/blocks/${assigned}`, client.token)).status).toBe(200);
     } finally { await stopServer(running.server); }
   });
@@ -154,7 +206,7 @@ postgresDescribe("A-04 PostgreSQL integration (safe only for majayong_a00_test)"
     try {
       const created = await Promise.all(Array.from({ length: 3 }, () => create(running.baseUrl, client)));
       expect(created.every(item => item.status === 201)).toBe(true);
-      const archivedIds = await Promise.all(created.map(async item => (await item.json() as { data: { id: string } }).data.id));
+      const archivedIds = await Promise.all(created.map(async item => ((await item.json()) as { data: { id: string } }).data.id));
       expect((await create(running.baseUrl, client)).status).toBe(409);
       currentTime = new Date(currentTime.getTime() + 31 * 86_400_000);
       await archiveInactiveDrafts(db, currentTime);
@@ -162,7 +214,7 @@ postgresDescribe("A-04 PostgreSQL integration (safe only for majayong_a00_test)"
       const active = await Promise.all(Array.from({ length: 3 }, () => create(running.baseUrl, client)));
       expect(active.every(item => item.status === 201)).toBe(true);
       expect((await call(running.baseUrl, "POST", `/drafts/${archivedIds[0]}/restore`, client.token, {})).status).toBe(409);
-      const removeId = (await active[0]!.json() as { data: { id: string } }).data.id;
+      const removeId = ((await active[0]!.json()) as { data: { id: string } }).data.id;
       expect((await call(running.baseUrl, "DELETE", `/drafts/${removeId}`, client.token)).status).toBe(200);
       expect((await call(running.baseUrl, "POST", `/drafts/${archivedIds[0]}/restore`, client.token, {})).status).toBe(200);
     } finally { await stopServer(running.server); }
@@ -172,7 +224,7 @@ postgresDescribe("A-04 PostgreSQL integration (safe only for majayong_a00_test)"
     const client = await makeAccount();
     const running = await runServer();
     try {
-      const data = (await (await create(running.baseUrl, client)).json() as { data: { id: string; lastActiveAt: string } }).data;
+      const data = ((await (await create(running.baseUrl, client)).json()) as { data: { id: string; lastActiveAt: string } }).data;
       currentTime = new Date(currentTime.getTime() + 30 * 86_400_000 - 1);
       await archiveInactiveDrafts(db, currentTime);
       expect((await db.draft.findUniqueOrThrow({ where: { id: data.id } })).status).toBe("IN_PROGRESS");
@@ -188,9 +240,9 @@ postgresDescribe("A-04 PostgreSQL integration (safe only for majayong_a00_test)"
     const client = await makeAccount();
     const running = await runServer();
     try {
-      const id = (await (await create(running.baseUrl, client)).json() as { data: { id: string } }).data.id;
+      const id = ((await (await create(running.baseUrl, client)).json()) as { data: { id: string } }).data.id;
       expect((await call(running.baseUrl, "DELETE", `/drafts/${id}`, client.token)).status).toBe(200);
-      expect((await (await call(running.baseUrl, "GET", "/drafts", client.token)).json() as { data: unknown[] }).data).toEqual([]);
+      expect(((await (await call(running.baseUrl, "GET", "/drafts", client.token)).json()) as { data: unknown[] }).data).toEqual([]);
       expect((await call(running.baseUrl, "GET", `/drafts/${id}`, client.token)).status).toBe(404);
     } finally { await stopServer(running.server); }
   });
@@ -200,7 +252,7 @@ postgresDescribe("A-04 PostgreSQL integration (safe only for majayong_a00_test)"
     const blockId = await makeBlock(5000);
     const running = await runServer();
     try {
-      const id = (await (await call(running.baseUrl, "POST", "/drafts", client.token, { entryType: DraftEntryType.DEFAULT_DRAFT })).json() as { data: { id: string } }).data.id;
+      const id = ((await (await call(running.baseUrl, "POST", "/drafts", client.token, { entryType: DraftEntryType.DEFAULT_DRAFT })).json()) as { data: { id: string } }).data.id;
       await Promise.all([
         call(running.baseUrl, "POST", `/drafts/${id}/blocks`, client.token, { blockId }),
         call(running.baseUrl, "POST", `/drafts/${id}/blocks`, client.token, { blockId }),
@@ -223,7 +275,7 @@ postgresDescribe("A-04 PostgreSQL integration (safe only for majayong_a00_test)"
     };
     const running = await runServer({ catalog });
     try {
-      const data = (await (await create(running.baseUrl, client)).json() as { data: { id: string; lastActiveAt: string } }).data;
+      const data = ((await (await create(running.baseUrl, client)).json()) as { data: { id: string; lastActiveAt: string } }).data;
       currentTime = new Date(currentTime.getTime() + 60_000);
       await call(running.baseUrl, "GET", `/drafts/${data.id}`, client.token);
       await call(running.baseUrl, "GET", "/drafts", client.token);
@@ -243,7 +295,7 @@ postgresDescribe("A-04 PostgreSQL integration (safe only for majayong_a00_test)"
     const running = await runServer({ catalog: { ...defaultCatalog, resolveExisting } });
     try {
       const raw = "민들레 사장님 민들레 가게 서울 종로구 https://shop.example.invalid test-private@example.invalid 010-1234-5678";
-      const data = (await (await create(running.baseUrl, owner, raw)).json() as { data: { id: string; utterances: { content: string }[] } }).data;
+      const data = ((await (await create(running.baseUrl, owner, raw)).json()) as { data: { id: string; utterances: { content: string }[] } }).data;
       expect(data.utterances[0]?.content).toContain("test-private@example.invalid");
       expect((await call(running.baseUrl, "GET", `/drafts/${data.id}`, other.token)).status).toBe(404);
       expect((await call(running.baseUrl, "DELETE", `/drafts/${data.id}`, other.token)).status).toBe(404);

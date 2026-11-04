@@ -1,5 +1,6 @@
 import { Prisma, ProjectStatus, type PrismaClient } from "@prisma/client";
 import { DraftError } from "../draft/rules.js";
+import type { ProjectSpecVersion } from "../market/public-project.js";
 
 export type ProjectTx = Prisma.TransactionClient;
 
@@ -55,7 +56,7 @@ export interface TransitionProjectInput {
 
 export interface ProjectOutputPorts {
   transitionProject(tx: ProjectTx, input: TransitionProjectInput): Promise<void>;
-  readSpecVersion(projectId: string): Promise<{ currentVersion: number; status: ProjectStatus } | null>;
+  readSpecVersion(projectId: string): Promise<ProjectSpecVersion | null>;
 }
 
 const allowedTransitions: Partial<Record<ProjectStatus, ProjectStatus[]>> = {
@@ -72,17 +73,24 @@ export function createProjectOutputPorts(db: PrismaClient): ProjectOutputPorts {
       if (!project) throw new DraftError("PROJECT_NOT_FOUND", 404);
       const allowed = allowedTransitions[project.status] ?? [];
       if (!allowed.includes(input.to)) throw new DraftError("INVALID_PROJECT_TRANSITION", 409);
-      await tx.project.update({
-        where: { id: input.projectId },
+      const updated = await tx.project.updateMany({
+        where: { id: input.projectId, status: project.status },
         data: {
           status: input.to,
           selectionEndsAt: input.to === ProjectStatus.SELECTING ? new Date(input.at.getTime() + selectionWindowMs) : null,
         },
       });
+      if (updated.count !== 1) throw new DraftError("INVALID_PROJECT_TRANSITION", 409);
     },
     async readSpecVersion(projectId) {
       const project = await db.project.findUnique({ where: { id: projectId }, select: { currentVersion: true, status: true } });
-      return project ?? null;
+      if (project === null) return null;
+      const items = await db.specItem.findMany({
+        where: { projectId, versionNo: project.currentVersion, status: "INCLUDED" },
+        select: { id: true },
+        orderBy: [{ sortOrder: "asc" }, { id: "asc" }],
+      });
+      return { ...project, specItemIds: items.map((item) => item.id) };
     },
   };
 }

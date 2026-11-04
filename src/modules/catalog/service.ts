@@ -94,12 +94,14 @@ async function persistOrReuse(
   });
 }
 
-async function reserveLlmCall(db: PrismaClient, clientId: string): Promise<string> {
+type LlmPurpose = "BLOCK_CREATE" | "BLOCK_CLASSIFY";
+
+async function reserveLlmCall(db: PrismaClient, clientId: string, purpose: LlmPurpose): Promise<string> {
   const event = await db.eventLog.create({
     data: {
       userId: clientId,
       type: EventType.LLM_CALLED,
-      payload: { purpose: "BLOCK_CREATE", model: "pending", tokens: { input: 0, output: 0 }, costKrw: 0, latencyMs: 0, succeeded: false, reserved: true },
+      payload: { purpose, model: "pending", tokens: { input: 0, output: 0 }, costKrw: 0, latencyMs: 0, succeeded: false, reserved: true },
     },
   });
   return event.id;
@@ -110,11 +112,12 @@ async function finishLlmCall(
   eventId: string,
   metadata: CatalogGenerationMetadata | undefined,
   succeeded: boolean,
+  purpose: LlmPurpose,
 ): Promise<void> {
   await db.eventLog.update({
     where: { id: eventId },
     data: { payload: {
-      purpose: "BLOCK_CREATE",
+      purpose,
       model: metadata?.model ?? "unknown",
       tokens: metadata?.tokens ?? { input: 0, output: 0 },
       costKrw: metadata?.costKrw ?? 0,
@@ -148,12 +151,12 @@ export async function generateOrReuseCatalogBlock(
   const safeInput = { clientId: input.clientId, industryCode, trigger: input.trigger };
 
   for (let attempt = 1; attempt <= 2; attempt += 1) {
-    const eventId = await reserveLlmCall(db, input.clientId);
+    const eventId = await reserveLlmCall(db, input.clientId, "BLOCK_CREATE");
     let generated: unknown;
     try {
       generated = await generator({ industryCode, text: safeText });
     } catch {
-      await finishLlmCall(db, eventId, undefined, false);
+      await finishLlmCall(db, eventId, undefined, false, "BLOCK_CREATE");
       if (attempt === 2) {
         return {
           status: "PENDING",
@@ -175,7 +178,7 @@ export async function generateOrReuseCatalogBlock(
       if (!metadata) throw new Error("INVALID_GENERATION_METADATA");
       block = parseGeneratedBlock(response?.content, privateValues);
     } catch {
-      await finishLlmCall(db, eventId, metadata, false);
+      await finishLlmCall(db, eventId, metadata, false, "BLOCK_CREATE");
       if (attempt === 2) {
         return {
           status: "PENDING",
@@ -189,8 +192,57 @@ export async function generateOrReuseCatalogBlock(
       }
       continue;
     }
-    await finishLlmCall(db, eventId, metadata, true);
+    await finishLlmCall(db, eventId, metadata, true, "BLOCK_CREATE");
     return persistOrReuse(db, safeInput, block);
   }
   throw new CatalogError("CATALOG_GENERATION_FAILED", 503);
+}
+
+export const MAX_EXTRACTED_FEATURES = 6;
+
+export type CatalogFeatureExtraction = { features: string[]; metadata: CatalogGenerationMetadata };
+export type CatalogFeatureExtractor = (input: { industryCode: string; text: string }) => Promise<CatalogFeatureExtraction>;
+
+function validFeatureList(value: unknown): value is string[] {
+  if (!Array.isArray(value) || value.length === 0 || value.length > MAX_EXTRACTED_FEATURES) return false;
+  return value.every(item => typeof item === "string" && item.trim().length > 0 && item.length <= 200);
+}
+
+/**
+ * 문장에서 사용자 목적(블록) 후보만 뽑는다. 개인정보는 프롬프트 전에 제거하고,
+ * 응답이 스키마를 벗어나면 빈 목록으로 안전하게 실패한다. 토큰·비용은 이벤트로 남긴다.
+ */
+export async function extractCatalogFeatures(
+  db: PrismaClient,
+  input: Pick<CatalogGenerationInput, "clientId" | "industryCode" | "trigger" | "text">,
+  extractor: CatalogFeatureExtractor,
+): Promise<string[]> {
+  const industryCode = requiredText(input.industryCode);
+  const text = requiredText(input.text);
+  const privateValues = await readPrivateValues(db, input.clientId);
+  const safeText = sanitizeUserText(text, privateValues);
+  const eventId = await reserveLlmCall(db, input.clientId, "BLOCK_CLASSIFY");
+  let extracted: unknown;
+  try {
+    extracted = await extractor({ industryCode, text: safeText });
+  } catch {
+    await finishLlmCall(db, eventId, undefined, false, "BLOCK_CLASSIFY");
+    return [];
+  }
+  const response = extracted as Partial<CatalogFeatureExtraction> | null;
+  const metadata = validGenerationMetadata(response?.metadata) ? response.metadata : undefined;
+  if (!metadata || !validFeatureList(response?.features)) {
+    await finishLlmCall(db, eventId, metadata, false, "BLOCK_CLASSIFY");
+    return [];
+  }
+  const features = response.features
+    .map(feature => sanitizeUserText(feature.trim(), privateValues))
+    .filter(feature => feature.length > 0)
+    .slice(0, MAX_EXTRACTED_FEATURES);
+  if (features.length === 0) {
+    await finishLlmCall(db, eventId, metadata, false, "BLOCK_CLASSIFY");
+    return [];
+  }
+  await finishLlmCall(db, eventId, metadata, true, "BLOCK_CLASSIFY");
+  return features;
 }

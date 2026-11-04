@@ -145,6 +145,7 @@ export function toContractRecord(row: ContractRow): ContractRecord {
 }
 
 export interface ContractDbClient extends NotificationDbClient {
+  readonly $queryRaw?: <T = unknown>(query: TemplateStringsArray, ...values: unknown[]) => Promise<T>;
   readonly contract: {
     findUnique(input: {
       readonly where: { readonly id: string };
@@ -235,6 +236,9 @@ export function createContractTx(
     },
 
     async findContract(contractId) {
+      if (db.$queryRaw !== undefined) {
+        await db.$queryRaw`SELECT id FROM contracts WHERE id = ${contractId} FOR UPDATE`;
+      }
       const row = await db.contract.findUnique({
         where: { id: contractId },
         include: CONTRACT_INCLUDE,
@@ -320,8 +324,12 @@ export function createContractTx(
     },
 
     async applySignature(input) {
-      const row = await db.contract.update({
-        where: { id: input.contractId },
+      const updated = await db.contract.updateMany({
+        where: {
+          id: input.contractId,
+          status: 'PENDING_CONSENT',
+          [input.party === 'CLIENT' ? 'clientSignedAt' : 'supplierSignedAt']: null,
+        },
         data:
           input.party === 'CLIENT'
             ? {
@@ -334,9 +342,10 @@ export function createContractTx(
                 ...(input.activate ? { status: 'ACTIVE' } : {}),
                 ...(input.depositDeadline === null ? {} : { depositDeadline: input.depositDeadline }),
               },
-        include: CONTRACT_INCLUDE,
       });
-      return toContractRecord(row);
+      if (updated.count !== 1) return null;
+      const row = await db.contract.findUnique({ where: { id: input.contractId }, include: CONTRACT_INCLUDE });
+      return row === null ? null : toContractRecord(row);
     },
 
     async cancelContract(input) {

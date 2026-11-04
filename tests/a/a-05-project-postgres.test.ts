@@ -1,5 +1,5 @@
 import { afterAll, describe, expect, it } from "@jest/globals";
-import { BlockOrigin, DraftEntryType, DraftStatus, PrismaClient, Role } from "@prisma/client";
+import { BlockOrigin, DraftEntryType, DraftStatus, Prisma, PrismaClient, Role } from "@prisma/client";
 import express, { type NextFunction, type Request, type Response } from "express";
 import { createServer, type Server } from "node:http";
 import { randomUUID } from "node:crypto";
@@ -24,7 +24,7 @@ const servers: Server[] = [];
 const now = new Date("2026-11-03T09:00:00.000Z");
 const tokenSecret = "a-05-project-test-token-secret-longer-than-32-bytes";
 
-async function makeDraft(pendingFeatures: unknown[] = []): Promise<{ clientId: string; draftId: string; blockIds: string[] }> {
+async function makeDraft(pendingFeatures: Prisma.InputJsonValue = []): Promise<{ clientId: string; draftId: string; blockIds: string[] }> {
   const clientId = randomUUID();
   const draftId = randomUUID();
   const ids: string[] = [];
@@ -127,6 +127,10 @@ afterAll(async () => {
       await db.eventLog.deleteMany({ where: { projectId: { in: projectIds } } });
       await db.specItem.deleteMany({ where: { projectId: { in: projectIds } } });
     }
+    await db.eventLog.deleteMany({ where: { OR: [
+      { draftId: { in: draftIds } },
+      ...(userIds.length ? [{ userId: { in: userIds } }] : []),
+    ] } });
     await db.project.deleteMany({ where: { draftId: { in: draftIds } } });
     await db.draftBlock.deleteMany({ where: { draftId: { in: draftIds } } });
     await db.clientUtterance.deleteMany({ where: { draftId: { in: draftIds } } });
@@ -185,6 +189,7 @@ describe("A-05 project publication PostgreSQL integration", () => {
     expect(response.status).toBe(201);
     expect(body.data?.itemCount).toBe(2);
     const project = await db.project.findUniqueOrThrow({ where: { draftId } });
+    expect(await db.eventLog.count({ where: { projectId: project.id, type: "SPEC_CONFIRMED" } })).toBe(1);
     expect(project.disclosureConsentVersion).toBe("project-disclosure-v0.1-draft");
     expect(await db.draft.findUniqueOrThrow({ where: { id: draftId }, select: { status: true } })).toEqual({ status: DraftStatus.CONFIRMED });
     expect(await db.specItem.count({ where: { projectId: project.id, versionNo: 1 } })).toBe(2);
@@ -200,6 +205,7 @@ describe("A-05 project publication PostgreSQL integration", () => {
     expect(outcomes.filter(outcome => outcome.status === "rejected")).toHaveLength(1);
 
     const project = await db.project.findUniqueOrThrow({ where: { draftId } });
+    expect(await db.eventLog.count({ where: { projectId: project.id, type: "SPEC_CONFIRMED" } })).toBe(1);
     const items = await db.specItem.findMany({ where: { projectId: project.id }, orderBy: { sortOrder: "asc" } });
     expect(project).toMatchObject({
       currentVersion: 1,

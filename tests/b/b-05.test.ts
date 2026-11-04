@@ -483,6 +483,45 @@ describe('B-05-T01 동시 2명 합의 → 1명만', () => {
     assert.equal(contract.status, 'PENDING_CONSENT');
   });
 
+  it('동시 서명은 한 번만 계약을 활성화한다', async () => {
+    const { tx, uow } = setup();
+    const contract = await accept(tx, uow);
+    await signContract(uow, {
+      contractId: contract.id, actor: SUPPLIER,
+      expectedContentHash: contract.contentHash, now: FIXED_NOW,
+    });
+
+    let serialize: Promise<void> = Promise.resolve();
+    const serialUow: ContractUnitOfWork = {
+      async run<T>(work: (tx: ContractTx) => Promise<T>): Promise<T> {
+        const previous = serialize;
+        let unlock!: () => void;
+        serialize = new Promise<void>((resolve) => { unlock = resolve; });
+        await previous;
+        try {
+          return await work(tx);
+        } finally {
+          unlock();
+        }
+      },
+    };
+    const outcomes = await Promise.allSettled([
+      signContract(serialUow, {
+        contractId: contract.id, actor: CLIENT,
+        expectedContentHash: contract.contentHash, now: FIXED_NOW,
+      }),
+      signContract(serialUow, {
+        contractId: contract.id, actor: CLIENT,
+        expectedContentHash: contract.contentHash, now: FIXED_NOW,
+      }),
+    ]);
+
+    assert.equal(outcomes.filter((result) => result.status === 'fulfilled').length, 1);
+    assert.equal(outcomes.filter((result) => result.status === 'rejected').length, 1);
+    assert.equal(tx.contracts[0]?.status, 'ACTIVE');
+    assert.equal(tx.projects[0]?.status, 'CONTRACTED');
+  });
+
   it('합의 완료는 계약·수수료·기한·항목을 한 번에 만든다', async () => {
     const { tx, uow } = setup();
     const contract = await accept(tx, uow);

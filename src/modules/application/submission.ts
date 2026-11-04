@@ -78,6 +78,11 @@ export function createApplicationNotificationPort(
 
 /** B가 C/통합에 넘기는 원자적 쓰기 Port. 실제 구현은 PostgreSQL 트랜잭션. */
 export interface ApplicationTx {
+  findProjectSpec(projectId: string): Promise<{
+    readonly status: ProjectStatus;
+    readonly currentVersion: number;
+    readonly specItemIds: readonly string[];
+  } | null>;
   findFirstDetailView(input: {
     readonly projectId: string;
     readonly supplierId: string;
@@ -221,6 +226,27 @@ function validateItems(
   }
 }
 
+async function requireCurrentProjectSpec(
+  tx: ApplicationTx,
+  input: {
+    readonly projectId: string;
+    readonly specVersionNo: number;
+    readonly specItemIds: readonly string[];
+  },
+): Promise<{ readonly status: ProjectStatus; readonly currentVersion: number; readonly specItemIds: readonly string[] }> {
+  const current = await tx.findProjectSpec(input.projectId);
+  if (current === null) throw new ApplicationError(404, 'PROJECT_NOT_FOUND', '프로젝트를 찾을 수 없습니다.');
+  const currentIds = new Set(current.specItemIds);
+  if (
+    current.currentVersion !== input.specVersionNo ||
+    input.specItemIds.length !== currentIds.size ||
+    input.specItemIds.some((id) => !currentIds.has(id))
+  ) {
+    throw new ApplicationError(409, 'PROJECT_SPEC_CHANGED', '명세가 변경되었습니다. 새로고침한 뒤 다시 시도해 주세요.');
+  }
+  return current;
+}
+
 interface PreparedContent {
   readonly message: string | null;
   readonly questions: readonly ApplicationQuestion[];
@@ -270,17 +296,25 @@ export async function submitApplication(
 ): Promise<ApplicationRevision> {
   validateAmount(input.totalAmount);
   validateDuration(input.durationDays);
-  validateItems(input.items, input.specItemIds);
   const content = prepareContent(input.message, input.questions ?? []);
 
   return uow.run(async (tx) => {
-    if (input.projectStatus !== 'RECRUITING') {
+    const project = await requireCurrentProjectSpec(tx, {
+      projectId: input.projectId,
+      specVersionNo: input.specVersionNo,
+      specItemIds: input.specItemIds,
+    });
+    if (project.status !== 'RECRUITING') {
       throw new ApplicationError(
         409,
         'PROJECT_NOT_RECRUITING',
         '모집 중인 프로젝트에만 지원할 수 있습니다.',
       );
     }
+    if (input.projectStatus !== project.status) {
+      throw new ApplicationError(409, 'PROJECT_STATE_CHANGED', '프로젝트 상태가 변경되었습니다. 다시 확인해 주세요.');
+    }
+    validateItems(input.items, project.specItemIds);
 
     const firstViewedAt = await tx.findFirstDetailView({
       projectId: input.projectId,
@@ -352,7 +386,6 @@ export async function reviseApplication(
 ): Promise<ReviseApplicationResult> {
   validateAmount(input.totalAmount);
   validateDuration(input.durationDays);
-  validateItems(input.items, input.specItemIds);
 
   const trimmedReason = input.revisionReason.trim();
   if (trimmedReason.length === 0) {
@@ -378,6 +411,13 @@ export async function reviseApplication(
         '현재 상태에서는 견적을 수정할 수 없습니다.',
       );
     }
+
+    const project = await requireCurrentProjectSpec(tx, {
+      projectId: previous.projectId,
+      specVersionNo: input.specVersionNo,
+      specItemIds: input.specItemIds,
+    });
+    validateItems(input.items, project.specItemIds);
 
     const content = prepareContent(
       input.message === undefined ? previous.message : input.message,

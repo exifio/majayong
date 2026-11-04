@@ -1,4 +1,4 @@
-import { clientFullRefundStorage, endOfKstDayPlus, isClientFullRefund } from "../settlement/policy.ts";
+import { endOfKstDayPlus, isClientFullRefund } from "../settlement/policy.ts";
 
 export class CancellationHttpError extends Error {
   readonly status: number;
@@ -258,15 +258,7 @@ export class CancellationService {
       throw new CancellationHttpError(403, "취소를 요청한 상대방만 동의할 수 있습니다.");
     }
 
-    const fullRefund = await this.fullRefundIfEligible(contract);
-    if (fullRefund) {
-      return this.repo.updateContract(contract.id, {
-        ...fullRefund,
-        cancelResolution: "AGREED",
-        cancelResolvedAt: this.clock.now(),
-        status: "CANCELLED",
-      });
-    }
+    await this.assertNoUnapprovedClientFullRefund(contract);
 
     // 합의 사유는 요청 단계에 기록된 비율만 확정한다. 그 외 사유는 PRD 13.2 정책값을 쓴다.
     let agreedRate: number;
@@ -393,16 +385,7 @@ export class CancellationService {
       throw new CancellationHttpError(409, "상대 이의 또는 3일 무응답 에스컬레이션 이후에만 운영자 판정할 수 있습니다.");
     }
 
-    const fullRefund = await this.fullRefundIfEligible(contract);
-    if (fullRefund) {
-      return this.repo.updateContract(contract.id, {
-        ...fullRefund,
-        refundReason: input.reason,
-        cancelResolution: "ADMIN_DECIDED",
-        cancelResolvedAt: this.clock.now(),
-        status: "CANCELLED",
-      });
-    }
+    await this.assertNoUnapprovedClientFullRefund(contract);
 
     if (contract.cancelCause === "CLIENT" && input.compensationRate < 50) {
       throw new CancellationHttpError(
@@ -482,7 +465,9 @@ export class CancellationService {
     };
   }
 
-  private async fullRefundIfEligible(contract: CancellationContractEntity) {
+  private async assertNoUnapprovedClientFullRefund(
+    contract: CancellationContractEntity,
+  ): Promise<void> {
     const installments = await this.repo.listInstallments(contract.id);
     const requestedAt = contract.cancelRequestedAt ?? this.clock.now();
     if (
@@ -493,9 +478,9 @@ export class CancellationService {
         installmentStatuses: installments.map((row) => row.status),
       }) === false
     ) {
-      return null;
+      return;
     }
-    return clientFullRefundStorage(contract.totalDeposited, contract.clientFee);
+    throw new CancellationHttpError(409, "D16_BLOCKED");
   }
 
   async getCancellation(

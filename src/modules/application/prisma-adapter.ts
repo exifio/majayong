@@ -5,7 +5,7 @@
  * `@prisma/client`를 직접 import하지 않고 필요한 delegate만 구조적으로 받는다.
  */
 import type { ApplicationQuestion } from './submission.js';
-import type { ApplicationRevision } from './submission.js';
+import type { ApplicationRevision, SupplierProfileSummary } from './submission.js';
 import {
   ApplicationUniqueViolation,
   createApplicationNotificationPort,
@@ -15,6 +15,8 @@ import {
 } from './submission.js';
 import type { ApplicationReadPort, ProjectApplicationsPort } from './queries.js';
 import type { ApplicationStatus } from './dto.js';
+import type { ProjectStatus } from '../market/public-project.js';
+import { maskContacts } from '../chat/masking.js';
 import {
   createPrismaNotificationTx,
   type NotificationDbClient,
@@ -63,6 +65,35 @@ export interface ApplicationReadDbClient {
       readonly where: { readonly id: string };
       readonly select: { readonly draft: { readonly select: { readonly clientId: true } } };
     }): Promise<{ readonly draft: { readonly clientId: string } } | null>;
+  };
+  readonly supplierProfile?: {
+    findMany(input: {
+      readonly where: { readonly userId: { readonly in: readonly string[] } };
+      readonly select: {
+        readonly userId: true;
+        readonly careerYears: true;
+        readonly ratingAvg: true;
+        readonly reviewCount: true;
+        readonly portfolioSummary: true;
+        readonly portfolioSummaryStatus: true;
+        readonly portfolioConsentAt: true;
+        readonly user: { readonly select: { readonly withdrawnAt: true } };
+        readonly applications: {
+          readonly where: { readonly contract: { readonly is: { readonly status: 'COMPLETED' } } };
+          readonly select: { readonly id: true };
+        };
+      };
+    }): Promise<readonly {
+      readonly userId: string;
+      readonly careerYears: number | null;
+      readonly ratingAvg: number | null;
+      readonly reviewCount: number;
+      readonly portfolioSummary: string | null;
+      readonly portfolioSummaryStatus: string | null;
+      readonly portfolioConsentAt: Date | null;
+      readonly user: { readonly withdrawnAt: Date | null };
+      readonly applications: readonly { readonly id: string }[];
+    }[]>;
   };
 }
 
@@ -125,6 +156,46 @@ export function createPrismaApplicationReadPort(
       return rows.map(toApplicationRevision);
     },
 
+    async listSupplierProfileSummaries(supplierIds) {
+      if (supplierIds.length === 0) return [];
+      if (db.supplierProfile === undefined) return supplierIds.map((supplierId) => ({
+        supplierId,
+        careerYears: null,
+        ratingAvg: null,
+        reviewCount: 0,
+        completedContractCount: 0,
+        portfolioSummary: null,
+      }));
+      const rows = await db.supplierProfile.findMany({
+        where: { userId: { in: [...supplierIds] } },
+        select: {
+          userId: true,
+          careerYears: true,
+          ratingAvg: true,
+          reviewCount: true,
+          portfolioSummary: true,
+          portfolioSummaryStatus: true,
+          portfolioConsentAt: true,
+          user: { select: { withdrawnAt: true } },
+          applications: {
+            where: { contract: { is: { status: 'COMPLETED' } } },
+            select: { id: true },
+          },
+        },
+      });
+      return rows.filter((row) => row.user.withdrawnAt === null).map((row): SupplierProfileSummary => ({
+        supplierId: row.userId,
+        careerYears: row.careerYears,
+        ratingAvg: row.ratingAvg,
+        reviewCount: row.reviewCount,
+        completedContractCount: row.applications.length,
+        portfolioSummary:
+          row.portfolioSummaryStatus === 'PUBLISHED' && row.portfolioConsentAt !== null
+            ? (row.portfolioSummary === null ? null : maskContacts(row.portfolioSummary).text)
+            : null,
+      }));
+    },
+
     async findRevision(applicationId) {
       const row = await db.application.findUnique({
         where: { id: applicationId },
@@ -164,7 +235,20 @@ export interface ApplicationWriteDelegate extends ApplicationReadDelegate {
 }
 
 export interface ApplicationDbClient {
+  readonly $queryRaw: <T = unknown>(query: TemplateStringsArray, ...values: unknown[]) => Promise<T>;
   readonly application: ApplicationWriteDelegate;
+  readonly project: {
+    findUnique(input: {
+      readonly where: { readonly id: string };
+      readonly select: { readonly currentVersion: true; readonly status: true };
+    }): Promise<{ readonly currentVersion: number; readonly status: ProjectStatus } | null>;
+  };
+  readonly specItem: {
+    findMany(input: {
+      readonly where: { readonly projectId: string; readonly versionNo: number; readonly status: 'INCLUDED' };
+      readonly select: { readonly id: true };
+    }): Promise<readonly { readonly id: string }[]>;
+  };
   readonly applicationMessage: {
     create(input: { readonly data: Readonly<Record<string, unknown>> }): Promise<unknown>;
   };
@@ -192,6 +276,19 @@ function isUniqueViolation(error: unknown): boolean {
 
 export function createApplicationTx(db: ApplicationDbClient): ApplicationTx {
   return {
+    async findProjectSpec(projectId) {
+      await db.$queryRaw`SELECT id FROM projects WHERE id = ${projectId} FOR UPDATE`;
+      const project = await db.project.findUnique({
+        where: { id: projectId },
+        select: { currentVersion: true, status: true },
+      });
+      if (project === null) return null;
+      const items = await db.specItem.findMany({
+        where: { projectId, versionNo: project.currentVersion, status: 'INCLUDED' },
+        select: { id: true },
+      });
+      return { ...project, specItemIds: items.map((item) => item.id) };
+    },
     async findFirstDetailView(input) {
       const row = await db.eventLog.findFirst({
         where: {

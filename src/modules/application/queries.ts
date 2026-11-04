@@ -12,8 +12,11 @@ import {
 } from './dto.js';
 import type { ApplicationRevision } from './submission.js';
 import {
+  attachSupplierProfileSummaries,
   compareApplicationCards,
   type ApplicationCard,
+  type SupplierProfileSummary,
+  type SupplierApplicationCard,
 } from './submission.js';
 
 export interface ApplicationReadPort {
@@ -66,6 +69,7 @@ export async function getApplicationDetail(
 export interface ProjectApplicationsPort {
   findProjectClientId(projectId: string): Promise<string | null>;
   listRevisionsByProject(projectId: string): Promise<readonly ApplicationRevision[]>;
+  listSupplierProfileSummaries(supplierIds: readonly string[]): Promise<readonly SupplierProfileSummary[]>;
 }
 
 /**
@@ -75,7 +79,7 @@ export interface ProjectApplicationsPort {
 export async function listProjectApplicationCards(
   port: ProjectApplicationsPort,
   input: { readonly actor: Actor; readonly projectId: string },
-): Promise<readonly ApplicationCard[]> {
+): Promise<readonly SupplierApplicationCard[]> {
   const clientUserId = await port.findProjectClientId(input.projectId);
   if (
     clientUserId === null ||
@@ -86,10 +90,9 @@ export async function listProjectApplicationCards(
   }
 
   const revisions = await port.listRevisionsByProject(input.projectId);
-  return compareApplicationCards(
-    revisions.filter(
-      (revision) =>
-        revision.projectId === input.projectId && revision.clientUserId === clientUserId,
-    ),
+  const cards = compareApplicationCards(
+    revisions.filter((revision) => revision.projectId === input.projectId && revision.clientUserId === clientUserId),
   );
+  const profiles = await port.listSupplierProfileSummaries([...new Set(cards.map((card) => card.supplierId))]);
+  return attachSupplierProfileSummaries(cards, profiles);
 }
