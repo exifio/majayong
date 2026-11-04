@@ -5,6 +5,7 @@ import {
   AgreementExtractionError,
   buildAgreementDraft,
   isDraftFresh,
+  previewAgreementDraft,
   refreshAgreementDraft,
   type AgreementDraft,
   type AgreementExtraction,
@@ -570,6 +571,71 @@ describe('B-04-T07 LLM 오류 시 안전한 실패', () => {
       assert.equal(result.refreshed, false);
       assert.equal(result.stale, true);
       assert.equal(result.draft.lastMessageAt, null);
+    }
+  });
+});
+
+describe('B-04-T08 읽기 전용 agreement-preview', () => {
+  const messages = [message('m1', CLIENT, 1), message('m2', SUPPLIER, 2)];
+
+  const cached = buildAgreementDraft(
+    extraction([
+      {
+        blockId: 'block-1',
+        conditions: [{ key: 'scope', state: 'DECIDED', evidenceMessageIds: ['m1', 'm2'] }],
+      },
+    ]),
+    { spec: spec(), messages, now: NOW },
+  );
+
+  it('저장된 초안을 그대로 돌려주고 확정 조건을 바꾸지 않는다', () => {
+    const before = JSON.stringify(cached);
+
+    const preview = previewAgreementDraft({
+      spec: spec(),
+      messages,
+      cached,
+      now: new Date('2026-11-03T12:30:00.000Z'),
+    });
+
+    assert.equal(preview.readOnly, true);
+    assert.equal(preview.stale, false);
+    assert.equal(preview.draft, cached);
+    assert.equal(findState(preview.draft, 'block-1', 'scope'), 'DECIDED');
+    assert.equal(findState(preview.draft, 'block-1', 'warranty'), 'UNDECIDED');
+    assert.equal(JSON.stringify(cached), before);
+  });
+
+  it('새 메시지가 있으면 갱신하지 않고 stale로만 표시한다', () => {
+    const preview = previewAgreementDraft({
+      spec: spec(),
+      messages: [...messages, message('m3', CLIENT, 3)],
+      cached,
+      now: new Date('2026-11-03T12:30:00.000Z'),
+    });
+
+    assert.equal(preview.stale, true);
+    assert.equal(preview.draft, cached);
+    assert.equal(preview.draft.cachedAt.toISOString(), cached.cachedAt.toISOString());
+  });
+
+  it('캐시가 없으면 LLM 없이 전부 UNDECIDED 기본값이다', () => {
+    const preview = previewAgreementDraft({
+      spec: spec(),
+      messages,
+      cached: null,
+      now: NOW,
+    });
+
+    assert.equal(preview.readOnly, true);
+    assert.equal(preview.stale, false);
+    assert.equal(preview.draft.interimRatio, 50);
+    assert.equal(preview.draft.ratioState, 'UNDECIDED');
+    for (const item of preview.draft.items) {
+      for (const condition of item.conditions) {
+        assert.equal(condition.state, 'UNDECIDED');
+        assert.deepEqual(condition.evidenceMessageIds, []);
+      }
     }
   });
 });

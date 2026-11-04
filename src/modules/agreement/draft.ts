@@ -109,6 +109,32 @@ export interface AgreementRefreshResult {
   readonly errorCode: string | null;
 }
 
+/** `GET /applications/{id}/agreement-preview` 응답. 항상 읽기 전용이다. */
+export interface AgreementPreview {
+  readonly draft: AgreementDraft;
+  /** 캐시가 이후 메시지를 반영하지 못했는지. 읽기 전용이라 갱신하지 않는다. */
+  readonly stale: boolean;
+  readonly readOnly: true;
+}
+
+/**
+ * 합의 미리보기는 저장된 캐시를 그대로 읽는다. LLM 재추출·확정 조건 수정·
+ * 저장은 하지 않으며, 틀린 경우 사용자는 채팅으로 돌아가 다시 합의한다.
+ */
+export function previewAgreementDraft(input: {
+  readonly spec: AgreementSpec;
+  readonly messages: readonly AgreementMessage[];
+  readonly cached: AgreementDraft | null;
+  readonly now: Date;
+}): AgreementPreview {
+  const draft = input.cached ?? emptyDraft(input.spec, input.now);
+  return {
+    draft,
+    stale: input.cached !== null && !isDraftFresh(input.cached, input.messages),
+    readOnly: true,
+  };
+}
+
 export function buildAgreementDraft(
   extraction: unknown,
   input: {
