@@ -89,10 +89,21 @@ export function createContractRouter(ports: ContractHttpPorts): Router {
     bodyObject(request.body, []);
     const applicationId = request.params.applicationId as string;
     const application = await requireApplication(ports, applicationId, actor);
-    const [agreement, items] = await Promise.all([
-      ports.agreements.get(applicationId),
-      ports.items.listSources(applicationId),
-    ]);
+    let agreement = await ports.agreements.get(applicationId);
+    const items = await ports.items.listSources(applicationId);
+    if (agreement === null) {
+      // AI 추출 캐시가 아직 없으면, 읽기 전용 미리보기와 같은 UNDECIDED 초안을 저장한다.
+      // 모든 조건이 '정하지 않음'으로 계약서에 남고, 기능 범위는 그대로 검수 기준이 된다.
+      const [spec, messages] = await Promise.all([
+        ports.preview.getSpec(applicationId),
+        ports.preview.getMessages(applicationId),
+      ]);
+      if (spec === null) {
+        throw new HttpError(404, 'APPLICATION_NOT_FOUND', '지원 정보를 찾을 수 없습니다.');
+      }
+      agreement = previewAgreementDraft({ spec, messages, cached: null, now: ports.now() }).draft;
+      await ports.agreements.save(applicationId, agreement);
+    }
     const result = await acceptAgreement(ports.uow, {
       actor,
       application,

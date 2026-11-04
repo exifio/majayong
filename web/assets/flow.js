@@ -68,6 +68,26 @@
       : `★ ${profile.ratingAvg} · 리뷰 ${profile.reviewCount ?? 0}건 · `;
   }
 
+  function replaceAllText(from, to) {
+    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+    const nodes = [];
+    while (walker.nextNode()) nodes.push(walker.currentNode);
+    for (const node of nodes) {
+      if (node.nodeValue?.includes(from)) node.nodeValue = node.nodeValue.split(from).join(to);
+    }
+  }
+
+  function kstDate(iso, withYear = false) {
+    if (!iso) return '';
+    const date = new Date(iso);
+    if (Number.isNaN(date.getTime())) return '';
+    return new Intl.DateTimeFormat('ko-KR', {
+      timeZone: 'Asia/Seoul',
+      ...(withYear ? { year: 'numeric' } : {}),
+      month: 'long', day: 'numeric',
+    }).format(date);
+  }
+
   function showError(anchor, message) {
     let box = $('#flow-error');
     if (!box) {
@@ -134,6 +154,171 @@
     const next = new Date(date);
     next.setDate(next.getDate() + days);
     return next;
+  }
+
+  if (screen === 'Agreement-Client') {
+    const applicationId = new URLSearchParams(location.search).get('applicationId');
+    if (!applicationId) return;
+    if (!MJ.requireLogin(location.pathname + location.search)) return;
+
+    void (async () => {
+      try {
+        const [preview, application] = await Promise.all([
+          MJ.request(`/applications/${encodeURIComponent(applicationId)}/agreement-preview`),
+          MJ.request(`/applications/${encodeURIComponent(applicationId)}`),
+        ]);
+        const items = Array.isArray(preview?.draft?.items) ? preview.draft.items : [];
+        if (items.length === 0) throw new Error('합의할 명세 항목이 없습니다.');
+        const amount = Number(application.totalAmount);
+        const fee = Math.floor(amount * 0.05);
+        const total = amount + fee;
+
+        const sub = document.querySelector('.head .sub');
+        if (sub) sub.textContent = `견적 ${won(amount)} · 작업 기간 ${Number(application.durationDays)}일`;
+
+        const host = document.querySelector('.lay > div');
+        if (host) {
+          host.innerHTML = items.map((item, index) => {
+            const stage = item.stage === 'INTERIM' ? '중간' : '최종';
+            const conditions = (item.conditions || []).map((condition, conditionIndex) => {
+              const state = condition.state || 'UNDECIDED';
+              const chip = state === 'DECIDED'
+                ? ['chip teal', '정해짐']
+                : state === 'PROPOSED'
+                  ? ['chip', '한쪽 제안']
+                  : ['chip out', '아직 안 정함'];
+              const note = state === 'DECIDED'
+                ? '합의된 조건입니다.'
+                : state === 'PROPOSED'
+                  ? '한쪽 제안만 있어 계약서에 정하지 않음으로 남습니다.'
+                  : '채팅에서 아직 정하지 않았습니다. 계약서에 정하지 않음으로 남습니다.';
+              return `<div class="cr${conditionIndex === 0 ? ' first' : ''}">
+                <div class="q">${escapeHtml(condition.text || condition.key)}</div>
+                <div><div class="pend">${escapeHtml(note)}</div></div>
+                <div class="st"><span class="${chip[0]}">${chip[1]}</span></div>
+              </div>`;
+            }).join('');
+            return `<section class="fc" aria-label="${escapeHtml(item.title)}">
+              <div class="fh"><div><div class="nm">${escapeHtml(item.title)}</div><div class="ds">명세 항목 ${index + 1}</div></div><span class="stg">지급 구간 <b>${stage}</b></span></div>
+              ${conditions}
+            </section>`;
+          }).join('');
+        }
+
+        const ratio = Number(preview?.draft?.interimRatio) || 50;
+        const ratioText = document.querySelector('.ratio .big');
+        if (ratioText) ratioText.textContent = `중간 ${ratio} : 최종 ${100 - ratio}`;
+        const split = document.querySelectorAll('.ratio .split2 .r b');
+        const interimAmount = Math.floor(amount * ratio / 100);
+        if (split[0]) split[0].textContent = won(interimAmount);
+        if (split[1]) split[1].textContent = won(amount - interimAmount);
+
+        const amounts = document.querySelectorAll('.dock .amts .v');
+        if (amounts[0]) amounts[0].textContent = won(amount);
+        if (amounts[1]) amounts[1].textContent = won(fee);
+        if (amounts[2]) amounts[2].textContent = won(total);
+
+        const back = document.querySelector('.dock .acts a.btn.gh');
+        if (back) back.href = `/Chat-Client?applicationId=${encodeURIComponent(applicationId)}`;
+
+        const confirm = document.querySelector('.dock .acts a.btn:last-child');
+        if (!confirm) return;
+        confirm.addEventListener('click', async (event) => {
+          event.preventDefault();
+          clearError();
+          busy(confirm, true, '합의를 마치는 중…');
+          try {
+            const result = await MJ.request(`/applications/${encodeURIComponent(applicationId)}/agreement/confirm`, {
+              method: 'POST',
+              body: {},
+            });
+            const contractId = result?.contract?.id;
+            if (!contractId) throw new Error('계약 번호를 받지 못했습니다.');
+            location.assign(`/Contract-Client?contractId=${encodeURIComponent(contractId)}`);
+          } catch (error) {
+            busy(confirm, false);
+            showError(confirm, error.message);
+          }
+        });
+      } catch (error) {
+        showError(document.body, error.message);
+      }
+    })();
+    return;
+  }
+
+  if (screen === 'Contract-Client') {
+    const contractId = new URLSearchParams(location.search).get('contractId');
+    if (!contractId) return;
+    if (!MJ.requireLogin(location.pathname + location.search)) return;
+
+    void (async () => {
+      try {
+        const contract = await MJ.request(`/contracts/${encodeURIComponent(contractId)}`);
+        const amount = Number(contract.agreedAmount);
+        const fee = Number(contract.clientFee);
+        const total = amount + fee;
+
+        replaceAllText('3,100,000', amount.toLocaleString('ko-KR'));
+        replaceAllText('3,255,000', total.toLocaleString('ko-KR'));
+        replaceAllText('155,000', fee.toLocaleString('ko-KR'));
+        replaceAllText('42일', `${Number(contract.durationDays)}일`);
+        if (contract.consentDeadline) replaceAllText('11월 10일', kstDate(contract.consentDeadline));
+
+        const chip = document.querySelector('.head .chip');
+        if (chip) {
+          if (contract.status === 'ACTIVE') {
+            chip.textContent = '계약 체결';
+            chip.className = 'chip teal';
+          } else if (contract.status === 'CANCELLED') {
+            chip.textContent = '결렬';
+            chip.className = 'chip out';
+          } else {
+            chip.textContent = '임시 계약 · 서명 대기';
+            chip.className = 'chip amber';
+          }
+        }
+
+        const clientSigned = Boolean(contract.clientSignedAt);
+        const signbox = document.querySelector('.signbox');
+        if (signbox) {
+          if (contract.status === 'ACTIVE') {
+            signbox.innerHTML = `<p class="done">계약이 체결되었습니다. 3일 안에 예치해 주세요.</p>
+              <a class="btn full" href="/Escrow-Client?contractId=${encodeURIComponent(contractId)}">${won(total)} 예치하기</a>`;
+          } else if (clientSigned) {
+            signbox.innerHTML = '<p class="done">서명 완료. 공급자 서명을 기다리고 있습니다.</p>';
+          } else {
+            const button = signbox.querySelector('a.btn');
+            if (button) {
+              button.textContent = '서명하기';
+              button.removeAttribute('href');
+              button.addEventListener('click', async (event) => {
+                event.preventDefault();
+                clearError();
+                if (!document.querySelector('#agree')?.checked) {
+                  showError(button, '계약 내용을 확인하고 동의해 주세요.');
+                  return;
+                }
+                busy(button, true, '서명하는 중…');
+                try {
+                  await MJ.request(`/contracts/${encodeURIComponent(contractId)}/sign`, {
+                    method: 'POST',
+                    body: { expectedContentHash: contract.contentHash },
+                  });
+                  location.reload();
+                } catch (error) {
+                  busy(button, false);
+                  showError(button, error.message);
+                }
+              });
+            }
+          }
+        }
+      } catch (error) {
+        showError(document.body, error.message);
+      }
+    })();
+    return;
   }
 
   if (screen === 'Compare-Client') {
@@ -259,7 +444,12 @@
         const meta = document.querySelector('.cvh .mt');
         if (meta) meta.innerHTML = `${escapedCareer(profile)}${escapedRating(profile)}<a class="ft" href="/Compare-Client?projectId=${encodeURIComponent(application.projectId)}">${escapeHtml(project?.title || '제안 비교')}</a>`;
         const acts = document.querySelector('.cvh .acts');
-        if (acts) acts.innerHTML = `<a class="btn sm gh" href="/Compare-Client?projectId=${encodeURIComponent(application.projectId)}">제안 비교로</a>`;
+        if (acts) {
+          const agreementLink = application.status === 'SUBMITTED' || application.status === 'STALE'
+            ? `<a class="btn sm tint" href="/Agreement-Client?applicationId=${encodeURIComponent(applicationId)}">합의 확인·계약</a>`
+            : '';
+          acts.innerHTML = `<a class="btn sm gh" href="/Compare-Client?projectId=${encodeURIComponent(application.projectId)}">제안 비교로</a>${agreementLink}`;
+        }
 
         const items = Array.isArray(application.items) ? application.items : [];
         const qbar = document.querySelector('.qbar');

@@ -138,29 +138,13 @@ describe("E2E-04 서명", () => {
 
     const preview = await req(baseUrl, "GET", `/api/v1/applications/${applicationId}/agreement-preview`, clientToken);
     expect(preview.status).toBe(200);
-    const agreementDraft = {
-      items: preview.body.data.draft.items.map((item: any) => ({
-        blockId: item.blockId,
-        specItemId: null,
-        title: item.title,
-        stage: item.stage,
-        conditions: item.conditions.map((condition: any) => ({
-          key: condition.key,
-          text: condition.text,
-          state: "UNDECIDED",
-          evidenceMessageIds: [],
-        })),
-      })),
-      interimRatio: 50,
-      ratioState: "UNDECIDED",
-      cachedAt: new Date().toISOString(),
-      lastMessageAt: null,
-    };
-    await db.application.update({ where: { id: applicationId }, data: { agreementDraft } });
 
+    // 서버가 미리보기와 같은 UNDECIDED 초안을 저장하고 임시 계약을 만든다.
     const confirm = await req(baseUrl, "POST", `/api/v1/applications/${applicationId}/agreement/confirm`, clientToken, {});
     expect(confirm.status).toBe(201);
     const contractId = confirm.body.data.contract.id;
+    const savedDraft = await db.application.findUnique({ where: { id: applicationId }, select: { agreementDraft: true } });
+    expect(savedDraft?.agreementDraft).not.toBeNull();
 
     const contractRow = await db.contract.findUnique({ where: { id: contractId }, select: { contentHash: true } });
     const hash = contractRow?.contentHash;
