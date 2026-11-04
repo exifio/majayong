@@ -294,6 +294,14 @@ describe("A-05 project publication PostgreSQL integration", () => {
     expect(body).not.toContain("clientFee");
   });
 
+  it("assembles the project title with the overflow feature count", async () => {
+    const { clientId, draftId } = await makeDraft();
+    await db.draftBlock.updateMany({ where: { draftId }, data: { status: "ADDED" } });
+    const project = await publishDraft(db, draftId, clientId, publishInput, PROJECT_DISCLOSURE_CONSENT_DRAFT_VERSION, now);
+    expect(project.title).toBe("예약 달력, 예약금 결제 외 1개 기능");
+    expect(project.itemCount).toBe(3);
+  });
+
   it("does not publish a draft while generated features are still pending", async () => {
     const { clientId, draftId } = await makeDraft([{ key: "pending", summary: "회원 알림", attempts: 1, lastTriedAt: null }]);
     await expect(publishDraft(db, draftId, clientId, publishInput, PROJECT_DISCLOSURE_CONSENT_DRAFT_VERSION, now))
