@@ -96,8 +96,8 @@ afterAll(async () => {
   await db.$disconnect();
 });
 
-describe("E2E-02 supplier application", () => {
-  it("supplier can read published project and submit application", async () => {
+describe("E2E-02 공급자 지원", () => {
+  it("공급자가 게시된 프로젝트를 열람하고 지원서를 제출한다", async () => {
     const clientId = await makeClient();
     const clientToken = issueAccessToken({ userId: clientId, role: Role.CLIENT, expiresAt: Date.now() + 60_000 }, tokenSecret);
     const { baseUrl, close } = await startApp();
@@ -122,8 +122,8 @@ describe("E2E-02 supplier application", () => {
 
     const detail = await req(baseUrl, "GET", `/api/v1/projects/${projectId}`, supplierToken);
     expect(detail.status).toBe(200);
-    const specItems = await db.specItem.findMany({ where: { projectId, versionNo: 1, status: "INCLUDED" }, orderBy: { sortOrder: "asc" } });
-    const specItemIds = specItems.map(item => item.id);
+    const specItemIds = detail.body.data.items.map((item: { specItemId?: string }) => item.specItemId);
+    expect(specItemIds.every(Boolean)).toBe(true);
 
     const submit = await req(baseUrl, "POST", `/api/v1/projects/${projectId}/applications`, supplierToken, {
       items: [{ specItemId: specItemIds[0], isAvailable: true }],
