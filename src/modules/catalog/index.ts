@@ -2,3 +2,4 @@ export { mergeCatalogBlock, setCatalogBlockActive, updateCatalogBlockPrice } fro
 export { CatalogError } from "./errors.js";
 export { generateOrReuseCatalogBlock, type CatalogBlockGenerator, type CatalogGenerationInput, type CatalogGenerationResult } from "./service.js";
 export { createOpenAiCatalogBlockGenerator } from "./openai-block-generator.js";
+export { reservationRestaurantIndustryCode, reservationRestaurantSeedBlocks, seedReservationRestaurantCatalog } from "./seed.js";

@@ -4,6 +4,7 @@ import { BlockOrigin, BlockSource, DraftEntryType, PrismaClient, Role } from "@p
 import { generateOrReuseCatalogBlock } from "../../src/modules/catalog/service.ts";
 import { mergeCatalogBlock, setCatalogBlockActive, updateCatalogBlockPrice } from "../../src/modules/catalog/admin.ts";
 import type { CatalogBlockGenerator } from "../../src/modules/catalog/service.ts";
+import { reservationRestaurantSeedBlocks, seedReservationRestaurantCatalog } from "../../src/modules/catalog/seed.ts";
 
 const testDatabaseUrl = process.env.TEST_DATABASE_URL;
 if (!testDatabaseUrl) throw new Error("A-03 tests require the dedicated local majayong_a00_test database");
@@ -116,6 +117,19 @@ afterAll(async () => {
 });
 
 describe("A-03 catalog generation and reuse", () => {
+  it("seeds all proposed restaurant blocks once and leaves them inactive", async () => {
+    const codes = reservationRestaurantSeedBlocks.map(block => block.code);
+    try {
+      expect(await seedReservationRestaurantCatalog(prisma)).toBe(36);
+      expect(await seedReservationRestaurantCatalog(prisma)).toBe(0);
+      const seeded = await prisma.blockCatalog.findMany({ where: { code: { in: codes } } });
+      expect(seeded).toHaveLength(36);
+      expect(seeded.every(block => !block.isActive && block.reviewedAt === null)).toBe(true);
+    } finally {
+      await prisma.blockCatalog.deleteMany({ where: { code: { in: codes } } });
+    }
+  });
+
   it("redacts client profile data before AI input and reuses an existing price", async () => {
     const client = await createClient();
     const industryCode = testIndustryCode();
