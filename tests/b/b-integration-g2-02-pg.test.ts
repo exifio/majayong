@@ -9,11 +9,14 @@ import {
   createChatEventPort,
   createIntegrationPorts,
   createProjectStatePort,
+  createPublicProjectPorts,
   createReportAccountActionPort,
 } from "../../src/integration/external-ports.ts";
+import { createProjectCandidatePort } from "../../src/integration/a-ports.ts";
 import {
   createPrismaIntegrationDb,
   createPrismaPorts,
+  createProjectCandidateDb,
 } from "../../src/integration/prisma-wiring.ts";
 import { createPrismaApplicationReadPort } from "../../src/modules/application/prisma-adapter.ts";
 import { createPrismaContractUnitOfWork } from "../../src/modules/contract/prisma-adapter.ts";
@@ -412,10 +415,20 @@ describe("INT-G2-02: B→A 읽기·상태 경계", { skip: hasDatabase ? false :
           { token: "supplier-token", actor: { userId: ids.supplierAId, role: "SUPPLIER" } },
           { token: "other-client-token", actor: { userId: ids.otherClientId, role: "CLIENT" } },
         ]),
-        routers: createBRouters(
-          createPrismaPorts(prisma),
-          createIntegrationPorts(createPrismaIntegrationDb(prisma), { now: () => NOW }),
-        ),
+        routers: (() => {
+          const integrationDb = createPrismaIntegrationDb(prisma);
+          return createBRouters(
+            createPrismaPorts(prisma),
+            createIntegrationPorts(integrationDb, {
+              ...createPublicProjectPorts(
+                integrationDb,
+                createProjectCandidatePort(createProjectCandidateDb(prisma)),
+              ),
+              reportAccounts: createReportAccountActionPort(integrationDb),
+              now: () => NOW,
+            }),
+          );
+        })(),
       });
 
       await withServer(app, async (call) => {
@@ -435,6 +448,14 @@ describe("INT-G2-02: B→A 읽기·상태 경계", { skip: hasDatabase ? false :
         assert.equal(other.status, 404);
         const anonymous = await call({ method: "GET", path });
         assert.equal(anonymous.status, 401);
+
+        const recommended = await call({
+          method: "GET",
+          path: "/api/v1/me/recommended-projects",
+          token: "supplier-token",
+        });
+        assert.equal(recommended.status, 200);
+        assert.ok(Array.isArray((recommended.body as { data: unknown[] }).data));
       });
     } finally {
       await cleanup(prisma, ids);
