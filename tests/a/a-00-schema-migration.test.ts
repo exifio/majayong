@@ -1,11 +1,8 @@
 import { afterAll, describe, expect, it } from "@jest/globals";
 import { PrismaClient } from "@prisma/client";
+import { assertTestDatabase } from "../../src/core/test-database.ts";
 
-const databaseUrl = process.env.TEST_DATABASE_URL;
-if (!databaseUrl || new URL(databaseUrl).pathname !== "/majayong_a00_test") {
-  throw new Error("A-00 tests require the dedicated majayong_a00_test database");
-}
-process.env.DATABASE_URL = databaseUrl;
+process.env.DATABASE_URL = assertTestDatabase(process.env.TEST_DATABASE_URL);
 
 const prisma = new PrismaClient();
 
