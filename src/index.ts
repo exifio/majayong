@@ -40,6 +40,10 @@ const server = createServer(async (req, res) => {
   }
 });
 
-server.listen(PORT, () => {
-  console.log(`마자용 running at http://localhost:${PORT}  (all screens: http://localhost:${PORT}/screens)`);
-});
+export default server;
+
+if (!process.env.VERCEL) {
+  server.listen(PORT, () => {
+    console.log(`마자용 running at http://localhost:${PORT}  (all screens: http://localhost:${PORT}/screens)`);
+  });
+}
