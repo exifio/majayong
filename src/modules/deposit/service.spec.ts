@@ -801,4 +801,36 @@ workDueAt: null,
       0,
     );
   });
+
+  it("C-01 sandbox confirm은 명시적 플래그에서만 예치를 완료한다", async () => {
+    const ctx = createTestContext();
+    const { deposit } = await ctx.service.createDeposit(
+      { userId: "client-1", role: "CLIENT" },
+      { contractId: ctx.contract.id, idempotencyKey: "idem-sandbox", method: "CARD", amount: 1_050_000 },
+    );
+
+    const previous = process.env.TOSS_SANDBOX_MOCK;
+    delete process.env.TOSS_SANDBOX_MOCK;
+    try {
+      await assert.rejects(
+        () => ctx.service.confirmSandboxDeposit(
+          { userId: "client-1", role: "CLIENT" },
+          { contractId: ctx.contract.id, depositId: deposit.id },
+        ),
+        (error: unknown) => error instanceof DepositHttpError && error.status === 404,
+      );
+
+      process.env.TOSS_SANDBOX_MOCK = "true";
+      const result = await ctx.service.confirmSandboxDeposit(
+        { userId: "client-1", role: "CLIENT" },
+        { contractId: ctx.contract.id, depositId: deposit.id },
+      );
+      assert.equal(result.deposit.status, "COMPLETED");
+      assert.equal(result.contract.paymentStatus, "DEPOSITED");
+      assert.equal(result.installments.length, 2);
+    } finally {
+      if (previous === undefined) delete process.env.TOSS_SANDBOX_MOCK;
+      else process.env.TOSS_SANDBOX_MOCK = previous;
+    }
+  });
 });

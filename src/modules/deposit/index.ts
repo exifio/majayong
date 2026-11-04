@@ -430,6 +430,49 @@ export class DepositService {
     return { deposit: created, isNew: true };
   }
 
+  /**
+   * 로컬/검증 환경 전용 sandbox 예치 확정. `TOSS_SANDBOX_MOCK=true`가 아니면 404.
+   * 실제 카드 승인·송금을 만들지 않고, 예치 확정 트랜잭션만 실행한다.
+   */
+  async confirmSandboxDeposit(
+    actor: { userId: string; role: string },
+    input: { contractId: string; depositId: string },
+  ): Promise<{ deposit: EscrowDeposit; contract: DepositContractInfo; installments: PaymentInstallment[] }> {
+    if (process.env.TOSS_SANDBOX_MOCK !== "true") {
+      throw new DepositHttpError(404, "샌드박스 예치 확인이 비활성화되어 있습니다.");
+    }
+    const deposit = await this.repo.findById(input.depositId);
+    if (!deposit || deposit.contractId !== input.contractId) {
+      throw new DepositHttpError(404, "예치 건을 찾을 수 없습니다.");
+    }
+    const contract = await this.contractsPort.getContract(input.contractId);
+    if (!contract) throw new DepositHttpError(404, "계약을 찾을 수 없습니다.");
+    if (actor.role !== "CLIENT" || actor.userId !== contract.clientUserId) {
+      throw new DepositHttpError(403, "의뢰인 본인만 예치할 수 있습니다.");
+    }
+    if (deposit.status === "COMPLETED") {
+      return { deposit, contract, installments: await this.repo.listInstallments(input.contractId) };
+    }
+    if (deposit.status !== "PENDING" && deposit.status !== "HELD") {
+      throw new DepositHttpError(409, "확인할 수 있는 예치 상태가 아닙니다.");
+    }
+    const pgKey = `sandbox:${deposit.id}`;
+    return this.withDepositLock(deposit.id, () => this.completionPort.completeDeposit({
+      depositId: deposit.id,
+      pgKey,
+      paymentEvent: {
+        dedupKey: pgKey,
+        payload: {
+          orderId: deposit.id,
+          paymentKey: pgKey,
+          amount: deposit.amount,
+          status: "DONE",
+          eventType: "SANDBOX",
+        },
+      },
+    }));
+  }
+
   async getDeposits(actor: { userId: string; role: string }, contractId: string): Promise<EscrowDeposit[]> {
     const contract = await this.contractsPort.getContract(contractId);
     if (!contract) {
