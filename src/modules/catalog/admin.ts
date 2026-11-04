@@ -25,12 +25,20 @@ function validatePrice(unitPrice: number): void {
   }
 }
 
+function withTransaction<T>(
+  db: PrismaClient,
+  existingTx: CatalogTx | undefined,
+  work: (tx: CatalogTx) => Promise<T>,
+): Promise<T> {
+  return existingTx === undefined ? db.$transaction(work) : work(existingTx);
+}
+
 async function lockBlock(tx: CatalogTx, blockId: string): Promise<void> {
   await tx.$queryRaw`SELECT id FROM block_catalog WHERE id = ${blockId} FOR UPDATE`;
 }
 
-export async function updateCatalogBlockPrice(db: PrismaClient, input: CatalogPriceUpdate) {
-  return db.$transaction(async tx => {
+export async function updateCatalogBlockPrice(db: PrismaClient, input: CatalogPriceUpdate, existingTx?: CatalogTx) {
+  return withTransaction(db, existingTx, async tx => {
     const privateValues = await requireAdmin(tx, input.actorId);
     validatePrice(input.unitPrice);
     const reason = requiredReason(input.reason, privateValues);
@@ -57,8 +65,8 @@ export async function updateCatalogBlockPrice(db: PrismaClient, input: CatalogPr
   });
 }
 
-export async function mergeCatalogBlock(db: PrismaClient, input: CatalogMerge) {
-  return db.$transaction(async tx => {
+export async function mergeCatalogBlock(db: PrismaClient, input: CatalogMerge, existingTx?: CatalogTx) {
+  return withTransaction(db, existingTx, async tx => {
     const privateValues = await requireAdmin(tx, input.actorId);
     const reason = requiredReason(input.reason, privateValues);
     if (input.sourceId === input.targetId) throw new CatalogError("INVALID_CATALOG_MERGE", 409);
@@ -84,8 +92,8 @@ export async function mergeCatalogBlock(db: PrismaClient, input: CatalogMerge) {
   });
 }
 
-export async function setCatalogBlockActive(db: PrismaClient, input: CatalogActivation) {
-  return db.$transaction(async tx => {
+export async function setCatalogBlockActive(db: PrismaClient, input: CatalogActivation, existingTx?: CatalogTx) {
+  return withTransaction(db, existingTx, async tx => {
     const privateValues = await requireAdmin(tx, input.actorId);
     const reason = requiredReason(input.reason, privateValues);
     if (typeof input.isActive !== "boolean") throw new CatalogError("INVALID_ACTIVE_STATE", 400);

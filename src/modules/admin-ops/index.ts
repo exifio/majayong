@@ -80,7 +80,7 @@ export interface CatalogAdminPort {
     reason: string;
     unitPrice?: number;
     mergedIntoId?: string;
-  }): Promise<{ success: boolean; blockId: string; action: string }>;
+  }, tx?: unknown): Promise<{ success: boolean; blockId: string; action: string }>;
 }
 
 export interface AdminRepository {
@@ -102,7 +102,7 @@ export interface AdminRepository {
     id: string,
     patch: Partial<AdminCancellationContract>,
   ): Promise<AdminCancellationContract>;
-  recordEvent(event: Omit<EventLogEntity, "id">): Promise<EventLogEntity>;
+  recordEvent(event: Omit<EventLogEntity, "id">, tx?: unknown): Promise<EventLogEntity>;
   listEventLogs(): Promise<EventLogEntity[]>;
 }
 
@@ -225,6 +225,8 @@ export interface AdminOpsServiceOptions {
     }): Promise<{ refundedAt: Date | null; cancelPayoutAt: Date | null }>;
   };
   clock?: { now(): Date };
+  /** C 감사 로그와 A 카탈로그 변경을 같은 트랜잭션으로 묶는다. */
+  transactionRunner?: { run<T>(work: (tx: unknown) => Promise<T>): Promise<T> };
 }
 
 export class AdminOpsService {
@@ -234,6 +236,7 @@ export class AdminOpsService {
   private readonly inspectionPort?: AdminOpsServiceOptions["inspectionPort"];
   private readonly cancellationPort?: AdminOpsServiceOptions["cancellationPort"];
   private readonly clock: { now(): Date };
+  private readonly transactionRunner?: AdminOpsServiceOptions["transactionRunner"];
 
   constructor(options: AdminOpsServiceOptions) {
     this.repo = options.repo;
@@ -242,6 +245,7 @@ export class AdminOpsService {
     this.inspectionPort = options.inspectionPort;
     this.cancellationPort = options.cancellationPort;
     this.clock = options.clock ?? { now: () => new Date() };
+    this.transactionRunner = options.transactionRunner;
   }
 
   private rethrowAsAdmin(err: unknown): never {
@@ -293,25 +297,30 @@ export class AdminOpsService {
       throw new AdminHttpError(400, "블록 병합은 mergedIntoId가 필요합니다.");
     }
 
-    const result = await this.catalogPort.executeBlockAction({
-      actorId: actor.userId,
-      blockId,
-      action,
-      reason: input.reason,
-      unitPrice: input.unitPrice,
-      mergedIntoId: input.mergedIntoId,
-    });
+    const work = async (tx?: unknown) => {
+      const result = await this.catalogPort.executeBlockAction({
+        actorId: actor.userId,
+        blockId,
+        action,
+        reason: input.reason,
+        unitPrice: input.unitPrice,
+        mergedIntoId: input.mergedIntoId,
+      }, tx);
 
-    await this.repo.recordEvent({
-      actorUserId: actor.userId,
-      actionType: `BLOCK_${input.action}`,
-      targetType: "BLOCK",
-      targetId: blockId,
-      reason: input.reason,
-      occurredAt: this.clock.now(),
-    });
+      await this.repo.recordEvent({
+        actorUserId: actor.userId,
+        actionType: `BLOCK_${input.action}`,
+        targetType: "BLOCK",
+        targetId: blockId,
+        reason: input.reason,
+        occurredAt: this.clock.now(),
+      }, tx);
 
-    return result;
+      return result;
+    };
+
+    if (this.transactionRunner === undefined) return work();
+    return this.transactionRunner.run(work);
   }
 
   async listHeldDeposits(actor: { userId: string; role: string }): Promise<AdminHeldDeposit[]> {

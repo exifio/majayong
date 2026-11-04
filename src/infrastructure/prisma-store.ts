@@ -914,8 +914,8 @@ export function createPrismaRepositories(prisma: PrismaClient, options: PrismaSt
       await prisma.contract.update({ where: { id }, data: data as never });
       return (await this.getCancellationContract(id))!;
     },
-    async recordEvent(data) {
-      const row = await prisma.eventLog.create({
+    async recordEvent(data, tx?: unknown) {
+      const row = await db(tx).eventLog.create({
         data: {
           userId: data.actorUserId || null,
           type: eventTypeFor(data.actionType) as never,

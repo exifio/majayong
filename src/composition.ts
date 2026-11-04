@@ -101,6 +101,9 @@ export function createIntegrationServices(config: IntegrationConfig) {
     inspectionPort: inspections,
     cancellationPort: cancellations,
     clock,
+    transactionRunner: {
+      run: (work) => config.prisma.$transaction((tx) => work(tx)),
+    },
   });
 
   const services: AppServices = {
