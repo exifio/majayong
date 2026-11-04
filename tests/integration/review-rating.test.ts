@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { describe, it } from "node:test";
 import { PrismaClient, type Prisma } from "@prisma/client";
-import { testDatabaseUrl } from "../test-db.ts";
+import { testDatabaseUrl } from "../../src/test-support/test-db.ts";
 import { createPrismaRepositories } from "../../src/infrastructure/prisma-store.ts";
 import { ReviewService } from "../../src/modules/review/index.ts";
 import { createProfileRatingPort } from "../../src/modules/profile/api.ts";
