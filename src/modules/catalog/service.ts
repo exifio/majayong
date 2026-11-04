@@ -5,7 +5,9 @@ import { sanitizeUserText } from "../../core/privacy.js";
 import { CatalogError } from "./errors.js";
 import { normalizeFunctionSummary, parseGeneratedBlock } from "./rules.js";
 
-export type CatalogBlockGenerator = (input: { industryCode: string; text: string }) => Promise<unknown>;
+export type CatalogGenerationMetadata = { model: string; tokens: { input: number; output: number }; costKrw: number; latencyMs: number };
+export type CatalogBlockGeneration = { content: unknown; metadata: CatalogGenerationMetadata };
+export type CatalogBlockGenerator = (input: { industryCode: string; text: string }) => Promise<CatalogBlockGeneration>;
 export type CatalogGenerationInput = {
   clientId: string;
   industryCode: string;
@@ -92,6 +94,48 @@ async function persistOrReuse(
   });
 }
 
+async function reserveLlmCall(db: PrismaClient, clientId: string): Promise<string> {
+  const event = await db.eventLog.create({
+    data: {
+      userId: clientId,
+      type: EventType.LLM_CALLED,
+      payload: { purpose: "BLOCK_CREATE", model: "pending", tokens: { input: 0, output: 0 }, costKrw: 0, latencyMs: 0, succeeded: false, reserved: true },
+    },
+  });
+  return event.id;
+}
+
+async function finishLlmCall(
+  db: PrismaClient,
+  eventId: string,
+  metadata: CatalogGenerationMetadata | undefined,
+  succeeded: boolean,
+): Promise<void> {
+  await db.eventLog.update({
+    where: { id: eventId },
+    data: { payload: {
+      purpose: "BLOCK_CREATE",
+      model: metadata?.model ?? "unknown",
+      tokens: metadata?.tokens ?? { input: 0, output: 0 },
+      costKrw: metadata?.costKrw ?? 0,
+      latencyMs: metadata?.latencyMs ?? 0,
+      succeeded,
+    } },
+  });
+}
+
+function validGenerationMetadata(value: unknown): value is CatalogGenerationMetadata {
+  if (!value || typeof value !== "object") return false;
+  const metadata = value as Record<string, unknown>;
+  if (typeof metadata.model !== "string" || metadata.model.length === 0 || metadata.model.length > 100 ||
+      typeof metadata.costKrw !== "number" || !Number.isSafeInteger(metadata.costKrw) || metadata.costKrw < 0 ||
+      typeof metadata.latencyMs !== "number" || !Number.isSafeInteger(metadata.latencyMs) || metadata.latencyMs < 0 ||
+      !metadata.tokens || typeof metadata.tokens !== "object") return false;
+  const tokens = metadata.tokens as Record<string, unknown>;
+  return typeof tokens.input === "number" && Number.isSafeInteger(tokens.input) && tokens.input >= 0 &&
+    typeof tokens.output === "number" && Number.isSafeInteger(tokens.output) && tokens.output >= 0;
+}
+
 export async function generateOrReuseCatalogBlock(
   db: PrismaClient,
   input: CatalogGenerationInput,
@@ -104,10 +148,12 @@ export async function generateOrReuseCatalogBlock(
   const safeInput = { clientId: input.clientId, industryCode, trigger: input.trigger };
 
   for (let attempt = 1; attempt <= 2; attempt += 1) {
-    let block: ReturnType<typeof parseGeneratedBlock>;
+    const eventId = await reserveLlmCall(db, input.clientId);
+    let generated: unknown;
     try {
-      block = parseGeneratedBlock(await generator({ industryCode, text: safeText }), privateValues);
+      generated = await generator({ industryCode, text: safeText });
     } catch {
+      await finishLlmCall(db, eventId, undefined, false);
       if (attempt === 2) {
         return {
           status: "PENDING",
@@ -121,6 +167,29 @@ export async function generateOrReuseCatalogBlock(
       }
       continue;
     }
+
+    const response = generated as Partial<CatalogBlockGeneration> | null;
+    const metadata = validGenerationMetadata(response?.metadata) ? response.metadata : undefined;
+    let block: ReturnType<typeof parseGeneratedBlock>;
+    try {
+      if (!metadata) throw new Error("INVALID_GENERATION_METADATA");
+      block = parseGeneratedBlock(response?.content, privateValues);
+    } catch {
+      await finishLlmCall(db, eventId, metadata, false);
+      if (attempt === 2) {
+        return {
+          status: "PENDING",
+          pendingFeature: {
+            key: randomUUID(),
+            summary: "기능 분석 대기 중",
+            attempts: attempt,
+            lastTriedAt: new Date().toISOString(),
+          },
+        };
+      }
+      continue;
+    }
+    await finishLlmCall(db, eventId, metadata, true);
     return persistOrReuse(db, safeInput, block);
   }
   throw new CatalogError("CATALOG_GENERATION_FAILED", 503);
