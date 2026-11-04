@@ -53,7 +53,7 @@ function assertNoPrivateText(value: unknown, privateValues: string[], seen = new
 }
 
 function readConditions(value: unknown): Prisma.InputJsonArray {
-  if (!Array.isArray(value) || value.length < 2 || value.length > 4) throw new CatalogOutputError();
+  if (!Array.isArray(value) || value.length !== 2) throw new CatalogOutputError();
   return value.map(item => {
     if (!isRecord(item)) throw new CatalogOutputError();
     return { key: requiredString(item.key), text: requiredString(item.text) };

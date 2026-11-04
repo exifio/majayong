@@ -77,6 +77,11 @@ describe("A-03 catalog core rules", () => {
     ["fractional price", { unitPrice: 12.5 }],
     ["non-integer database range", { unitPrice: 2_147_483_648 }],
     ["too few conditions", { conditions: [{ key: "one", text: "Only one." }] }],
+    ["too many conditions", { conditions: [
+      { key: "one", text: "First." },
+      { key: "two", text: "Second." },
+      { key: "three", text: "Third." },
+    ] }],
     ["non-three-line price basis", { priceBasis: "One line.\nTwo lines." }],
     ["unknown wireframe type", { wireframe: { parts: [{ type: "CHART" }] } }],
   ])("rejects %s", (_label, override) => {
