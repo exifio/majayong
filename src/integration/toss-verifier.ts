@@ -20,7 +20,9 @@ interface TossPayment {
   readonly status?: unknown;
 }
 
-export function createTossSandboxVerifier(options: TossSandboxVerifierOptions): TossVerifyAdapter {
+export function createTossSandboxVerifier(
+  options: TossSandboxVerifierOptions,
+): Required<TossVerifyAdapter> {
   const base = (options.baseUrl ?? "https://api.tosspayments.com").replace(/\/+$/, "");
   const fetcher = options.fetchImpl ?? fetch;
   const authorization = `Basic ${Buffer.from(`${options.secretKey}:`).toString("base64")}`;
