@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>회원가입 — 블록 가격 등록</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="/_blob/a8316b816fb987eb4a5af50ab874b7d1">
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+.cat{display:flex;justify-content:space-between;align-items:baseline;padding:0 0 10px}
+.cat .cn{font-size:16px;font-weight:600;color:var(--navy-900)}
+.cat .cc{font-size:14px;color:var(--s600)}
+.blk{display:flex;align-items:flex-start;gap:16px;padding:16px 0;border-top:1px solid var(--s200);flex-wrap:wrap}
+.blk:first-of-type{border-top:0}
+.blk .pickcol{flex:1 1 300px;min-width:0;display:flex;gap:10px}
+.blk .pickcol input{width:17px;height:17px;margin:5px 0 0;accent-color:var(--blue-600);flex:none}
+.blk .nm{font-size:16px;font-weight:600}
+.blk .ds{font-size:14px;color:var(--s600);margin-top:3px}
+.blk .avg{flex:0 1 190px;font-size:14px;color:var(--s600)}
+.blk .avg b{color:var(--s900)}
+.blk .pricecol{flex:0 1 170px}
+.blk.off .nm,.blk.off .ds{color:var(--s400)}
+.inp.num{text-align:right}
+.inp[disabled]{background:var(--s50);color:var(--s400)}
+</style>
+</helmet>
+
+<div class="pg">
+
+  <header class="gnb dark">
+    <div class="wrap">
+      <div class="gnbin">
+        <a class="brand" href="Supplier-Landing.dc.html"><span class="mark" aria-hidden="true"><i style="height:9px"></i><i style="height:17px"></i><i style="height:12px;opacity:.55"></i></span>마자용</a>
+        <nav class="nav" aria-label="주요 메뉴"><a href="Supplier-Landing.dc.html">견적 방식</a><a href="Supplier-Landing.dc.html">블록 가격</a><a href="Supplier-Landing.dc.html">비용</a></nav>
+        <div class="gright"><span class="spacetag">공급자로 가입 중</span></div>
+      </div>
+    </div>
+  </header>
+
+  <main class="pad">
+    <div class="wrap">
+
+      <ol class="steps">
+        <li class="done"><i>✓</i>계정 만들기</li>
+        <li class="sep" aria-hidden="true">›</li>
+        <li class="done"><i>✓</i>역할 선택</li>
+        <li class="sep" aria-hidden="true">›</li>
+        <li class="done"><i>✓</i>프로필</li>
+        <li class="sep" aria-hidden="true">›</li>
+        <li class="on"><i>4</i>블록 가격</li>
+      </ol>
+
+      <h1 class="t">할 수 있는 블록과 평소 받는 가격을 알려주세요</h1>
+      <p class="sub">등록한 가격은 <b>플랫폼 평균 단가</b>를 만드는 데에만 쓰입니다. 나중에 견적서의 단가를 제한하지 않고, 지금 작성하는 가격이 의뢰인이나 다른 공급자에게 공개되지도 않습니다.</p>
+
+      <div class="side">
+        <div class="main">
+
+          <div class="card">
+            <div class="cat"><span class="cn">예약</span><span class="cc">3개 블록</span></div>
+
+            <div class="blk">
+              <div class="pickcol"><input type="checkbox" id="b1" checked>
+                <label for="b1"><span class="nm">예약 달력</span><span class="ds">회차와 좌석을 지정해 예약을 받고, 정원이 차면 자동 마감</span></label></div>
+              <div class="avg">플랫폼 평균 <b>140만원</b><br><span class="dim">18명 등록</span></div>
+              <div class="pricecol"><input class="inp num" type="text" value="950,000" aria-label="예약 달력 가격"></div>
+            </div>
+
+            <div class="blk">
+              <div class="pickcol"><input type="checkbox" id="b2" checked>
+                <label for="b2"><span class="nm">회차 예약</span><span class="ds">점심·저녁 1부·2부처럼 회차를 나눠 운영</span></label></div>
+              <div class="avg">플랫폼 평균 <b>61만원</b><br><span class="dim">12명 등록</span></div>
+              <div class="pricecol"><input class="inp num" type="text" value="700,000" aria-label="회차 예약 가격"></div>
+            </div>
+
+            <div class="blk off">
+              <div class="pickcol"><input type="checkbox" id="b3">
+                <label for="b3"><span class="nm">좌석 배치도</span><span class="ds">손님이 자리를 직접 고름</span></label></div>
+              <div class="avg"><span class="chip out">금액 미정</span><br><span class="dim" style="display:inline-block;margin-top:5px">3명 등록 · 5명부터 평균 공개</span></div>
+              <div class="pricecol"><input class="inp num" type="text" placeholder="가격" disabled aria-label="좌석 배치도 가격"></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="cat"><span class="cn">결제</span><span class="cc">2개 블록</span></div>
+
+            <div class="blk">
+              <div class="pickcol"><input type="checkbox" id="b4" checked>
+                <label for="b4"><span class="nm">예약금 결제</span><span class="ds">예약할 때 예약금을 받고 규정에 따라 일부 또는 전액 환불</span></label></div>
+              <div class="avg">플랫폼 평균 <b>120만원</b><br><span class="dim">15명 등록</span></div>
+              <div class="pricecol"><input class="inp num" type="text" value="700,000" aria-label="예약금 결제 가격"></div>
+            </div>
+
+            <div class="blk">
+              <div class="pickcol"><input type="checkbox" id="b5" checked>
+                <label for="b5"><span class="nm">노쇼 위약금 자동 청구</span><span class="ds">사전 고지한 규정대로 위약금을 자동 청구</span></label></div>
+              <div class="avg">플랫폼 평균 <b>58만원</b><br><span class="dim">9명 등록</span></div>
+              <div class="pricecol"><input class="inp num" type="text" value="620,000" aria-label="노쇼 위약금 가격"></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="cat"><span class="cn">알림</span><span class="cc">2개 블록</span></div>
+
+            <div class="blk">
+              <div class="pickcol"><input type="checkbox" id="b6" checked>
+                <label for="b6"><span class="nm">리마인드 알림</span><span class="ds">예약 전날 손님에게 안내 문자를 자동 발송</span></label></div>
+              <div class="avg">플랫폼 평균 <b>60만원</b><br><span class="dim">16명 등록</span></div>
+              <div class="pricecol"><input class="inp num" type="text" value="450,000" aria-label="리마인드 알림 가격"></div>
+            </div>
+
+            <div class="blk">
+              <div class="pickcol"><input type="checkbox" id="b7" checked>
+                <label for="b7"><span class="nm">예약 확정 문자</span><span class="ds">예약이 잡히면 즉시 확정 안내 발송</span></label></div>
+              <div class="avg">플랫폼 평균 <b>29만원</b><br><span class="dim">11명 등록</span></div>
+              <div class="pricecol"><input class="inp num" type="text" value="310,000" aria-label="예약 확정 문자 가격"></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="cat"><span class="cn">고객 관리</span><span class="cc">3개 블록</span></div>
+
+            <div class="blk">
+              <div class="pickcol"><input type="checkbox" id="b8" checked>
+                <label for="b8"><span class="nm">단골 등급 관리</span><span class="ds">방문 횟수로 등급을 나누고 혜택을 다르게 적용</span></label></div>
+              <div class="avg">플랫폼 평균 <b>66만원</b><br><span class="dim">7명 등록</span></div>
+              <div class="pricecol"><input class="inp num" type="text" value="800,000" aria-label="단골 등급 관리 가격"></div>
+            </div>
+
+            <div class="blk off">
+              <div class="pickcol"><input type="checkbox" id="b9">
+                <label for="b9"><span class="nm">알레르기·선호 메모</span><span class="ds">손님별 알레르기와 취향을 미리 받아 기록</span></label></div>
+              <div class="avg"><span class="chip out">금액 미정</span><br><span class="dim" style="display:inline-block;margin-top:5px">4명 등록 · 5명부터 평균 공개</span></div>
+              <div class="pricecol"><input class="inp num" type="text" placeholder="가격" disabled aria-label="알레르기 메모 가격"></div>
+            </div>
+
+            <div class="blk off">
+              <div class="pickcol"><input type="checkbox" id="b10">
+                <label for="b10"><span class="nm">재방문 알림</span><span class="ds">한동안 오지 않은 손님에게 안내 발송</span></label></div>
+              <div class="avg">플랫폼 평균 <b>38만원</b><br><span class="dim">6명 등록</span></div>
+              <div class="pricecol"><input class="inp num" type="text" placeholder="가격" disabled aria-label="재방문 알림 가격"></div>
+            </div>
+          </div>
+
+          <div class="info">평균은 참고용입니다. 그대로 옮겨 적기보다 <b>평소 받으시는 금액</b>을 적어주세요. 평균을 그대로 채운 값은 다음 평균 계산에서 빠집니다.</div>
+
+          <div class="info" style="margin-top:12px;background:var(--s50)">
+            등록자가 <b>5명 미만</b>인 블록은 평균을 공개하지 않고 <span class="chip out">금액 미정</span>으로 둡니다. 적은 수의 가격으로 평균을 내면 한 사람의 금액이 그대로 드러나기 때문입니다.
+          </div>
+
+        </div>
+
+        <div class="rail">
+
+          <div class="card">
+            <h2 class="ct">등록 현황</h2>
+            <div class="rowsb" style="padding:5px 0"><span class="sec">등록한 가격</span><span><b>7개</b></span></div>
+            <div class="rowsb" style="padding:5px 0"><span class="sec">가입 기준</span><span class="chip teal">3개 이상 충족</span></div>
+            <hr class="hr">
+            <p class="sec" style="margin:0">작성하지 않으실 블록은 비워두시면 됩니다. 나중에 ‘블록 가격’에서 더하거나 고칠 수 있습니다.</p>
+          </div>
+
+          <div class="card">
+            <h2 class="ct">가입 전 확인</h2>
+            <div class="cbx">
+              <input type="checkbox" id="nda" checked>
+              <label for="nda">의뢰인 명세에 대한 <b>비밀유지 의무</b>에 동의합니다</label>
+            </div>
+            <p class="sec" style="margin:-4px 0 0 27px">열람한 명세를 밖으로 내보내지 않겠다는 약속입니다. 위반 시 계정 정지와 손해배상 책임이 따릅니다. <a class="ft" href="#nda">약관 보기</a></p>
+            <hr class="hr">
+            <div class="cbx">
+              <input type="checkbox" id="fee" checked>
+              <label for="fee">거래마다 <b>수수료 5%</b>가 부과되는 데 동의합니다</label>
+            </div>
+            <p class="sec" style="margin:-4px 0 0 27px;color:var(--teal-700)">초기 공급자 20명에 포함되어 <b style="color:var(--teal-700)">첫 거래 1회는 면제</b>됩니다.</p>
+            <div style="margin-top:18px"><a class="btn full" href="Supplier-Landing.dc.html">가입 완료하기</a></div>
+            <p class="sec" style="text-align:center;margin:10px 0 0">가입하면 바로 프로젝트를 찾아보실 수 있습니다</p>
+          </div>
+
+          <div class="note">
+            <b>가격은 언제든 바꿀 수 있습니다</b>
+            <p>6개월이 지나면 로그인할 때 갱신 안내가 뜹니다. 답하지 않아도 기존 가격은 그대로 유지됩니다.</p>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="rowsb" style="margin-top:4px">
+        <a class="btn gh" href="Signup-Supplier.dc.html">이전</a>
+        <span class="sec"><b>3개 이상</b>의 블록 가격을 등록하셔야 가입이 완료됩니다. 등록된 가격이 모여야 플랫폼 평균이 만들어집니다.</span>
+      </div>
+
+    </div>
+  </main>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":2196}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

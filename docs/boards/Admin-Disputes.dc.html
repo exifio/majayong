@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>운영자 — 이견 개입</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="/_blob/a8316b816fb987eb4a5af50ab874b7d1">
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+.pg{word-break:keep-all}
+.ad-pg{min-height:100%;background:var(--s50)}
+.ad-pg sc-for,.ad-pg sc-if{display:contents}
+.ad-top{height:64px;background:#fff;border-bottom:1px solid var(--s200);display:flex;align-items:center;justify-content:space-between;padding:0 28px;box-sizing:border-box}
+.ad-top .lg{display:flex;align-items:center;gap:10px;font-size:19px;font-weight:600;color:var(--s900);text-decoration:none;letter-spacing:-0.4px}
+.ad-top .lg .mark{margin-right:0}
+.ad-top .cp{font-size:12px;font-weight:500;color:var(--s600);background:var(--s100);border:1px solid var(--s200);border-radius:6px;padding:2px 8px;letter-spacing:0}
+.ad-top .me{display:flex;align-items:center;gap:10px;font-size:14px;color:var(--s600)}
+.ad-top .me b{color:var(--s900);font-weight:600}
+.ad-top .me .av{width:32px;height:32px;border-radius:50%;background:var(--navy-900);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600}
+.ad-body{display:grid;grid-template-columns:232px minmax(0,1fr);align-items:stretch}
+.ad-nav{background:var(--navy-900);padding:20px 12px;display:flex;flex-direction:column;gap:2px;min-height:calc(100% - 0px)}
+.ad-nav .h{font-size:12px;color:var(--on-sub);padding:0 12px 8px;letter-spacing:0.2px}
+.ad-nav a{display:flex;justify-content:space-between;align-items:center;font-size:15px;color:#fff;text-decoration:none;padding:10px 12px;border-radius:8px;border-left:3px solid transparent}
+.ad-nav a.on{background:rgba(255,255,255,.10);border-left-color:var(--blue-600);font-weight:600}
+.ad-nav a .bd{font-size:12px;font-weight:600;min-width:20px;height:20px;border-radius:10px;background:rgba(255,255,255,.16);color:#fff;display:inline-flex;align-items:center;justify-content:center;padding:0 6px;box-sizing:border-box}
+.ad-nav .sp{height:1px;background:var(--on-line);margin:12px 8px}
+.ad-nav a.mut{color:var(--on-sub);font-size:14px}
+.ad-nav .ft2{margin-top:auto;font-size:12px;color:var(--on-sub);line-height:1.6;padding:24px 12px 4px}
+.ad-main{padding:28px 32px 40px;min-width:0}
+.ad-main h1.t{margin:0 0 6px}
+.ad-main .ad-sub{margin:0 0 20px;font-size:15px;color:var(--s600);max-width:760px}
+
+.ad-tabs{display:flex;gap:6px;margin:0 0 14px;flex-wrap:wrap}
+.ad-tabs a{font-size:14px;padding:6px 13px;border-radius:16px;border:1px solid var(--s200);background:#fff;color:var(--s600);text-decoration:none;white-space:nowrap}
+.ad-tabs a.on{background:var(--navy-900);border-color:var(--navy-900);color:#fff;font-weight:600}
+.ad-tabs a .ad-c{margin-left:5px;font-weight:600;color:inherit;font-size:14px}
+.ad-tabs a.on .ad-c{color:#fff}
+.ad-split{display:grid;grid-template-columns:300px minmax(0,1fr);gap:18px;align-items:start}
+.ad-list{display:flex;flex-direction:column;gap:10px}
+.ad-li{display:block;background:#fff;border:1px solid var(--s200);border-radius:12px;padding:14px 16px;text-decoration:none;color:inherit}
+.ad-li.on{border-color:var(--blue-600,#2563EB);box-shadow:0 0 0 1px var(--blue-600,#2563EB) inset}
+.ad-li .ad-lt{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 8px}
+.ad-li .ad-lt .chip{font-size:12px;padding:2px 8px}
+.ad-li b{display:block;font-size:15px;line-height:1.45;margin:0 0 4px}
+.ad-li .ad-lm{font-size:13px;color:var(--s600);line-height:1.55}
+.ad-li.dim2{opacity:.7}
+.ad-more{font-size:13px;color:var(--s600);padding:4px 4px 0}
+.ad-card{background:#fff;border:1px solid var(--s200);border-radius:14px;overflow:hidden}
+.ad-ch{padding:20px 24px 16px;border-bottom:1px solid var(--s200)}
+.ad-ch .ad-lt{display:flex;gap:6px;margin:0 0 8px}
+.ad-ch .ad-lt .chip{font-size:12px;padding:2px 8px}
+.ad-ch h2{font-size:20px;font-weight:600;letter-spacing:-0.3px;margin:0 0 4px}
+.ad-ch .ad-m{font-size:14px;color:var(--s600);line-height:1.6}
+.ad-sec{padding:20px 24px;border-top:1px solid var(--s200)}
+.ad-sec:first-of-type{border-top:0}
+.ad-sh{font-size:13px;font-weight:600;color:var(--s600);margin:0 0 12px}
+.ad-two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:28px}
+.ad-flow{list-style:none;margin:0;padding:0}
+.ad-flow li{position:relative;padding:0 0 14px 24px;font-size:14px;color:var(--s600);line-height:1.5}
+.ad-flow li::before{content:"";position:absolute;left:4px;top:6px;width:9px;height:9px;border-radius:50%;background:var(--teal-700)}
+.ad-flow li::after{content:"";position:absolute;left:8px;top:17px;bottom:-2px;width:1px;background:var(--s200)}
+.ad-flow li:last-child::after{display:none}
+.ad-flow li.now::before{background:#fff;border:2px solid var(--amber-700);box-sizing:content-box;left:2px;top:4px}
+.ad-flow li.am::before{background:var(--amber-700)}
+.ad-flow li b{display:block;color:var(--s900);font-weight:600}
+.ad-flow li.now b{color:var(--amber-700)}
+.ad-bk .r{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:9px 0;border-top:1px solid var(--s200);font-size:14px}
+.ad-bk .r:first-of-type{border-top:0;padding-top:0}
+.ad-bk .r .k{color:var(--s900)}
+.ad-bk .r .k i{display:block;font-style:normal;font-size:12px;color:var(--s600);margin-top:2px}
+.ad-bk .r .v{font-weight:500;font-variant-numeric:tabular-nums;white-space:nowrap}
+.ad-bk .r.tot{border-top:2px solid var(--s900);padding-top:11px}
+.ad-bk .r.tot .k,.ad-bk .r.tot2 .k{font-weight:600}
+.ad-bk .r .k i{font-weight:400}
+.ad-bk .r.tot .v,.ad-bk .r.tot2 .v{font-size:18px;font-weight:600;color:var(--navy-900)}
+.ad-bk .r.mut .k,.ad-bk .r.mut .v{color:var(--s600)}
+.ad-reason{width:100%;box-sizing:border-box;min-height:76px;resize:vertical;line-height:1.6;font-size:14px}
+.ad-req{font-size:12px;color:var(--amber-700);font-weight:600;margin-left:6px}
+.ad-foot{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:16px 24px;border-top:1px solid var(--s200);background:var(--s50)}
+.ad-foot p{margin:0;font-size:13px;color:var(--s600);line-height:1.6;max-width:560px}
+.ad-foot .ad-bt{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex:none}
+.ad-foot .ad-bt .btn{white-space:nowrap}
+.ad-foot .ad-bt small{font-size:12px;color:var(--s600)}
+.ad-done{display:flex;gap:12px;align-items:flex-start;background:#EAF6F4;border:1px solid #C7E6E0;border-radius:12px;padding:14px 18px;margin:0 0 16px}
+.ad-done b{display:block;color:var(--teal-700);font-size:15px;margin:0 0 2px}
+.ad-done p{margin:0;font-size:14px;color:var(--s600);line-height:1.6}
+.ad-warn{background:var(--amber-50);border:1px solid #F2E0BE;border-radius:12px;padding:14px 18px}
+.ad-warn b{display:block;color:var(--amber-700);font-size:15px;margin:0 0 4px}
+.ad-warn p{margin:0;font-size:14px;color:#7A5A1C;line-height:1.6}
+.ad-quote{border-left:3px solid var(--s300);padding:6px 0 6px 12px;margin:0 0 10px;font-size:14px;line-height:1.6;color:var(--s900)}
+.ad-quote i{display:block;font-style:normal;font-size:12px;color:var(--s600);margin-bottom:2px}
+.ad-opts{display:flex;flex-direction:column;gap:10px}
+.ad-opts label.lbl{display:flex;gap:12px;align-items:flex-start;border:1px solid var(--s300);border-radius:10px;padding:13px 16px;cursor:pointer;margin:0;font-weight:400;background:#fff}
+.ad-opts label.lbl.on{border-color:var(--blue-600,#2563EB);background:var(--blue-50,#EEF4FF);box-shadow:0 0 0 1px var(--blue-600,#2563EB) inset}
+.ad-opts input{margin:3px 0 0;flex:none}
+.ad-opts b{display:block;font-size:15px;color:var(--s900)}
+.ad-opts span.d{display:block;font-size:13px;color:var(--s600);margin-top:3px;line-height:1.55}
+.ad-opts span.pv{display:block;font-size:13px;color:var(--navy-900);margin-top:6px;font-variant-numeric:tabular-nums}
+
+.ad-claims{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.ad-claim{border:1px solid var(--s200);border-radius:12px;padding:14px 16px}
+.ad-claim .ad-who{font-size:13px;color:var(--s600);margin:0 0 6px}
+.ad-claim .ad-who b{color:var(--s900)}
+.ad-claim p{margin:0;font-size:14px;line-height:1.65}
+.ad-cond{border:1px solid var(--s200);border-radius:12px;overflow:hidden}
+.ad-cond .ad-fh{padding:12px 16px;background:var(--s50);border-bottom:1px solid var(--s200)}
+.ad-cond .ad-fh b{font-size:15px}
+.ad-cond .ad-fh span{display:block;font-size:13px;color:var(--s600);margin-top:2px}
+.ad-cond .cr2{display:grid;grid-template-columns:120px minmax(0,1fr);gap:12px;padding:11px 16px;border-top:1px solid var(--s200);font-size:14px;line-height:1.6}
+.ad-cond .cr2:first-of-type{border-top:0}
+.ad-cond .cr2 .q{color:var(--s600)}
+.ad-cond .cr2.hl{background:#FFF8E8;box-shadow:inset 3px 0 0 var(--amber-700)}
+.ad-cond .cr2.hl .a{font-weight:600;color:var(--navy-900)}
+.ad-cond .cr2.nd .a{color:var(--s600)}
+.ad-cond .cr2.nd .a i{font-style:normal;display:inline-block;border:1px dashed var(--s400);border-radius:6px;padding:0 6px;margin-right:6px;font-size:12px}
+.ad-rule{font-size:13px;color:var(--s600);margin:10px 0 0;line-height:1.6}
+.ad-links{display:flex;flex-direction:column;gap:6px;font-size:14px}
+.ad-links span{color:var(--s600);font-size:13px;margin-left:6px}
+.ad-pv2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
+.ad-pv2>div{border:1px solid var(--s200);border-radius:10px;padding:12px 14px;background:var(--s50)}
+.ad-pv2 .k{display:block;font-size:12px;font-weight:600;color:var(--s600);margin:0 0 4px}
+.ad-pv2 p{margin:0;font-size:13px;line-height:1.6;color:var(--s900)}
+.ad-rec{border:1px solid #C7E6E0;background:#F6FBFA;border-radius:12px;padding:14px 16px}
+.ad-rec .k{display:block;font-size:12px;font-weight:600;color:var(--teal-700);margin:0 0 4px}
+.ad-rec b{display:block;font-size:15px;margin:0 0 4px}
+.ad-rec p{margin:0;font-size:14px;line-height:1.6;color:var(--s900)}
+</style>
+</helmet>
+<div class="pg ad-pg">
+  <header class="ad-top">
+    <a class="lg" href="Admin-Blocks.dc.html"><span class="mark" aria-hidden="true"><i style="height:9px"></i><i style="height:17px"></i><i style="height:12px;opacity:.55"></i></span>마자용 운영<span class="cp">운영자 콘솔</span></a>
+    <div class="me"><span>운영자</span><b>김하늘</b><span class="av" aria-hidden="true">하</span></div>
+  </header>
+  <div class="ad-body">
+    <nav class="ad-nav" aria-label="운영 메뉴">
+      <p class="h">처리할 일</p>
+      <a href="Admin-Blocks.dc.html">블록 검토<span class="bd">7</span></a><a href="Admin-Payments.dc.html">보류된 결제<span class="bd">2</span></a><a href="Admin-Refunds.dc.html">환불 처리<span class="bd">{{nRefund}}</span></a><a class="on" aria-current="page" href="Admin-Disputes.dc.html">이견 개입<span class="bd">{{nDispute}}</span></a><a href="Admin-Reports.dc.html">신고 처리<span class="bd">2</span></a><a href="Admin-Inquiries.dc.html">1:1 문의<span class="bd">4</span></a>
+      <div class="sp"></div>
+      <a class="mut" href="Admin-Events.dc.html">이벤트 기록</a>
+      <p class="ft2">운영자 행위는 모두 이벤트 기록에 남습니다</p>
+    </nav>
+    <main class="ad-main">
+      <h1 class="t">이견 개입</h1>
+      <p class="ad-sub">같은 항목에 보완 요청이 반복되면 개입합니다. 판단 근거는 계약서에 첨부된 합의 내용의 조건 줄이고, 화면은 근거를 모아 보여 줍니다.</p>
+      <nav class="ad-tabs" aria-label="이견 상태"><a class="{{tabO}}" href="#o">검토 중<span class="ad-c">{{nO}}</span></a><a class="{{tabD}}" href="#d">판정 완료<span class="ad-c">{{nD}}</span></a></nav>
+      <sc-if value="{{isDone}}" hint-placeholder-val="{{ false }}">
+        <div class="ad-done"><div><b>판정을 보냈습니다 · {{J.t}} · 11월 28일 16:40 · 운영자 김하늘</b><p>{{J.band}} 판정 사유는 이벤트 기록에 남았습니다.</p></div></div>
+      </sc-if>
+      <div class="ad-split">
+        <div class="ad-list">
+          <a class="ad-li on" href="Admin-Disputes.dc.html"><div class="ad-lt"><span class="chip amber">보완 3회</span><span class="{{lChipCls}}">{{lChip}}</span></div><b>회차 예약 · 중간 구간</b><div class="ad-lm">회차 예약, 대기 등록 외 1개 기능<br>의뢰인 누리 국수 · 공급자 이도윤<br>11월 28일 의뢰인이 도움 요청</div></a>
+          <p class="ad-more">{{more}}</p>
+        </div>
+        <div>
+          <div class="ad-card">
+            <div class="ad-ch">
+              <div class="ad-lt"><span class="chip amber">보완 요청 3회 · 조건과 다름</span><span class="{{lChipCls}}">{{lChip}}</span></div>
+              <h2>회차 예약 — 회차 예약, 대기 등록 외 1개 기능</h2>
+              <div class="ad-m">의뢰인 누리 국수 · 공급자 이도윤 · 합의 2,200,000원 · 중간 구간(회차 예약 · 대기 등록) 1,100,000원 · 대기 등록은 11월 20일 승인</div>
+            </div>
+            <div class="ad-sec">
+              <p class="ad-sh">양쪽 주장</p>
+              <div class="ad-claims">
+                <div class="ad-claim"><p class="ad-who"><b>의뢰인 누리 국수</b></p><p>두 손님이 동시에 예약하면 정원 12석을 넘겨 14명까지 받습니다. 정원을 10석으로 줄였을 때도 이미 받은 예약이 그대로라 넘칩니다.</p></div>
+                <div class="ad-claim"><p class="ad-who"><b>공급자 이도윤</b></p><p>정원 12석은 지켜집니다. 동시 예약은 고쳤습니다. 정원을 바꾸는 기능은 계약서에서 정하지 않은 조건이라 이번 범위가 아닙니다.</p></div>
+              </div>
+            </div>
+            <div class="ad-sec">
+              <p class="ad-sh">판단 근거 — 계약서에 첨부된 합의 내용</p>
+              <div class="ad-cond">
+                <div class="ad-fh"><b>회차 예약</b><span>점심 · 저녁 회차를 열고 회차마다 정원을 정해 예약받기</span></div>
+                <div class="cr2 hl"><span class="q">회차 구성</span><span class="a">점심 1회 · 저녁 2회, 회차마다 정원 12석</span></div>
+                <div class="cr2"><span class="q">예약 마감</span><span class="a">방문 전날 21시까지</span></div>
+                <div class="cr2 nd"><span class="q">정원 변경</span><span class="a"><i>정하지 않음</i>검수 기준이 아님 — 기능 설명대로 동작하는지만 봅니다</span></div>
+              </div>
+              <p class="ad-rule">계약서 제4조 — 각 항목에 적힌 합의 조건이 검수 기준이고, '정하지 않음' 조건은 검수 기준이 되지 않으며 그 항목은 기능 설명에 맞게 동작하는지만 본다. 계약에 없는 기능은 새 프로젝트로.</p>
+            </div>
+            <div class="ad-sec">
+              <div class="ad-two">
+                <div>
+                  <p class="ad-sh">보완 요청 이력</p>
+                  <ol class="ad-flow">
+                    <li class="am"><b>11월 20일 · 1회 · 조건과 다름(회차 구성)</b>"13번째 손님도 예약이 됩니다." → 11월 21일 다시 납품</li>
+                    <li class="am"><b>11월 24일 · 2회 · 조건과 다름(회차 구성)</b>"두 명이 동시에 누르면 14명이 됩니다." → 11월 26일 다시 납품</li>
+                    <li class="am"><b>11월 27일 · 3회 · 조건과 다름(회차 구성)</b>"정원을 10석으로 바꾸니 이미 받은 12명이 그대로입니다."</li>
+                    <li class="now"><b>11월 28일 · 의뢰인 도움 요청</b>공급자는 3회 요청이 범위 밖이라고 답함</li>
+                  </ol>
+                </div>
+                <div>
+                  <p class="ad-sh">납품물 · 채팅 인용</p>
+                  <div class="ad-links"><a class="ft" href="#d">test.nuri-guksu.kr/reserve</a><span style="margin:0">3회차 제출 · 11월 26일 · 확인 방법: 두 창에서 같은 회차를 동시에 예약</span></div>
+                  <div class="ad-quote" style="margin-top:14px"><i>공급자 이도윤 · 11월 26일 18:02</i>"동시에 눌러도 12석을 넘지 않게 고쳤습니다. 두 창으로 확인해 주세요."</div>
+                  <div class="ad-quote" style="margin:0"><i>의뢰인 누리 국수 · 11월 27일 11:15</i>"동시 예약은 이제 괜찮아요. 그런데 정원을 줄이면 넘친 예약은 어떻게 되나요?"</div>
+                </div>
+              </div>
+            </div>
+            <sc-if value="{{isReview}}" hint-placeholder-val="{{ true }}">
+            <div class="ad-sec">
+              <p class="ad-sh">판정</p>
+              <div class="ad-opts" role="radiogroup" aria-label="판정">
+                <label class="lbl"><input type="radio" name="dp"><span><b>보완이 맞다</b><span class="d">조건 줄을 지키지 못했다 — 공급자가 다시 작업하고 이 항목은 검수 대기로 돌아갑니다</span></span></label>
+                <label class="lbl"><input type="radio" name="dp"><span><b>승인이 맞다</b><span class="d">조건 줄을 충족했다 — 이 항목을 승인 처리합니다. 구간의 항목이 모두 승인되면 지급됩니다</span></span></label>
+                <label class="lbl"><input type="radio" name="dp"><span><b>정하지 않은 조건이다</b><span class="d">요청한 부분이 '정하지 않음' 조건이다 — 기능 설명 기준으로 보고 그 부분은 검수 대상에서 뺍니다</span></span></label>
+              </div>
+              <p class="ad-sh" style="margin:16px 0 6px">판정 사유<span class="ad-req">필수</span></p>
+              <textarea class="inp ad-reason" aria-label="판정 사유" placeholder="어느 조건 줄을 근거로 판단했는지 적어 주세요. 양쪽에 그대로 전달됩니다."></textarea>
+            </div>
+            </sc-if>
+            <sc-if value="{{isWrite}}" hint-placeholder-val="{{ false }}">
+            <div class="ad-sec">
+              <p class="ad-sh">판정</p>
+              <div class="ad-opts" role="radiogroup" aria-label="판정">
+                <sc-for list="{{opts}}" as="o" hint-placeholder-count="3"><label class="{{o.cls}}"><input type="radio" name="dp" {{o.chk}}><span><b>{{o.t}}</b><span class="d">{{o.d}}</span></span></label></sc-for>
+              </div>
+              <p class="ad-sh" style="margin:16px 0 6px">판정 사유<span class="ad-req">필수</span></p>
+              <textarea class="inp ad-reason" aria-label="판정 사유" style="min-height:124px">{{J.why}}</textarea>
+              <div class="ad-pv2">
+                <div><span class="k">의뢰인에게 보이는 내용</span><p>{{J.toC}}</p></div>
+                <div><span class="k">공급자에게 보이는 내용</span><p>{{J.toS}}</p></div>
+              </div>
+            </div>
+            </sc-if>
+            <sc-if value="{{isDone}}" hint-placeholder-val="{{ false }}">
+            <div class="ad-sec">
+              <div class="ad-rec"><span class="k">보낸 판정 · 11월 28일 16:40 · 운영자 김하늘</span><b>{{J.t}}</b><p>{{J.short}}</p></div>
+              <ol class="ad-flow" style="margin-top:16px">
+                <sc-for list="{{J.flow}}" as="l" hint-placeholder-count="2"><li><b>{{l.b}}</b>{{l.d}}</li></sc-for>
+              </ol>
+            </div>
+            </sc-if>
+            <div class="ad-foot">
+              <p>판정은 양쪽 채팅과 내 계약에 기록되고, 이벤트 기록에 남습니다. 판정 근거는 계약서의 조건 줄입니다.</p>
+              <sc-if value="{{isReview}}" hint-placeholder-val="{{ true }}"><div class="ad-bt"><button type="button" class="btn off" disabled>판정 보내기</button><small>판정과 사유를 적으면 켜집니다</small></div></sc-if>
+              <sc-if value="{{isWrite}}" hint-placeholder-val="{{ false }}"><div class="ad-bt"><a class="btn" href="#send">판정 보내기</a></div></sc-if>
+              <sc-if value="{{isDone}}" hint-placeholder-val="{{ false }}"><div class="ad-bt"><a class="btn gh" href="Admin-Events.dc.html">이벤트 기록 보기</a></div></sc-if>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"view":{"editor":"enum","options":["검토 중","판정 작성","판정 작성 — 보완이 맞다","판정 작성 — 승인이 맞다","판정 완료","판정 완료 — 보완이 맞다","판정 완료 — 승인이 맞다"],"default":"검토 중","section":"상태"},"$preview":{"width":1280,"height":1900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const v = this.props.view ?? '검토 중';
+    // '판정 작성' · '판정 완료'만 있으면 '정하지 않은 조건이다'를 고른 상태
+    const review = v === '검토 중', write = /^판정 작성/.test(v), done = /^판정 완료/.test(v);
+    const k = /보완이 맞다/.test(v) ? 0 : /승인이 맞다/.test(v) ? 1 : 2;
+    const O = [
+      ['보완이 맞다', '조건 줄을 지키지 못했다 — 공급자가 다시 작업하고 이 항목은 검수 대기로 돌아갑니다'],
+      ['승인이 맞다', '조건 줄을 충족했다 — 이 항목을 승인 처리합니다. 구간의 항목이 모두 승인되면 지급됩니다'],
+      ['정하지 않은 조건이다', "요청한 부분이 '정하지 않음' 조건이다 — 기능 설명 기준으로 보고 그 부분은 검수 대상에서 뺍니다"]
+    ];
+    const JS = [
+      { t: '보완이 맞다',
+        why: "정원을 10석으로 줄인 뒤에도 그 회차에 새 예약이 계속 받아지면 회차 구성 줄(회차마다 정원)을 지키지 못한 것이다. 이미 받은 예약을 어떻게 할지는 '정원 변경 — 정하지 않음'이라 요구하지 않는다. 정원을 넘는 새 예약만 막도록 보완한다. (보완이 맞다를 고른 경우의 예시)",
+        toC: '판정: 보완이 맞다 · 정원을 줄인 뒤 정원을 넘는 새 예약이 받아지지 않게 공급자가 다시 작업합니다. 이미 받은 예약의 처리는 정하지 않은 조건이라 이번 보완에 들어가지 않습니다. 다시 납품되면 그때부터 검수 기한 7일이 새로 시작됩니다.',
+        toS: '판정: 보완이 맞다 · 회차 예약은 보완 요청 상태로 남습니다. 정원을 줄인 뒤 정원을 넘는 새 예약을 막도록 고쳐 다시 납품해 주세요. 이미 받은 예약의 처리는 이번 범위가 아닙니다.',
+        short: "정원을 줄인 뒤 새 예약이 정원을 넘음 — 회차 구성 줄 미충족. 이미 받은 예약 처리는 '정하지 않음'이라 제외.",
+        band: '회차 예약은 보완 요청 상태로 남고, 공급자에게 다시 납품할 부분이 전달되었습니다.',
+        flow: [{ b: '11월 28일 · 양쪽 채팅과 내 계약에 판정 기록', d: '공급자에게 다시 작업할 부분(정원을 넘는 새 예약 막기)이 전달되었습니다' },
+               { b: '11월 30일 · 공급자 다시 납품', d: '회차 예약 검수 대기 · 검수 기한 12월 7일' }] },
+      { t: '승인이 맞다',
+        why: '회차 구성 줄(정원 12석)은 3회차 납품에서 충족했고, 의뢰인도 11월 27일 동시 예약 문제가 해결됐다고 확인했다. 3회 요청은 조건 줄에 없는 정원 변경 뒤의 처리라 회차 예약을 승인한다. (승인이 맞다를 고른 경우의 예시)',
+        toC: '판정: 승인이 맞다 · 회차 예약을 운영자가 승인 처리했습니다. 중간 구간의 항목이 모두 승인되어 1,100,000원이 공급자에게 지급됩니다. 정원 변경 처리가 필요하면 새 프로젝트로 맡길 수 있습니다.',
+        toS: '판정: 승인이 맞다 · 회차 예약이 승인되어 중간 구간이 지급됩니다(수수료를 뺀 1,045,000원). 다시 납품하지 않아도 됩니다.',
+        short: '회차 구성 줄(정원 12석)은 3회차 납품에서 충족. 3회 요청은 조건 줄에 없는 정원 변경 뒤 처리라 승인.',
+        band: '회차 예약을 승인 처리했고, 중간 구간의 항목이 모두 승인되어 지급이 시작되었습니다.',
+        flow: [{ b: '11월 28일 · 회차 예약 승인 처리', d: '운영자 판정으로 승인 · 양쪽 채팅과 내 계약에 기록' },
+               { b: '11월 28일 · 중간 구간 지급', d: '1,100,000원 지급 시작 · 공급자 정산 내역에 표시' }] },
+      { t: '정하지 않은 조건이다',
+        why: "회차 구성 줄(정원 12석)은 3회차 납품에서 충족했다 — 의뢰인도 11월 27일 동시 예약 문제는 해결됐다고 확인. 3회 요청은 정원을 바꿨을 때의 처리로, 계약서에 '정원 변경 — 정하지 않음'으로 남은 조건이다. 기능 설명(회차마다 정원을 정해 예약받기)대로 동작하므로 이 부분은 검수 대상이 아니다.",
+        toC: '판정: 정하지 않은 조건 · 3회 요청(정원 변경 후 처리)은 검수 대상이 아닙니다. 회차 예약은 검수 대기로 돌아가며 승인할 수 있습니다. 정원 변경 처리가 필요하면 새 프로젝트로 맡길 수 있습니다.',
+        toS: '판정: 정하지 않은 조건 · 3회 요청은 범위 밖으로 판정했습니다. 다시 납품하지 않아도 되며, 의뢰인이 회차 예약을 승인하면 중간 구간이 지급됩니다.',
+        short: "회차 구성 줄(정원 12석)은 3회차 납품에서 충족. 3회 요청은 '정원 변경 — 정하지 않음' 조건이라 검수 대상이 아님. 기능 설명대로 동작함.",
+        band: '회차 예약은 검수 대기로 돌아갔고, 양쪽 채팅과 내 계약에 판정이 기록되었습니다.',
+        flow: [{ b: '11월 28일 · 양쪽 채팅과 내 계약에 판정 기록', d: '의뢰인 · 공급자 모두 판정 내용을 받았습니다' },
+               { b: '11월 29일 · 의뢰인 승인', d: '회차 예약 승인 → 중간 구간 1,100,000원 지급' }] }
+    ];
+    return {
+      opts: O.map((o, i) => ({ t: o[0], d: o[1], cls: i === k ? 'lbl on' : 'lbl', chk: i === k ? 'checked' : '' })), J: JS[k],
+      isReview: review, isWrite: write, isDone: done,
+      nRefund: 1, nDispute: done ? 0 : 1,
+      more: done ? '이 건 말고 지난 판정 완료 2건이 더 있습니다 · 이벤트 기록에서 볼 수 있습니다.' : "같은 항목에 보완 요청이 3회 이상이거나, 어느 한쪽이 '운영자에게 도움 요청'을 누르면 여기에 올라옵니다.",
+      tabO: done ? '' : 'on', tabD: done ? 'on' : '', nO: done ? 0 : 1, nD: done ? 3 : 2,
+      lChip: done ? '판정 완료' : '검토 중', lChipCls: done ? 'chip teal' : 'chip'
+    };
+  }
+}
+</script>
+</body>
+</html>

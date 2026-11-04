@@ -1,0 +1,426 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>공급자 — 납품</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="/_blob/a8316b816fb987eb4a5af50ab874b7d1">
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+.pg{word-break:keep-all}
+.dv sc-for,.dv sc-if{display:contents}
+.crumb{font-size:14px;color:var(--s600);margin:0 0 10px}
+.crumb a{color:var(--s600)}
+.head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin:0 0 20px}
+.head h1.t{margin:0 0 6px;display:flex;align-items:center;gap:10px}
+.head h1.t .chip{font-size:14px}
+.head .sub{margin:0;max-width:760px}
+.whoS{display:flex;align-items:center;gap:10px;font-size:14px;color:var(--s600)}
+.whoS .av{width:36px;height:36px;border-radius:50%;background:var(--s100);border:1px solid var(--s200);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;color:var(--navy-900)}
+.whoS b{color:var(--s900);font-size:15px}
+/* 계약 요약 */
+.sum{display:grid;grid-template-columns:repeat(3,minmax(0,1fr)) 1.4fr;gap:0;background:#fff;border:1px solid var(--s200);border-radius:12px;margin:0 0 16px}
+.sum>div{padding:16px 20px;border-left:1px solid var(--s200)}
+.sum>div:first-child{border-left:0}
+.sum .k{font-size:13px;color:var(--s600);margin:0 0 4px}
+.sum .v{font-size:18px;font-weight:600;color:var(--navy-900);font-variant-numeric:tabular-nums}
+.sum .s{font-size:12px;color:var(--s600);margin-top:2px}
+.pbar{display:flex;gap:4px;margin:8px 0 6px}
+.pbar i{flex:1 1 0;height:8px;border-radius:4px;background:var(--s200)}
+.pbar i.b-ok{background:var(--teal-700)}
+.pbar i.b-wait{background:#B8C7DB}
+.pbar i.b-fix{background:#E2B55C}
+/* 지급 완료 띠 */
+.paid{display:flex;justify-content:space-between;align-items:center;gap:16px;border-radius:12px;padding:14px 20px;margin:0 0 16px;background:#EAF6F4;border:1px solid #C7E6E0}
+.dl-band{display:flex;justify-content:space-between;align-items:center;gap:16px;border-radius:12px;padding:14px 20px;margin:0 0 16px;background:var(--amber-50);border:1px solid #F2E0BE;word-break:keep-all}
+.dl-band b{display:block;font-size:16px;color:var(--amber-700);margin:0 0 2px}
+.dl-band p{margin:0;font-size:14px;color:var(--s600)}
+.dl-band .btn{flex:none;white-space:nowrap}
+.paid b{display:block;font-size:16px;color:var(--teal-700);margin:0 0 2px}
+.paid p{margin:0;font-size:14px;color:var(--s600)}
+.lay{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:20px;align-items:start}
+/* 구간 탭 */
+.tabs2{display:flex;gap:6px;border-bottom:1px solid var(--s200);margin:0 0 16px}
+.tabs2 a{font-size:15px;color:var(--s600);text-decoration:none;padding:10px 14px;border-bottom:2px solid transparent;margin-bottom:-1px;display:flex;gap:8px;align-items:center}
+.tabs2 a.on{color:var(--navy-900);font-weight:600;border-color:var(--navy-900)}
+.tabs2 .chip{font-size:12px;padding:2px 8px}
+/* 항목 카드 */
+.ic{background:#fff;border:1px solid var(--s200);border-radius:12px;margin:0 0 14px;overflow:hidden}
+.ic .ih{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;padding:16px 20px}
+.ic .ih .nm{font-size:17px;font-weight:600}
+.ic .ih .ds{font-size:14px;color:var(--s600);margin-top:2px}
+.ic .ih .chip{flex:none;font-size:12px;padding:3px 9px}
+.crit{margin:0 20px;padding:12px 0 14px;border-top:1px solid var(--s200)}
+.crit .k{font-size:13px;font-weight:600;color:var(--s600);margin:0 0 6px}
+.crit ul{list-style:none;margin:0;padding:0}
+.crit li{display:grid;grid-template-columns:140px minmax(0,1fr);gap:12px;font-size:14px;line-height:1.6;padding:3px 0}
+.crit .q{color:var(--s600)}
+.crit .a{color:var(--navy-900);font-weight:500}
+.crit li.un .a{color:var(--s600);font-weight:400}
+.crit li.un .a em{font-style:normal;display:inline-block;font-size:12px;border:1px dashed var(--s400);border-radius:5px;padding:0 6px;margin-right:6px;color:var(--s600)}
+.up{background:var(--s50);border-top:1px solid var(--s200);padding:16px 20px 18px}
+.up .g2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+.up .lbl{margin-bottom:6px}
+.drop{display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-height:46px;border:1px dashed var(--s400);border-radius:8px;background:#fff;padding:6px 10px;font-size:14px;color:var(--s600)}
+.fchip{display:inline-flex;align-items:center;gap:6px;background:var(--s100);border:1px solid var(--s200);border-radius:6px;padding:3px 8px;font-size:13px;color:var(--s900)}
+.drop .add{margin-left:auto;font-size:13px;color:var(--navy-900);text-decoration:underline;white-space:nowrap}
+.up textarea.inp{min-height:68px;resize:vertical;line-height:1.6}
+.up .memo{margin-top:12px}
+/* 승인 · 검수 중 요약 */
+.doneRow{display:flex;justify-content:space-between;align-items:center;gap:12px;border-top:1px solid var(--s200);padding:12px 20px;font-size:14px;color:var(--s600);background:var(--s50)}
+.doneRow a{color:var(--s600)}
+.doneRow.ok{background:#F3FAF8;color:var(--teal-700)}
+/* 보완 요청 */
+.fix{margin:0 20px 14px;border:1px solid #F2E0BE;background:var(--amber-50);border-radius:10px;padding:12px 16px}
+.fix .t3{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 6px}
+.fix .t3 b{color:var(--amber-700);font-size:15px}
+.fix .rs{font-size:12px;font-weight:600;color:var(--amber-700);background:#fff;border:1px solid #F2E0BE;border-radius:5px;padding:1px 7px}
+.fix .t3 .when{font-size:13px;color:#7A5A1C;margin-left:auto}
+.fix p{margin:0;font-size:14px;line-height:1.65;color:#7A5A1C}
+.fix p+p{margin-top:4px}
+.fix p.hl{margin-top:8px;font-size:13px}
+.fix p.hl a{color:#7A5A1C}
+.doneRow.rv{background:#F5F8FD;color:var(--navy-900)}
+/* 제출 바 */
+.sbm{display:flex;justify-content:space-between;align-items:center;gap:16px;background:#fff;border:1px solid var(--s200);border-radius:12px;padding:14px 20px}
+.sbm p{margin:0;font-size:14px;color:var(--s600)}
+.sbm .btn{flex:none;white-space:nowrap}
+/* 오른쪽 */
+.rail2 .card{margin:0 0 16px}
+.rail2 h3{font-size:16px;font-weight:600;margin:0 0 10px}
+.pay .r{display:flex;justify-content:space-between;gap:10px;font-size:14px;line-height:1.9}
+.pay .r span{color:var(--s600)}
+.pay .r b{font-weight:500;font-variant-numeric:tabular-nums}
+.pay hr{height:1px;border:0;background:var(--s200);margin:8px 0}
+.pay .tot{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.pay .tot span{font-size:14px;color:var(--s600)}
+.pay .tot b{font-size:22px;font-weight:600;color:var(--navy-900);font-variant-numeric:tabular-nums}
+.pay .nt{font-size:13px;color:var(--s600);margin:8px 0 0;line-height:1.6}
+.prog .pr{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:7px 0;border-top:1px solid var(--s200);font-size:14px}
+.prog .pr:first-of-type{border-top:0}
+.prog .pr .g{font-size:12px;color:var(--s600);margin-right:6px}
+.prog .chip{font-size:12px;padding:2px 8px}
+.after{margin:0;padding-left:18px}
+.after li{font-size:14px;color:var(--s600);line-height:1.7}
+.after b{color:var(--s900);font-weight:600}
+.mdl{position:absolute;top:160px;left:50%;transform:translateX(-50%);width:560px;z-index:31;background:#fff;border-radius:16px;box-shadow:0 24px 60px rgba(11,37,69,.35);overflow:hidden}
+.mdl .mh{padding:24px 26px 6px}
+.mdl .mh h2{font-size:20px;font-weight:600;letter-spacing:-0.3px;margin:0 0 6px}
+.mdl .mh p{margin:0;font-size:14px;color:var(--s600)}
+.mdl .mb{padding:14px 26px 20px}
+.mdl .mf{display:flex;justify-content:flex-end;gap:10px;padding:14px 26px;border-top:1px solid var(--s200);background:var(--s50)}
+.mdl .mf .btn{white-space:nowrap}
+.mdl .hx{position:absolute;top:18px;right:20px;font-family:inherit;font-size:22px;line-height:1;color:var(--s600);background:none;border:0;cursor:pointer}
+.mdl .fl2{font-size:14px;font-weight:600;color:var(--s600);margin:0 0 6px}
+.mdl .sel2{width:100%;box-sizing:border-box;font-family:inherit;font-size:15px;border:1px solid var(--s300);border-radius:8px;padding:9px 12px;background:#fff;margin:0 0 14px}
+.mdl textarea{width:100%;box-sizing:border-box;min-height:96px;font-family:inherit;font-size:15px;line-height:1.6;border:1px solid var(--s300);border-radius:8px;padding:10px 12px;resize:none;margin:0 0 14px}
+.mdl .ck2{list-style:none;margin:0 0 14px;padding:0}
+.mdl .ck2 li{display:flex;gap:10px;align-items:flex-start;font-size:14px;line-height:1.5;padding:5px 0;color:var(--s900)}
+.mdl .ck2 li input{margin:3px 0 0;flex:none}
+.mdl .ck2 li span{color:var(--s600);font-size:13px;display:block}
+.mdl .note5{font-size:13px;color:var(--s600);background:var(--s50);border:1px solid var(--s200);border-radius:10px;padding:10px 14px;margin:0;line-height:1.6;word-break:keep-all}
+.waitRow{border-top:1px solid var(--s200);padding:12px 20px;font-size:14px;background:var(--s50);color:var(--s600);line-height:1.6}
+.waitRow b{color:var(--s900);font-weight:600;margin-right:6px}
+</style>
+<style>
+.pg{min-height:100vh;position:relative;padding-bottom:256px;box-sizing:border-box}
+.gf{position:absolute;left:0;right:0;bottom:0;background:var(--navy-900);padding:34px 0 30px;font-size:14px;color:#A9BDD6;word-break:keep-all}
+.gf a{color:#A9BDD6;text-decoration:none}
+.gf-top{display:flex;justify-content:space-between;align-items:center;gap:12px 32px;flex-wrap:wrap}
+.gf-brand{display:flex;align-items:center;gap:16px;flex-wrap:wrap;min-width:0}
+.gf-logo{display:inline-flex;align-items:center;font-size:19px;font-weight:600;letter-spacing:-0.4px;color:#fff}
+.gf-brand p{margin:0}
+.gf-cs{display:flex;align-items:baseline;gap:4px 16px;flex-wrap:wrap}
+.gf-cs b{color:#fff;font-weight:600;font-size:15px}
+.gf-nav{display:flex;flex-wrap:wrap;gap:10px 44px;margin:18px 0 0;padding:0 0 24px;border-bottom:1px solid rgba(255,255,255,.14)}
+.gf-nav>div{display:flex;align-items:baseline;gap:18px;flex-wrap:wrap}
+.gf-nav b{color:#fff;font-weight:600}
+.gf-nav a.em{color:#fff;font-weight:600}
+.gf-bot{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:24px;padding-top:20px;font-size:13px;line-height:1.75;color:#8FA6C2}
+.gf-bot p{margin:0}
+.gf-biz i{display:inline-block;width:1px;height:10px;background:rgba(255,255,255,.28);margin:0 9px;vertical-align:-1px}
+.gf-copy{align-self:end;text-align:right;white-space:nowrap}
+.gf-note{grid-column:1 / -1;margin-top:8px !important}
+</style>
+</helmet>
+
+<div class="pg">
+
+  <header class="gnb dark">
+    <div class="wrap">
+      <div class="gnbin">
+        <a class="brand" href="Home-Supplier.dc.html"><span class="mark" aria-hidden="true"><i style="height:9px"></i><i style="height:17px"></i><i style="height:12px;opacity:.55"></i></span>마자용</a>
+        <nav class="nav" aria-label="주요 메뉴">
+          <a href="Home-Supplier.dc.html">홈</a><a href="Find-Supplier.dc.html">프로젝트 찾기</a><a href="Apps-Supplier.dc.html">내 지원</a><a class="on" href="Contracts-Supplier.dc.html">내 계약</a><a href="Find-Supplier.dc.html">북마크</a>
+        </nav>
+        <div class="gright">
+          <a class="bell dot" href="Chat-Supplier.dc.html" aria-label="채팅 — 새 메시지 1건"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"></path></svg></a>
+          <a class="bell dot" href="Notify-Supplier.dc.html" aria-label="알림 — 안 읽은 알림 3건"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"></path><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"></path></svg></a>
+          <span class="who"><span class="ava">최</span><span class="uname">최준호</span></span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="pad dv">
+    <div class="wrap">
+
+      <p class="crumb"><a href="Contracts-Supplier.dc.html">내 계약</a> › <a href="Contract-Supplier.dc.html">온도 다이닝</a> › 납품</p>
+      <div class="head">
+        <div>
+          <h1 class="t">납품 <span class="{{stChipCls}}">{{stChip}}</span></h1>
+          <p class="sub">계약서에 붙은 기능과 조건이 검수 기준입니다. 항목마다 결과물을 올리고 구간 단위로 제출하세요. 의뢰인은 항목별로 승인하거나 보완을 요청합니다.</p>
+        </div>
+        <div class="whoS"><span class="av" aria-hidden="true">정</span><span><b>정민재 · 온도 다이닝</b><br>의뢰인 · <a class="ft" href="Chat-Supplier.dc.html">채팅</a></span></div>
+      </div>
+
+      <section class="sum" aria-label="계약 요약">
+        <div><p class="k">합의 금액</p><div class="v">3,100,000원</div><div class="s">계약 체결 11월 4일 · 예치 11월 4일</div></div>
+        <div><p class="k">지급 비율</p><div class="v">중간 50 : 최종 50</div><div class="s">구간마다 1,550,000원</div></div>
+        <div><p class="k">작업 기간</p><div class="v">42일</div><div class="s">{{ddTxt}}</div></div>
+        <div><p class="k">검수 진행 · 항목 4건 중 승인 {{nOkItems}}건</p>
+          <div class="pbar" aria-hidden="true"><sc-for list="{{bar}}" as="b" hint-placeholder-count="4"><i class="{{b}}"></i></sc-for></div>
+          <div class="s">{{barNote}}</div></div>
+      </section>
+
+      <sc-if value="{{hasBand}}" hint-placeholder-val="{{ false }}">
+        <div class="dl-band" role="note">
+          <div><b>{{bandT}}</b><p>{{bandP}}</p></div>
+          <sc-if value="{{bandAcct}}" hint-placeholder-val="{{ false }}"><a class="btn gh" href="Account-Supplier.dc.html">계좌 등록</a></sc-if><sc-if value="{{bandChat}}" hint-placeholder-val="{{ false }}"><a class="btn gh" href="Chat-Supplier.dc.html">채팅으로 일정 정하기</a></sc-if>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{helpSent}}" hint-placeholder-val="{{ false }}">
+        <div class="paid" role="status">
+          <div><b>운영자에게 도움 요청을 보냈습니다 · 11월 26일 10:05</b><p>운영자가 조건 줄과 보완 요청 이력을 보고 판정합니다. 정민재님에게도 도움 요청이 알려졌습니다. 판정이 나오면 알림이 옵니다.</p></div>
+          <a class="ft" href="Chat-Supplier.dc.html" style="font-size:14px;flex:none">채팅에서 보기</a>
+        </div>
+      </sc-if>
+      <sc-if value="{{showPaid}}" hint-placeholder-val="{{ false }}">
+        <div class="paid">
+          <div><b>중간 구간 승인 · 1,472,500원 지급 완료</b><p>11월 27일 · 예약 달력과 예약금 결제가 모두 승인되어 중간 구간 금액에서 수수료 5%를 뺀 금액이 지급되었습니다.</p></div>
+          <a class="ft" href="Settle-Supplier.dc.html" style="font-size:14px;flex:none">정산 내역</a>
+        </div>
+      </sc-if>
+
+      <div class="lay">
+        <div>
+          <nav class="tabs2" aria-label="구간">
+            <a class="{{tabMid}}" href="#mid">중간 구간 · 2건 <span class="{{midChipCls}}">{{midChip}}</span></a>
+            <a class="{{tabFin}}" href="#fin">최종 구간 · 2건 <span class="{{finChipCls}}">{{finChip}}</span></a>
+          </nav>
+
+          <sc-for list="{{items}}" as="it" hint-placeholder-count="2">
+            <section class="ic" aria-label="{{it.name}}">
+              <div class="ih">
+                <div><div class="nm">{{it.name}}</div><div class="ds">{{it.desc}}</div></div>
+                <span class="{{it.chipCls}}">{{it.chip}}</span>
+              </div>
+              <sc-if value="{{it.hasFix}}" hint-placeholder-val="{{ false }}">
+                <div class="fix" role="note">
+                  <div class="t3"><b>보완 요청</b><span class="rs">조건과 다름</span><span class="rs">환불 기준</span><span class="when">11월 25일 · 1회째</span></div>
+                  <p>“저녁 2부 회차는 마감 시각이 지나도 환불 버튼이 보여요. 회차마다 정한 마감 시각 이후에는 환불이 안 되게 해 주세요.” — 정민재</p>
+                  <sc-if value="{{it.helpLink}}" hint-placeholder-val="{{ true }}"><p>이 항목만 고쳐 다시 제출하면 됩니다. 같은 구간의 예약 달력은 이미 승인되어 다시 검수하지 않습니다.</p></sc-if>
+                  <sc-if value="{{it.helpLink}}" hint-placeholder-val="{{ true }}"><p class="hl"><a class="ft" href="#help">같은 문제로 보완이 반복되면 운영자에게 도움 요청</a></p></sc-if>
+                </div>
+              </sc-if>
+              <div class="crit">
+                <p class="k">검수 기준 · 계약서에 붙은 합의 조건</p>
+                <ul>
+                  <sc-for list="{{it.conds}}" as="c" hint-placeholder-count="2">
+                    <li class="{{c.cls}}"><span class="q">{{c.q}}</span><span class="a"><sc-if value="{{c.un}}" hint-placeholder-val="{{ false }}"><em>정하지 않음</em></sc-if>{{c.a}}</span></li>
+                  </sc-for>
+                </ul>
+              </div>
+              <sc-if value="{{it.edit}}" hint-placeholder-val="{{ true }}">
+                <div class="up">
+                  <div class="g2">
+                    <div>
+                      <label class="lbl" for="lk-{{it.id}}">결과물 링크</label>
+                      <input class="inp" id="lk-{{it.id}}" type="text" value="{{it.link}}" placeholder="테스트 주소 · 저장소 주소">
+                    </div>
+                    <div>
+                      <label class="lbl">파일 첨부<span class="opt">선택</span></label>
+                      <div class="drop">
+                        <sc-for list="{{it.files}}" as="f" hint-placeholder-count="1"><span class="fchip">{{f}}</span></sc-for>
+                        <sc-if value="{{it.noFile}}" hint-placeholder-val="{{ false }}"><span>화면 캡처 · 문서를 끌어다 놓으세요</span></sc-if>
+                        <span class="add">파일 선택</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="memo">
+                    <label class="lbl" for="mm-{{it.id}}">확인 방법 메모 <span class="sec" style="font-weight:400">의뢰인이 검수할 때 보는 순서</span></label>
+                    <textarea class="inp" id="mm-{{it.id}}" placeholder="예) 관리 화면 › 예약 설정에서 회차를 바꿔 보세요">{{it.memo}}</textarea>
+                  </div>
+                </div>
+              </sc-if>
+              <sc-if value="{{it.waitRow}}" hint-placeholder-val="{{ false }}">
+                <div class="waitRow"><b>운영자에게 도움 요청함 · 11월 26일 10:05</b>판정 전까지 이 항목은 다시 제출하지 않아도 되고, 검수와 자동 승인도 멈춥니다. 판정은 채팅과 내 계약에 남습니다.</div>
+              </sc-if>
+              <sc-if value="{{it.revRow}}" hint-placeholder-val="{{ false }}">
+                <div class="doneRow rv"><span>11월 25일 제출 · 의뢰인 검수 기한 12월 2일 · 지나면 자동 승인되고 지급됩니다</span><a href="#sub">제출한 결과물 보기</a></div>
+              </sc-if>
+              <sc-if value="{{it.okRow}}" hint-placeholder-val="{{ false }}">
+                <div class="doneRow ok"><span>✓ {{it.okNote}}</span><a href="#sub">제출한 결과물 보기</a></div>
+              </sc-if>
+            </section>
+          </sc-for>
+
+          <div class="sbm">
+            <p>{{sbmNote}}</p>
+            <sc-if value="{{sbmOn}}" hint-placeholder-val="{{ true }}"><button type="button" class="btn">{{sbmLabel}}</button></sc-if><sc-if value="{{sbmOff}}" hint-placeholder-val="{{ false }}"><button type="button" class="btn off" disabled>{{sbmLabel}}</button></sc-if>
+          </div>
+        </div>
+
+        <aside class="rail2">
+          <section class="card pay" aria-labelledby="p-h">
+            <h3 id="p-h">{{payTitle}}</h3>
+            <div class="r"><span>구간 금액 · {{payStage}} 50%</span><b>1,550,000원</b></div>
+            <div class="r"><span>공급자 수수료 5%</span><b>−77,500원</b></div>
+            <hr>
+            <div class="tot"><span>받을 금액</span><b>1,472,500원</b></div>
+            <p class="nt">{{payNote}}</p>
+          </section>
+          <section class="card prog" aria-labelledby="g-h">
+            <h3 id="g-h">항목별 검수</h3>
+            <sc-for list="{{prog}}" as="p" hint-placeholder-count="4">
+              <div class="pr"><span><span class="g">{{p.g}}</span>{{p.name}}</span><span class="{{p.chipCls}}">{{p.chip}}</span></div>
+            </sc-for>
+          </section>
+          <section class="card" aria-labelledby="n-h">
+            <h3 id="n-h">알아두실 것</h3>
+            <ul class="after">
+              <li>구간에 담긴 항목이 <b>모두 승인되면</b> 그 구간 금액이 지급됩니다.</li>
+              <li><b>승인된 항목은 다시 검수하지 않습니다.</b> 보완 요청은 항목 단위로, 사유와 함께 옵니다.</li>
+              <li>'정하지 않음' 조건은 검수 기준이 아닙니다. 그 항목은 <b>기능 설명대로 동작하는지만</b> 봅니다.</li>
+              <li>계약 범위 밖 기능은 이 계약에서 만들지 않습니다. 필요하면 의뢰인이 <b>새 프로젝트</b>로 등록합니다.</li>
+            </ul>
+          </section>
+        </aside>
+      </div>
+
+    </div>
+  </main>
+
+  <sc-if value="{{helpM}}" hint-placeholder-val="{{ false }}">
+    <div class="scrim2" aria-hidden="true"></div>
+    <section class="mdl" role="dialog" aria-modal="true" aria-labelledby="hp-h" style="top:110px;width:600px">
+      <button type="button" class="hx" aria-label="닫기">×</button>
+      <div class="mh">
+        <h2 id="hp-h">운영자에게 도움 요청</h2>
+        <p>같은 항목의 보완이 반복되거나 조건 해석이 다를 때 운영자가 근거를 보고 판정합니다.</p>
+      </div>
+      <div class="mb">
+        <p class="fl2">어떤 항목인가요?</p>
+        <select class="sel2" aria-label="항목"><option>예약금 결제 · 중간 구간 · 보완 요청 1회</option></select>
+        <p class="fl2">무엇이 다른가요?</p>
+        <textarea aria-label="다툼 요약">'회차마다 정한 마감 시각'을 하루 단위 마감(전날 18시)으로 이해해 만들었습니다. 의뢰인은 회차별 시각(저녁 2부 17:00)이라고 합니다. 조건 줄을 어떻게 읽어야 하는지 판단을 부탁드립니다.</textarea>
+        <p class="fl2">근거로 함께 보낼 것</p>
+        <ul class="ck2">
+          <li><input type="checkbox" checked aria-label="조건 줄"><div>최종 합의 내용의 조건 줄<span>환불 기준 — 회차마다 정한 마감 시각 전에 취소하면 전액 환불, 그 뒤에는 환불 없음</span></div></li>
+          <li><input type="checkbox" checked aria-label="보완 요청 이력"><div>보완 요청 이력<span>11월 25일 · 조건과 다름 · 환불 기준</span></div></li>
+          <li><input type="checkbox" checked aria-label="제출한 결과물"><div>제출한 결과물<span>11월 25일 · test.ondo-dining.kr/reserve</span></div></li>
+          <li><input type="checkbox" aria-label="채팅 메시지"><div>채팅 메시지 2건<span>10월 31일 환불 기준을 정한 대화</span></div></li>
+        </ul>
+        <p class="note5">운영자는 '최종 합의 내용'의 조건 줄을 근거로 판정합니다. 판정 전까지 이 항목은 다시 제출하지 않아도 되고, 다른 항목은 그대로 진행됩니다. 판정 결과는 채팅과 내 계약에 남습니다.</p>
+      </div>
+      <div class="mf">
+        <a class="btn gh" href="Deliver-Supplier.dc.html">취소</a>
+        <a class="btn" href="Deliver-Supplier.dc.html">도움 요청 보내기</a>
+      </div>
+    </section>
+  </sc-if>
+
+  <footer class="gf" aria-label="사이트 정보">
+    <div class="wrap">
+      <div class="gf-top">
+        <div class="gf-brand">
+          <span class="gf-logo"><span class="mark" aria-hidden="true"><i style="height:9px"></i><i style="height:17px"></i><i style="height:12px;opacity:.55"></i></span>마자용</span>
+          <p>소상공인을 위한 웹 외주 요구사항 정의 · 매칭 플랫폼</p>
+        </div>
+        <div class="gf-cs"><b>고객센터 1600-0000</b><span>평일 10:00–18:00</span><span>점심 12:00–13:00 · 주말 · 공휴일 휴무</span><span>help@majayong.example</span></div>
+      </div>
+      <nav class="gf-nav" aria-label="사이트 링크">
+        <div><b>서비스</b><a href="Main.dc.html">의뢰인 안내</a><a href="Supplier-Landing.dc.html">공급자 안내</a></div>
+        <div><b>고객센터</b><a href="Help.dc.html">자주 묻는 질문</a><a href="Help-Inquiry.dc.html">1:1 문의</a><a href="Help.dc.html">공지사항</a></div>
+        <div><b>정책</b><a href="Terms.dc.html">이용약관</a><a class="em" href="Terms.dc.html">개인정보 처리방침</a><a href="Terms.dc.html">명세 비밀유지</a><a href="Terms.dc.html">중개자 고지</a></div>
+      </nav>
+      <div class="gf-bot">
+        <p class="gf-biz">상호 로켓단<i></i>대표 김로켓<i></i>사업자등록번호 000-00-00000<i></i>통신판매업 신고 제2026-서울마포-0000호<br>주소 서울특별시 마포구 예시로 00, 0층<i></i>개인정보 보호책임자 박예시<i></i>이메일 help@majayong.example</p>
+        <p class="gf-copy">© 2026 로켓단. All rights reserved.</p>
+        <p class="gf-note">마자용은 통신판매중개자로서 거래 당사자가 아니며, 의뢰인과 공급자 사이 계약의 이행 책임은 각 당사자에게 있습니다. 대금 예치와 정산은 마자용이 관리합니다.</p>
+      </div>
+    </div>
+  </footer>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;view&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;중간 납품&quot;,&quot;제출함 · 검수 대기&quot;,&quot;보완 요청&quot;,&quot;최종 납품&quot;,&quot;마감 지남&quot;,&quot;정산 계좌 없음&quot;,&quot;도움 요청&quot;,&quot;도움 요청 보냄&quot;],&quot;default&quot;:&quot;중간 납품&quot;,&quot;section&quot;:&quot;상태&quot;},&quot;$preview&quot;:{&quot;width&quot;:1280,&quot;height&quot;:1933}}">
+class Component extends DCLogic {
+  renderVals() {
+    const v = this.props.view ?? '중간 납품';
+    const late = v === '마감 지남', noAcct = v === '정산 계좌 없음';
+    const helpM = v === '도움 요청', helpSent = v === '도움 요청 보냄';
+    const fixV = v === '보완 요청' || helpM || helpSent, fin = v === '최종 납품' || late, sub = v === '제출함 · 검수 대기' || noAcct;
+    const C = (q, a, un) => ({ q: q, a: un ? '기능 설명대로 동작하는지만 봅니다' : a, un: !!un, cls: un ? 'un' : '' });
+    const chip = { pre: ['chip out', '제출 전'], rev: ['chip blue', '검수 중'], ok: ['chip teal', '승인'], fix: ['chip amber', '보완 요청'], help: ['chip', '운영자 확인 중'] };
+    const mk = (o, st) => Object.assign({ chipCls: chip[st][0], chip: chip[st][1], hasFix: st === 'fix' || st === 'help', helpLink: st === 'fix', waitRow: st === 'help', edit: st === 'pre' || st === 'fix', okRow: st === 'ok', revRow: st === 'rev',
+      files: [], noFile: true, link: '', memo: '', okNote: '' }, o);
+    const cal = { id: 'cal', name: '예약 달력', desc: '회차별로 예약받고 정원이 차면 마감',
+      conds: [C('회차 구성', '점심 1회 · 저녁 2회, 회차마다 정원 10석'), C('예약 가능 기간', '방문 30일 전부터 전날 18시까지')],
+      link: 'https://test.ondo-dining.kr/admin/slots', files: ['회차설정_화면.png'], noFile: false,
+      memo: '관리 화면 › 예약 설정에서 회차와 정원을 바꾼 뒤, 손님 화면에서 정원이 차면 마감되는지 확인해 주세요.' };
+    const dep = { id: 'dep', name: '예약금 결제', desc: '예약할 때 예약금을 받고 환불 규정 안내',
+      conds: [C('예약금 금액', '1인당 30,000원 정액, 관리 화면에서 바꿀 수 있게'), C('환불 기준', '회차마다 정한 마감 시각 전에 취소하면 전액 환불, 그 뒤에는 환불 없음')],
+      link: 'https://test.ondo-dining.kr/reserve', memo: fixV ? '저녁 2부(마감 17:00) 예약을 만든 뒤 17:01 이후 취소해 보세요. 환불 버튼 대신 “환불 기간이 지났습니다”가 보입니다.' : '' ,
+      files: fixV ? ['환불마감_수정.mp4'] : [], noFile: !fixV };
+    const nos = { id: 'nos', name: '노쇼 기록', desc: '노쇼 손님을 기록해 다음 예약 때 표시',
+      conds: [C('노쇼 판정 기준', '예약 시각 30분이 지나도 연락이 없으면 노쇼'), C('표시 방식', '', true)],
+      link: 'https://test.ondo-dining.kr/admin/noshow', files: ['노쇼기록_흐름.pdf'], noFile: false, memo: '' };
+    const rem = { id: 'rem', name: '리마인드 알림', desc: '예약 전날 손님에게 안내 자동 발송',
+      conds: [C('발송 시점', '방문 전날 18:00'), C('발송 수단', '카카오 알림톡, 실패하면 문자')] };
+    let items, prog, bar;
+    if (fin) {
+      items = [mk(nos, 'pre'), mk(rem, 'pre')];
+      prog = [['중간', '예약 달력', 'ok'], ['중간', '예약금 결제', 'ok'], ['최종', '노쇼 기록', 'pre'], ['최종', '리마인드 알림', 'pre']];
+    } else if (sub) {
+      items = [mk(cal, 'rev'), mk(dep, 'rev')];
+      prog = [['중간', '예약 달력', 'rev'], ['중간', '예약금 결제', 'rev'], ['최종', '노쇼 기록', 'pre'], ['최종', '리마인드 알림', 'pre']];
+    } else if (fixV) {
+      items = [mk(Object.assign({}, cal, { okNote: '11월 25일 승인 · 다시 검수하지 않습니다' }), 'ok'), mk(dep, helpSent ? 'help' : 'fix')];
+      prog = [['중간', '예약 달력', 'ok'], ['중간', '예약금 결제', helpSent ? 'help' : 'fix'], ['최종', '노쇼 기록', 'pre'], ['최종', '리마인드 알림', 'pre']];
+    } else {
+      items = [mk(cal, 'pre'), mk(dep, 'pre')];
+      prog = [['중간', '예약 달력', 'pre'], ['중간', '예약금 결제', 'pre'], ['최종', '노쇼 기록', 'pre'], ['최종', '리마인드 알림', 'pre']];
+    }
+    const barCls = { ok: 'b-ok', rev: 'b-wait', fix: 'b-fix', help: 'b-fix', pre: 'b-pre' };
+    bar = prog.map(p => barCls[p[2]]);
+    const nOk = prog.filter(p => p[2] === 'ok').length;
+    return {
+      items: items, bar: bar, nOkItems: nOk, helpM: helpM, helpSent: helpSent,
+      prog: prog.map(p => ({ g: p[0], name: p[1], chipCls: chip[p[2]][0], chip: chip[p[2]][1] })),
+      barNote: sub ? '중간 구간 2건 제출 · 검수 기한 12월 2일' : late ? '중간 구간 지급 완료 · 최종 구간 미제출' : fin ? '중간 구간 지급 완료 · 최종 구간 작성 중' : (helpSent ? '중간 구간 · 승인 1건, 운영자 확인 중 1건' : fixV ? '중간 구간 · 승인 1건, 보완 요청 1건' : '중간 구간 작성 중 · 아직 제출하지 않았습니다'),
+      showPaid: fin && !late, hasBand: late || noAcct, bandAcct: noAcct, bandChat: late,
+      bandT: late ? '작업 마감(12월 16일)이 지났습니다' : '지급받을 계좌가 없습니다',
+      bandP: late ? '납품하거나 의뢰인과 채팅으로 일정을 정하세요 · 의뢰인이 공급자 사정으로 취소를 요청할 수 있습니다.' : '승인되어도 계좌를 등록해야 지급됩니다 · 계정 설정 › 정산 정보에서 등록하세요.',
+      ddTxt: late ? '12월 16일까지 · 2일 지남' : '12월 16일까지 · D-' + (fin ? 18 : (fixV || sub ? 21 : 30)),
+      stChip: helpSent ? '운영자 확인 중' : sub ? '검수 대기' : late ? '마감 지남 · 최종 미제출' : fin ? '최종 구간 작성 중' : (fixV ? '보완 요청 1건' : '중간 구간 작성 중'),
+      stChipCls: helpSent ? 'chip' : fixV || late ? 'chip amber' : 'chip blue',
+      tabMid: fin ? '' : 'on', tabFin: fin ? 'on' : '',
+      midChip: helpSent ? '운영자 확인 중' : sub ? '검수 중' : fin ? '지급 완료' : (fixV ? '보완 요청' : '작성 중'), midChipCls: fin ? 'chip teal' : helpSent ? 'chip' : (fixV ? 'chip amber' : 'chip blue'),
+      finChip: late ? '마감 지남' : fin ? '작성 중' : '중간 뒤', finChipCls: late ? 'chip amber' : fin ? 'chip blue' : 'chip out',
+      sbmLabel: helpSent ? '판정 기다리는 중' : sub ? '검수 기다리는 중' : fin ? '최종 납품 제출' : (fixV ? '다시 제출' : '중간 납품 제출'), sbmOn: !sub && !helpSent, sbmOff: sub || helpSent,
+      sbmNote: helpSent ? '예약금 결제는 운영자 판정이 나온 뒤 판정에 따라 다시 제출하거나 그대로 검수받습니다.' : sub ? '11월 25일 제출했습니다. 의뢰인 검수 기한 12월 2일 · 지나면 자동 승인되고 지급됩니다. 검수가 끝나기 전에는 고칠 수 없습니다.' : late ? '마감이 지났어도 지금 제출할 수 있습니다. 제출하면 의뢰인 \'내 계약\'에 검수 대기로 표시되고, 검수 기한은 제출일부터 7일입니다.' : fin ? '노쇼 기록과 리마인드 알림을 함께 제출합니다. 제출하면 의뢰인 \'내 계약\'에 검수 대기로 표시됩니다.'
+           : (fixV ? '예약금 결제만 다시 제출합니다. 승인되면 중간 구간 금액이 지급됩니다.' : '예약 달력과 예약금 결제를 함께 제출합니다. 제출하면 의뢰인 \'내 계약\'에 검수 대기로 표시됩니다.'),
+      payTitle: fin ? '최종 구간 지급 예정' : '이번 구간 지급 예정', payStage: fin ? '최종' : '중간',
+      payNote: noAcct ? '두 항목이 모두 승인되면 지급되지만, 정산 계좌가 등록되어 있어야 보낼 수 있습니다. 등록 전까지 지급은 보류됩니다.' : fin ? '노쇼 기록과 리마인드 알림이 모두 승인되면 지급되고, 계약이 완료됩니다. 원 단위 끝수는 최종 지급에 더합니다.'
+                   : '예약 달력과 예약금 결제가 모두 승인되면 지급됩니다. 한 항목만 승인되어서는 지급되지 않습니다.'
+    };
+  }
+}
+</script>
+</body>
+</html>

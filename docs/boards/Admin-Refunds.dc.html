@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>운영자 — 환불 처리</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="/_blob/a8316b816fb987eb4a5af50ab874b7d1">
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+.pg{word-break:keep-all}
+.ad-pg{min-height:100%;background:var(--s50)}
+.ad-pg sc-for,.ad-pg sc-if{display:contents}
+.ad-top{height:64px;background:#fff;border-bottom:1px solid var(--s200);display:flex;align-items:center;justify-content:space-between;padding:0 28px;box-sizing:border-box}
+.ad-top .lg{display:flex;align-items:center;gap:10px;font-size:19px;font-weight:600;color:var(--s900);text-decoration:none;letter-spacing:-0.4px}
+.ad-top .lg .mark{margin-right:0}
+.ad-top .cp{font-size:12px;font-weight:500;color:var(--s600);background:var(--s100);border:1px solid var(--s200);border-radius:6px;padding:2px 8px;letter-spacing:0}
+.ad-top .me{display:flex;align-items:center;gap:10px;font-size:14px;color:var(--s600)}
+.ad-top .me b{color:var(--s900);font-weight:600}
+.ad-top .me .av{width:32px;height:32px;border-radius:50%;background:var(--navy-900);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600}
+.ad-body{display:grid;grid-template-columns:232px minmax(0,1fr);align-items:stretch}
+.ad-nav{background:var(--navy-900);padding:20px 12px;display:flex;flex-direction:column;gap:2px;min-height:calc(100% - 0px)}
+.ad-nav .h{font-size:12px;color:var(--on-sub);padding:0 12px 8px;letter-spacing:0.2px}
+.ad-nav a{display:flex;justify-content:space-between;align-items:center;font-size:15px;color:#fff;text-decoration:none;padding:10px 12px;border-radius:8px;border-left:3px solid transparent}
+.ad-nav a.on{background:rgba(255,255,255,.10);border-left-color:var(--blue-600);font-weight:600}
+.ad-nav a .bd{font-size:12px;font-weight:600;min-width:20px;height:20px;border-radius:10px;background:rgba(255,255,255,.16);color:#fff;display:inline-flex;align-items:center;justify-content:center;padding:0 6px;box-sizing:border-box}
+.ad-nav .sp{height:1px;background:var(--on-line);margin:12px 8px}
+.ad-nav a.mut{color:var(--on-sub);font-size:14px}
+.ad-nav .ft2{margin-top:auto;font-size:12px;color:var(--on-sub);line-height:1.6;padding:24px 12px 4px}
+.ad-main{padding:28px 32px 40px;min-width:0}
+.ad-main h1.t{margin:0 0 6px}
+.ad-main .ad-sub{margin:0 0 20px;font-size:15px;color:var(--s600);max-width:760px}
+
+.ad-tabs{display:flex;gap:6px;margin:0 0 14px;flex-wrap:wrap}
+.ad-tabs a{font-size:14px;padding:6px 13px;border-radius:16px;border:1px solid var(--s200);background:#fff;color:var(--s600);text-decoration:none;white-space:nowrap}
+.ad-tabs a.on{background:var(--navy-900);border-color:var(--navy-900);color:#fff;font-weight:600}
+.ad-tabs a .ad-c{margin-left:5px;font-weight:600;color:inherit;font-size:14px}
+.ad-tabs a.on .ad-c{color:#fff}
+.ad-split{display:grid;grid-template-columns:300px minmax(0,1fr);gap:18px;align-items:start}
+.ad-list{display:flex;flex-direction:column;gap:10px}
+.ad-li{display:block;background:#fff;border:1px solid var(--s200);border-radius:12px;padding:14px 16px;text-decoration:none;color:inherit}
+.ad-li.on{border-color:var(--blue-600,#2563EB);box-shadow:0 0 0 1px var(--blue-600,#2563EB) inset}
+.ad-li .ad-lt{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 8px}
+.ad-li .ad-lt .chip{font-size:12px;padding:2px 8px}
+.ad-li b{display:block;font-size:15px;line-height:1.45;margin:0 0 4px}
+.ad-li .ad-lm{font-size:13px;color:var(--s600);line-height:1.55}
+.ad-li.dim2{opacity:.7}
+.ad-more{font-size:13px;color:var(--s600);padding:4px 4px 0}
+.ad-card{background:#fff;border:1px solid var(--s200);border-radius:14px;overflow:hidden}
+.ad-ch{padding:20px 24px 16px;border-bottom:1px solid var(--s200)}
+.ad-ch .ad-lt{display:flex;gap:6px;margin:0 0 8px}
+.ad-ch .ad-lt .chip{font-size:12px;padding:2px 8px}
+.ad-ch h2{font-size:20px;font-weight:600;letter-spacing:-0.3px;margin:0 0 4px}
+.ad-ch .ad-m{font-size:14px;color:var(--s600);line-height:1.6}
+.ad-sec{padding:20px 24px;border-top:1px solid var(--s200)}
+.ad-sec:first-of-type{border-top:0}
+.ad-sh{font-size:13px;font-weight:600;color:var(--s600);margin:0 0 12px}
+.ad-two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:28px}
+.ad-flow{list-style:none;margin:0;padding:0}
+.ad-flow li{position:relative;padding:0 0 14px 24px;font-size:14px;color:var(--s600);line-height:1.5}
+.ad-flow li::before{content:"";position:absolute;left:4px;top:6px;width:9px;height:9px;border-radius:50%;background:var(--teal-700)}
+.ad-flow li::after{content:"";position:absolute;left:8px;top:17px;bottom:-2px;width:1px;background:var(--s200)}
+.ad-flow li:last-child::after{display:none}
+.ad-flow li.now::before{background:#fff;border:2px solid var(--amber-700);box-sizing:content-box;left:2px;top:4px}
+.ad-flow li.am::before{background:var(--amber-700)}
+.ad-flow li b{display:block;color:var(--s900);font-weight:600}
+.ad-flow li.now b{color:var(--amber-700)}
+.ad-bk .r{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:9px 0;border-top:1px solid var(--s200);font-size:14px}
+.ad-bk .r:first-of-type{border-top:0;padding-top:0}
+.ad-bk .r .k{color:var(--s900)}
+.ad-bk .r .k i{display:block;font-style:normal;font-size:12px;color:var(--s600);margin-top:2px}
+.ad-bk .r .v{font-weight:500;font-variant-numeric:tabular-nums;white-space:nowrap}
+.ad-bk .r.tot{border-top:2px solid var(--s900);padding-top:11px}
+.ad-bk .r.tot .k,.ad-bk .r.tot2 .k{font-weight:600}
+.ad-bk .r .k i{font-weight:400}
+.ad-bk .r.tot .v,.ad-bk .r.tot2 .v{font-size:18px;font-weight:600;color:var(--navy-900)}
+.ad-bk .r.mut .k,.ad-bk .r.mut .v{color:var(--s600)}
+.ad-reason{width:100%;box-sizing:border-box;min-height:76px;resize:vertical;line-height:1.6;font-size:14px}
+.ad-req{font-size:12px;color:var(--amber-700);font-weight:600;margin-left:6px}
+.ad-foot{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:16px 24px;border-top:1px solid var(--s200);background:var(--s50)}
+.ad-foot p{margin:0;font-size:13px;color:var(--s600);line-height:1.6;max-width:560px}
+.ad-foot .ad-bt{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex:none}
+.ad-foot .ad-bt .btn{white-space:nowrap}
+.ad-foot .ad-bt small{font-size:12px;color:var(--s600)}
+.ad-done{display:flex;gap:12px;align-items:flex-start;background:#EAF6F4;border:1px solid #C7E6E0;border-radius:12px;padding:14px 18px;margin:0 0 16px}
+.ad-done b{display:block;color:var(--teal-700);font-size:15px;margin:0 0 2px}
+.ad-done p{margin:0;font-size:14px;color:var(--s600);line-height:1.6}
+.ad-warn{background:var(--amber-50);border:1px solid #F2E0BE;border-radius:12px;padding:14px 18px}
+.ad-warn b{display:block;color:var(--amber-700);font-size:15px;margin:0 0 4px}
+.ad-warn p{margin:0;font-size:14px;color:#7A5A1C;line-height:1.6}
+.ad-quote{border-left:3px solid var(--s300);padding:6px 0 6px 12px;margin:0 0 10px;font-size:14px;line-height:1.6;color:var(--s900)}
+.ad-quote i{display:block;font-style:normal;font-size:12px;color:var(--s600);margin-bottom:2px}
+.ad-opts{display:flex;flex-direction:column;gap:10px}
+.ad-opts label.lbl{display:flex;gap:12px;align-items:flex-start;border:1px solid var(--s300);border-radius:10px;padding:13px 16px;cursor:pointer;margin:0;font-weight:400;background:#fff}
+.ad-opts label.lbl.on{border-color:var(--blue-600,#2563EB);background:var(--blue-50,#EEF4FF);box-shadow:0 0 0 1px var(--blue-600,#2563EB) inset}
+.ad-opts input{margin:3px 0 0;flex:none}
+.ad-opts b{display:block;font-size:15px;color:var(--s900)}
+.ad-opts span.d{display:block;font-size:13px;color:var(--s600);margin-top:3px;line-height:1.55}
+.ad-opts span.pv{display:block;font-size:13px;color:var(--navy-900);margin-top:6px;font-variant-numeric:tabular-nums}
+
+.ad-ck{display:flex;flex-direction:column;gap:12px}
+.ad-ci{border:1px solid var(--s200);border-radius:12px;padding:16px 18px}
+.ad-ci .ad-cr{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin:0 0 10px}
+.ad-ci .ad-cr b{display:block;font-size:15px}
+.ad-ci .ad-cr span.d{display:block;font-size:13px;color:var(--s600);margin-top:2px}
+.ad-ci .ad-amt{font-size:20px;font-weight:600;color:var(--navy-900);font-variant-numeric:tabular-nums;white-space:nowrap}
+.ad-ci .ad-in{display:flex;gap:10px;align-items:center}
+.ad-ci .ad-in input.inp{flex:1 1 auto;min-width:0;font-size:14px}
+.ad-ci .ad-in .btn{white-space:nowrap;flex:none}
+.ad-ci.ok{background:#F6FBFA;border-color:#C7E6E0}
+.ad-ci .ad-okl{font-size:14px;color:var(--teal-700);font-weight:600}
+.ad-ci .ad-okm{font-size:13px;color:var(--s600);margin-top:2px}
+.ad-claims{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.ad-claim{border:1px solid var(--s200);border-radius:12px;padding:14px 16px}
+.ad-claim .ad-who{font-size:13px;color:var(--s600);margin:0 0 6px}
+.ad-claim .ad-who b{color:var(--s900)}
+.ad-claim p{margin:0;font-size:14px;line-height:1.65}
+.ad-ev2{display:flex;flex-direction:column;gap:10px}
+.ad-ev2 .ad-eb{border:1px solid var(--s200);border-radius:10px;padding:12px 14px;font-size:14px;line-height:1.6}
+.ad-ev2 .ad-eb .k{font-size:12px;font-weight:600;color:var(--s600);display:block;margin:0 0 4px}
+.ad-ev2 .ad-eb.dash{border-style:dashed;background:var(--s50)}
+</style>
+</helmet>
+<div class="pg ad-pg">
+  <header class="ad-top">
+    <a class="lg" href="Admin-Blocks.dc.html"><span class="mark" aria-hidden="true"><i style="height:9px"></i><i style="height:17px"></i><i style="height:12px;opacity:.55"></i></span>마자용 운영<span class="cp">운영자 콘솔</span></a>
+    <div class="me"><span>운영자</span><b>김하늘</b><span class="av" aria-hidden="true">하</span></div>
+  </header>
+  <div class="ad-body">
+    <nav class="ad-nav" aria-label="운영 메뉴">
+      <p class="h">처리할 일</p>
+      <a href="Admin-Blocks.dc.html">블록 검토<span class="bd">7</span></a><a href="Admin-Payments.dc.html">보류된 결제<span class="bd">2</span></a><a class="on" aria-current="page" href="Admin-Refunds.dc.html">환불 처리<span class="bd">{{nRefund}}</span></a><a href="Admin-Disputes.dc.html">이견 개입<span class="bd">{{nDispute}}</span></a><a href="Admin-Reports.dc.html">신고 처리<span class="bd">2</span></a><a href="Admin-Inquiries.dc.html">1:1 문의<span class="bd">4</span></a>
+      <div class="sp"></div>
+      <a class="mut" href="Admin-Events.dc.html">이벤트 기록</a>
+      <p class="ft2">운영자 행위는 모두 이벤트 기록에 남습니다</p>
+    </nav>
+    <main class="ad-main">
+      <h1 class="t">환불 처리</h1>
+      <p class="ad-sub">예치 후 취소된 계약의 정산을 처리합니다. 사유를 두고 양쪽이 다투면 근거를 보고 판정합니다.</p>
+      <nav class="ad-tabs" aria-label="환불 상태"><a class="{{tabP}}" href="#p">처리 대기<span class="ad-c">{{nP}}</span></a><a class="{{tabJ}}" href="#j">판정 필요<span class="ad-c">{{nJ}}</span></a><a class="{{tabD}}" href="#d">처리 완료<span class="ad-c">{{nD}}</span></a></nav>
+      <sc-if value="{{isDone}}" hint-placeholder-val="{{ false }}">
+        <div class="ad-done"><div><b>정산 처리를 마쳤습니다 · 11월 21일 15:10 · 운영자 김하늘</b><p>의뢰인 · 공급자 정산 내역의 이 건이 '완료'로 바뀌었습니다. 운영자 처리 메모는 이벤트 기록에 남았습니다.</p></div></div>
+      </sc-if>
+      <div class="ad-split">
+        <div class="ad-list">
+          <sc-if value="{{isPending}}" hint-placeholder-val="{{ true }}">
+          <a class="ad-li on" href="Admin-Refunds.dc.html"><div class="ad-lt"><span class="chip">의뢰인 사유</span><span class="chip amber">처리 대기</span></div><b>런치 예약, 단체 문의 외 1개 기능</b><div class="ad-lm">의뢰인 소이 비스트로 · 공급자 윤재하<br>11월 20일 정산 확정 · 환불 1,575,000원</div></a>
+          <p class="ad-more">처리 완료 2건은 '처리 완료' 탭에 있습니다</p>
+          </sc-if>
+          <sc-if value="{{isJudge}}" hint-placeholder-val="{{ false }}">
+          <a class="ad-li on" href="Admin-Refunds.dc.html"><div class="ad-lt"><span class="chip amber">사유 다툼</span><span class="chip amber">판정 필요</span></div><b>주문 접수, 픽업 알림 외 1개 기능</b><div class="ad-lm">의뢰인 소담 분식 · 공급자 오세린<br>11월 22일 이견 · 예치 1,680,000원</div></a>
+          <a class="ad-li" href="Admin-Refunds.dc.html"><div class="ad-lt"><span class="chip">의뢰인 사유</span><span class="chip amber">처리 대기</span></div><b>런치 예약, 단체 문의 외 1개 기능</b><div class="ad-lm">의뢰인 소이 비스트로 · 공급자 윤재하<br>11월 20일 정산 확정 · 환불 1,575,000원</div></a>
+          </sc-if>
+          <sc-if value="{{isDone}}" hint-placeholder-val="{{ false }}">
+          <a class="ad-li on" href="Admin-Refunds.dc.html"><div class="ad-lt"><span class="chip">의뢰인 사유</span><span class="chip teal">처리 완료</span></div><b>런치 예약, 단체 문의 외 1개 기능</b><div class="ad-lm">의뢰인 소이 비스트로 · 공급자 윤재하<br>11월 21일 처리 · 환불 1,575,000원</div></a>
+          <a class="ad-li dim2" href="Admin-Refunds.dc.html"><div class="ad-lt"><span class="chip">합의</span><span class="chip teal">처리 완료</span></div><b>생일 케이크 주문 외 1개 기능</b><div class="ad-lm">의뢰인 달빛 제과 · 공급자 윤가람<br>10월 30일 처리 · 환불 840,000원</div></a>
+          <a class="ad-li dim2" href="Admin-Refunds.dc.html"><div class="ad-lt"><span class="chip">공급자 사유</span><span class="chip teal">처리 완료</span></div><b>수강권 결제, 출석 알림 외 1개 기능</b><div class="ad-lm">의뢰인 공방 온 · 공급자 정하율<br>10월 12일 처리 · 환불 1,260,000원</div></a>
+          </sc-if>
+        </div>
+        <div>
+          <sc-if value="{{showRefund}}" hint-placeholder-val="{{ true }}">
+          <div class="ad-card">
+            <div class="ad-ch">
+              <div class="ad-lt"><span class="chip">의뢰인 사유</span><span class="{{stChip}}">{{stText}}</span></div>
+              <h2>런치 예약, 단체 문의 외 1개 기능</h2>
+              <div class="ad-m">의뢰인 소이 비스트로 · 공급자 윤재하 · 합의 2,000,000원 · 중간 50 : 최종 50 · 11월 8일 예치 2,100,000원</div>
+            </div>
+            <div class="ad-sec">
+              <div class="ad-two">
+                <div>
+                  <p class="ad-sh">취소 경위</p>
+                  <ol class="ad-flow">
+                    <li><b>11월 8일 · 예치</b>2,100,000원 · 카드</li>
+                    <li><b>11월 19일 · 의뢰인 취소 요청</b>사유 '의뢰인 사정' · 예치 24시간 뒤 · 납품 전</li>
+                    <li><b>11월 20일 · 공급자 동의</b>사유에 이견 없음</li>
+                    <li><b>11월 20일 · 정산 확정</b>계약서 제6조 — 진행 중 구간의 50%를 공급자에게 보상</li>
+                    <li class="{{lastCls}}"><b>{{lastB}}</b>{{lastS}}</li>
+                  </ol>
+                </div>
+                <div class="ad-bk">
+                  <p class="ad-sh">정산 계산</p>
+                  <div class="r"><span class="k">예치한 금액<i>합의 2,000,000원 + 의뢰인 수수료 100,000원</i></span><span class="v">2,100,000원</span></div>
+                  <div class="r mut"><span class="k">진행 중이던 구간<i>중간 구간 · 납품 전</i></span><span class="v">1,000,000원</span></div>
+                  <div class="r"><span class="k">공급자 보상<i>진행 중 구간의 50%</i></span><span class="v">500,000원</span></div>
+                  <div class="r"><span class="k">보상분 수수료<i>지급 확정액 500,000원에만 양측 5%씩</i></span><span class="v">25,000원 × 2</span></div>
+                  <div class="r tot"><span class="k">의뢰인 환불<i>2,100,000 − 500,000 − 25,000</i></span><span class="v">1,575,000원</span></div>
+                  <div class="r tot2"><span class="k">공급자 지급<i>500,000 − 25,000</i></span><span class="v">475,000원</span></div>
+                </div>
+              </div>
+            </div>
+            <div class="ad-sec">
+              <p class="ad-sh">처리할 일 2건</p>
+              <div class="ad-ck">
+                <sc-if value="{{isPending}}" hint-placeholder-val="{{ true }}">
+                  <div class="ad-ci">
+                    <div class="ad-cr"><div><b>의뢰인에게 환불</b><span class="d">결제한 수단으로 — 카드 · 끝자리 7310</span></div><span class="ad-amt">1,575,000원</span></div>
+                    <div class="ad-in"><input class="inp" type="text" placeholder="PG 환불 승인 번호 · 메모 (필수)" aria-label="환불 처리 메모"><a class="btn sm tint" href="#done1">처리 완료로 표시</a></div>
+                  </div>
+                  <div class="ad-ci">
+                    <div class="ad-cr"><div><b>공급자에게 지급</b><span class="d">등록한 정산 계좌 — 끝자리 2048</span></div><span class="ad-amt">475,000원</span></div>
+                    <div class="ad-in"><input class="inp" type="text" placeholder="이체 확인 번호 · 메모 (필수)" aria-label="지급 처리 메모"><a class="btn sm tint" href="#done2">처리 완료로 표시</a></div>
+                  </div>
+                </sc-if>
+                <sc-if value="{{isDone}}" hint-placeholder-val="{{ false }}">
+                  <div class="ad-ci ok">
+                    <div class="ad-cr"><div><b>의뢰인에게 환불</b><span class="d">결제한 수단으로 — 카드 · 끝자리 7310</span></div><span class="ad-amt">1,575,000원</span></div>
+                    <div class="ad-okl">✓ 처리 완료 · 11월 21일 14:52</div><div class="ad-okm">메모: PG 부분취소 승인 완료 · 승인 번호 끝자리 5521</div>
+                  </div>
+                  <div class="ad-ci ok">
+                    <div class="ad-cr"><div><b>공급자에게 지급</b><span class="d">등록한 정산 계좌 — 끝자리 2048</span></div><span class="ad-amt">475,000원</span></div>
+                    <div class="ad-okl">✓ 처리 완료 · 11월 21일 15:10</div><div class="ad-okm">메모: 정산 계좌 이체 완료 · 확인 번호 끝자리 0913</div>
+                  </div>
+                </sc-if>
+              </div>
+            </div>
+            <div class="ad-foot">
+              <p>실제 이체 · 환불은 PG 관리자 화면에서 하고, 여기서는 상태만 바꿉니다(MVP). 취소 정산은 계약당 한 번입니다. 완료 처리와 메모는 이벤트 기록에 남습니다.</p>
+              <sc-if value="{{isPending}}" hint-placeholder-val="{{ true }}"><div class="ad-bt"><button type="button" class="btn off" disabled>정산 처리 완료</button><small>두 항목을 모두 표시하면 켜집니다</small></div></sc-if>
+              <sc-if value="{{isDone}}" hint-placeholder-val="{{ false }}"><div class="ad-bt"><a class="btn gh" href="Admin-Events.dc.html">이벤트 기록 보기</a></div></sc-if>
+            </div>
+          </div>
+          </sc-if>
+          <sc-if value="{{isJudge}}" hint-placeholder-val="{{ false }}">
+          <div class="ad-card">
+            <div class="ad-ch">
+              <div class="ad-lt"><span class="chip amber">사유 다툼</span><span class="chip amber">판정 필요</span></div>
+              <h2>주문 접수, 픽업 알림 외 1개 기능</h2>
+              <div class="ad-m">의뢰인 소담 분식 · 공급자 오세린 · 합의 1,600,000원 · 중간 50 : 최종 50 · 11월 6일 예치 1,680,000원 · 작업 기간 30일(12월 6일 마감)</div>
+            </div>
+            <div class="ad-sec">
+              <p class="ad-sh">양쪽 주장</p>
+              <div class="ad-claims">
+                <div class="ad-claim"><p class="ad-who"><b>의뢰인 소담 분식</b> · 11월 21일 취소 요청 · 사유 '공급자 사정'</p><p>11월 14일 이후로 진행 소식이 없고 중간 납품도 없습니다. 작업 기간의 절반이 지났습니다.</p></div>
+                <div class="ad-claim"><p class="ad-who"><b>공급자 오세린</b> · 11월 22일 이견 · 사유 '의뢰인 사정'</p><p>픽업 알림을 어떤 수단으로 보낼지 정해 달라고 했는데 6일 동안 답이 없어 이어서 만들 수 없었습니다.</p></div>
+              </div>
+            </div>
+            <div class="ad-sec">
+              <p class="ad-sh">근거</p>
+              <div class="ad-ev2">
+                <div class="ad-eb dash"><span class="k">계약서 · 픽업 알림 · 발송 수단</span>정하지 않음 — 이 조건은 검수 기준이 아니고, 픽업 알림은 기능 설명("주문이 준비되면 손님에게 알림")대로 동작하면 됩니다(제4조)</div>
+                <div class="ad-eb"><span class="k">납품 기록</span>중간 구간(주문 접수 · 픽업 알림) 납품 없음 · 11월 21일 기준 작업 기간 30일 중 15일 지남</div>
+                <div class="ad-eb"><span class="k">채팅 인용 2건</span>
+                  <div class="ad-quote" style="margin-top:6px"><i>공급자 오세린 · 11월 12일 10:24</i>"픽업 알림을 문자로 보낼지 알림톡으로 보낼지 정해 주셔야 이어서 만들 수 있습니다."</div>
+                  <div class="ad-quote" style="margin:0"><i>의뢰인 소담 분식 · 11월 18일 21:40</i>"늦어서 죄송해요. 문자로 해 주세요."</div>
+                </div>
+              </div>
+            </div>
+            <div class="ad-sec">
+              <p class="ad-sh">판정 — 취소 사유</p>
+              <div class="ad-opts" role="radiogroup" aria-label="취소 사유 판정">
+                <label class="lbl on"><input type="radio" name="jd" checked><span><b>의뢰인 사유</b><span class="d">진행 중 구간 800,000원의 50% 이상을 공급자에게 보상</span><span class="pv">→ 공급자 보상 400,000원(받는 금액 380,000원) · 의뢰인 환불 1,260,000원</span></span></label>
+                <label class="lbl"><input type="radio" name="jd"><span><b>공급자 사유</b><span class="d">지급되지 않은 구간을 의뢰인에게 전액 환불</span><span class="pv">→ 의뢰인 환불 1,680,000원 · 공급자 0원</span></span></label>
+                <label class="lbl"><input type="radio" name="jd"><span><b>합의</b><span class="d">양쪽이 채팅에서 정한 보상 비율로 정산</span><span class="pv">→ 비율을 고르면 금액이 계산됩니다</span></span></label>
+              </div>
+              <p class="ad-sh" style="margin:16px 0 6px">판정 사유<span class="ad-req">필수</span></p>
+              <textarea class="inp ad-reason" aria-label="판정 사유">공급자가 11월 12일에 발송 수단을 물었고 의뢰인 답은 11월 18일에 왔다. 발송 수단은 정하지 않은 조건이라 기본 방식으로 진행할 수도 있었으나, 중단의 주된 원인은 의뢰인 응답 지연으로 본다.</textarea>
+            </div>
+            <div class="ad-foot">
+              <p>판정은 양쪽 채팅과 내 계약에 기록되고 이벤트 기록에 남습니다. 판정 뒤 정산은 '처리 대기'로 넘어가고, 취소 정산은 계약당 한 번입니다.</p>
+              <div class="ad-bt"><a class="btn" href="#confirm">판정 확정</a></div>
+            </div>
+          </div>
+          </sc-if>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"view":{"editor":"enum","options":["처리 대기","사유 다툼 판정","처리 완료"],"default":"처리 대기","section":"상태"},"$preview":{"width":1280,"height":1330}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const v = this.props.view ?? '처리 대기';
+    const pend = v === '처리 대기', judge = v === '사유 다툼 판정', done = v === '처리 완료';
+    return {
+      isPending: pend, isJudge: judge, isDone: done, showRefund: pend || done,
+      nRefund: done ? 0 : (judge ? 2 : 1), nDispute: 1,
+      tabP: pend ? 'on' : '', tabJ: judge ? 'on' : '', tabD: done ? 'on' : '',
+      nP: done ? 0 : 1, nJ: judge ? 1 : 0, nD: done ? 3 : 2,
+      stChip: done ? 'chip teal' : 'chip amber', stText: done ? '처리 완료' : '처리 대기',
+      lastCls: done ? '' : 'now',
+      lastB: done ? '11월 21일 · 운영자 처리 완료' : '지금 · 운영자 처리 대기',
+      lastS: done ? '환불 · 지급 모두 완료로 표시 · 정산 내역에 반영' : '아래 두 건을 처리하고 완료로 표시합니다'
+    };
+  }
+}
+</script>
+</body>
+</html>

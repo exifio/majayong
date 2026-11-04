@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>로그인 모달</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="/_blob/a8316b816fb987eb4a5af50ab874b7d1">
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+.stage{position:relative;min-height:916px;overflow:hidden}
+.behind{filter:blur(1px)}
+.scrim{position:absolute;inset:0;background:rgba(11,37,69,.55);z-index:1}
+.modalwrap{position:absolute;inset:0;z-index:2;display:flex;align-items:center;justify-content:center;padding:40px 20px}
+.modal{background:#fff;border-radius:16px;width:100%;max-width:460px;padding:28px 32px 26px;position:relative;
+ box-shadow:0 18px 48px rgba(11,37,69,.28)}
+.modal .close{position:absolute;top:16px;right:16px;width:32px;height:32px;border:0;background:transparent;
+ color:var(--s600);font-size:19px;line-height:1;cursor:pointer;border-radius:8px;font-family:inherit}
+.modal h2{font-size:24px;font-weight:600;letter-spacing:-0.5px;margin:0 0 6px}
+.modal .mdsub{font-size:16px;color:var(--s600);margin:0 0 22px}
+.div{display:flex;align-items:center;gap:14px;margin:20px 0;color:var(--s600);font-size:14px}
+.div::before,.div::after{content:"";height:1px;background:var(--s200);flex:1 1 auto}
+.subrow{display:flex;justify-content:center;gap:16px;align-items:center;margin-top:16px;font-size:14px}
+.subrow .bar{color:var(--s300)}
+.rolenote{background:var(--blue-50);border:1px solid #D7E5FF;border-radius:10px;
+ padding:13px 15px;margin-bottom:20px;font-size:14px;color:var(--navy-900);line-height:1.6}
+.rolenote b{display:block;font-size:15px;margin-bottom:3px}
+.pg{word-break:keep-all}
+.failnote{background:var(--amber-50);border:1px solid #F2E0BE;border-radius:10px;padding:12px 15px;margin-bottom:18px;font-size:14px;color:#7A5A1C;line-height:1.6}
+.failnote b{display:block;color:var(--amber-700);font-size:15px;margin-bottom:2px}
+.inp.warnline{border-color:#E6C68A}
+.stage sc-if{display:contents}
+.shero{background:var(--navy-900);padding:60px 0 64px;color:#fff}
+.shero h1.hl{color:#fff}
+.shero .lead{color:var(--on-sub)}
+.mdfoot{font-size:14px;color:var(--s600);line-height:1.6;margin:18px 0 0;padding-top:16px;
+ border-top:1px solid var(--s200)}
+/* 뒤에 깔리는 랜딩 */
+.hero{background:var(--s50);border-bottom:1px solid var(--s200);padding:60px 0 64px}
+.half{display:flex;flex-wrap:wrap;gap:40px}
+.half>div{flex:1 1 440px;min-width:0}
+h1.hl{font-size:40px;font-weight:600;letter-spacing:-1.2px;line-height:1.3;margin:0 0 18px}
+.pill{display:inline-block;background:var(--blue-50);color:var(--navy-900);font-size:14px;
+ font-weight:500;padding:6px 14px;border-radius:999px;margin-bottom:20px}
+.demo{background:#fff;border:1px solid var(--s200);border-radius:14px;padding:18px}
+.dh{display:flex;justify-content:space-between;font-size:13px;color:var(--s600);
+ padding-bottom:12px;border-bottom:1px solid var(--s200);margin-bottom:14px}
+.two{display:flex;gap:14px;flex-wrap:wrap}
+.two>div{flex:1 1 180px;min-width:0}
+.capt{font-size:13px;font-weight:600;color:var(--s600);margin-bottom:9px}
+.sum{background:var(--navy-900);border-radius:10px;padding:14px 16px;margin-top:12px;
+ display:flex;justify-content:space-between;align-items:center}
+.sum .l{color:var(--on-sub);font-size:14px}
+.sum .v{color:#fff;font-size:22px;font-weight:600;letter-spacing:-0.4px}
+</style>
+</helmet>
+
+<div class="pg">
+  <div class="stage">
+
+    <!-- 뒤에 깔린 의뢰인 랜딩 -->
+    <sc-if value="{{cliBack}}" hint-placeholder-val="{{ true }}">
+    <div class="behind" aria-hidden="true">
+      <header class="gnb">
+        <div class="wrap">
+          <div class="gnbin">
+            <span class="brand"><span class="mark"><i style="height:9px"></i><i style="height:17px"></i><i style="height:12px;opacity:.55"></i></span>마자용</span>
+            <nav class="nav"><a>작동 방식</a><a>안전장치</a><a>비용</a></nav>
+            <div class="gright">
+              <span class="tg"><span class="on">의뢰인</span><span>공급자</span></span>
+              <span class="lk">로그인</span>
+              <span class="btn sm">화면 초안 받아보기</span>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <section class="hero">
+        <div class="wrap">
+          <div class="half">
+            <div>
+              <span class="pill">예약 기반 음식점부터 시작합니다</span>
+              <h1 class="hl">요구사항을 쓰지 마세요.<br>그려드린 걸 고치세요.</h1>
+              <p class="lead">불편한 점을 한 문장으로 적으면 화면 초안이 먼저 나옵니다. 틀린 곳을 지우고 고치기만 하면, 그 행동이 그대로 요구사항 명세가 되고 예산 안에 드는지도 바로 보입니다.</p>
+              <div style="display:flex;gap:10px;flex-wrap:wrap">
+                <span class="btn lg">화면 초안 받아보기</span>
+                <span class="btn lg gh">작동 방식 보기</span>
+              </div>
+            </div>
+            <div>
+              <div class="demo">
+                <div class="dh"><span>코스 레스토랑 예약 사이트</span><span>예시 화면</span></div>
+                <div class="two">
+                  <div>
+                    <div class="capt">화면 초안 — 틀린 곳을 고치세요</div>
+                    <div class="canvasbox">
+                      <div class="cb"><span class="t">예약 달력</span><span class="x">×</span></div>
+                      <div class="cb"><span class="t">예약금 결제</span><span class="x">×</span></div>
+                      <div class="cb" style="margin-bottom:0"><span class="t">리마인드 알림</span><span class="x">×</span></div>
+                    </div>
+                  </div>
+                  <div>
+                    <div class="capt">요구사항 명세</div>
+                    <div class="si derived"><div class="nm">예약 달력</div><div class="ds">정할 것 · 회차 구성, 예약 기간</div></div>
+                    <div class="si derived"><div class="nm">예약금 결제</div><div class="ds">정할 것 · 예약금 금액, 환불 기준</div></div>
+                    <div class="sum"><span class="l">수수료 포함 예상 총액</span><span class="v">441만원</span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+    </sc-if>
+    <sc-if value="{{supBack}}" hint-placeholder-val="{{ false }}">
+    <div class="behind" aria-hidden="true">
+      <header class="gnb dark">
+        <div class="wrap">
+          <div class="gnbin">
+            <span class="brand"><span class="mark"><i style="height:9px"></i><i style="height:17px"></i><i style="height:12px;opacity:.55"></i></span>마자용</span>
+            <nav class="nav"><a>견적 방식</a><a>고르는 기준</a><a>비용</a></nav>
+            <div class="gright">
+              <span class="tg"><span>의뢰인</span><span class="on">공급자</span></span>
+              <span class="lk">로그인</span>
+              <span class="btn sm onnavy">공급자로 등록</span>
+            </div>
+          </div>
+        </div>
+      </header>
+      <section class="shero">
+        <div class="wrap">
+          <span class="pill">웹 외주 프리랜서 · 제작사</span>
+          <h1 class="hl">글을 읽고 기능을 뽑지 마세요.<br>정리된 명세에 견적만 내세요.</h1>
+          <p class="lead">의뢰인이 확정한 명세를 보고 할 수 있는 항목을 고른 뒤 총액과 기간만 적습니다.</p>
+          <div style="display:flex;gap:10px;flex-wrap:wrap"><span class="btn lg onnavy">공급자로 등록하기</span></div>
+          <div style="height:260px"></div>
+        </div>
+      </section>
+    </div>
+    </sc-if>
+
+    <div class="scrim"></div>
+
+    <!-- 로그인 모달 -->
+    <div class="modalwrap">
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="md-title">
+        <button type="button" class="close" aria-label="닫기">✕</button>
+
+        <h2 id="md-title">{{heading}}</h2>
+        <p class="mdsub">{{subline}}</p>
+
+        <sc-if value="{{isFail}}" hint-placeholder-val="{{ false }}">
+          <div class="failnote" role="alert">
+            <b>이메일 또는 비밀번호가 맞지 않습니다</b>
+            다시 입력해 주세요. 다섯 번 틀리면 잠시 로그인이 막힙니다. 비밀번호가 생각나지 않으면 '비밀번호 찾기'로 새로 정할 수 있습니다.
+          </div>
+        </sc-if>
+        <sc-if value="{{roleNotice}}" hint-placeholder-val="{{ true }}">
+          <div class="rolenote">
+            <b>이 계정은 의뢰인으로 가입되어 있습니다</b>
+            공급자 페이지에서 들어오셨지만 역할은 바뀌지 않습니다. 의뢰인 공간으로 들어가시거나, 공급자로 활동하시려면 다른 이메일로 가입해 주세요.
+          </div>
+          <a class="btn full" href="Home-Client.dc.html">의뢰인 공간으로 들어가기</a>
+        </sc-if>
+
+        <sc-if value="{{showForm}}" hint-placeholder-val="{{ true }}">
+        <a class="btn google" href="{{goHref}}">
+          <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path fill="#4285F4" d="M17.6 9.2c0-.6-.1-1.3-.2-1.9H9v3.5h4.8a4.1 4.1 0 0 1-1.8 2.7v2.2h2.9c1.7-1.6 2.7-3.9 2.7-6.5z"/><path fill="#34A853" d="M9 18c2.4 0 4.5-.8 6-2.2l-2.9-2.2c-.8.5-1.8.9-3.1.9-2.4 0-4.4-1.6-5.1-3.8H.9v2.3A9 9 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.9 10.7a5.4 5.4 0 0 1 0-3.4V5H.9a9 9 0 0 0 0 8l3-2.3z"/><path fill="#EA4335" d="M9 3.6c1.3 0 2.5.5 3.4 1.3l2.6-2.6A9 9 0 0 0 .9 5l3 2.3C4.6 5.2 6.6 3.6 9 3.6z"/></svg>
+          구글 계정으로 계속하기
+        </a>
+
+        <div class="div">또는 이메일로</div>
+
+        <div class="f">
+          <label class="lbl" for="li-email">이메일</label>
+          <input class="inp" id="li-email" type="email" value="{{email}}">
+        </div>
+
+        <div class="f" style="margin-bottom:20px">
+          <label class="lbl" for="li-pw">비밀번호</label>
+          <input class="{{pwCls}}" id="li-pw" type="password" value="{{pw}}">
+        </div>
+
+        <a class="btn full" href="{{goHref}}">로그인</a>
+
+        <div class="subrow">
+          <a class="ft" href="Reset.dc.html">비밀번호 찾기</a>
+          <span class="bar" aria-hidden="true">|</span>
+          <a class="ft" href="Signup.dc.html">회원가입</a>
+        </div>
+        </sc-if>
+
+        <p class="mdfoot">역할은 가입할 때 정해지고 바뀌지 않습니다. 로그인하시면 가입하신 역할의 공간으로 들어갑니다.</p>
+      </div>
+    </div>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;view&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;의뢰인 랜딩에서&quot;,&quot;공급자 랜딩에서&quot;,&quot;로그인 실패&quot;,&quot;역할 안내&quot;],&quot;default&quot;:&quot;의뢰인 랜딩에서&quot;,&quot;section&quot;:&quot;상태&quot;},&quot;$preview&quot;:{&quot;width&quot;:1280,&quot;height&quot;:920}}">
+class Component extends DCLogic {
+  renderVals() {
+    const v = this.props.view ?? '의뢰인 랜딩에서';
+    const sup = v === '공급자 랜딩에서' || v === '역할 안내';
+    const fail = v === '로그인 실패', role = v === '역할 안내';
+    return {
+      cliBack: !sup, supBack: sup, isFail: fail, roleNotice: role, showForm: !role,
+      goHref: sup ? 'Home-Supplier.dc.html' : 'Home-Client.dc.html',
+      email: sup ? 'junho@example.com' : 'minjae.ondo@example.com',
+      pw: fail ? '' : 'password1234', pwCls: fail ? 'inp warnline' : 'inp',
+      heading: role ? '의뢰인 계정으로 로그인했습니다' : (sup ? '공급자 로그인' : '다시 오셨네요'),
+      subline: role ? '가입하신 역할의 공간으로 들어갑니다.'
+        : (sup ? '로그인하면 바로 모집 중인 프로젝트를 볼 수 있습니다.' : '작업 중이던 초안은 그대로 남아 있습니다.')
+    };
+  }
+}
+</script>
+</body>
+</html>

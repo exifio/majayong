@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>의뢰인 — 명세 확정</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="/_blob/a8316b816fb987eb4a5af50ab874b7d1">
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+.pg{word-break:keep-all}
+.head{margin:0 0 24px}
+.head h1.t{margin:0 0 6px}
+.head .sub{margin:0}
+.sec-card{padding:24px 28px}
+.sec-card h2.ct{margin:0 0 6px}
+.sec-card>.sec{margin:0 0 16px}
+/* 1. 범위 */
+.grp{font-size:14px;font-weight:600;color:var(--s600);margin:18px 0 6px}
+.grp:first-of-type{margin-top:0}
+.it{padding:12px 0;border-top:1px solid var(--s200)}
+.it:first-of-type{border-top:0}
+.it .nm{font-size:16px;font-weight:500}
+.it .ds{font-size:14px;color:var(--s600);margin-top:2px}
+.it .cd{font-size:14px;color:var(--s900);margin-top:6px}
+.it .cd .k{color:var(--s600);margin-right:6px;padding-right:6px;border-right:1px solid var(--s300)}
+.it .cd .mm{display:block;color:var(--s600);font-size:13px;margin-top:2px}
+.out{display:flex;justify-content:space-between;align-items:center}
+.out .nm{color:var(--s600);text-decoration:line-through;font-weight:400}
+.hide{margin-top:12px;font-size:14px;color:var(--s600);line-height:1.7}
+.hide b{color:var(--s900);font-weight:600}
+/* 3. 등록 정보 */
+.dl{display:grid;grid-template-columns:120px minmax(0,1fr);gap:10px 16px;margin:0 0 6px}
+.dl dt{font-size:14px;color:var(--s600)}
+.dl dd{margin:0;font-size:16px;color:var(--s900)}
+.dl dd .sec{display:block}
+.inp.err{border-color:var(--red-600)}
+.errmsg{font-size:14px;color:var(--red-600);margin:7px 0 0}
+/* 4. 공개 범위 */
+table.tb td{font-size:15px;vertical-align:top}
+table.tb td.w{white-space:nowrap;font-weight:600}
+table.tb td .sec{display:block;font-weight:400}
+.consent{margin-top:16px;padding-top:16px;border-top:1px solid var(--s200)}
+.consent .cbx label{font-size:16px}
+.consent .ver{margin:-4px 0 0 27px}
+/* 하단 */
+.foot2{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-top:6px}
+.after{margin:14px 0 0;text-align:right}
+</style>
+<style>
+.pg{min-height:100vh;position:relative;padding-bottom:256px;box-sizing:border-box}
+.gf{position:absolute;left:0;right:0;bottom:0;background:var(--navy-900);padding:34px 0 30px;font-size:14px;color:#A9BDD6;word-break:keep-all}
+.gf a{color:#A9BDD6;text-decoration:none}
+.gf-top{display:flex;justify-content:space-between;align-items:center;gap:12px 32px;flex-wrap:wrap}
+.gf-brand{display:flex;align-items:center;gap:16px;flex-wrap:wrap;min-width:0}
+.gf-logo{display:inline-flex;align-items:center;font-size:19px;font-weight:600;letter-spacing:-0.4px;color:#fff}
+.gf-brand p{margin:0}
+.gf-cs{display:flex;align-items:baseline;gap:4px 16px;flex-wrap:wrap}
+.gf-cs b{color:#fff;font-weight:600;font-size:15px}
+.gf-nav{display:flex;flex-wrap:wrap;gap:10px 44px;margin:18px 0 0;padding:0 0 24px;border-bottom:1px solid rgba(255,255,255,.14)}
+.gf-nav>div{display:flex;align-items:baseline;gap:18px;flex-wrap:wrap}
+.gf-nav b{color:#fff;font-weight:600}
+.gf-nav a.em{color:#fff;font-weight:600}
+.gf-bot{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:24px;padding-top:20px;font-size:13px;line-height:1.75;color:#8FA6C2}
+.gf-bot p{margin:0}
+.gf-biz i{display:inline-block;width:1px;height:10px;background:rgba(255,255,255,.28);margin:0 9px;vertical-align:-1px}
+.gf-copy{align-self:end;text-align:right;white-space:nowrap}
+.gf-note{grid-column:1 / -1;margin-top:8px !important}
+</style>
+</helmet>
+
+<div class="pg">
+
+  <header class="gnb">
+    <div class="wrap">
+      <div class="gnbin">
+        <a class="brand" href="Home-Client.dc.html"><span class="mark" aria-hidden="true"><i style="height:9px"></i><i style="height:17px"></i><i style="height:12px;opacity:.55"></i></span>마자용</a>
+        <nav class="nav" aria-label="주요 메뉴">
+          <a href="Home-Client.dc.html">홈</a><a class="on" href="Input-Client.dc.html">프로젝트 시작</a><a href="My-Client.dc.html">내 프로젝트</a><a href="Contracts-Client.dc.html">내 계약</a><a href="Settle-Client.dc.html">정산 내역</a>
+        </nav>
+        <div class="gright">
+          <a class="bell dot" href="Chat-Client.dc.html" aria-label="채팅 — 새 메시지 1건"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"></path></svg></a>
+          <a class="bell dot" href="Notify-Client.dc.html" aria-label="알림 — 안 읽은 알림 3건"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"></path><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"></path></svg></a>
+          <span class="who"><span class="ava">민</span><span class="uname">정민재</span></span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="pad">
+    <div class="narrow">
+
+      <div class="head">
+        <h1 class="t">확정하기 전에 확인해 주세요</h1>
+        <p class="sub">확정하면 이 명세가 그대로 프로젝트 등록 글이 되고, 계약할 때는 검수 기준으로 계약서에 붙습니다.</p>
+      </div>
+
+      <!-- 1. 확정될 범위 -->
+      <section class="card sec-card" aria-labelledby="s1">
+        <h2 class="ct" id="s1">1. 확정될 범위</h2>
+        <p class="sec">이 기능들이 프로젝트 등록 글이 됩니다. 공급자와 정할 것은 문의 채팅에서 정하고, '이 사람과 계약하기'를 누르면 AI가 정리한 최종 합의 내용으로 확인합니다.</p>
+
+        <p class="grp">포함 · 4건</p>
+        <div class="it"><div class="nm">예약 달력</div><div class="ds">회차별로 예약받고 정원이 차면 마감</div><div class="cd"><span class="k">공급자와 정할 것</span>회차 구성 · 예약 가능 기간</div></div>
+        <div class="it"><div class="nm">예약금 결제</div><div class="ds">예약할 때 예약금을 받고 환불 규정 안내</div><div class="cd"><span class="k">공급자와 정할 것</span>예약금 금액 · 환불 기준<span class="mm">메모 │ 전날 취소면 돌려주고 싶음</span></div></div>
+        <div class="it"><div class="nm">노쇼 기록</div><div class="ds">노쇼 손님을 기록해 다음 예약 때 표시</div><div class="cd"><span class="k">공급자와 정할 것</span>노쇼 판정 기준 · 표시 방식</div></div>
+        <div class="it"><div class="nm">리마인드 알림</div><div class="ds">예약 전날 손님에게 안내 자동 발송</div><div class="cd"><span class="k">공급자와 정할 것</span>발송 시점 · 발송 수단</div></div>
+
+        <p class="grp">이번 범위에서 제외 · 1건</p>
+        <div class="it out"><div class="nm">단골 등급 관리</div><span class="sec">직접 삭제</span></div>
+      </section>
+
+      <!-- 3. 등록 정보와 모집 기간 -->
+      <section class="card sec-card" aria-labelledby="s3">
+        <h2 class="ct" id="s3">2. 등록 정보와 모집 기간</h2>
+        <p class="sec">제목 · 요약 · 필요 기술은 기능(블록) 이름에서 자동으로 만듭니다. 적으신 문장은 목록에 쓰지 않습니다.</p>
+        <dl class="dl">
+          <dt>제목</dt><dd>예약 달력, 예약금 결제 외 2개 기능<span class="sec">기능 이름 앞 2개 + 나머지 개수로 만듭니다. 업종은 칩으로 따로 보입니다</span></dd>
+          <dt>요약</dt><dd>예약 달력 · 예약금 결제 · 노쇼 기록 · 리마인드 알림</dd>
+          <dt>필요 기술</dt><dd>예약 캘린더 · PG 결제 연동 · 문자 발송</dd>
+          <dt>희망 예산</dt><dd>5,000,000원<span class="sec">목록에는 400~500만원 구간으로, 상세에서는 정확한 금액으로 보입니다</span></dd>
+        </dl>
+        <hr class="hr">
+        <div class="two">
+          <div class="f">
+            <label class="lbl" for="rs">모집 시작</label>
+            <sc-if value="{{dateOk}}" hint-placeholder-val="{{ true }}"><input class="inp" id="rs" type="text" value="2026. 10. 27"></sc-if>
+            <sc-if value="{{dateError}}" hint-placeholder-val="{{ false }}"><input class="inp err" id="rs" type="text" value="2026. 11. 5" aria-invalid="true" aria-describedby="rs-err"></sc-if>
+          </div>
+          <div class="f">
+            <label class="lbl" for="rd">모집 마감</label>
+            <input class="inp" id="rd" type="text" value="2026. 11. 3">
+          </div>
+        </div>
+        <sc-if value="{{dateOk}}" hint-placeholder-val="{{ true }}"><p class="hint">오늘로 두면 확정하자마자 모집이 시작됩니다. 날짜를 뒤로 두면 그날까지 ‘모집 예정’으로 기다립니다.</p></sc-if>
+        <sc-if value="{{dateError}}" hint-placeholder-val="{{ false }}"><p class="errmsg" id="rs-err">모집 시작일은 마감일보다 앞이어야 합니다.</p></sc-if>
+      </section>
+
+      <!-- 4. 공개 범위 동의 -->
+      <section class="card sec-card" aria-labelledby="s4">
+        <h2 class="ct" id="s4">3. 공개 범위 동의</h2>
+        <p class="sec">명세는 두 단계로 열립니다. 상세를 보는 공급자는 모두 가입할 때 비밀유지에 동의했고, 누가 열었는지 기록이 남습니다.</p>
+        <div class="card flat" style="margin:0">
+          <table class="tb">
+            <thead><tr><th scope="col">언제</th><th scope="col">보이는 것</th></tr></thead>
+            <tbody>
+              <tr><td class="w">전체 공개<span class="sec">로그인한 공급자</span></td><td>업종 · 제목과 요약 · 항목 이름과 수 · 희망 예산 구간 · 마감일</td></tr>
+              <tr><td class="w" style="border-bottom:0">상세 공개<span class="sec">열람 기록이 남음</span></td><td style="border-bottom:0">기능 설명 · 공급자와 정할 것과 메모 · 화면 초안 · 정확한 희망 예산<br>내 프로필 — 이름 · 상호 · 업종 · 가게 주소 · 자기소개 · 웹사이트</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="hide"><b>공개하지 않는 것</b> — 로그인 이메일, 처음 적으신 문장과 초안 채팅. 연락처는 받지 않으며, 계약이 체결되기 전까지 문의 채팅의 연락처는 자동으로 가려집니다.</p>
+        <div class="consent">
+          <div class="cbx">
+            <input type="checkbox" id="agree" checked="">
+            <label for="agree">이 명세가 비밀유지 의무를 진 공급자에게 위 두 단계로, 상세 공개에서는 제 프로필과 함께 공개되는 데 동의합니다.</label>
+          </div>
+          <p class="sec ver">동의 문구 v2.0 · 동의한 시각과 함께 보관됩니다</p>
+        </div>
+      </section>
+
+      <sc-if value="{{profileMissing}}" hint-placeholder-val="{{ false }}">
+        <div class="note" style="margin:0 0 16px">
+          <b>프로젝트를 등록하려면 상호가 필요합니다</b>
+          <p>상세 공개에서 공급자에게 보이는 정보입니다. 입력하고 저장하시면 이 화면으로 바로 돌아옵니다.</p>
+        </div>
+      </sc-if>
+
+      <div class="foot2">
+        <a class="btn gh" href="Draft-Client.dc.html">초안으로 돌아가기</a>
+        <sc-if value="{{canSubmit}}" hint-placeholder-val="{{ true }}"><a class="btn lg" href="Spec-Client.dc.html">확정하고 공급자 모집 시작</a></sc-if>
+        <sc-if value="{{profileMissing}}" hint-placeholder-val="{{ false }}"><a class="btn lg" href="Signup-Client.dc.html">가게 정보 입력하고 돌아오기</a></sc-if>
+        <sc-if value="{{blockedByDate}}" hint-placeholder-val="{{ false }}"><button type="button" class="btn lg off" disabled="">확정하고 공급자 모집 시작</button></sc-if>
+      </div>
+      <sc-if value="{{blockedByDate}}" hint-placeholder-val="{{ false }}"><p class="sec after">모집 기간을 고치면 확정할 수 있습니다.</p></sc-if>
+      <p class="sec after">계약 전에는 명세를 내려받을 수 없습니다. 모집 중에 명세를 고치면 이미 들어온 지원은 ‘이전 명세 기준’이 되어, 다시 견적을 받아야 계약할 수 있습니다.</p>
+
+    </div>
+  </main>
+
+  <footer class="gf" aria-label="사이트 정보">
+    <div class="wrap">
+      <div class="gf-top">
+        <div class="gf-brand">
+          <span class="gf-logo"><span class="mark" aria-hidden="true"><i style="height:9px"></i><i style="height:17px"></i><i style="height:12px;opacity:.55"></i></span>마자용</span>
+          <p>소상공인을 위한 웹 외주 요구사항 정의 · 매칭 플랫폼</p>
+        </div>
+        <div class="gf-cs"><b>고객센터 1600-0000</b><span>평일 10:00–18:00</span><span>점심 12:00–13:00 · 주말 · 공휴일 휴무</span><span>help@majayong.example</span></div>
+      </div>
+      <nav class="gf-nav" aria-label="사이트 링크">
+        <div><b>서비스</b><a href="Main.dc.html">의뢰인 안내</a><a href="Supplier-Landing.dc.html">공급자 안내</a></div>
+        <div><b>고객센터</b><a href="Help.dc.html">자주 묻는 질문</a><a href="Help-Inquiry.dc.html">1:1 문의</a><a href="Help.dc.html">공지사항</a></div>
+        <div><b>정책</b><a href="Terms.dc.html">이용약관</a><a class="em" href="Terms.dc.html">개인정보 처리방침</a><a href="Terms.dc.html">명세 비밀유지</a><a href="Terms.dc.html">중개자 고지</a></div>
+      </nav>
+      <div class="gf-bot">
+        <p class="gf-biz">상호 로켓단<i></i>대표 김로켓<i></i>사업자등록번호 000-00-00000<i></i>통신판매업 신고 제2026-서울마포-0000호<br>주소 서울특별시 마포구 예시로 00, 0층<i></i>개인정보 보호책임자 박예시<i></i>이메일 help@majayong.example</p>
+        <p class="gf-copy">© 2026 로켓단. All rights reserved.</p>
+        <p class="gf-note">마자용은 통신판매중개자로서 거래 당사자가 아니며, 의뢰인과 공급자 사이 계약의 이행 책임은 각 당사자에게 있습니다. 대금 예치와 정산은 마자용이 관리합니다.</p>
+      </div>
+    </div>
+  </footer>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;dateError&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;section&quot;:&quot;상태&quot;},&quot;profileMissing&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;section&quot;:&quot;상태&quot;},&quot;$preview&quot;:{&quot;width&quot;:1280,&quot;height&quot;:2891}}">
+class Component extends DCLogic {
+  renderVals() {
+    const dateErr = this.props.dateError ?? false;
+    const prof = this.props.profileMissing ?? false;
+    return {
+      dateError: dateErr,
+      dateOk: !dateErr,
+      profileMissing: prof,
+      blockedByDate: dateErr && !prof,
+      canSubmit: !dateErr && !prof
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>공급자 — 홈</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="/_blob/a8316b816fb987eb4a5af50ab874b7d1">
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+.fv-ck{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);border-radius:12px;padding:16px 18px}
+.fv-ck .hd{display:flex;justify-content:space-between;align-items:baseline;margin:0 0 10px;font-size:15px;font-weight:600;color:#fff}
+.fv-ck .hd span{font-size:13px;font-weight:400;color:var(--on-sub)}
+.fv-ck ul{list-style:none;margin:0;padding:0}
+.fv-ck li{display:flex;gap:10px;align-items:flex-start;padding:9px 0;border-top:1px solid rgba(255,255,255,.12);font-size:14px;line-height:1.5;color:var(--on-sub)}
+.fv-ck li:first-child{border-top:0}
+.fv-ck li .ic{flex:none;width:20px;height:20px;border-radius:50%;border:1.5px solid rgba(255,255,255,.4);font-size:12px;line-height:17px;text-align:center;color:#fff;margin-top:1px}
+.fv-ck li.ok .ic{background:var(--teal-700,#0F766E);border-color:transparent}
+.fv-ck li b{display:block;color:#fff;font-weight:600}
+.fv-ck li a{color:#fff;text-decoration:underline;text-underline-offset:2px}
+
+.whowrap{position:relative}
+.menu{position:absolute;top:44px;right:0;z-index:5;background:#fff;border:1px solid var(--s200);
+ border-radius:12px;box-shadow:0 12px 32px rgba(11,37,69,.18);min-width:208px;padding:6px;text-align:left}
+.menu .mi{display:block;padding:10px 14px;border-radius:8px;font-size:15px;color:var(--s900);text-decoration:none}
+.menu .sep2{height:1px;background:var(--s200);margin:6px 0}
+.menu .mi.out{color:var(--s600)}
+.hello{margin-bottom:24px}
+.hello h1{font-size:28px;font-weight:600;letter-spacing:-0.6px;margin:0 0 6px}
+.hello .mt{font-size:16px;color:var(--s600)}
+.focus{background:var(--navy-900);border-radius:14px;padding:26px 28px;margin-bottom:18px;color:#fff;
+ display:flex;gap:28px;flex-wrap:wrap;align-items:center;min-height:276px;box-sizing:border-box}
+.bar{height:6px;background:var(--on-line);border-radius:3px;margin-top:12px;overflow:hidden}
+.bar i{display:block;height:6px;background:var(--on-ok);border-radius:3px}
+.focus .lt{flex:999 1 420px;min-width:0}
+.focus .rt{flex:1 1 300px;min-width:0}
+.focus .kick{font-size:14px;font-weight:600;color:var(--on-ok);margin:0 0 8px}
+.focus h2{font-size:26px;font-weight:600;letter-spacing:-0.6px;line-height:1.35;margin:0 0 10px;color:#fff}
+.focus p{font-size:16px;color:var(--on-sub);margin:0 0 20px;line-height:1.65}
+.mini{background:rgba(255,255,255,.07);border:1px solid var(--on-line);border-radius:11px;padding:18px 20px}
+.mini .tt{font-size:15px;font-weight:600;margin-bottom:12px;color:#fff}
+.mrow{display:flex;justify-content:space-between;align-items:center;font-size:15px;padding:4px 0}
+.mrow .k{color:var(--on-sub)}
+.mrow .v2{color:#fff}
+.stats{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:28px}
+.stats>div{flex:1 1 220px;min-width:0;background:#fff;border:1px solid var(--s200);border-radius:12px;padding:18px 20px}
+.stats .k{font-size:14px;color:var(--s600)}
+.stats .v{font-size:28px;font-weight:600;letter-spacing:-0.6px;margin:6px 0 4px}
+.stats .s{font-size:14px;color:var(--s600)}
+.pr{padding:18px 22px;border-top:1px solid var(--s200);display:flex;gap:16px;flex-wrap:wrap;align-items:center}
+.pr:first-of-type{border-top:0}
+.pr .lt{flex:999 1 400px;min-width:0}
+.pr .rt{flex:0 1 190px;text-align:right;min-width:0}
+.pr .ti{font-size:17px;font-weight:600;letter-spacing:-0.2px;margin:7px 0 5px}
+.pr .mt{font-size:14px;color:var(--s600)}
+.pr .tags{margin-top:9px;display:flex;gap:6px;flex-wrap:wrap}
+.dead{color:var(--amber-700);font-weight:600}
+.todo{list-style:none;margin:0;padding:0}
+.todo li{font-size:16px;padding:11px 0 11px 24px;border-top:1px solid var(--s200);position:relative;line-height:1.6}
+.todo li:first-child{border-top:0}
+.todo li::before{content:"";position:absolute;left:3px;top:19px;width:7px;height:7px;border-radius:50%;background:var(--s300)}
+.todo li.now::before{background:var(--amber-700)}
+</style>
+<style>
+.pg{min-height:100vh;position:relative;padding-bottom:256px;box-sizing:border-box}
+.gf{position:absolute;left:0;right:0;bottom:0;background:var(--navy-900);padding:34px 0 30px;font-size:14px;color:#A9BDD6;word-break:keep-all}
+.gf a{color:#A9BDD6;text-decoration:none}
+.gf-top{display:flex;justify-content:space-between;align-items:center;gap:12px 32px;flex-wrap:wrap}
+.gf-brand{display:flex;align-items:center;gap:16px;flex-wrap:wrap;min-width:0}
+.gf-logo{display:inline-flex;align-items:center;font-size:19px;font-weight:600;letter-spacing:-0.4px;color:#fff}
+.gf-brand p{margin:0}
+.gf-cs{display:flex;align-items:baseline;gap:4px 16px;flex-wrap:wrap}
+.gf-cs b{color:#fff;font-weight:600;font-size:15px}
+.gf-nav{display:flex;flex-wrap:wrap;gap:10px 44px;margin:18px 0 0;padding:0 0 24px;border-bottom:1px solid rgba(255,255,255,.14)}
+.gf-nav>div{display:flex;align-items:baseline;gap:18px;flex-wrap:wrap}
+.gf-nav b{color:#fff;font-weight:600}
+.gf-nav a.em{color:#fff;font-weight:600}
+.gf-bot{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:24px;padding-top:20px;font-size:13px;line-height:1.75;color:#8FA6C2}
+.gf-bot p{margin:0}
+.gf-biz i{display:inline-block;width:1px;height:10px;background:rgba(255,255,255,.28);margin:0 9px;vertical-align:-1px}
+.gf-copy{align-self:end;text-align:right;white-space:nowrap}
+.gf-note{grid-column:1 / -1;margin-top:8px !important}
+</style>
+</helmet>
+
+<div class="pg">
+
+  <header class="gnb dark">
+    <div class="wrap">
+      <div class="gnbin">
+        <a class="brand" href="Home-Supplier.dc.html"><span class="mark" aria-hidden="true"><i style="height:9px"></i><i style="height:17px"></i><i style="height:12px;opacity:.55"></i></span>마자용</a>
+        <nav class="nav" aria-label="주요 메뉴">
+          <a class="on" href="Home-Supplier.dc.html">홈</a><a href="Find-Supplier.dc.html">프로젝트 찾기</a><a href="Apps-Supplier.dc.html">내 지원</a><a href="Contracts-Supplier.dc.html">내 계약</a><a href="Find-Supplier.dc.html">북마크</a>
+        </nav>
+        <div class="gright">
+          <a class="bell dot" href="Chat-Supplier.dc.html" aria-label="채팅 — 새 메시지 1건"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"></path></svg></a>
+          <a class="bell dot" href="Notify-Supplier.dc.html" aria-label="알림 — 안 읽은 알림 3건"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg></a>
+          <span class="whowrap">
+            <button type="button" class="who" aria-expanded="{{expanded}}" style="border:0;background:transparent;cursor:pointer;font-family:inherit;padding:0">
+              <span class="ava">최</span><span class="uname">최준호</span>
+            </button>
+            <sc-if value="{{menuOpen}}" hint-placeholder-val="{{ false }}">
+            <div class="menu" role="menu">
+              <a class="mi" role="menuitem" href="Profile-Supplier.dc.html">내 프로필</a>
+              <a class="mi" role="menuitem" href="Account-Supplier.dc.html">계정 설정</a>
+              <div class="sep2"></div>
+              <a class="mi out" role="menuitem" href="Main.dc.html">로그아웃</a>
+            </div>
+            </sc-if>
+          </span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="pad">
+    <div class="wrap">
+
+      <sc-if value="{{isFirst}}" hint-placeholder-val="{{ false }}">
+      <div class="hello">
+        <div>
+          <h1>환영합니다, 최준호님</h1>
+          <div class="mt">공급자 가입을 마쳤습니다 · 아직 지원한 프로젝트가 없습니다</div>
+        </div>
+      </div>
+
+      <section class="focus">
+        <div class="lt">
+          <p class="kick">처음 오셨나요</p>
+          <h2>업종과 기술 스택이 맞는 프로젝트부터 찾아보세요</h2>
+          <p>의뢰인이 기능을 고르고 AI가 정리한 명세를 보고, 할 수 있는 항목과 총액 · 기간으로 견적을 냅니다. 시간당 단가나 항목별 금액은 받지 않습니다. 의뢰인이 문의하면 채팅이 열립니다.</p>
+          <a class="btn lg onnavy" href="Find-Supplier.dc.html">프로젝트 찾기</a>
+        </div>
+        <div class="rt">
+          <div class="fv-ck">
+            <div class="hd">프로필 채우기<span>4개 중 1개 완료</span></div>
+            <ul>
+              <li class="ok"><span class="ic">✓</span><div><b>기술 스택</b>React · Next.js · Supabase — 추천 프로젝트를 고르는 데 씁니다</div></li>
+              <li><span class="ic"></span><div><b>포트폴리오</b><a href="Profile-Supplier.dc.html">링크나 파일 올리기</a> — 의뢰인이 제안을 비교할 때 봅니다</div></li>
+              <li><span class="ic"></span><div><b>AI 요약 확인</b>포트폴리오를 올리면 만들어지고, 확인하실 때까지 공개하지 않습니다</div></li>
+              <li><span class="ic"></span><div><b>정산 정보</b><a href="Account-Supplier.dc.html">사업자 / 개인 · 정산 계좌</a> — 첫 지급 전까지 넣으시면 됩니다</div></li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <div class="rowsb" style="margin:28px 0 12px">
+        <h2 class="ct" style="margin:0">추천 프로젝트</h2>
+        <a class="ft" href="Find-Supplier.dc.html">전체 보기</a>
+      </div>
+      <div class="card flat" style="margin-bottom:28px">
+        <div class="pr">
+          <div class="lt">
+            <span class="chip blue">기술 스택 2개 일치</span> <span class="mt">음식점 · 마감 11월 3일 · 2일 남음</span>
+            <div class="ti">예약 달력, 예약금 결제 외 2개 기능</div>
+            <div class="mt">명세 항목 4개 · 예산 400~500만원</div>
+            <div class="tags"><span class="tag on">React</span><span class="tag on">Supabase</span></div>
+          </div>
+          <div class="rt"><a class="btn sm tint" href="Project-Supplier.dc.html">명세 열어보기</a></div>
+        </div>
+        <div class="pr">
+          <div class="lt">
+            <span class="chip blue">기술 스택 2개 일치</span> <span class="mt">음식점 · 마감 11월 9일</span>
+            <div class="ti">회차 예약, 알레르기 사전 접수 외 2개 기능</div>
+            <div class="mt">명세 항목 4개 · 예산 200~300만원</div>
+            <div class="tags"><span class="tag on">React</span><span class="tag on">Supabase</span></div>
+          </div>
+          <div class="rt"><a class="btn sm tint" href="Project-Supplier.dc.html">명세 열어보기</a></div>
+        </div>
+        <div class="pr">
+          <div class="lt">
+            <span class="chip blue">기술 스택 1개 일치</span> <span class="mt">카페 · 베이커리 · 마감 11월 12일</span>
+            <div class="ti">픽업 주문, 적립 쿠폰 외 1개 기능</div>
+            <div class="mt">명세 항목 3개 · 예산 100~200만원</div>
+            <div class="tags"><span class="tag on">Next.js</span></div>
+          </div>
+          <div class="rt"><a class="btn sm tint" href="Project-Supplier.dc.html">명세 열어보기</a></div>
+        </div>
+        <div style="padding:14px 22px;border-top:1px solid var(--s200)">
+          <p class="sec" style="margin:0;word-break:keep-all">활동 업종(예약 기반 음식점 · 카페 · 베이커리)이 같은 프로젝트 중 내 기술 스택과 겹치는 수가 많은 순, 같으면 마감이 가까운 순입니다. 명세 상세를 열면 열람 기록이 남고, 가입 때 동의하신 비밀유지 의무가 적용됩니다.</p>
+        </div>
+      </div>
+      </sc-if>
+      <sc-if value="{{isBase}}" hint-placeholder-val="{{ true }}">
+      <div class="hello">
+        <div>
+          <h1>안녕하세요, 최준호님</h1>
+          <div class="mt">웹 외주 프리랜서 5년 차 · <span class="star">★</span> 4.8 (리뷰 12건)</div>
+        </div>
+      </div>
+
+      <section class="focus">
+        <div class="lt">
+          <p class="kick">중간 검수 대기</p>
+          <h2>납품 2건이 검수를 기다립니다</h2>
+          <p>의뢰인이 항목별로 확인한 뒤 승인하면 중간 구간 금액이 지급됩니다. 보완 요청이 오면 그 항목만 다시 납품하시면 되고, 이미 승인된 항목은 다시 검수하지 않습니다.</p>
+          <a class="btn lg onnavy" href="Deliver-Supplier.dc.html">납품 현황 보기</a>
+        </div>
+        <div class="rt">
+          <div class="mini">
+            <div class="tt">온도 다이닝 · 예약 달력, 예약금 결제 외 2개 기능</div>
+            <div class="mrow"><span class="k">합의 금액</span><span class="v2">3,100,000원</span></div>
+            <div class="mrow"><span class="k">이번 구간 수령 예정</span><span class="v2">1,472,500원</span></div>
+            <div class="mrow"><span class="k">검수 상태</span><span class="v2">4건 중 2건 제출 · 검수 중</span></div>
+            <div class="bar"><i style="width:50%"></i></div>
+            <p style="font-size:14px;color:var(--on-sub);margin:10px 0 0;line-height:1.6">중간 검수 승인에 50%, 최종 승인에 나머지</p>
+          </div>
+        </div>
+      </section>
+
+      <div class="stats">
+        <div>
+          <div class="k">검토 중인 지원</div>
+          <div class="v">3</div>
+          <div class="s">문의 중 1건 · <a class="ft" href="Chat-Supplier.dc.html">새 메시지 1건</a></div>
+        </div>
+        <div>
+          <div class="k">재견적 요청</div>
+          <div class="v" style="color:var(--amber-700)">1</div>
+          <div class="s">명세가 바뀌어 다시 내셔야 합니다</div>
+        </div>
+        <div>
+          <div class="k">진행 중인 계약</div>
+          <div class="v">1</div>
+          <div class="s">중간 검수 대기</div>
+        </div>
+        <div>
+          <div class="k">완료한 계약</div>
+          <div class="v">12</div>
+          <div class="s">받은 리뷰 12건</div>
+        </div>
+      </div>
+
+      <div class="rowsb" style="margin-bottom:12px">
+        <h2 class="ct" style="margin:0">추천 프로젝트</h2>
+        <a class="ft" href="Find-Supplier.dc.html">전체 보기</a>
+      </div>
+
+      <div class="card flat" style="margin-bottom:28px">
+        <div class="pr">
+          <div class="lt">
+            <span class="chip blue">기술 스택 1개 일치</span> <span class="mt">카페 · 베이커리 · 마감 11월 12일</span>
+            <div class="ti">픽업 주문, 적립 쿠폰 외 1개 기능</div>
+            <div class="mt">명세 항목 3개 · 예산 100~200만원</div>
+            <div class="tags"><span class="tag on">Next.js</span></div>
+          </div>
+          <div class="rt"><a class="btn sm tint" href="Project-Supplier.dc.html">명세 열어보기</a></div>
+        </div>
+        <div class="pr">
+          <div class="lt">
+            <span class="chip blue">기술 스택 1개 일치</span> <span class="mt">음식점 · 마감 11월 25일</span>
+            <div class="ti">테이블 오더, 메뉴판 관리 외 1개 기능</div>
+            <div class="mt">명세 항목 3개 · 예산 200~300만원</div>
+            <div class="tags"><span class="tag on">React</span><span class="tag">Node.js</span></div>
+          </div>
+          <div class="rt"><a class="btn sm tint" href="Project-Supplier.dc.html">명세 열어보기</a></div>
+        </div>
+        <div class="pr">
+          <div class="lt">
+            <span class="chip blue">기술 스택 1개 일치</span> <span class="mt">카페 · 베이커리 · 마감 11월 28일</span>
+            <div class="ti">정기 구독, 원두 주문 외 2개 기능</div>
+            <div class="mt">명세 항목 4개 · 예산 300~400만원</div>
+            <div class="tags"><span class="tag on">Next.js</span></div>
+          </div>
+          <div class="rt"><a class="btn sm tint" href="Project-Supplier.dc.html">명세 열어보기</a></div>
+        </div>
+        <div style="padding:14px 22px;border-top:1px solid var(--s200)">
+          <p class="sec" style="margin:0;word-break:keep-all">활동 업종(예약 기반 음식점 · 카페 · 베이커리)이 같은 프로젝트 중 내 기술 스택과 겹치는 수가 많은 순, 같으면 마감이 가까운 순입니다. 이미 지원한 프로젝트는 빼고 보여 드립니다. 겹치는 스택은 파랗게 표시합니다.</p>
+        </div>
+      </div>
+
+      <div class="cols">
+        <div>
+          <div class="card">
+            <h2 class="ct">다음에 할 일</h2>
+            <ul class="todo">
+              <li class="now"><a class="ft" href="QuoteWrite-Supplier.dc.html">‘좌석 배치도 외 3개’ 재견적 내기</a> <span class="sec">— 의뢰인이 명세를 고쳤습니다</span></li>
+              <li><a class="ft" href="Deliver-Supplier.dc.html">중간 검수 결과 기다리기</a> <span class="sec">— 온도 다이닝</span></li>
+            </ul>
+          </div>
+        </div>
+        <div>
+          <div class="card">
+            <h2 class="ct">알아두실 것</h2>
+            <p class="sec" style="margin:0 0 10px">명세 상세를 열면 <b>열람 기록이 남습니다.</b> 가입 시 동의하신 비밀유지 의무가 적용됩니다.</p>
+            <p class="sec" style="margin:0 0 10px">계약 범위는 서명 시점에 고정됩니다. 계약 후에 범위가 늘어나지 않습니다.</p>
+            <p class="sec" style="margin:0">수수료는 지급이 확정된 금액에만 부과됩니다.</p>
+          </div>
+        </div>
+      </div>
+      </sc-if>
+
+    </div>
+  </main>
+
+  <footer class="gf" aria-label="사이트 정보">
+    <div class="wrap">
+      <div class="gf-top">
+        <div class="gf-brand">
+          <span class="gf-logo"><span class="mark" aria-hidden="true"><i style="height:9px"></i><i style="height:17px"></i><i style="height:12px;opacity:.55"></i></span>마자용</span>
+          <p>소상공인을 위한 웹 외주 요구사항 정의 · 매칭 플랫폼</p>
+        </div>
+        <div class="gf-cs"><b>고객센터 1600-0000</b><span>평일 10:00–18:00</span><span>점심 12:00–13:00 · 주말 · 공휴일 휴무</span><span>help@majayong.example</span></div>
+      </div>
+      <nav class="gf-nav" aria-label="사이트 링크">
+        <div><b>서비스</b><a href="Main.dc.html">의뢰인 안내</a><a href="Supplier-Landing.dc.html">공급자 안내</a></div>
+        <div><b>고객센터</b><a href="Help.dc.html">자주 묻는 질문</a><a href="Help-Inquiry.dc.html">1:1 문의</a><a href="Help.dc.html">공지사항</a></div>
+        <div><b>정책</b><a href="Terms.dc.html">이용약관</a><a class="em" href="Terms.dc.html">개인정보 처리방침</a><a href="Terms.dc.html">명세 비밀유지</a><a href="Terms.dc.html">중개자 고지</a></div>
+      </nav>
+      <div class="gf-bot">
+        <p class="gf-biz">상호 로켓단<i></i>대표 김로켓<i></i>사업자등록번호 000-00-00000<i></i>통신판매업 신고 제2026-서울마포-0000호<br>주소 서울특별시 마포구 예시로 00, 0층<i></i>개인정보 보호책임자 박예시<i></i>이메일 help@majayong.example</p>
+        <p class="gf-copy">© 2026 로켓단. All rights reserved.</p>
+        <p class="gf-note">마자용은 통신판매중개자로서 거래 당사자가 아니며, 의뢰인과 공급자 사이 계약의 이행 책임은 각 당사자에게 있습니다. 대금 예치와 정산은 마자용이 관리합니다.</p>
+      </div>
+    </div>
+  </footer>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"view":{"editor":"enum","options":["기본","첫 방문"],"default":"기본","section":"상태"},"menuOpen":{"editor":"boolean","default":false,"section":"상태"},"$preview":{"width":1280,"height":2369}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const menuOpen = this.props.menuOpen ?? false;
+    const first = (this.props.view ?? '기본') === '첫 방문';
+    return { isFirst: first, isBase: !first, menuOpen: menuOpen, expanded: menuOpen ? 'true' : 'false' };
+  }
+}
+</script>
+</body>
+</html>
