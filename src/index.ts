@@ -16,6 +16,9 @@ import { createSupabaseStorageAdapter } from "./integration/supabase-storage.js"
 import { createTossSandboxVerifier } from "./integration/toss-verifier.js";
 import { createOpenAiCatalogBlockGenerator, createOpenAiCatalogFeatureExtractor } from "./modules/catalog/index.js";
 import { createProjectSearchPort } from "./modules/market/project-search.js";
+import { runProjectDeadlineBatch } from "./modules/project/service.js";
+import { breakExpiredContracts } from "./modules/contract/lifecycle.js";
+import { createPrismaContractUnitOfWork } from "./modules/contract/prisma-adapter.js";
 import type { ProjectPorts } from "./modules/project/ports.js";
 import {
   createProjectCandidateDb,
@@ -25,7 +28,9 @@ import {
 } from "./integration/prisma-wiring.js";
 import { createApp } from "./app.js";
 import { createBRouters } from "./server.js";
-import { createAppHandler } from "./composition.js";
+import { createIntegrationServices } from "./composition.js";
+import { createHttpHandler } from "./c-app.js";
+import { startDueJobScheduler } from "./jobs/index.js";
 import { createProfileRatingPort } from "./modules/profile/api.js";
 import { requireActor } from "./modules/identity/session.js";
 import { createMarketplaceAutoRejectPort } from "./modules/application/marketplace-port.js";
@@ -81,63 +86,6 @@ const integrationPorts = createIntegrationPorts(integrationDb, {
 });
 const prismaPorts = createPrismaPorts(db);
 const applicationRead = createPrismaApplicationReadPort(prismaPorts.applicationRead);
-const bRouters = createBRouters(prismaPorts, integrationPorts, applicationRead).map(
-  (mounted) => mounted.router,
-);
-
-const pending = (name: string): never => {
-  throw new HttpError(503, "INTEGRATION_PENDING", `${name} Port가 아직 연결되지 않았습니다.`);
-};
-const ratingPort = createProfileRatingPort(db);
-const cHandler = createAppHandler(
-  {
-    prisma: db,
-    webhookSecret: process.env.TOSS_WEBHOOK_SECRET ?? "",
-    ...(storageBucket === undefined ? {} : { bucket: storageBucket }),
-    clock: { now },
-    ports: {
-      marketplace: createMarketplaceAutoRejectPort(
-        createPrismaApplicationUnitOfWork(prismaPorts.application),
-        // C 예치 완료가 넘긴 Prisma tx를 B ApplicationTx로 매핑해 같은 트랜잭션에 쓴다.
-        (tx) => createApplicationTx(tx as ApplicationDbClient),
-      ),
-      notifications: createNotificationBridge(
-        createPrismaNotificationTx(prismaPorts.notification),
-        { now, notificationTxFor: (tx) => createPrismaNotificationTx(tx as NotificationDbClient) },
-      ),
-      profileReview: {
-        async updateProfileReviewStats(input, tx) {
-          await ratingPort.refresh(
-            input.targetUserId,
-            tx as import("@prisma/client").Prisma.TransactionClient | undefined,
-          );
-          return { success: true };
-        },
-      },
-      storage: storageAdapter ?? {
-        async createUploadUrl() { return pending("Storage"); },
-        async createDownloadUrl() { return pending("Storage"); },
-      },
-      ...(tossVerifier === undefined ? {} : { tossVerifier }),
-      catalogAdmin: {
-        ...createCatalogAdminPort(db),
-      },
-    },
-  },
-  async (req) => {
-    const header = req.headers.authorization;
-    const value = typeof header === "string" ? header : undefined;
-    const match = /^Bearer ([^\s]+)$/.exec(value ?? "");
-    if (!match) return null;
-    try {
-      const actor = await requireActor(db, match[1]!, tokenSecret, Date.now());
-      return { userId: actor.userId, role: actor.role };
-    } catch {
-      return null;
-    }
-  },
-  { deferUnmatched: true },
-);
 
 // A의 공개 프로젝트 라우트에 B 검색·열람·지원 어댑터를 주입한다.
 // D-10-R 승인(2026-11-04): 알림 15종 불변. 마감 연장(DEADLINE_EXTENDED)은 A EventLog에만
@@ -152,6 +100,66 @@ const projectPorts: ProjectPorts = {
   view: createAProjectViewPort(aProjectDb),
   application: createAProjectApplicationPort(aProjectDb) as unknown as ProjectPorts["application"],
 };
+const contractJobUow = createPrismaContractUnitOfWork(prismaPorts.contract, integrationPorts.depositAttempts);
+const bRouters = createBRouters(prismaPorts, integrationPorts, applicationRead).map(
+  (mounted) => mounted.router,
+);
+
+const pending = (name: string): never => {
+  throw new HttpError(503, "INTEGRATION_PENDING", `${name} Port가 아직 연결되지 않았습니다.`);
+};
+const ratingPort = createProfileRatingPort(db);
+const integrationConfig = {
+  prisma: db,
+  webhookSecret: process.env.TOSS_WEBHOOK_SECRET ?? "",
+  ...(storageBucket === undefined ? {} : { bucket: storageBucket }),
+  clock: { now },
+  ports: {
+    marketplace: createMarketplaceAutoRejectPort(
+      createPrismaApplicationUnitOfWork(prismaPorts.application),
+      // C 예치 완료가 넘긴 Prisma tx를 B ApplicationTx로 매핑해 같은 트랜잭션에 쓴다.
+      (tx) => createApplicationTx(tx as ApplicationDbClient),
+    ),
+    notifications: createNotificationBridge(
+      createPrismaNotificationTx(prismaPorts.notification),
+      { now, notificationTxFor: (tx) => createPrismaNotificationTx(tx as NotificationDbClient) },
+    ),
+    profileReview: {
+      async updateProfileReviewStats(input: { targetUserId: string }, tx: unknown) {
+        await ratingPort.refresh(
+          input.targetUserId,
+          tx as import("@prisma/client").Prisma.TransactionClient | undefined,
+        );
+        return { success: true };
+      },
+    },
+    storage: storageAdapter ?? {
+      async createUploadUrl() { return pending("Storage"); },
+      async createDownloadUrl() { return pending("Storage"); },
+    },
+    ...(tossVerifier === undefined ? {} : { tossVerifier }),
+    projectDeadlines: (now: Date) => runProjectDeadlineBatch(db, projectPorts, now),
+    contractBreaks: (now: Date) => breakExpiredContracts(contractJobUow, { now }),
+    catalogAdmin: {
+      ...createCatalogAdminPort(db),
+    },
+  },
+};
+const { services: cServices, runner: jobRunner } = createIntegrationServices(integrationConfig);
+const cHandler = createHttpHandler(
+  { services: cServices, authenticate: async (req) => {
+    const header = req.headers.authorization;
+    const value = typeof header === "string" ? header : undefined;
+    const match = /^Bearer ([^\s]+)$/.exec(value ?? "");
+    if (!match) return null;
+    try {
+      const actor = await requireActor(db, match[1]!, tokenSecret, Date.now());
+      return { userId: actor.userId, role: actor.role };
+    } catch {
+      return null;
+    }
+  }, deferUnmatched: true },
+);
 
 const app = createApp({
   db,
@@ -182,7 +190,16 @@ const app = createApp({
 });
 const server = app.listen(port);
 
+const stopScheduler =
+  process.env.JOB_SCHEDULER_ENABLED === "true"
+    ? startDueJobScheduler(jobRunner, {
+        intervalMs: 60_000,
+        onError: (err) => console.error("due job scheduler error", err),
+      })
+    : undefined;
+
 async function shutdown(): Promise<void> {
+  stopScheduler?.();
   server.close(async () => {
     await db.$disconnect();
     process.exitCode = 0;

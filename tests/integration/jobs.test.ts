@@ -141,4 +141,48 @@ describe("INT-C-04: 배치 러너·스케줄러", () => {
     assert.equal(runs, 2);
     stop();
   });
+
+  it("프로젝트 마감·계약 결렬 배치를 같은 실행에 포함한다", async () => {
+    let projects = 0;
+    let contracts = 0;
+    const runner = createDueJobRunner({
+      services: {
+        projectDeadlines: async () => {
+          projects += 1;
+          return { recruiting: 1, selecting: 1, expired: 1 };
+        },
+        contractBreaks: async () => {
+          contracts += 1;
+          return 2;
+        },
+      },
+      targets: {},
+      retries: 0,
+    });
+
+    const result = await runner.runOnce(t0);
+    assert.equal(result.success, true);
+    assert.equal(projects, 1);
+    assert.equal(contracts, 1);
+    assert.equal(result.actionsCount, 5);
+  });
+
+  it("프로젝트·계약 배치 실패를 job별로 남긴다", async () => {
+    const runner = createDueJobRunner({
+      services: {
+        projectDeadlines: async () => {
+          throw new Error("PROJECT_FAIL");
+        },
+        contractBreaks: async () => {
+          throw new Error("CONTRACT_FAIL");
+        },
+      },
+      targets: {},
+      retries: 0,
+    });
+
+    const result = await runner.runOnce(t0);
+    assert.equal(result.success, false);
+    assert.deepEqual(result.failures.map((failure) => failure.job), ["PROJECT_DEADLINE", "CONTRACT_BREAK"]);
+  });
 });

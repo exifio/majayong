@@ -924,7 +924,13 @@ export interface DueJobTargets {
 }
 
 export interface DueJobFailure {
-  job: "DEPOSIT_DEADLINE" | "CANCELLATION_DEADLINE" | "AUTO_APPROVAL" | "DUE_NOTIFICATION";
+  job:
+    | "PROJECT_DEADLINE"
+    | "CONTRACT_BREAK"
+    | "DEPOSIT_DEADLINE"
+    | "CANCELLATION_DEADLINE"
+    | "AUTO_APPROVAL"
+    | "DUE_NOTIFICATION";
   targetId: string;
   attempts: number;
   error: string;
@@ -937,6 +943,10 @@ export interface DueJobResult {
 }
 
 export interface DueJobsContext {
+  /** A: 모집 시작/마감·선택 기간 종료 배치. */
+  projectDeadlines?(now: Date): Promise<{ recruiting: number; selecting: number; expired: number }>;
+  /** B: 서명 7일·예치 3일 경과 계약 결렬 배치. */
+  contractBreaks?(now: Date): Promise<number>;
   batchService?: {
     processAutoApproval(deliveryId: string, now: Date): Promise<{ autoApprovedCount: number }>;
     sendDueNotifications?(contractId: string, now: Date): Promise<void>;
@@ -984,6 +994,16 @@ export async function runDueJobs(context: DueJobsContext, now: Date): Promise<Du
   let actionsCount = 0;
   const failures: DueJobFailure[] = [];
   const retries = context.retries ?? 1;
+
+  if (context.projectDeadlines) {
+    const result = await withRetry("PROJECT_DEADLINE", "all", () => context.projectDeadlines!(now), retries, failures);
+    if (result !== null) actionsCount += result.recruiting + result.selecting + result.expired;
+  }
+
+  if (context.contractBreaks) {
+    const broken = await withRetry("CONTRACT_BREAK", "all", () => context.contractBreaks!(now), retries, failures);
+    if (broken !== null) actionsCount += broken;
+  }
 
   const depositIds =
     context.depositContractIds ?? (await context.targets?.depositContractIds?.(now)) ?? [];

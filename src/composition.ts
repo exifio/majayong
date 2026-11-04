@@ -27,6 +27,10 @@ export interface IntegrationPorts {
   /** D-08: 검증된 Toss sandbox 계약이 확인되기 전에는 주입하지 않는다(웹훅은 HELD로 격리). */
   tossVerifier?: TossVerifyAdapter;
   projectClientId?(projectId: string): Promise<string | null>;
+  /** A 프로젝트 모집·선택 기간 마감 배치. */
+  projectDeadlines?(now: Date): Promise<{ recruiting: number; selecting: number; expired: number }>;
+  /** B 서명·예치 기한 경과 계약 결렬 배치. */
+  contractBreaks?(now: Date): Promise<number>;
 }
 
 export interface IntegrationConfig {
@@ -132,6 +136,8 @@ export function createIntegrationServices(config: IntegrationConfig) {
 
   const runner = createDueJobRunner({
     services: {
+      ...(config.ports.projectDeadlines === undefined ? {} : { projectDeadlines: config.ports.projectDeadlines }),
+      ...(config.ports.contractBreaks === undefined ? {} : { contractBreaks: config.ports.contractBreaks }),
       completionService: completion,
       cancellationService: cancellations,
       batchService: inspections,
@@ -150,4 +156,8 @@ export function createAppHandler(
 ) {
   const { services } = createIntegrationServices(config);
   return createHttpHandler({ services, authenticate, deferUnmatched: options.deferUnmatched });
+}
+
+export function createIntegrationRunner(config: IntegrationConfig) {
+  return createIntegrationServices(config).runner;
 }

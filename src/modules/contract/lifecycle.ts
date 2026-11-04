@@ -803,8 +803,12 @@ export async function breakExpiredContracts(
       contractId: candidate.id,
       reason,
       now: input.now,
+    }).catch((error: unknown) => {
+      // 다른 워커가 먼저 결렬/서명/예치를 반영했으면 이 후보는 건너뛴다.
+      if (error instanceof ContractError && error.code === 'CONTRACT_NOT_BREAKABLE') return null;
+      throw error;
     });
-    if (result.broken) broken += 1;
+    if (result?.broken) broken += 1;
   }
 
   return broken;
