@@ -6,6 +6,13 @@ export type InspectionStatus = "OPEN" | "RESOLVED" | "ESCALATED";
 export type ConditionState = "DECIDED" | "PROPOSED" | "UNDECIDED";
 export type DisputeDecision = "REWORK_VALID" | "APPROVE" | "UNDECIDED_CONDITION";
 
+const INSPECTION_REASONS: readonly InspectionReason[] = [
+  "CONDITION_MISMATCH",
+  "NOT_WORKING",
+  "MISSING_PART",
+  "OTHER",
+];
+
 export interface DeliveryFile {
   fileId: string;
   name: string;
@@ -106,6 +113,7 @@ export interface DeliveryRepository {
   seedContractItems(items: ContractItemEntity[]): void;
   getContract(id: string): Promise<DeliveryContractInfo | null>;
   getInstallment(id: string): Promise<DeliveryInstallmentInfo | null>;
+  updateInstallment(id: string, patch: Partial<DeliveryInstallmentInfo>): Promise<DeliveryInstallmentInfo>;
   getContractItem(id: string): Promise<ContractItemEntity | null>;
   listContractItemsByContractId(contractId: string): Promise<ContractItemEntity[]>;
   updateContractItem(id: string, patch: Partial<ContractItemEntity>): Promise<ContractItemEntity>;
@@ -145,6 +153,13 @@ export function createInMemoryDeliveryRepository(): DeliveryRepository {
     },
     async getInstallment(id) {
       return installments.get(id) ?? null;
+    },
+    async updateInstallment(id, patch) {
+      const installment = installments.get(id);
+      if (!installment) throw new DeliveryHttpError(404, "구간을 찾을 수 없습니다.");
+      const updated = { ...installment, ...patch };
+      installments.set(id, updated);
+      return updated;
     },
     async getContractItem(id) {
       return contractItems.get(id) ?? null;
@@ -219,6 +234,57 @@ export class DeliveryService {
     this.clock = options.clock ?? { now: () => new Date() };
   }
 
+  private async assertParty(
+    actor: { userId: string; role: string },
+    contract: DeliveryContractInfo,
+  ): Promise<void> {
+    const isParty =
+      (actor.role === "CLIENT" && actor.userId === contract.clientUserId) ||
+      (actor.role === "SUPPLIER" && actor.userId === contract.supplierUserId);
+    if (!isParty) throw new DeliveryHttpError(403, "계약 당사자만 조회할 수 있습니다.");
+  }
+
+  private assertContractActive(contract: DeliveryContractInfo, action: string): void {
+    if (contract.status !== "ACTIVE") {
+      throw new DeliveryHttpError(409, `진행 중(ACTIVE) 계약만 ${action} 수 있습니다.`);
+    }
+  }
+
+  async listDeliveries(
+    actor: { userId: string; role: string },
+    installmentId: string,
+  ): Promise<DeliveryEntity[]> {
+    const installment = await this.repo.getInstallment(installmentId);
+    if (!installment) throw new DeliveryHttpError(404, "구간을 찾을 수 없습니다.");
+    const contract = await this.repo.getContract(installment.contractId);
+    if (!contract) throw new DeliveryHttpError(404, "계약을 찾을 수 없습니다.");
+    await this.assertParty(actor, contract);
+    return this.repo.listDeliveries(installmentId);
+  }
+
+  async getDelivery(actor: { userId: string; role: string }, deliveryId: string): Promise<DeliveryEntity> {
+    const delivery = await this.repo.getDelivery(deliveryId);
+    if (!delivery) throw new DeliveryHttpError(404, "납품을 찾을 수 없습니다.");
+    const installment = await this.repo.getInstallment(delivery.installmentId);
+    if (!installment) throw new DeliveryHttpError(404, "구간을 찾을 수 없습니다.");
+    const contract = await this.repo.getContract(installment.contractId);
+    if (!contract) throw new DeliveryHttpError(404, "계약을 찾을 수 없습니다.");
+    await this.assertParty(actor, contract);
+    return delivery;
+  }
+
+  async listReworkRequests(
+    actor: { userId: string; role: string },
+    contractItemId: string,
+  ): Promise<InspectionRequestEntity[]> {
+    const item = await this.repo.getContractItem(contractItemId);
+    if (!item) throw new DeliveryHttpError(404, "계약 항목을 찾을 수 없습니다.");
+    const contract = await this.repo.getContract(item.contractId);
+    if (!contract) throw new DeliveryHttpError(404, "계약을 찾을 수 없습니다.");
+    await this.assertParty(actor, contract);
+    return this.repo.listInspectionRequestsByItem(contractItemId);
+  }
+
   async submitDelivery(
     actor: { userId: string; role: string },
     input: { installmentId: string; items: DeliveryItemPayload[]; summary?: string },
@@ -235,6 +301,11 @@ export class DeliveryService {
 
     if (contract.status !== "ACTIVE" || contract.paymentStatus !== "DEPOSITED") {
       throw new DeliveryHttpError(409, "예치 완료된 계약만 납품할 수 있습니다.");
+    }
+
+    // 구간 상태 전이: PENDING/REWORK_REQUESTED -> DELIVERED
+    if (installment.status !== "PENDING" && installment.status !== "REWORK_REQUESTED") {
+      throw new DeliveryHttpError(409, "납품 가능한 구간 상태가 아닙니다.");
     }
 
     if (!input.items || input.items.length === 0) {
@@ -270,7 +341,7 @@ export class DeliveryService {
           throw new DeliveryHttpError(400, "보완 요청된 미승인 항목만 재제출할 수 있습니다.");
         }
         const inspections = await this.repo.listInspectionRequestsByItem(item.contractItemId);
-        const hasReworkRequest = inspections.some((i) => i.status === "OPEN" || i.status === "RESOLVED");
+        const hasReworkRequest = inspections.some((i) => i.status === "OPEN");
         if (!hasReworkRequest) {
           throw new DeliveryHttpError(400, "보완 요청된 미승인 항목만 재제출할 수 있습니다.");
         }
@@ -280,7 +351,7 @@ export class DeliveryService {
     const submittedAt = this.clock.now();
     const inspectionDueAt = endOfKstDayPlus(submittedAt, 7);
 
-    return this.repo.createDelivery({
+    const created = await this.repo.createDelivery({
       installmentId: installment.id,
       attemptNo,
       items: input.items,
@@ -290,6 +361,25 @@ export class DeliveryService {
       inspectionDueAt,
       reviewedAt: null,
     });
+
+    await this.repo.updateInstallment(installment.id, { status: "DELIVERED" });
+
+    // 재납품한 항목의 이전 OPEN 보완 요청은 해소되어 자동 승인을 영구 차단하지 않는다.
+    if (attemptNo > 1) {
+      for (const item of input.items) {
+        const inspections = await this.repo.listInspectionRequestsByItem(item.contractItemId);
+        for (const insp of inspections) {
+          if (insp.status === "OPEN") {
+            await this.repo.updateInspectionRequest(insp.id, {
+              status: "RESOLVED",
+              resolvedAt: submittedAt,
+            });
+          }
+        }
+      }
+    }
+
+    return created;
   }
 
   async approveItem(
@@ -301,6 +391,8 @@ export class DeliveryService {
 
     const contract = await this.repo.getContract(item.contractId);
     if (!contract) throw new DeliveryHttpError(404, "계약을 찾을 수 없습니다.");
+
+    this.assertContractActive(contract, "항목을 승인할");
 
     if (actor.role !== "CLIENT" || actor.userId !== contract.clientUserId) {
       throw new DeliveryHttpError(403, "의뢰인만 항목을 승인할 수 있습니다.");
@@ -362,8 +454,23 @@ export class DeliveryService {
       throw new DeliveryHttpError(403, "의뢰인만 보완을 요청할 수 있습니다.");
     }
 
+    this.assertContractActive(contract, "보완을 요청할");
+
+    if (!INSPECTION_REASONS.includes(input.reason)) {
+      throw new DeliveryHttpError(400, "보완 사유는 CONDITION_MISMATCH|NOT_WORKING|MISSING_PART|OTHER 중 하나여야 합니다.");
+    }
+    if (!input.note || input.note.trim().length === 0) {
+      throw new DeliveryHttpError(400, "보완 사유 설명은 필수입니다.");
+    }
+
     if (item.approvedAt) {
       throw new DeliveryHttpError(409, "이미 승인된 항목은 보완 요청할 수 없습니다.");
+    }
+
+    const delivery = await this.repo.getDelivery(input.deliveryId);
+    if (!delivery) throw new DeliveryHttpError(404, "납품을 찾을 수 없습니다.");
+    if (!delivery.items.some((row) => row.contractItemId === item.id)) {
+      throw new DeliveryHttpError(404, "해당 납품의 항목이 아닙니다.");
     }
 
     if (input.reason === "CONDITION_MISMATCH") {
@@ -377,10 +484,12 @@ export class DeliveryService {
           "DECIDED 조건만 상세 검수 기준입니다. PROPOSED 또는 UNDECIDED 조건은 계약서에 정하지 않음으로 남으며 보완 근거가 되지 않습니다.",
         );
       }
+    } else if (input.conditionKey) {
+      const condition = item.conditions.find((c) => c.key === input.conditionKey);
+      if (!condition) {
+        throw new DeliveryHttpError(422, "해당 계약 항목에 없는 조건 키입니다.");
+      }
     }
-
-    const delivery = await this.repo.getDelivery(input.deliveryId);
-    if (!delivery) throw new DeliveryHttpError(404, "납품을 찾을 수 없습니다.");
 
     const created = await this.repo.createInspectionRequest({
       deliveryId: delivery.id,
@@ -398,6 +507,7 @@ export class DeliveryService {
       status: "REWORK_REQUESTED",
       reviewedAt: this.clock.now(),
     });
+    await this.repo.updateInstallment(delivery.installmentId, { status: "REWORK_REQUESTED" });
 
     return created;
   }

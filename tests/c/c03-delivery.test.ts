@@ -3,9 +3,12 @@ import { describe, it } from "node:test";
 import {
   DeliveryService,
   DeliveryHttpError,
+  InspectionBatchService,
   createInMemoryDeliveryRepository,
   type ContractItemEntity,
   type DeliveryContractInfo,
+  type InspectionReason,
+  type NotificationPorts,
 } from "../../src/modules/delivery/index.ts";
 
 describe("C-03: 항목별 납품·승인·보완 요청", () => {
@@ -13,6 +16,7 @@ describe("C-03: 항목별 납품·승인·보완 요청", () => {
 
   function createTestSetup() {
     const repo = createInMemoryDeliveryRepository();
+    let now = baseTime;
 
     const contract: DeliveryContractInfo = {
       id: "contract-1",
@@ -71,10 +75,21 @@ describe("C-03: 항목별 납품·승인·보완 요청", () => {
 
     const service = new DeliveryService({
       repo,
-      clock: { now: () => baseTime },
+      clock: { now: () => now },
     });
 
-    return { repo, contract, installment, item1, item2, alienItem, service };
+    return {
+      repo,
+      contract,
+      installment,
+      item1,
+      item2,
+      alienItem,
+      service,
+      setNow: (next: Date) => {
+        now = next;
+      },
+    };
   }
 
   it("C-03-T01 타 계약 ID 삽입 차단", async () => {
@@ -420,5 +435,228 @@ describe("C-03: 항목별 납품·승인·보완 요청", () => {
 
     const item = await repo.getContractItem(item1.id);
     assert.equal(item?.approvedAt, null);
+  });
+
+  function payload(contractItemId: string) {
+    return { contractItemId, links: [`https://app/${contractItemId}`], files: [], howToCheck: "확인" };
+  }
+
+  it("C-03-F01 납품·보완이 구간 상태 전이와 일치함", async () => {
+    const { service, repo, contract, installment, item1, item2 } = createTestSetup();
+    const supplier = { userId: contract.supplierUserId, role: "SUPPLIER" };
+    const client = { userId: contract.clientUserId, role: "CLIENT" };
+
+    const d1 = await service.submitDelivery(supplier, {
+      installmentId: installment.id,
+      items: [payload(item1.id), payload(item2.id)],
+    });
+    assert.equal((await repo.getInstallment(installment.id))?.status, "DELIVERED");
+
+    await service.requestRework(client, {
+      deliveryId: d1.id,
+      contractItemId: item2.id,
+      reason: "NOT_WORKING",
+      note: "결제 모듈 오류",
+    });
+    assert.equal((await repo.getInstallment(installment.id))?.status, "REWORK_REQUESTED");
+
+    await service.submitDelivery(supplier, {
+      installmentId: installment.id,
+      items: [payload(item2.id)],
+    });
+    assert.equal((await repo.getInstallment(installment.id))?.status, "DELIVERED");
+
+    // 승인·지급이 끝난 구간에는 새 납품을 받지 않는다.
+    repo.seedInstallment({ ...installment, status: "APPROVED" });
+    await assert.rejects(
+      () => service.submitDelivery(supplier, { installmentId: installment.id, items: [payload(item2.id)] }),
+      (err: unknown) => err instanceof DeliveryHttpError && err.status === 409,
+    );
+  });
+
+  it("C-03-F02 취소 요청 중 승인·보완은 실제 호출에서 차단됨", async () => {
+    const { service, repo, contract, installment, item1, item2 } = createTestSetup();
+    const client = { userId: contract.clientUserId, role: "CLIENT" };
+
+    const delivery = await service.submitDelivery(
+      { userId: contract.supplierUserId, role: "SUPPLIER" },
+      { installmentId: installment.id, items: [payload(item1.id), payload(item2.id)] },
+    );
+    repo.seedContract({ ...contract, status: "CANCEL_REQUESTED" });
+
+    await assert.rejects(
+      () => service.approveItem(client, { contractItemId: item1.id, deliveryId: delivery.id }),
+      (err: unknown) => err instanceof DeliveryHttpError && err.status === 409,
+    );
+    assert.equal((await repo.getContractItem(item1.id))?.approvedAt, null);
+
+    await assert.rejects(
+      () =>
+        service.requestRework(client, {
+          deliveryId: delivery.id,
+          contractItemId: item1.id,
+          reason: "NOT_WORKING",
+          note: "동작하지 않음",
+        }),
+      (err: unknown) => err instanceof DeliveryHttpError && err.status === 409,
+    );
+    assert.equal((await repo.listInspectionRequestsByItem(item1.id)).length, 0);
+    assert.equal((await repo.getDelivery(delivery.id))?.status, "SUBMITTED");
+  });
+
+  it("C-03-F03 재납품이 이전 OPEN을 해소하고 검수 기한을 재설정함", async () => {
+    const setup = createTestSetup();
+    const { service, repo, contract, installment, item1, setNow } = setup;
+    const supplier = { userId: contract.supplierUserId, role: "SUPPLIER" };
+    const client = { userId: contract.clientUserId, role: "CLIENT" };
+
+    const d1 = await service.submitDelivery(supplier, {
+      installmentId: installment.id,
+      items: [payload(item1.id)],
+    });
+    await service.requestRework(client, {
+      deliveryId: d1.id,
+      contractItemId: item1.id,
+      reason: "MISSING_PART",
+      note: "일부 화면 누락",
+    });
+    assert.equal(
+      (await repo.listInspectionRequestsByItem(item1.id)).filter((row) => row.status === "OPEN").length,
+      1,
+    );
+
+    setNow(new Date("2026-11-12T10:00:00.000Z"));
+    const d2 = await service.submitDelivery(supplier, {
+      installmentId: installment.id,
+      items: [payload(item1.id)],
+    });
+    assert.equal(d2.inspectionDueAt.toISOString(), "2026-11-19T14:59:59.999Z");
+    const inspections = await repo.listInspectionRequestsByItem(item1.id);
+    assert.equal(inspections.filter((row) => row.status === "OPEN").length, 0);
+    assert.ok(inspections.every((row) => row.status === "RESOLVED" && row.resolvedAt instanceof Date));
+
+    const sent: string[] = [];
+    const notificationPorts: NotificationPorts = {
+      async createOnce(input) {
+        sent.push(`${input.userId}:${input.type}:${input.targetId}`);
+        return { created: true };
+      },
+    };
+    const batch = new InspectionBatchService({ repo, notificationPorts });
+    const result = await batch.processAutoApproval(d2.id, new Date("2026-11-19T15:00:00.000Z"));
+    assert.equal(result.autoApprovedCount, 1);
+    assert.ok((await repo.getContractItem(item1.id))?.approvedAt);
+  });
+
+  it("C-03-F04 보완 사유·조건·대상 항목 검증", async () => {
+    const { service, contract, installment, item1, item2 } = createTestSetup();
+    const supplier = { userId: contract.supplierUserId, role: "SUPPLIER" };
+    const client = { userId: contract.clientUserId, role: "CLIENT" };
+
+    const delivery = await service.submitDelivery(supplier, {
+      installmentId: installment.id,
+      items: [payload(item1.id)],
+    });
+
+    await assert.rejects(
+      () =>
+        service.requestRework(client, {
+          deliveryId: delivery.id,
+          contractItemId: item1.id,
+          reason: "BOGUS" as InspectionReason,
+          note: "이상한 사유",
+        }),
+      (err: unknown) => err instanceof DeliveryHttpError && err.status === 400,
+    );
+
+    // 이 납품에 포함되지 않은 항목은 보완 대상으로 지정할 수 없다.
+    await assert.rejects(
+      () =>
+        service.requestRework(client, {
+          deliveryId: delivery.id,
+          contractItemId: item2.id,
+          reason: "NOT_WORKING",
+          note: "동작하지 않음",
+        }),
+      (err: unknown) => err instanceof DeliveryHttpError && err.status === 404,
+    );
+
+    // 항목에 없는 조건 키는 거부한다.
+    await assert.rejects(
+      () =>
+        service.requestRework(client, {
+          deliveryId: delivery.id,
+          contractItemId: item1.id,
+          reason: "CONDITION_MISMATCH",
+          conditionKey: "no-such-condition",
+          note: "조건 불일치",
+        }),
+      (err: unknown) => err instanceof DeliveryHttpError && err.status === 422,
+    );
+
+    // 설명 없는 보완 요청은 거부한다.
+    await assert.rejects(
+      () =>
+        service.requestRework(client, {
+          deliveryId: delivery.id,
+          contractItemId: item1.id,
+          reason: "OTHER",
+          note: "   ",
+        }),
+      (err: unknown) => err instanceof DeliveryHttpError && err.status === 400,
+    );
+  });
+
+  it("C-03-F05 납품·보완 요청 조회는 계약 당사자만 가능", async () => {
+    const { service, repo, contract, installment, item1 } = createTestSetup();
+    const supplier = { userId: contract.supplierUserId, role: "SUPPLIER" };
+    const client = { userId: contract.clientUserId, role: "CLIENT" };
+    const outsider = { userId: "outsider-9", role: "CLIENT" };
+
+    const delivery = await service.submitDelivery(supplier, {
+      installmentId: installment.id,
+      items: [payload(item1.id)],
+    });
+    await service.requestRework(client, {
+      deliveryId: delivery.id,
+      contractItemId: item1.id,
+      reason: "MISSING_PART",
+      note: "일부 누락",
+    });
+
+    assert.equal((await service.listDeliveries(client, installment.id)).length, 1);
+    assert.equal((await service.listDeliveries(supplier, installment.id)).length, 1);
+    await assert.rejects(
+      () => service.listDeliveries(outsider, installment.id),
+      (err: unknown) => err instanceof DeliveryHttpError && err.status === 403,
+    );
+
+    const detail = await service.getDelivery(client, delivery.id);
+    assert.equal(detail.id, delivery.id);
+    await assert.rejects(
+      () => service.getDelivery(outsider, delivery.id),
+      (err: unknown) => err instanceof DeliveryHttpError && err.status === 403,
+    );
+
+    const reworks = await service.listReworkRequests(supplier, item1.id);
+    assert.equal(reworks.length, 1);
+    await assert.rejects(
+      () => service.listReworkRequests(outsider, item1.id),
+      (err: unknown) => err instanceof DeliveryHttpError && err.status === 403,
+    );
+
+    // 다른 계약의 납품은 같은 사용자라도 조회되지 않는다.
+    repo.seedContract({
+      id: "contract-2",
+      clientUserId: "other-client",
+      supplierUserId: "other-supplier",
+      status: "ACTIVE",
+      paymentStatus: "DEPOSITED",
+    });
+    repo.seedInstallment({ id: "inst-other", contractId: "contract-2", stage: "INTERIM", status: "DELIVERED" });
+    await assert.rejects(
+      () => service.listDeliveries(client, "inst-other"),
+      (err: unknown) => err instanceof DeliveryHttpError && err.status === 403,
+    );
   });
 });
