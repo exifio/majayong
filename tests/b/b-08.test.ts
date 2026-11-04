@@ -13,7 +13,9 @@ import { summarizeBMetrics, type BMetricSource } from '../../src/modules/applica
 import {
   getApplicationDetail,
   listMyApplications,
+  listProjectApplicationCards,
   type ApplicationReadPort,
+  type ProjectApplicationsPort,
 } from '../../src/modules/application/queries.ts';
 import {
   assertContractableRevision,
@@ -498,5 +500,97 @@ describe('B-08-T04 내 목록·상세 읽기 서비스', () => {
       await listMyReports(port, { actor: { userId: 'admin-1', role: 'ADMIN' } }),
       [],
     );
+  });
+});
+
+describe('B-08 보조: 프로젝트 지원 비교 목록 (#050)', () => {
+  const CLIENT_ACTOR: Actor = { userId: 'client-1', role: 'CLIENT' };
+  const revisions: ApplicationRevision[] = [
+    applicationRevision({
+      id: 'app-s1-r1',
+      supplierId: 'supplier-1',
+      revisionNo: 1,
+      status: 'SUPERSEDED',
+      submittedAt: new Date('2026-11-01T00:00:00.000Z'),
+      totalAmount: 2_800_000,
+    }),
+    applicationRevision({
+      id: 'app-s1-r2',
+      supplierId: 'supplier-1',
+      revisionNo: 2,
+      submittedAt: new Date('2026-11-02T00:00:00.000Z'),
+      totalAmount: 3_100_000,
+      questions: [{ text: '질문 1' }, { text: '질문 2' }],
+    }),
+    applicationRevision({
+      id: 'app-s2-r1',
+      supplierId: 'supplier-2',
+      submittedAt: new Date('2026-11-03T00:00:00.000Z'),
+      totalAmount: 1_500_000,
+    }),
+    applicationRevision({
+      id: 'app-other-project',
+      projectId: 'prj-2',
+      supplierId: 'supplier-3',
+      submittedAt: new Date('2026-10-31T00:00:00.000Z'),
+    }),
+  ];
+
+  function port(overrides: Partial<ProjectApplicationsPort> = {}): ProjectApplicationsPort {
+    return {
+      findProjectClientId: async (projectId) => (projectId === 'prj-1' ? 'client-1' : null),
+      listRevisionsByProject: async () => revisions,
+      ...overrides,
+    };
+  }
+
+  it('의뢰인 본인에게 공급자별 최신 회차만 지원 순서대로 준다', async () => {
+    const cards = await listProjectApplicationCards(port(), {
+      actor: CLIENT_ACTOR,
+      projectId: 'prj-1',
+    });
+
+    assert.deepEqual(
+      cards.map((card) => [card.applicationId, card.supplierId, card.revisionCount]),
+      [
+        ['app-s1-r2', 'supplier-1', 2],
+        ['app-s2-r1', 'supplier-2', 1],
+      ],
+    );
+    assert.equal(cards[0]?.questionCount, 2);
+    assert.equal(cards[0]?.totalAmount, 3_100_000);
+    assert.equal(cards[0]?.submittedAt.toISOString(), '2026-11-02T00:00:00.000Z');
+    assert.equal(cards.length, 2);
+  });
+
+  it('판정·추천 필드를 만들지 않는다', async () => {
+    const [card] = await listProjectApplicationCards(port(), {
+      actor: CLIENT_ACTOR,
+      projectId: 'prj-1',
+    });
+
+    assert.deepEqual(Object.keys(card ?? {}).sort(), [
+      'applicationId',
+      'durationDays',
+      'questionCount',
+      'revisionCount',
+      'revisionNo',
+      'submittedAt',
+      'supplierId',
+      'totalAmount',
+    ]);
+  });
+
+  it('다른 의뢰인·공급자·없는 프로젝트는 404로 숨긴다', async () => {
+    for (const [actor, target] of [
+      [{ userId: 'client-2', role: 'CLIENT' }, port()],
+      [{ userId: 'supplier-1', role: 'SUPPLIER' }, port()],
+      [CLIENT_ACTOR, port({ findProjectClientId: async () => null })],
+    ] as const) {
+      await assert.rejects(
+        listProjectApplicationCards(target, { actor, projectId: 'prj-1' }),
+        (error: unknown) => error instanceof ApplicationAccessError,
+      );
+    }
   });
 });

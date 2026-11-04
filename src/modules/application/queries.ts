@@ -11,6 +11,10 @@ import {
   type ApplicationRecord,
 } from './dto.js';
 import type { ApplicationRevision } from './submission.js';
+import {
+  compareApplicationCards,
+  type ApplicationCard,
+} from './submission.js';
 
 export interface ApplicationReadPort {
   listForUser(input: {
@@ -57,4 +61,35 @@ export async function getApplicationDetail(
     supplierUserId: revision.supplierId,
   });
   return revision;
+}
+
+export interface ProjectApplicationsPort {
+  findProjectClientId(projectId: string): Promise<string | null>;
+  listRevisionsByProject(projectId: string): Promise<readonly ApplicationRevision[]>;
+}
+
+/**
+ * `GET /projects/{id}/applications`: 의뢰인 본인만. 공급자별 최신 회차 카드만
+ * 지원 순서대로 돌려주고 최저가·추천 같은 판정 값은 만들지 않는다.
+ */
+export async function listProjectApplicationCards(
+  port: ProjectApplicationsPort,
+  input: { readonly actor: Actor; readonly projectId: string },
+): Promise<readonly ApplicationCard[]> {
+  const clientUserId = await port.findProjectClientId(input.projectId);
+  if (
+    clientUserId === null ||
+    input.actor.role !== 'CLIENT' ||
+    input.actor.userId !== clientUserId
+  ) {
+    throw new ApplicationAccessError();
+  }
+
+  const revisions = await port.listRevisionsByProject(input.projectId);
+  return compareApplicationCards(
+    revisions.filter(
+      (revision) =>
+        revision.projectId === input.projectId && revision.clientUserId === clientUserId,
+    ),
+  );
 }
