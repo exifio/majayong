@@ -360,8 +360,16 @@ export function createApp(options: AppOptions): Express {
   app.use("/api/v1", router);
 
   const extraAuth = requireActorMiddleware(options);
+  // Toss 웹훅은 Bearer가 아니라 자체 비밀키로 C 핸들러에서 검증한다.
+  const PUBLIC_API_PATHS = new Set(["/api/v1/integrations/toss/payment-events"]);
   for (const extra of options.routers ?? []) {
-    app.use("/api/v1", extraAuth, extra);
+    app.use("/api/v1", (req, res, next) => {
+      if (PUBLIC_API_PATHS.has((req.originalUrl ?? "").split("?")[0] ?? "")) {
+        next();
+        return;
+      }
+      extraAuth(req, res, next);
+    }, extra);
   }
 
   app.get("/health", (_req, res) => {

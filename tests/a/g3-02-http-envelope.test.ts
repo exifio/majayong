@@ -1,5 +1,6 @@
 import { afterAll, describe, expect, it } from "@jest/globals";
 import { createServer, type Server } from "node:http";
+import { Router } from "express";
 import type { AddressInfo } from "node:net";
 import type { PrismaClient } from "@prisma/client";
 import { createApp } from "../../src/app.ts";
@@ -45,6 +46,29 @@ describe("G3-02: 공통 오류 봉투", () => {
     expect(body.error?.code).toBe("NOT_FOUND");
     expect(typeof body.error?.requestId).toBe("string");
     expect(res.headers.get("x-request-id")).toBe(body.error?.requestId);
+  });
+
+  it("Toss 웹훅 경로는 Bearer 없이 C fallback까지 도달한다", async () => {
+    let reached = false;
+    const fallback = async (req: import("node:http").IncomingMessage, res: import("node:http").ServerResponse) => {
+      reached = true;
+      res.statusCode = 418;
+      res.end("fallback");
+    };
+    const baseUrl = await listen(createServer(createApp({
+      db: {} as unknown as PrismaClient,
+      tokenSecret,
+      routers: [Router()],
+      fallback,
+    })));
+
+    const res = await fetch(`${baseUrl}/api/v1/integrations/toss/payment-events`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: "{}",
+    });
+    expect(res.status).toBe(418);
+    expect(reached).toBe(true);
   });
 
   it("단독 C 핸들러는 기존 404 형식을 유지한다", async () => {
