@@ -11,6 +11,15 @@
   const $ = (selector, root = document) => root.querySelector(selector);
   const screen = document.body.dataset.screen || '';
   const ERR_STYLE = 'margin:12px 0;padding:12px 14px;border:1px solid #f2e0be;border-radius:10px;background:#fff8e8;color:#7a5a1c;font-size:14px;line-height:1.6';
+  const SIGNUP_KEY = 'mj.pendingSignup';
+
+  function readPendingSignup() {
+    try { return JSON.parse(sessionStorage.getItem(SIGNUP_KEY) || 'null'); } catch { return null; }
+  }
+
+  function clearPendingSignup() {
+    try { sessionStorage.removeItem(SIGNUP_KEY); } catch { /* ignore */ }
+  }
 
   function showError(anchor, message) {
     let box = $('#flow-error');
@@ -78,6 +87,166 @@
     const next = new Date(date);
     next.setDate(next.getDate() + days);
     return next;
+  }
+
+  if (screen === 'Signup') {
+    const next = $('#signup-next');
+    if (!next) return;
+
+    next.addEventListener('click', (event) => {
+      event.preventDefault();
+      clearError();
+      const email = $('#su-email')?.value.trim() || '';
+      const password = $('#su-pw')?.value || '';
+      if (!email || !password) {
+        showError(next, '이메일과 비밀번호를 입력해 주세요.');
+        return;
+      }
+      if (!$('#ag1')?.checked || !$('#ag2')?.checked) {
+        showError(next, '필수 약관에 동의해 주세요.');
+        return;
+      }
+      try {
+        sessionStorage.setItem(SIGNUP_KEY, JSON.stringify({ email, password, termsVersion: 'terms-v1' }));
+      } catch {
+        showError(next, '브라우저 저장소를 사용할 수 없습니다.');
+        return;
+      }
+      location.assign('/Signup-Role');
+    });
+    return;
+  }
+
+  if (screen === 'Signup-Role') {
+    const next = $('#signup-role-next');
+    if (!next) return;
+
+    next.addEventListener('click', async (event) => {
+      event.preventDefault();
+      clearError();
+      const pending = readPendingSignup();
+      if (!pending?.email || !pending?.password) {
+        location.assign('/Signup');
+        return;
+      }
+      const role = $('#role-supplier')?.checked ? 'SUPPLIER' : 'CLIENT';
+      // 이메일 가입은 Signup 화면에서 이미 동의했다. 구글 가입일 때만 이 화면에 약관이 있다.
+      const commonChecks = [$('#g1'), $('#g2')].filter(Boolean);
+      if (commonChecks.length > 0 && commonChecks.some((element) => !element.checked)) {
+        showError(next, '필수 약관에 동의해 주세요.');
+        return;
+      }
+      const supplierNda = $('#g3');
+      if (role === 'SUPPLIER' && supplierNda && !supplierNda.checked) {
+        showError(next, '공급자 비밀유지 약관에 동의해 주세요.');
+        return;
+      }
+
+      busy(next, true, '계정을 만드는 중…');
+      try {
+        await MJ.register({ ...pending, role });
+        clearPendingSignup();
+        location.assign(role === 'SUPPLIER' ? '/Signup-Supplier' : '/Signup-Client');
+      } catch (error) {
+        busy(next, false);
+        showError(next, error.code === 'EMAIL_ALREADY_REGISTERED'
+          ? '이미 가입된 이메일입니다. 로그인해 주세요.'
+          : error.message);
+      }
+    });
+    return;
+  }
+
+  if (screen === 'Signup-Client') {
+    const save = $('#profile-save');
+    const skip = $('#profile-skip');
+    if (!MJ.session().accessToken) {
+      location.assign(`/Login?next=${encodeURIComponent('/Signup-Client')}`);
+      return;
+    }
+
+    const industryField = () =>
+      ($('#c-field')?.value || '').includes('예약') ? 'RESTAURANT_RESERVATION' : 'GENERAL';
+
+    save?.addEventListener('click', async (event) => {
+      event.preventDefault();
+      clearError();
+      const businessName = $('#c-biz')?.value.trim() || '';
+      if (!businessName) {
+        showError(save, '상호를 입력해 주세요.');
+        return;
+      }
+      busy(save, true, '저장하는 중…');
+      try {
+        await MJ.updateClientProfile({
+          ...(($('#c-name')?.value.trim() || '') ? { name: $('#c-name').value.trim() } : {}),
+          businessName,
+          industryField: industryField(),
+          ...(($('#c-addr')?.value.trim() || '') ? { storeAddress: $('#c-addr').value.trim() } : {}),
+          ...(($('#c-web')?.value.trim() || '') ? { websiteUrl: $('#c-web').value.trim() } : {}),
+          ...(($('#c-bio')?.value.trim() || '') ? { bio: $('#c-bio').value.trim() } : {}),
+        });
+        location.assign(nextPath() || '/Home-Client');
+      } catch (error) {
+        busy(save, false);
+        showError(save, error.message);
+      }
+    });
+    skip?.addEventListener('click', (event) => {
+      event.preventDefault();
+      location.assign(nextPath() || '/Home-Client');
+    });
+    return;
+  }
+
+  if (screen === 'Signup-Supplier') {
+    const save = $('#profile-save');
+    const skip = $('#profile-skip');
+    if (!MJ.session().accessToken) {
+      location.assign(`/Login?next=${encodeURIComponent('/Signup-Supplier')}`);
+      return;
+    }
+
+    save?.addEventListener('click', async (event) => {
+      event.preventDefault();
+      clearError();
+      const displayName = $('#s-name')?.value.trim() || '';
+      if (!displayName) {
+        showError(save, '이름을 입력해 주세요.');
+        return;
+      }
+      if (!$('#nda')?.checked || !$('#fee')?.checked) {
+        showError(save, '필수 동의 항목을 확인해 주세요.');
+        return;
+      }
+      const skills = [...document.querySelectorAll('.tag.on')]
+        .map((element) => element.textContent?.trim())
+        .filter((value) => Boolean(value));
+      const careerValue = $('#s-career')?.value;
+      const careerYears = careerValue === '' ? undefined : Number(careerValue);
+
+      busy(save, true, '저장하는 중…');
+      try {
+        await MJ.updateSupplierProfile({
+          name: displayName,
+          displayName,
+          ...(($('#s-bio')?.value.trim() || '') ? { bio: $('#s-bio').value.trim() } : {}),
+          industryCodes: ['RESTAURANT_RESERVATION'],
+          ...(skills.length ? { skills } : {}),
+          ...(Number.isInteger(careerYears) ? { careerYears } : {}),
+          ndaConsent: true,
+        });
+        location.assign(nextPath() || '/Home-Supplier');
+      } catch (error) {
+        busy(save, false);
+        showError(save, error.message);
+      }
+    });
+    skip?.addEventListener('click', (event) => {
+      event.preventDefault();
+      location.assign(nextPath() || '/Home-Supplier');
+    });
+    return;
   }
 
   if (screen === 'Login') {

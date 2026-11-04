@@ -108,6 +108,20 @@
     return request(`/drafts/${encodeURIComponent(draftId)}/publish`, { method: 'POST', body: input });
   }
 
+  async function register(input) {
+    const data = await request('/auth/register', { method: 'POST', body: input, auth: false });
+    saveSession(data);
+    return data;
+  }
+
+  async function updateClientProfile(input) {
+    return request('/me/client-profile', { method: 'PATCH', body: input });
+  }
+
+  async function updateSupplierProfile(input) {
+    return request('/me/supplier-profile', { method: 'PATCH', body: input });
+  }
+
   function requireLogin(next) {
     if (read(ACCESS)) return true;
     const target = next || location.pathname + location.search;
@@ -118,6 +132,9 @@
   window.MJ = {
     request,
     login,
+    register,
+    updateClientProfile,
+    updateSupplierProfile,
     createDraft,
     getDraft,
     setBudget,

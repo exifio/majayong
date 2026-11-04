@@ -196,9 +196,9 @@ sc-if{display:contents}
         <a class="btn gh" href="{{backHref}}">{{backLabel}}</a>
         <span style="display:flex;gap:10px;flex-wrap:wrap">
           <sc-if value="{{inSignup}}" hint-placeholder-val="{{ true }}">
-            <a class="btn gh" href="Home-Supplier.dc.html">프로필은 나중에 입력하기</a>
+            <a class="btn gh" id="profile-skip" href="Home-Supplier.dc.html">프로필은 나중에 입력하기</a>
           </sc-if>
-          <a class="btn" href="{{nextHref}}">{{saveLabel}}</a>
+          <a class="btn" id="profile-save" href="{{nextHref}}">{{saveLabel}}</a>
         </span>
       </div>
 
