@@ -117,7 +117,7 @@ table.ev td.why{color:var(--s600)}
       <div class="ev-fl">
         <select class="ev-sel" aria-label="기간"><option>최근 30일</option></select>
         <div class="ev-seg" role="group" aria-label="행위자"><a class="on" href="Admin-Events.dc.html">전체</a><a href="Admin-Events.dc.html">운영자</a><a href="Admin-Events.dc.html">시스템</a><a href="Admin-Events.dc.html">의뢰인</a><a href="Admin-Events.dc.html">공급자</a></div>
-        <select class="ev-sel" aria-label="종류"><option>모든 종류</option></select>
+        <select class="ev-sel" aria-label="종류"><sc-for list="{{kinds}}" as="o" hint-placeholder-count="1"><option {{o.sel}}>{{o.t}}</option></sc-for></select>
         <input class="ev-q" type="search" placeholder="계약 · 블록 · 사용자 이름으로 찾기" aria-label="찾기">
       </div>
       <div class="ev-tw">
@@ -130,7 +130,7 @@ table.ev td.why{color:var(--s600)}
             </sc-for>
           </tbody>
         </table>
-        <div class="ev-pg"><span>1 – 12 · 전체 1,284건 · 최신 순</span><span class="pn"><a class="on" href="Admin-Events.dc.html">1</a><a href="Admin-Events.dc.html">2</a><a href="Admin-Events.dc.html">3</a><a href="Admin-Events.dc.html">›</a></span></div>
+        <div class="ev-pg"><span>{{pg}}</span><span class="pn"><a class="on" href="Admin-Events.dc.html">1</a><a href="Admin-Events.dc.html">2</a><a href="Admin-Events.dc.html">3</a><a href="Admin-Events.dc.html">›</a></span></div>
       </div>
     </main>
   </div>

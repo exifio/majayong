@@ -11,6 +11,8 @@ export default class SettleSupplierScreen extends Screen {
   renderVals(): Values {
     const role: string = '공급자';
     const view = this.props.view ?? '전체';
+    // '발행했어요'를 누른 계약(카드 제목) — 그 줄이 '발행함'으로 바뀐다
+    const issued: string[] = Array.isArray(this.state.issued) ? this.state.issued.filter((n: unknown): n is string => typeof n === 'string') : [];
     const cl = role === '의뢰인';
     const one = view === '계약 하나만', ex = view === '취소된 계약 예시', indiv = view === '개인 공급자 예시';
     type Chip = [string, string];
@@ -69,9 +71,9 @@ export default class SettleSupplierScreen extends Screen {
       ];
     } else {
       const S = (d: string, k: string, nt: string, gross: string, net: string, ch: Chip, cls?: string, wh?: number) => R(cls || '', d, k, nt, net, gross ? '구간 ' + gross + ' − 수수료 5%' + (wh ? ' − 원천징수 3.3%' : '') : '', ch);
-      const F = (v: string) => ({ k: '낸 수수료 5%', v: v, hasLk: true, lk: '수수료 증빙 받기', href: '#receipt' });
+      const F = (v: string) => ({ k: '낸 수수료 5%', v: v, hasLk: true, lk: '수수료 증빙 받기', href: '/assets/samples/fee-receipt-sample.pdf', dl: true });
       const T = (v: string, lk?: string) => ({ k: '대금 세금계산서 · 의뢰인에게 직접', v: v, vCls: lk ? 'v dim2' : 'v', hasLk: !!lk, lk: lk || '', href: '#issued' });
-      const W = (v: string) => ({ k: '원천징수 3.3%', v: v, hasLk: true, lk: '원천징수영수증', href: '#wh' });
+      const W = (v: string) => ({ k: '원천징수 3.3%', v: v, hasLk: true, lk: '원천징수영수증', href: '/assets/samples/withholding-receipt-sample.pdf', dl: true });
       const a = C({ chip: '진행 중', chipCls: 'chip blue', when: '작업 마감 12월 16일', title: A, who: '의뢰인 온도 다이닝', amt: '합의 3,100,000원 · 중간 50 : 최종 50',
         bigK: '받은 금액', bigV: '1,472,500원', href: 'Contracts-Supplier.dc.html',
         stats: [{ k: '받은 금액', v: '1,472,500원' }, { k: '받을 예정', v: '1,472,500원' }, F('77,500원'), T('중간 구간 발행 전', '발행했어요')],
@@ -126,7 +128,16 @@ export default class SettleSupplierScreen extends Screen {
       ];
     }
     if (one) cards = [Object.assign({}, cards[ex ? oneIdx + 1 : oneIdx], { isGrp: false, cls: 'pc hl' })];
-    cards = cards.map(p => Object.assign({}, p, { nStats: p.stats.length, stats: p.stats.map((t: Values) => Object.assign({ vCls: 'v', hasLk: false, lk: '', href: '#' }, t)) }));
+    cards = cards.map(p => {
+      const title = String(p.title), done = issued.includes(title);
+      const stats = (p.stats as Values[]).map(t => {
+        if (t.href !== '#issued') return t;
+        // 사업자 공급자의 '발행했어요' — 누르면 그 줄 상태만 '발행함'으로
+        return done ? Object.assign({}, t, { v: String(t.v).replace('발행 전', '발행함'), vCls: 'v', hasLk: false, lk: '' })
+                    : Object.assign({}, t, { act: () => this.setState({ issued: [...issued, title] }) });
+      });
+      return Object.assign({}, p, { nStats: stats.length, stats: stats.map(t => Object.assign({ vCls: 'v', hasLk: false, lk: '', href: '#' }, t)) });
+    });
     sum = sum.map(m => Object.assign({ hasLk: false, lk: '' }, m));
     const self = cl ? 'Settle-Client.dc.html' : 'Settle-Supplier.dc.html';
     return {

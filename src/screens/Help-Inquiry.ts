@@ -28,7 +28,7 @@ export default class HelpInquiryScreen extends Screen {
     const faqLinks = cl ? ['대금은 언제 공급자에게 지급되나요?', '계약을 취소하면 환불받을 수 있나요?', '수수료는 얼마인가요?']
       : ['세금계산서와 원천징수는 어떻게 되나요?', '대금은 언제 공급자에게 지급되나요?', '견적을 낸 뒤 작업이 늘어나면 어떻게 하나요?'];
     return {
-      guest: guest, isClient: cl, isSupplier: sp,
+      who: who, guest: guest, isClient: cl, isSupplier: sp,
       tabAsk: form || guest ? 'on' : '', tabMy: (sent || myv) && !guest ? 'on' : '', myN: guest ? '' : MY.length,
       sent: sent && !guest, showForm: form && !guest, showMy: (sent || myv) && !guest,
       types: types, relContract: '예약 달력, 예약금 결제 외 2개 기능 · ' + (cl ? '최준호' : '온도 다이닝'),

@@ -80,21 +80,24 @@
 .ed.off .ti{color:var(--s600)}
 </style>
 <style>
-.pg{min-height:100vh;position:relative;padding-bottom:393px;box-sizing:border-box}
-.gf{position:absolute;left:0;right:0;bottom:0;background:var(--s50);border-top:1px solid var(--s200);padding:40px 0 36px;font-size:14px;color:var(--s600);word-break:keep-all}
-.gf-top{display:flex;justify-content:space-between;gap:32px;flex-wrap:wrap;padding-bottom:28px;border-bottom:1px solid var(--s200)}
-.gf-brand{flex:1 1 260px;min-width:0}
-.gf-logo{display:inline-flex;align-items:center;font-size:19px;font-weight:600;letter-spacing:-0.4px;color:var(--s900)}
-.gf-brand p{margin:10px 0 0;line-height:1.6}
-.gf-cols{display:flex;gap:48px;flex-wrap:wrap}
-.gf-cols>div{display:flex;flex-direction:column;gap:9px;min-width:0}
-.gf-cols b{font-size:14px;font-weight:600;color:var(--s900);margin-bottom:2px}
-.gf-cols a{color:var(--s600);text-decoration:none}
-.gf-cols a.em{color:var(--s900);font-weight:600}
-.gf-bot{padding-top:22px;font-size:13px;line-height:1.75}
-.gf-bot p{margin:0 0 8px}
-.gf-biz i{display:inline-block;width:1px;height:10px;background:var(--s300);margin:0 9px;vertical-align:-1px}
-.gf-copy{color:var(--s400)}
+.pg{min-height:100vh;position:relative;padding-bottom:256px;box-sizing:border-box}
+.gf{position:absolute;left:0;right:0;bottom:0;background:var(--navy-900);padding:34px 0 30px;font-size:14px;color:#A9BDD6;word-break:keep-all}
+.gf a{color:#A9BDD6;text-decoration:none}
+.gf-top{display:flex;justify-content:space-between;align-items:center;gap:12px 32px;flex-wrap:wrap}
+.gf-brand{display:flex;align-items:center;gap:16px;flex-wrap:wrap;min-width:0}
+.gf-logo{display:inline-flex;align-items:center;font-size:19px;font-weight:600;letter-spacing:-0.4px;color:#fff}
+.gf-brand p{margin:0}
+.gf-cs{display:flex;align-items:baseline;gap:4px 16px;flex-wrap:wrap}
+.gf-cs b{color:#fff;font-weight:600;font-size:15px}
+.gf-nav{display:flex;flex-wrap:wrap;gap:10px 44px;margin:18px 0 0;padding:0 0 24px;border-bottom:1px solid rgba(255,255,255,.14)}
+.gf-nav>div{display:flex;align-items:baseline;gap:18px;flex-wrap:wrap}
+.gf-nav b{color:#fff;font-weight:600}
+.gf-nav a.em{color:#fff;font-weight:600}
+.gf-bot{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:24px;padding-top:20px;font-size:13px;line-height:1.75;color:#8FA6C2}
+.gf-bot p{margin:0}
+.gf-biz i{display:inline-block;width:1px;height:10px;background:rgba(255,255,255,.28);margin:0 9px;vertical-align:-1px}
+.gf-copy{align-self:end;text-align:right;white-space:nowrap}
+.gf-note{grid-column:1 / -1;margin-top:8px !important}
 </style>
 </helmet>
 
@@ -215,17 +218,17 @@
           <span class="gf-logo"><span class="mark" aria-hidden="true"><i style="height:9px"></i><i style="height:17px"></i><i style="height:12px;opacity:.55"></i></span>마자용</span>
           <p>소상공인을 위한 웹 외주 요구사항 정의 · 매칭 플랫폼</p>
         </div>
-        <div class="gf-cols">
-          <div><b>서비스</b><a href="Main.dc.html">의뢰인 안내</a><a href="Supplier-Landing.dc.html">공급자 안내</a></div>
-          <div><b>고객센터</b><a href="Help.dc.html">자주 묻는 질문</a><a href="Help-Inquiry.dc.html">1:1 문의</a><a href="Help.dc.html">공지사항</a></div>
-          <div><b>정책</b><a href="Terms.dc.html">이용약관</a><a class="em" href="Terms.dc.html">개인정보 처리방침</a><a href="Terms.dc.html">명세 비밀유지</a><a href="Terms.dc.html">중개자 고지</a></div>
-          <div class="gf-cs"><b>고객센터 1600-0000</b><span>평일 10:00–18:00</span><span>점심 12:00–13:00 · 주말 · 공휴일 휴무</span><span>help@majayong.example</span></div>
-        </div>
+        <div class="gf-cs"><b>고객센터 1600-0000</b><span>평일 10:00–18:00</span><span>점심 12:00–13:00 · 주말 · 공휴일 휴무</span><span>help@majayong.example</span></div>
       </div>
+      <nav class="gf-nav" aria-label="사이트 링크">
+        <div><b>서비스</b><a href="Main.dc.html">의뢰인 안내</a><a href="Supplier-Landing.dc.html">공급자 안내</a></div>
+        <div><b>고객센터</b><a href="Help.dc.html">자주 묻는 질문</a><a href="Help-Inquiry.dc.html">1:1 문의</a><a href="Help.dc.html?view=공지사항">공지사항</a></div>
+        <div><b>정책</b><a href="Terms.dc.html?view=이용약관">이용약관</a><a class="em" href="Terms.dc.html?view=개인정보+처리방침">개인정보 처리방침</a><a href="Terms.dc.html?view=명세+비밀유지">명세 비밀유지</a><a href="Terms.dc.html?view=중개자+고지">중개자 고지</a></div>
+      </nav>
       <div class="gf-bot">
         <p class="gf-biz">상호 로켓단<i></i>대표 김로켓<i></i>사업자등록번호 000-00-00000<i></i>통신판매업 신고 제2026-서울마포-0000호<br>주소 서울특별시 마포구 예시로 00, 0층<i></i>개인정보 보호책임자 박예시<i></i>이메일 help@majayong.example</p>
-        <p class="gf-note">마자용은 통신판매중개자로서 거래 당사자가 아니며, 의뢰인과 공급자 사이 계약의 이행 책임은 각 당사자에게 있습니다. 대금 예치와 정산은 마자용이 관리합니다.</p>
         <p class="gf-copy">© 2026 로켓단. All rights reserved.</p>
+        <p class="gf-note">마자용은 통신판매중개자로서 거래 당사자가 아니며, 의뢰인과 공급자 사이 계약의 이행 책임은 각 당사자에게 있습니다. 대금 예치와 정산은 마자용이 관리합니다.</p>
       </div>
     </div>
   </footer>

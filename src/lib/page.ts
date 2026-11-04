@@ -39,6 +39,7 @@ export function routeFor(id: string): string {
   return id === 'Main' ? '/' : `/${id}`;
 }
 
+// Elements carrying data-print open the print dialog (계약서 내려받기 → PDF).
 // Elements carrying data-action-href navigate to that URL. For onClick handlers it is
 // the URL of the state they produce (`_state=`), and the scroll position is kept so an
 // in-page change (a selected star, an expanded section) doesn't jump to the top.
@@ -49,6 +50,8 @@ const ACTION_SCRIPT = `<script>
   const key = 'majayong:scroll:' + location.pathname;
   try { const y = sessionStorage.getItem(key); if (y) { sessionStorage.removeItem(key); scrollTo(0, +y); } } catch {}
   document.addEventListener('click', (e) => {
+    // data-print: save the page as PDF through the browser's print dialog.
+    if (e.target instanceof Element && e.target.closest('[data-print]')) { e.preventDefault(); print(); return; }
     const el = e.target instanceof Element && e.target.closest('[data-action-href]');
     if (!el) return;
     e.preventDefault();

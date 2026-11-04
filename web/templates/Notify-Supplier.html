@@ -99,8 +99,9 @@
         <b>알림<sc-if value="{{hasUn}}" hint-placeholder-val="{{ true }}"><span class="n3">{{nUn}}</span></sc-if></b>
         <button type="button" class="{{allCls}}" data-action-href="?view=모두+읽음">모두 읽음</button>
       </div>
-      <nav class="seg3" aria-label="알림 보기"><a class="on" href="#all">전체 {{nAll}}</a><a href="#unread">안 읽음 {{nUn}}</a></nav>
-      <div class="scr">
+      <nav class="seg3" aria-label="알림 보기"><a class="{{allTab}}" href="#nt-list" aria-current="{{allCur}}" onClick="{{showAll}}">전체 {{nAll}}</a><a class="{{unTab}}" href="#nt-list" aria-current="{{unCur}}" onClick="{{showUn}}">안 읽음 {{nUn}}</a></nav>
+      <div class="scr" id="nt-list">
+        <sc-if value="{{noRows}}" hint-placeholder-val="{{ false }}"><p class="day">읽지 않은 알림이 없습니다</p></sc-if>
         <sc-for list="{{groups}}" as="g" hint-placeholder-count="3">
           <p class="day">{{g.label}}</p>
           <sc-for list="{{g.rows}}" as="r" hint-placeholder-count="2">

@@ -81,6 +81,14 @@ table.bl-cmp th{text-align:left;font-weight:600;color:var(--s600);padding:6px 6p
 table.bl-cmp td{padding:7px 6px;border-top:1px solid var(--s100);vertical-align:top;line-height:1.5}
 table.bl-cmp td.k{color:var(--s600);white-space:nowrap;width:64px}
 .bl-acts{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0 8px}
+.bl-done{background:#EAF6F4;border:1px solid #C7E6E0;border-radius:12px;padding:14px 18px;margin:0 0 16px}
+.bl-done b{display:block;color:var(--teal-700);font-size:15px;margin:0 0 2px}
+.bl-done p{margin:0;font-size:14px;color:var(--s600);line-height:1.6}
+.bl-res{background:var(--s50);border:1px solid var(--s200);border-radius:10px;padding:12px 14px;margin:16px 0 8px}
+.bl-res b{display:block;font-size:14px;font-weight:600;color:var(--s900);margin:0 0 3px}
+.bl-res p{margin:0;font-size:13px;color:var(--s600);line-height:1.55}
+.bl-res .bt{display:flex;gap:8px;margin:10px 0 0}
+.bl-amt s{font-size:14px;color:var(--s400);font-weight:400;margin-right:8px}
 .bl-acts .btn{white-space:nowrap;flex:none;padding-left:12px;padding-right:12px}
 .bl-rule{background:#fff;border:1px solid var(--s200);border-radius:12px;padding:14px 18px;margin:16px 0 0}
 .bl-rule b{display:block;font-size:14px;margin:0 0 4px}
@@ -107,7 +115,7 @@ table.bl-cmp td.k{color:var(--s600);white-space:nowrap;width:64px}
   <div class="ad-body">
     <nav class="ad-nav" aria-label="운영 메뉴">
       <p class="h">처리할 일</p>
-      <a class="on" aria-current="page" href="Admin-Blocks.dc.html">블록 검토<span class="bd">7</span></a><a href="Admin-Payments.dc.html">보류된 결제<span class="bd">2</span></a><a href="Admin-Refunds.dc.html">환불 처리<span class="bd">1</span></a><a href="Admin-Disputes.dc.html">이견 개입<span class="bd">1</span></a><a href="Admin-Reports.dc.html">신고 처리<span class="bd">2</span></a><a href="Admin-Inquiries.dc.html">1:1 문의<span class="bd">4</span></a>
+      <a class="on" aria-current="page" href="Admin-Blocks.dc.html">블록 검토<span class="bd">{{nNew}}</span></a><a href="Admin-Payments.dc.html">보류된 결제<span class="bd">2</span></a><a href="Admin-Refunds.dc.html">환불 처리<span class="bd">1</span></a><a href="Admin-Disputes.dc.html">이견 개입<span class="bd">1</span></a><a href="Admin-Reports.dc.html">신고 처리<span class="bd">2</span></a><a href="Admin-Inquiries.dc.html">1:1 문의<span class="bd">4</span></a>
       <div class="sp"></div>
       <a class="mut" href="Admin-Events.dc.html">이벤트 기록</a>
       <p class="ft2">운영자 행위는 모두 이벤트 기록에 남습니다</p>
@@ -115,13 +123,14 @@ table.bl-cmp td.k{color:var(--s600);white-space:nowrap;width:64px}
     <main class="ad-main">
       <h1 class="t">블록 검토</h1>
       <p class="sub">AI가 새로 만든 블록을 확인합니다. 중복이면 기존 블록에 병합하고, 단가가 맞지 않으면 고칩니다. 화면은 근거만 보여 주고 판단은 운영자가 합니다.</p>
-      <nav class="ad-tabs" aria-label="블록 보기"><a class="on" href="#new">새 블록<span class="n">7</span></a><a href="#merge">병합 후보<span class="n">2</span></a><a href="#log">단가 수정 기록<span class="n">3</span></a><a href="#all">전체 블록<span class="n">46</span></a></nav>
+      <sc-if value="{{done}}" hint-placeholder-val="{{ false }}"><div class="bl-done" role="status"><b>{{dn.t}}</b><p>{{dn.p}} <a class="ft" href="Admin-Events.dc.html">이벤트 기록에서 보기</a></p></div></sc-if>
+      <nav class="ad-tabs" aria-label="블록 보기"><a class="{{tabNew}}" href="?tab=새+블록">새 블록<span class="n">{{nNew}}</span></a><a class="{{tabCand}}" href="?tab=병합+후보">병합 후보<span class="n">{{nCand}}</span></a><a href="Admin-Events.dc.html?type=단가+수정">단가 수정 기록<span class="n">{{nLog}}</span></a><a class="{{tabAll}}" href="?tab=전체+블록">전체 블록<span class="n">46</span></a></nav>
       <div class="bl-grid">
         <div>
           <section class="bl-list" aria-label="새 블록 목록">
             <div class="bl-lh"><span>블록 · 생성 계기</span><span style="text-align:right">AI 단가 · 사용 중</span><span style="text-align:right">비슷한 기존 블록</span></div>
             <sc-for list="{{rows}}" as="r" hint-placeholder-count="7">
-              <a class="{{r.cls}}" href="#block">
+              <a class="{{r.cls}}" href="{{r.href}}">
                 <div>
                   <div class="nm">{{r.name}}<sc-if value="{{r.cand}}" hint-placeholder-val="{{ false }}"><span class="chip amber">병합 후보</span></sc-if></div>
                   <div class="why">계기: {{r.why}}</div>
@@ -149,7 +158,7 @@ table.bl-cmp td.k{color:var(--s600);white-space:nowrap;width:64px}
           <div class="sec2"><p class="k3">공급자와 정할 것</p><div class="tg4"><sc-for list="{{d.decs}}" as="t" hint-placeholder-count="2"><span>{{t}}</span></sc-for></div></div>
           <div class="sec2"><p class="k3">와이어프레임</p><div class="bl-wf"><div><span>{{d.wf1}}</span></div><div><span>{{d.wf2}}</span></div></div></div>
           <div class="sec2">
-            <div class="bl-amt"><span class="k3" style="margin:0">AI 단가 · 생성 때 고정</span><b>{{d.price}}</b></div>
+            <div class="bl-amt"><span class="k3" style="margin:0">{{d.amtK}}</span><b><sc-if value="{{d.old}}" hint-placeholder-val="{{ false }}"><s>{{d.old}}</s></sc-if>{{d.price}}</b></div>
             <ul class="bl-bs"><li><span>들어간 작업</span>{{d.work}}</li><li><span>작업량 기준</span>{{d.days}}</li><li><span>달라질 수 있는 것</span>{{d.vary}}</li></ul>
           </div>
           <div class="sec2">
@@ -158,6 +167,7 @@ table.bl-cmp td.k{color:var(--s600);white-space:nowrap;width:64px}
               <sc-for list="{{d.cmp}}" as="c" hint-placeholder-count="4"><tr><td class="k">{{c.k}}</td><td>{{c.a}}</td><td>{{c.b}}</td></tr></sc-for>
             </tbody></table>
           </div>
+          <sc-if value="{{notDone}}" hint-placeholder-val="{{ true }}">
           <div class="bl-acts">
             <a class="btn sm gh" href="#keep">그대로 두기</a>
             <a class="btn sm tint" href="?view=병합">기존 블록에 병합</a>
@@ -165,6 +175,11 @@ table.bl-cmp td.k{color:var(--s600);white-space:nowrap;width:64px}
             <a class="btn sm warn" href="?view=비활성화">비활성화</a>
           </div>
           <p class="ad-log">처리하면 사유와 함께 이벤트 기록에 남습니다</p>
+          </sc-if>
+          <sc-if value="{{done}}" hint-placeholder-val="{{ false }}">
+          <div class="bl-res"><b>{{rs.t}}</b><p>사유 · {{rs.why}}</p><div class="bt"><a class="btn sm gh" href="{{rs.href}}" style="white-space:nowrap">{{rs.btn}}</a></div></div>
+          <p class="ad-log">처리한 블록은 새 블록 목록에서 빠집니다</p>
+          </sc-if>
         </aside>
       </div>
     </main>
@@ -185,7 +200,7 @@ table.bl-cmp td.k{color:var(--s600);white-space:nowrap;width:64px}
         <label class="ad-lbl" for="mg-why">사유<i>필수</i></label>
         <textarea id="mg-why" class="ad-in">기능 요약과 정할 것이 ‘노쇼 기록’과 같고 이름만 다릅니다.</textarea>
       </div>
-      <div class="mf"><p>병합 전후 블록과 사유가 이벤트 기록에 남습니다</p><div class="bt"><a class="btn sm gh" href="?view=새+블록+목록" style="white-space:nowrap">취소</a><a class="btn sm" href="Admin-Blocks.dc.html" style="white-space:nowrap">병합하기</a></div></div>
+      <div class="mf"><p>병합 전후 블록과 사유가 이벤트 기록에 남습니다</p><div class="bt"><a class="btn sm gh" href="?view=새+블록+목록" style="white-space:nowrap">취소</a><a class="btn sm" href="?view=병합+완료" style="white-space:nowrap">병합하기</a></div></div>
     </section>
   </sc-if>
   <sc-if value="{{isPrice}}" hint-placeholder-val="{{ false }}">
@@ -207,7 +222,7 @@ table.bl-cmp td.k{color:var(--s600);white-space:nowrap;width:64px}
           <li>공급자 화면에는 단가가 보이지 않습니다.</li>
         </ul></div>
       </div>
-      <div class="mf"><p>수정 전후 값과 사유가 이벤트 기록에 남습니다</p><div class="bt"><a class="btn sm gh" href="?view=새+블록+목록" style="white-space:nowrap">취소</a><a class="btn sm" href="Admin-Blocks.dc.html" style="white-space:nowrap">단가 수정</a></div></div>
+      <div class="mf"><p>수정 전후 값과 사유가 이벤트 기록에 남습니다</p><div class="bt"><a class="btn sm gh" href="?view=새+블록+목록" style="white-space:nowrap">취소</a><a class="btn sm" href="?view=단가+수정+완료" style="white-space:nowrap">단가 수정</a></div></div>
     </section>
   </sc-if>
   <sc-if value="{{isDeact}}" hint-placeholder-val="{{ false }}">
@@ -224,7 +239,7 @@ table.bl-cmp td.k{color:var(--s600);white-space:nowrap;width:64px}
         <label class="ad-lbl" for="da-why">사유<i>필수</i></label>
         <textarea id="da-why" class="ad-in">방문 다음 날 안내는 ‘리마인드 알림’의 발송 시점 조건으로 다룰 수 있어 따로 둘 블록이 아닙니다. 쓰인 초안이 없어 병합 대신 끕니다.</textarea>
       </div>
-      <div class="mf"><p>비활성화와 사유가 이벤트 기록에 남습니다</p><div class="bt"><a class="btn sm gh" href="?view=새+블록+목록" style="white-space:nowrap">취소</a><a class="btn sm warn" href="Admin-Blocks.dc.html" style="white-space:nowrap">비활성화</a></div></div>
+      <div class="mf"><p>비활성화와 사유가 이벤트 기록에 남습니다</p><div class="bt"><a class="btn sm gh" href="?view=새+블록+목록" style="white-space:nowrap">취소</a><a class="btn sm warn" href="?view=비활성화+완료" style="white-space:nowrap">비활성화</a></div></div>
     </section>
   </sc-if>
 </div>

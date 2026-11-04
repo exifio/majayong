@@ -34,7 +34,7 @@ export default class NotifySupplierScreen extends Screen {
     const S: NotifyRow[] = [
       ['오늘', 'check', 'teal', '선택되었습니다 — 11월 10일까지 계약서에 서명해 주세요', '온도 다이닝 · 예약 달력, 예약금 결제 외 2개 기능 · 임시 계약', '09:30', true, 'Apps-Supplier.dc.html', '내 지원'],
       ['오늘', 'msg', 'blue', '정민재님의 새 메시지 1개', '온도 다이닝 · "노쇼 판정 기준도 정해 두면 좋겠습니다"', '09:12', true, 'Chat-Supplier.dc.html', '채팅'],
-      ['어제', 'check', 'teal', '1:1 문의에 답변이 왔습니다', '정산 계좌를 사업자 계좌로 바꿀 수 있나요? · 마자용 운영팀', '11월 2일', false, 'Help-Inquiry.dc.html', '내 문의'],
+      ['어제', 'check', 'teal', '1:1 문의에 답변이 왔습니다', '정산 계좌를 사업자 계좌로 바꿀 수 있나요? · 마자용 운영팀', '11월 2일', false, 'Help-Inquiry.dc.html?view=내+문의&who=공급자', '내 문의'],
       ['어제', 'redo', 'amber', '재견적 요청 — 의뢰인이 명세를 고쳤습니다', '라운드 테이블 · 좌석 배치도, 코스 메뉴 선택 외 3개 기능 · 이전 견적은 이전 명세 기준', '11월 2일', true, 'QuoteWrite-Supplier.dc.html', '다시 견적 내기'],
       ['지난 알림', 'x', '', '지원이 거절되었습니다 — 의뢰인이 다른 공급자와 계약했습니다', '하루 베이커리 · 전화 예약 대체, 대기 명단 외 1개 기능 · 자동 거절 · 채팅은 읽기 전용', '10월 30일', false, 'Apps-Supplier.dc.html', '내 지원'],
       ['지난 알림', 'x', '', '의뢰인이 지원을 거절했습니다', '면옥 · 포장 주문, 픽업 시간 선택 외 2개 기능 · 직접 거절', '10월 22일', false, 'Apps-Supplier.dc.html', '내 지원'],
@@ -55,12 +55,13 @@ export default class NotifySupplierScreen extends Screen {
     ];
     const dl = (this.props.view ?? '안 읽음 있음') === '기한 알림';
     const src = dl ? (sup ? SD : CD) : (sup ? S : C);
-    let nUn = 0;
+    // '전체 / 안 읽음'은 드롭다운 안 필터(알림 전체 페이지는 없다)
+    const onlyUn = (this.state || {}).filter === 'unread';
+    const nUn = src.filter(r => r[6] && !allRead).length;
     const order = [...new Set(src.map(r => r[0]))];
     const groups = order.map(lbl => {
-      const rows = src.filter(r => r[0] === lbl).map((r, i) => {
+      const rows = src.filter(r => r[0] === lbl && (!onlyUn || (r[6] && !allRead))).map((r, i) => {
         const un = r[6] && !allRead;
-        if (un) nUn++;
         return { cls: 'nr' + (i === 0 ? ' first' : '') + (un ? ' un' : ''), href: r[7], icCls: 'ic' + (r[2] ? ' ' + r[2] : ''), icon: I[r[1]],
           msg: r[3], sub: r[4], time: r[5], un: un, go: r[8] };
       });
@@ -68,6 +69,9 @@ export default class NotifySupplierScreen extends Screen {
     }).filter(g => g.rows.length);
     return {
       isClient: !sup, isSupplier: sup, groups: groups, nAll: src.length, nUn: nUn,
+      allTab: onlyUn ? '' : 'on', unTab: onlyUn ? 'on' : '', allCur: onlyUn ? null : 'true', unCur: onlyUn ? 'true' : null,
+      showAll: () => this.setState({ filter: 'all' }), showUn: () => this.setState({ filter: 'unread' }),
+      noRows: groups.length === 0,
       bellCls: 'bell open' + (nUn ? ' dot' : ''), hasUn: nUn > 0, allCls: 'allread' + (nUn ? '' : ' off'),
       sub: nUn ? '읽지 않은 알림이 ' + nUn + '건 있습니다. 누르면 그 화면으로 이동합니다.' : '모든 알림을 읽었습니다. 누르면 그 화면으로 이동합니다.'
     };

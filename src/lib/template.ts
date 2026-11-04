@@ -83,28 +83,40 @@ function parseAttrs(tag: string): Map<string, string> {
   return attrs;
 }
 
-export function render(source: string, values: Scope, ctx: RenderContext): string {
-  return renderNodes(parse(source), [values], ctx);
+// Elements whose content is plain text: an interpolated value inside them must not be
+// wrapped in a <span> (it would show up as literal "<span>" text).
+const RAW_TEXT = new Set(['textarea', 'title', 'option']);
+
+interface Walk {
+  ctx: RenderContext;
+  /** Name of the raw-text element we are inside, if any. */
+  rawText: string | null;
 }
 
-function renderNodes(nodes: Node[], scopes: Scope[], ctx: RenderContext): string {
+export function render(source: string, values: Scope, ctx: RenderContext): string {
+  return renderNodes(parse(source), [values], { ctx, rawText: null });
+}
+
+function renderNodes(nodes: Node[], scopes: Scope[], walk: Walk): string {
+  const { ctx } = walk;
   let html = '';
   for (const node of nodes) {
     switch (node.kind) {
       case 'raw':
-        html += renderText(node.text, scopes);
+        html += renderText(node.text, scopes, walk.rawText !== null);
         break;
       case 'tag':
+        trackRawText(node.source, walk);
         html += renderTag(node.source, scopes, ctx);
         break;
       case 'if':
-        if (evalAttr(node.value, scopes)) html += renderNodes(node.children, scopes, ctx);
+        if (evalAttr(node.value, scopes)) html += renderNodes(node.children, scopes, walk);
         break;
       case 'for': {
         const list = evalAttr(node.list, scopes);
         if (!Array.isArray(list)) break;
         list.forEach((item, index) => {
-          html += renderNodes(node.children, [...scopes, { [node.as]: item, $index: index }], ctx);
+          html += renderNodes(node.children, [...scopes, { [node.as]: item, $index: index }], walk);
         });
         break;
       }
@@ -113,14 +125,24 @@ function renderNodes(nodes: Node[], scopes: Scope[], ctx: RenderContext): string
   return html;
 }
 
-function renderText(text: string, scopes: Scope[]): string {
+function trackRawText(tag: string, walk: Walk): void {
+  const m = /^<(\/?)([\w:-]+)/.exec(tag);
+  if (!m) return;
+  const name = m[2]!.toLowerCase();
+  if (!RAW_TEXT.has(name)) return;
+  if (m[1]) {
+    if (walk.rawText === name) walk.rawText = null;
+  } else if (!tag.endsWith('/>')) walk.rawText = name;
+}
+
+function renderText(text: string, scopes: Scope[], plain = false): string {
   if (!text.includes('{{')) return text;
   return text.replace(HOLE_RE, (_, expr: string) => {
     const v = evaluate(expr, scopes);
     if (v === undefined || v === null || typeof v === 'boolean') return '';
     // The design runtime wraps every interpolated value in a span; keep that so
     // descendant selectors in the page styles match exactly as designed.
-    return `<span>${escapeHtml(String(v))}</span>`;
+    return plain ? escapeHtml(String(v)) : `<span>${escapeHtml(String(v))}</span>`;
   });
 }
 

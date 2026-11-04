@@ -5,14 +5,15 @@ export default class CancelClientScreen extends Screen {
   static override readonly id = "Cancel-Client";
   static override readonly title = "의뢰인 — 계약 취소 요청";
   static override readonly sharedStyles = true;
-  static override readonly props: PropSpecs = {"view": {"editor": "enum", "options": ["요청 작성", "공급자 사정 선택", "동의 대기", "이견 — 운영자 판정 중", "정산 확정"], "default": "요청 작성", "section": "상태"}};
+  static override readonly props: PropSpecs = {"view": {"editor": "enum", "options": ["요청 작성", "공급자 사정 선택", "동의 대기", "요청 철회 확인", "이견 — 운영자 판정 중", "정산 확정"], "default": "요청 작성", "section": "상태"}};
 
 
   renderVals(): Values {
     const v = this.props.view ?? '요청 작성';
     const supR = v === '공급자 사정 선택';
     const write = v === '요청 작성' || supR;
-    const wait = v === '동의 대기', disp = v === '이견 — 운영자 판정 중', done = v === '정산 확정';
+    const wd = v === '요청 철회 확인';
+    const wait = v === '동의 대기' || wd, disp = v === '이견 — 운영자 판정 중', done = v === '정산 확정';
     const sel = (supR || disp) ? 1 : 0;
     const R = [
       ['의뢰인 사정', '예치 후 24시간 안 · 납품 전이면 전액 환불. 그 뒤 납품 전이면 진행 중 구간의 50% 이상을 공급자에게 보상하고, 납품한 구간은 전액 지급합니다.'],
@@ -41,7 +42,7 @@ export default class CancelClientScreen extends Screen {
       { cls: 'r tot', k: '의뢰인 사정으로 판정되면', s: '보상 775,000원 − 보상분 수수료 38,750원을 뺀 금액 · 최준호님 736,250원', v: '2,441,250원' }
     ];
     return {
-      isWrite: write, isWait: wait, isDispute: disp, isDone: done, isDoneOrWait: !write,
+      isWd: wd, isWrite: write, isWait: wait, isDispute: disp, isDone: done, isDoneOrWait: !write,
       title: done ? '취소 정산 확정' : (write ? '계약 취소 요청' : '취소 요청 중'),
       sub: write ? '예치가 끝난 계약을 취소합니다. 사유를 고르면 정산이 어떻게 되는지 바로 보여 드립니다.'
                  : '보낸 취소 요청의 진행 상황입니다. 결과는 내 계약과 정산 내역에도 표시됩니다.',

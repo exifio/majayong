@@ -5,7 +5,7 @@ export default class AdminEventsScreen extends Screen {
   static override readonly id = "Admin-Events";
   static override readonly title = "운영자 — 이벤트 기록";
   static override readonly sharedStyles = true;
-  static override readonly props: PropSpecs = {"view": {"editor": "enum", "options": ["목록", "상세"], "default": "목록", "section": "상태"}};
+  static override readonly props: PropSpecs = {"view": {"editor": "enum", "options": ["목록", "상세"], "default": "목록", "section": "상태"}, "type": {"editor": "enum", "options": ["전체", "판정", "구간 지급", "항목 승인", "정산 처리", "결제 확정", "예치 완료", "결제 취소", "합의 완료", "블록 병합", "단가 수정", "비활성화", "견적 수정"], "default": "전체", "section": "상태"}};
 
 
   renderVals(): Values {
@@ -26,7 +26,13 @@ export default class AdminEventsScreen extends Screen {
       ['11월 2일 09:52', '운영자 김하늘', '운영', '비활성화', 'op', '블록 · 방문 후 리뷰 요청', '활성', '비활성', '리마인드 알림의 발송 시점으로 다룰 수 있음'],
       ['11월 1일 14:21', '공급자 최준호', '공급자', '견적 수정', 'su', '예약 달력, 예약금 결제 외 2개 기능 · 견적', '3,000,000원 · 42일', '3,100,000원 · 42일', '회차마다 환불 기준을 다르게 두려면 관리 화면 작업이 늘어남']
     ];
-    const rows = R.map((r, i) => ({ cls: det && i === 9 ? 'sel' : '', t: r[0], who: r[1], who2: r[2], kind: r[3], chipCls: K[r[4]], tg: r[5], bf: r[6], af: r[7], why: r[8] }));
-    return { rows: rows, isDetail: det };
+    // 종류 필터(`?type=`) — '전체'면 모든 행, 아니면 그 종류만
+    const type: string = this.props.type ?? '전체';
+    const all = type === '전체';
+    const rows = R.map((r, i) => ({ cls: det && i === 9 ? 'sel' : '', t: r[0], who: r[1], who2: r[2], kind: r[3], chipCls: K[r[4]], tg: r[5], bf: r[6], af: r[7], why: r[8] }))
+      .filter((r) => all || r.kind === type);
+    const kinds = (AdminEventsScreen.props.type?.options ?? []).map((o) => ({ t: o === '전체' ? '모든 종류' : o, sel: o === type ? 'selected' : '' }));
+    return { rows: rows, isDetail: det, kinds: kinds,
+      pg: all ? '1 – 12 · 전체 1,284건 · 최신 순' : `1 – ${rows.length} · ${type} ${rows.length}건 · 최신 순` };
   }
 }

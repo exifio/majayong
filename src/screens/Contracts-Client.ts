@@ -5,14 +5,14 @@ export default class ContractsClientScreen extends Screen {
   static override readonly id = "Contracts-Client";
   static override readonly title = "의뢰인 — 내 계약";
   static override readonly sharedStyles = true;
-  static override readonly props: PropSpecs = {"view": {"editor": "enum", "options": ["서명 대기", "예치 대기", "진행 중", "검수 대기", "완료", "취소 요청 중", "결렬 — 예치 기한 초과", "마감 지남"], "default": "진행 중", "section": "상태"}};
+  static override readonly props: PropSpecs = {"view": {"editor": "enum", "options": ["서명 대기", "예치 대기", "진행 중", "검수 대기", "완료", "취소 요청 중", "취소 요청 철회됨", "결렬 — 예치 기한 초과", "마감 지남"], "default": "진행 중", "section": "상태"}};
 
 
   renderVals(): Values {
     const role = '의뢰인';
     const view = this.props.view ?? '진행 중';
     const cl = role === '의뢰인';
-    const sign = view === '서명 대기', done = view === '완료', act = view === '진행 중', esc = view === '예치 대기', insp = view === '검수 대기', cx = view === '취소 요청 중', lapse = view === '결렬 — 예치 기한 초과', late = view === '마감 지남';
+    const sign = view === '서명 대기', done = view === '완료', wd = view === '취소 요청 철회됨', act = view === '진행 중' || wd, esc = view === '예치 대기', insp = view === '검수 대기', cx = view === '취소 요청 중', lapse = view === '결렬 — 예치 기한 초과', late = view === '마감 지남';
 
     // 단계: 서명 → 예치 → 중간 검수 · 지급 → 최종 검수 · 지급 → 완료
     const S = (st: string[], subs: string[]) => ['서명', '예치', '중간 검수 · 지급', '최종 검수 · 지급', '완료'].map((n, i) => ({ name: n, cls: st[i], sub: subs[i] }));
@@ -96,6 +96,15 @@ export default class ContractsClientScreen extends Screen {
       if (cl) { hasAct = false; }
       else { actLabel = '납품하기'; actHref = 'Deliver-Supplier.dc.html'; actCls = 'btn sm tint'; }
       cardCls = 'ck now2';
+    } else if (wd) {
+      steps = S(['done', 'done', 'now', 'todo', 'todo'], ['11월 4일', '11월 4일 · 3,255,000원', '작업 중', '', '']);
+      segs = [
+        { name: '중간 구간', chip: '작업 중', chipCls: 'chip blue', items: it(['예약 달력', ''], ['예약금 결제', '']), amtLabel: '지급 예정', amt: '1,550,000원', pay: '중간 항목이 모두 승인되면' },
+        { name: '최종 구간', chip: '시작 전', chipCls: 'chip out', items: it(['노쇼 기록', ''], ['리마인드 알림', '']), amtLabel: '지급 예정', amt: '1,550,000원', pay: '최종 항목이 모두 승인되면' }
+      ];
+      chip = '진행 중'; chipCls = 'chip blue'; dd = '작업 마감 12월 19일 · D-39'; ddCls = 'dd';
+      todo = '공급자가 중간 구간을 작업 중입니다. 멈췄던 3일만큼 작업 마감이 12월 19일로 늦춰졌습니다.';
+      actLabel = '검수하기'; actHref = 'Inspect-Client.dc.html'; hasAct = false; actOff = true;
     } else if (act) {
       steps = S(['done', 'done', 'done', 'now', 'todo'], ['11월 4일', '11월 4일 · 3,255,000원', '11월 27일 지급', '작업 중 · 마감 12월 16일', '']);
       segs = [
@@ -125,7 +134,7 @@ export default class ContractsClientScreen extends Screen {
     const cards = [{
       cls: cardCls, title: '예약 달력, 예약금 결제 외 2개 기능',
       who: cl ? '공급자 최준호 · ★ 4.8' : '의뢰인 온도 다이닝 · 정민재',
-      period: sign || esc || lapse ? '작업 기간 42일(예치 다음 날부터)' : '작업 기간 42일 · 11월 4일 ~ 12월 16일',
+      period: sign || esc || lapse ? '작업 기간 42일(예치 다음 날부터)' : (wd ? '작업 기간 42일 + 멈춘 3일 · 11월 4일 ~ 12월 19일' : '작업 기간 42일 · 11월 4일 ~ 12월 16일'),
       chip: chip, chipCls: chipCls, dd: dd, ddCls: ddCls, steps: steps, segs: segs, todo: todo,
       act: actLabel, actHref: actHref, actCls: actCls, hasAct: hasAct, actOff: actOff, hasCx: cl && act,
       late: cl && late, plainChat: !(cl && late), ln: ln, hasLn: !!ln
@@ -158,6 +167,7 @@ export default class ContractsClientScreen extends Screen {
     ];
 
     return {
+      isWd: wd,
       isClient: cl, isSupplier: !cl,
       chatHref: cl ? 'Chat-Client.dc.html' : 'Chat-Supplier.dc.html',
       sub: cl ? '계약의 진행 상태를 여기서 봅니다. 예치 · 납품 · 지급은 따로 알림을 보내지 않고 이 화면에 표시합니다.'

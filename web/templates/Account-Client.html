@@ -58,23 +58,30 @@
 .m-ok .t{font-size:14px;font-weight:600;color:var(--s900)}
 .m-ok .s{font-size:13px;color:var(--s600);margin-top:2px}
 .m-ok .chip{font-size:12px;padding:2px 8px;flex:none}
+.m-f .inp.err{border-color:var(--red-600);box-shadow:0 0 0 1px var(--red-600)}
+.m-err{font-size:14px;color:var(--red-600);margin:6px 0 0}
+.m-hint{font-size:13px;color:var(--s600);margin:6px 0 0;line-height:1.6}
+.m-info{background:#fff;border:1px solid var(--s200);border-radius:10px;padding:12px 14px;font-size:13px;color:var(--s600);line-height:1.7;margin:4px 0 0}
 </style>
 <style>
-.pg{min-height:100vh;position:relative;padding-bottom:393px;box-sizing:border-box}
-.gf{position:absolute;left:0;right:0;bottom:0;background:var(--s50);border-top:1px solid var(--s200);padding:40px 0 36px;font-size:14px;color:var(--s600);word-break:keep-all}
-.gf-top{display:flex;justify-content:space-between;gap:32px;flex-wrap:wrap;padding-bottom:28px;border-bottom:1px solid var(--s200)}
-.gf-brand{flex:1 1 260px;min-width:0}
-.gf-logo{display:inline-flex;align-items:center;font-size:19px;font-weight:600;letter-spacing:-0.4px;color:var(--s900)}
-.gf-brand p{margin:10px 0 0;line-height:1.6}
-.gf-cols{display:flex;gap:48px;flex-wrap:wrap}
-.gf-cols>div{display:flex;flex-direction:column;gap:9px;min-width:0}
-.gf-cols b{font-size:14px;font-weight:600;color:var(--s900);margin-bottom:2px}
-.gf-cols a{color:var(--s600);text-decoration:none}
-.gf-cols a.em{color:var(--s900);font-weight:600}
-.gf-bot{padding-top:22px;font-size:13px;line-height:1.75}
-.gf-bot p{margin:0 0 8px}
-.gf-biz i{display:inline-block;width:1px;height:10px;background:var(--s300);margin:0 9px;vertical-align:-1px}
-.gf-copy{color:var(--s400)}
+.pg{min-height:100vh;position:relative;padding-bottom:256px;box-sizing:border-box}
+.gf{position:absolute;left:0;right:0;bottom:0;background:var(--navy-900);padding:34px 0 30px;font-size:14px;color:#A9BDD6;word-break:keep-all}
+.gf a{color:#A9BDD6;text-decoration:none}
+.gf-top{display:flex;justify-content:space-between;align-items:center;gap:12px 32px;flex-wrap:wrap}
+.gf-brand{display:flex;align-items:center;gap:16px;flex-wrap:wrap;min-width:0}
+.gf-logo{display:inline-flex;align-items:center;font-size:19px;font-weight:600;letter-spacing:-0.4px;color:#fff}
+.gf-brand p{margin:0}
+.gf-cs{display:flex;align-items:baseline;gap:4px 16px;flex-wrap:wrap}
+.gf-cs b{color:#fff;font-weight:600;font-size:15px}
+.gf-nav{display:flex;flex-wrap:wrap;gap:10px 44px;margin:18px 0 0;padding:0 0 24px;border-bottom:1px solid rgba(255,255,255,.14)}
+.gf-nav>div{display:flex;align-items:baseline;gap:18px;flex-wrap:wrap}
+.gf-nav b{color:#fff;font-weight:600}
+.gf-nav a.em{color:#fff;font-weight:600}
+.gf-bot{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:24px;padding-top:20px;font-size:13px;line-height:1.75;color:#8FA6C2}
+.gf-bot p{margin:0}
+.gf-biz i{display:inline-block;width:1px;height:10px;background:rgba(255,255,255,.28);margin:0 9px;vertical-align:-1px}
+.gf-copy{align-self:end;text-align:right;white-space:nowrap}
+.gf-note{grid-column:1 / -1;margin-top:8px !important}
 </style>
 </helmet>
 
@@ -113,6 +120,9 @@
         <a class="on" href="Account-Client.dc.html">계정 설정</a>
       </nav>
 
+      <sc-if value="{{isTaxDone}}" hint-placeholder-val="{{ false }}">
+        <div class="ac-band"><div><b>증빙 정보를 바꿨습니다 · 11월 4일 16:10</b><p>다음 예치부터 바뀐 정보로 수수료 세금계산서를 발행합니다. 이미 발행된 증빙은 바뀌지 않습니다.</p></div></div>
+      </sc-if>
       <sc-if value="{{isDone}}" hint-placeholder-val="{{ false }}">
         <div class="ac-band"><div><b>비밀번호를 바꿨습니다 · 11월 3일 10:12</b><p>다른 기기에서는 다시 로그인해야 합니다. 바꾸지 않으셨다면 바로 비밀번호를 다시 바꿔 주세요.</p></div></div>
       </sc-if>
@@ -144,7 +154,7 @@
       <section class="ac-sec" aria-labelledby="h-pay">
         <h2 id="h-pay">결제 수단 · 증빙 정보</h2>
         <p class="ds" style="margin:0 0 4px">결제 수단은 저장하지 않습니다. 예치할 때마다 카드나 계좌이체를 고르고, 환불은 결제한 수단으로 돌려드립니다. 수수료 세금계산서는 마자용이, 대금 세금계산서는 사업자 공급자가 발행합니다.</p>
-        <div class="ac-row"><div><p class="k">증빙 정보</p><p class="v" style="margin:0">사업자등록번호 끝자리 4417 · 세금계산서 받을 이메일 tax.ondo@example.com</p></div><a class="btn sm gh" href="#tax">바꾸기</a></div>
+        <div class="ac-row"><div><p class="k">증빙 정보</p><p class="v" style="margin:0">{{taxNow}}</p></div><a class="btn sm gh" href="?view=증빙+정보+바꾸기">바꾸기</a></div>
       </section>
 
       <section class="ac-sec ac-out" aria-labelledby="h-out">
@@ -174,6 +184,23 @@
         </ul>
       </div>
       <div class="mf"><a class="btn sm gh" href="Account-Client.dc.html">취소</a><a class="btn sm" href="Account-Client.dc.html">인증 메일 보내기</a></div>
+    </section>
+  </sc-if>
+
+  <sc-if value="{{isTax}}" hint-placeholder-val="{{ false }}">
+    <div class="m-scrim" aria-hidden="true"></div>
+    <section class="m-dlg" role="dialog" aria-modal="true" aria-label="증빙 정보 바꾸기">
+      <div class="mh"><div><h2>증빙 정보 바꾸기</h2><p>수수료 세금계산서를 받을 정보입니다. 바꾸면 다음 예치부터 적용됩니다.</p></div><button type="button" class="x" aria-label="닫기" data-action-href="?view=기본">×</button></div>
+      <div class="mb">
+        <p class="m-cur">지금<b>사업자등록번호 끝자리 4417 · tax.ondo@example.com</b></p>
+        <div class="m-f"><label class="lbl" for="tx1">사업자등록번호</label><input class="{{taxInpCls}}" id="tx1" type="text" value="{{taxNo}}" placeholder="000-00-00000">
+          <sc-if value="{{taxErr}}" hint-placeholder-val="{{ false }}"><p class="m-err">사업자등록번호 10자리를 넣어 주세요</p></sc-if>
+          <sc-if value="{{taxOk}}" hint-placeholder-val="{{ true }}"><p class="m-hint">숫자 10자리. 하이픈은 자동으로 넣습니다</p></sc-if></div>
+        <div class="m-f"><label class="lbl" for="tx2">세금계산서 받을 이메일</label><input class="inp" id="tx2" type="email" value="tax.ondo@example.com" placeholder="이메일">
+          <p class="m-hint">계정 이메일과 달라도 됩니다. 상대에게는 보이지 않습니다</p></div>
+        <div class="m-info">사업자가 아니면 두 칸을 비워 두세요. 카드 결제는 카드 매출전표, 계좌이체는 결제 화면에서 현금영수증 번호를 넣으면 됩니다. 이미 발행된 증빙은 바뀌지 않습니다.</div>
+      </div>
+      <div class="mf"><a class="btn sm gh" href="?view=기본">취소</a><a class="btn sm" href="?view=증빙+정보+저장+완료">저장하기</a></div>
     </section>
   </sc-if>
 
@@ -218,17 +245,17 @@
           <span class="gf-logo"><span class="mark" aria-hidden="true"><i style="height:9px"></i><i style="height:17px"></i><i style="height:12px;opacity:.55"></i></span>마자용</span>
           <p>소상공인을 위한 웹 외주 요구사항 정의 · 매칭 플랫폼</p>
         </div>
-        <div class="gf-cols">
-          <div><b>서비스</b><a href="Main.dc.html">의뢰인 안내</a><a href="Supplier-Landing.dc.html">공급자 안내</a></div>
-          <div><b>고객센터</b><a href="Help.dc.html">자주 묻는 질문</a><a href="Help-Inquiry.dc.html">1:1 문의</a><a href="Help.dc.html">공지사항</a></div>
-          <div><b>정책</b><a href="Terms.dc.html">이용약관</a><a class="em" href="Terms.dc.html">개인정보 처리방침</a><a href="Terms.dc.html">명세 비밀유지</a><a href="Terms.dc.html">중개자 고지</a></div>
-          <div class="gf-cs"><b>고객센터 1600-0000</b><span>평일 10:00–18:00</span><span>점심 12:00–13:00 · 주말 · 공휴일 휴무</span><span>help@majayong.example</span></div>
-        </div>
+        <div class="gf-cs"><b>고객센터 1600-0000</b><span>평일 10:00–18:00</span><span>점심 12:00–13:00 · 주말 · 공휴일 휴무</span><span>help@majayong.example</span></div>
       </div>
+      <nav class="gf-nav" aria-label="사이트 링크">
+        <div><b>서비스</b><a href="Main.dc.html">의뢰인 안내</a><a href="Supplier-Landing.dc.html">공급자 안내</a></div>
+        <div><b>고객센터</b><a href="Help.dc.html">자주 묻는 질문</a><a href="Help-Inquiry.dc.html">1:1 문의</a><a href="Help.dc.html?view=공지사항">공지사항</a></div>
+        <div><b>정책</b><a href="Terms.dc.html?view=이용약관">이용약관</a><a class="em" href="Terms.dc.html?view=개인정보+처리방침">개인정보 처리방침</a><a href="Terms.dc.html?view=명세+비밀유지">명세 비밀유지</a><a href="Terms.dc.html?view=중개자+고지">중개자 고지</a></div>
+      </nav>
       <div class="gf-bot">
         <p class="gf-biz">상호 로켓단<i></i>대표 김로켓<i></i>사업자등록번호 000-00-00000<i></i>통신판매업 신고 제2026-서울마포-0000호<br>주소 서울특별시 마포구 예시로 00, 0층<i></i>개인정보 보호책임자 박예시<i></i>이메일 help@majayong.example</p>
-        <p class="gf-note">마자용은 통신판매중개자로서 거래 당사자가 아니며, 의뢰인과 공급자 사이 계약의 이행 책임은 각 당사자에게 있습니다. 대금 예치와 정산은 마자용이 관리합니다.</p>
         <p class="gf-copy">© 2026 로켓단. All rights reserved.</p>
+        <p class="gf-note">마자용은 통신판매중개자로서 거래 당사자가 아니며, 의뢰인과 공급자 사이 계약의 이행 책임은 각 당사자에게 있습니다. 대금 예치와 정산은 마자용이 관리합니다.</p>
       </div>
     </div>
   </footer>

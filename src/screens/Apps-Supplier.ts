@@ -5,12 +5,12 @@ export default class AppsSupplierScreen extends Screen {
   static override readonly id = "Apps-Supplier";
   static override readonly title = "공급자 — 내 지원 현황";
   static override readonly sharedStyles = true;
-  static override readonly props: PropSpecs = {"view": {"editor": "enum", "options": ["전체", "선택됨(서명 대기)", "보류 중", "지원 철회 확인", "제출 완료"], "default": "전체", "section": "상태"}};
+  static override readonly props: PropSpecs = {"view": {"editor": "enum", "options": ["전체", "선택됨(서명 대기)", "보류 중", "지원 철회 확인", "지원 철회됨", "제출 완료"], "default": "전체", "section": "상태"}};
 
 
   renderVals(): Values {
     const v = this.props.view ?? '전체';
-    const wd = v === '지원 철회 확인';
+    const wd = v === '지원 철회 확인', wdDone = v === '지원 철회됨';
     const sent = v === '제출 완료';
     const picked = v === '선택됨(서명 대기)', held = v === '보류 중' || wd;
     const base = (o: Values) => Object.assign({ cls: 'pj', chipCls: 'chip', hasNote: false, ntCls: 'nt', note: '', hasTx: false, tx: '',
@@ -42,7 +42,7 @@ export default class AppsSupplierScreen extends Screen {
       amount: '1,800,000원', amtSub: '28일 · 예상 수령 1,710,000원',
       hasNote: !held, note: '의뢰인이 다른 공급자와 계약을 진행 중입니다(예치 전). 결렬되면 다시 선택될 수 있습니다.',
       hasTx: true, tx: '지원 철회', btnCls: 'btn sm gh', href: 'Chat-Supplier.dc.html', action: '채팅 보기', expand: held });
-    let rows = held ? [hold] : [ondo, review, requote, hold];
+    let rows = held ? [hold] : wdDone ? [ondo, review, requote] : [ondo, review, requote, hold];
     if (sent) {
       rows.length = 0;
       rows.push(base({ cls: 'pj newr', chip: '검토 중', when: '방금 제출 · 마감 11월 3일',
@@ -65,9 +65,12 @@ export default class AppsSupplierScreen extends Screen {
         note: '서명 기한 7일이 지나 결렬되었습니다. 이 지원은 거절로 처리되었습니다.', href: 'Chat-Supplier.dc.html', action: '채팅 보기' }
     ];
     if (sent) ended.shift();
-    const T = sent ? [['전체', 5], ['검토 중', 3], ['문의 중', 0], ['선택됨', 0], ['보류', 0], ['종료', 2]] : [['전체', 7], ['검토 중', 1], ['문의 중', picked ? 1 : 2], ['선택됨', picked ? 1 : 0], ['보류', 1], ['종료', 3]];
+    if (wdDone) ended.unshift({ chip: '철회함', chipCls: 'chip out', when: '11월 4일', title: '단골 등급 관리, 재방문 알림 외 1개 기능', client: '브루잉 랩 · 카페', applied: '10월 25일 지원',
+      amtLabel: '내 견적 · 1회차', amount: '1,800,000원', amtSub: '28일',
+      note: '지원을 철회했습니다. 임시 계약이 결렬되어도 이 프로젝트에서 다시 선택될 수 없고, 채팅은 읽기 전용입니다.', href: 'Chat-Supplier.dc.html', action: '채팅 보기' });
+    const T = sent ? [['전체', 5], ['검토 중', 3], ['문의 중', 0], ['선택됨', 0], ['보류', 0], ['종료', 2]] : [['전체', 7], ['검토 중', 1], ['문의 중', picked ? 1 : 2], ['선택됨', picked ? 1 : 0], ['보류', wdDone ? 0 : 1], ['종료', wdDone ? 4 : 3]];
     const tabHref: Record<string, string> = { '전체': '?view=전체', '보류': '?view=보류+중' };
     const tabs = T.map(t => ({ name: t[0], n: t[1], cls: (held ? t[0] === '보류' : t[0] === '전체') ? 'on' : '', href: tabHref[t[0] as string] ?? '#apps' }));
-    return { sent: sent, picked: picked, rows: rows, ended: ended, showEnded: !held, tabs: tabs, wdOpen: wd };
+    return { wdDone: wdDone, nEnded: ended.length, sent: sent, picked: picked, rows: rows, ended: ended, showEnded: !held, tabs: tabs, wdOpen: wd };
   }
 }

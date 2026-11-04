@@ -5,7 +5,7 @@ export default class HelpScreen extends Screen {
   static override readonly id = "Help";
   static override readonly title = "공통 — 고객센터";
   static override readonly sharedStyles = true;
-  static override readonly props: PropSpecs = {"who": {"editor": "enum", "options": ["의뢰인", "공급자", "비로그인"], "default": "비로그인", "section": "상태"}, "view": {"editor": "enum", "options": ["자주 묻는 질문", "검색 결과"], "default": "자주 묻는 질문", "section": "상태"}};
+  static override readonly props: PropSpecs = {"who": {"editor": "enum", "options": ["의뢰인", "공급자", "비로그인"], "default": "비로그인", "section": "상태"}, "view": {"editor": "enum", "options": ["자주 묻는 질문", "검색 결과", "공지 펼침", "공지사항"], "default": "자주 묻는 질문", "section": "상태"}, "cat": {"editor": "enum", "options": ["전체", "의뢰인", "공급자", "결제 · 정산", "계정"], "default": "전체", "section": "상태"}};
 
 
   renderVals(): Values {
@@ -28,10 +28,17 @@ export default class HelpScreen extends Screen {
       ['계정', '의뢰인과 공급자를 한 계정으로 함께 쓸 수 있나요?', '역할은 가입할 때 정해지고 바꿀 수 없습니다. 두 역할이 모두 필요하면 다른 이메일로 계정을 하나 더 만들어 주세요.', '', ''],
       ['계정', '계약 전에 연락처를 주고받을 수 있나요?', '계약을 맺기 전에는 채팅의 전화번호 · 이메일 · 메신저 아이디가 자동으로 가려집니다. 양쪽이 서명해 계약이 체결되면 그때부터 주고받을 수 있습니다.', '', '']
     ];
-    const pick = search ? [3, 1, 2] : [0, 6, 7, 8, 1, 2, 3, 11, 4, 9, 10, 5, 12, 13];
-    const faqs = pick.map((i, k) => { const f = F[i]; const open = k === 0;
-      return { cls: open ? 'hc-q open' : 'hc-q', open: open, arrow: open ? '▴' : '▾', cat: f[0], q: f[1], a: f[2], hasGo: open && !!f[3] && !guest, go: f[3], goHref: f[4] }; });
-    const tabs = ['전체', '의뢰인', '공급자', '결제 · 정산', '계정'].map((n, i) => ({ name: n, cls: i === 0 ? 'on' : '' }));
+    const st = this.state || {};
+    const cat: string = search ? '전체' : (this.props.cat ?? '전체');
+    const order = search ? [3, 1, 2] : [0, 6, 7, 8, 1, 2, 3, 11, 4, 9, 10, 5, 12, 13];
+    // 분류 탭: 같은 목록을 그 분류로 거르고 첫 줄을 펼친다. 줄을 누르면 그 자리에서 펼침 — 한 번에 하나만
+    const pick = cat === '전체' ? order : order.filter(i => F[i][0] === cat);
+    const fAt = v + '|' + cat;
+    const fOpen = st.fAt === fAt && typeof st.fOpen === 'number' ? st.fOpen : pick[0];
+    const faqs = pick.map((i) => { const f = F[i]; const open = i === fOpen;
+      return { cls: open ? 'hc-q open' : 'hc-q', open: open, arrow: open ? '▴' : '▾', cat: f[0], q: f[1], a: f[2], hasGo: open && !!f[3] && !guest, go: f[3], goHref: f[4],
+        toggle: () => this.setState({ fAt: fAt, fOpen: open ? -1 : i }) }; });
+    const tabs = ['전체', '의뢰인', '공급자', '결제 · 정산', '계정'].map(n => ({ name: n, cls: n === cat ? 'on' : '', href: '?cat=' + n.replace(/ /g, '+'), cur: n === cat ? 'page' : null }));
     const types = ['이용 방법', '결제 · 예치', '검수 · 지급', '계약 취소', '계정', '기타'].map(n => ({ name: n, on: n === '결제 · 예치' ? 'true' : 'false', cls: n === '결제 · 예치' ? 'on' : '' }));
     const mine = cl
       ? [{ st: '답변 완료', cls: 'chip teal', t: '예치했는데 내 계약에 확인 중으로 나와요', d: '11월 4일' }, { st: '답변 완료', cls: 'chip teal', t: '예치 영수증은 어디서 받나요?', d: '11월 4일' }]
@@ -47,17 +54,26 @@ export default class HelpScreen extends Screen {
       { st: '답변 완료', sCls: 'chip teal', cat: '계정', t: '정산 계좌를 사업자 계좌로 바꿀 수 있나요?', d: '11월 2일' }
     ];
     const myItems = MY.map((m, i) => Object.assign({}, m, { cls: 'hc-mr' + (i === 0 ? ' sel' : '') }));
-    const notices = [
-      { tag: '안내', cls: 'chip blue', title: '예치 · 검수 기한 하루 전에 알림으로 알려 드립니다', date: '11월 3일' },
-      { tag: '정책', cls: 'chip', title: '수수료 증빙과 세금계산서 발행 방식 안내', date: '11월 1일' },
-      { tag: '안내', cls: 'chip blue', title: '마자용 서비스를 시작합니다', date: '10월 27일' }
+    const nOpen = v === '공지 펼침', nAll = v === '공지사항';
+    const N = [
+      ['안내', 'chip blue', '예치 · 검수 기한 하루 전에 알림으로 알려 드립니다', '11월 3일', '예치 기한(계약 체결 후 3일)과 검수 기한(납품 후 7일) 하루 전에 화면 위 알림으로 알려 드립니다. 기한이 지나면 예치는 자동 결렬, 검수는 자동 승인됩니다. 이메일 · 문자 알림은 보내지 않습니다.', guest ? '' : '내 계약 보기', cl ? 'Contracts-Client.dc.html' : 'Contracts-Supplier.dc.html'],
+      ['정책', 'chip', '수수료 증빙과 세금계산서 발행 방식 안내', '11월 1일', '마자용 수수료(5%) 증빙은 마자용이 발행합니다 — 사업자는 세금계산서, 개인은 카드 매출전표 또는 현금영수증. 대금 세금계산서는 사업자 공급자가 의뢰인에게 직접 발행하고, 개인 공급자는 지급 때 3.3%를 원천징수합니다.', '', ''],
+      ['안내', 'chip blue', '1:1 문의 답변은 알림과 \'내 문의\'에서 확인하세요', '10월 30일', '1:1 문의에 답변이 오면 알림으로 알려 드리고, 고객센터 › 1:1 문의 › 내 문의에서 다시 볼 수 있습니다. 평일 기준 하루 안에 답변 드립니다.', '1:1 문의', 'Help-Inquiry.dc.html'],
+      ['정책', 'chip', '계약 전 연락처는 자동으로 가려집니다', '10월 28일', '계약이 체결되기 전에는 채팅 · 견적 메시지의 전화번호 · 이메일 · 메신저 아이디가 \'연락처 가림\'으로 바뀝니다. 플랫폼 밖 거래를 권하는 메시지는 \'신고\'를 눌러 주세요.', '', ''],
+      ['안내', 'chip blue', '마자용 서비스를 시작합니다', '10월 27일', '예약 기반 음식점부터 시작합니다. 한 문장을 적으면 화면 초안이 먼저 나오고, 고친 그대로 명세가 되어 공급자의 견적을 받을 수 있습니다.', '', '']
     ];
+    const NI = nAll ? [0, 1, 2, 3, 4] : [0, 1, 4];
+    // 공지 줄: 그 자리에서 펼침, 한 번에 하나만. 기본은 모두 접힘, '공지 펼침' · '공지사항'은 첫 줄 펼침
+    const nOpenAt = st.nAt === v && typeof st.nOpen === 'number' ? st.nOpen : (nOpen || nAll ? NI[0] : -1);
+    const notices = NI.map((i) => { const n = N[i]; const open = i === nOpenAt;
+      return { tag: n[0], cls: n[1], title: n[2], date: n[3], body: n[4], go: n[5], goHref: n[6], hasGo: !!n[5], open: open, arrow: open ? '▴' : '▾', liCls: open ? 'open' : '',
+        toggle: () => this.setState({ nAt: v, nOpen: open ? -1 : i }) }; });
     return {
-      guest: guest, isClient: cl, isSupplier: sp, member: !guest,
+      who: who, guest: guest, isClient: cl, isSupplier: sp, member: !guest,
       query: search ? '환불' : '',
       quick: ['예상 금액', '환불 · 취소', '검수 기한', '수수료', '세금계산서', '계정 · 역할'],
-      showFaq: !form && !myv, showForm: form || (myv && guest), showMy: myv && !guest, myItems: myItems, md: MY[0], myCount: MY.length + '건', showMine: !guest, sent: sent, isSearch: search, showTabs: !search,
-      faqTitle: search ? '\'환불\' 검색 결과' : '자주 묻는 질문', faqCount: search ? '3건' : '14개',
+      showFaq: !form && !myv && !nAll, nCount: nAll ? '5개' : '', nLink: nAll ? '자주 묻는 질문 보기' : '전체 보기', nHref: nAll ? '?view=자주+묻는+질문' : '?view=공지사항', showForm: form || (myv && guest), showMy: myv && !guest, myItems: myItems, md: MY[0], myCount: MY.length + '건', showMine: !guest, sent: sent, isSearch: search, showTabs: !search,
+      faqTitle: search ? '\'환불\' 검색 결과' : '자주 묻는 질문', faqCount: search ? '3건' : pick.length + '개',
       faqs: faqs, tabs: tabs, types: types,
       relContract: '예약 달력, 예약금 결제 외 2개 기능 · ' + (cl ? '최준호' : '온도 다이닝'),
       formTitle: cl ? '예치했는데 내 계약에 확인 중으로 나와요' : '중간 구간 지급 예정일이 궁금합니다',

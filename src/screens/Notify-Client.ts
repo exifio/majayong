@@ -25,7 +25,7 @@ export default class NotifyClientScreen extends Screen {
     };
     // [그룹, 아이콘, 색, 메시지, 프로젝트 · 보조, 시각, 안 읽음, 이동 화면, 이동 이름]
     const C: NotifyRow[] = [
-      ['오늘', 'check', 'teal', '1:1 문의에 답변이 왔습니다', '예치했는데 내 계약에 확인 중으로 나와요 · 마자용 운영팀', '15:02', true, 'Help-Inquiry.dc.html', '내 문의'],
+      ['오늘', 'check', 'teal', '1:1 문의에 답변이 왔습니다', '예치했는데 내 계약에 확인 중으로 나와요 · 마자용 운영팀', '15:02', true, 'Help-Inquiry.dc.html?view=내+문의', '내 문의'],
       ['오늘', 'msg', 'blue', '최준호님의 새 메시지 1개', '예약 달력, 예약금 결제 외 2개 기능 · 견적을 3,100,000원으로 고쳤다는 안내', '14:21', true, 'Chat-Client.dc.html', '채팅'],
       ['오늘', 'doc', 'blue', '스튜디오 넛이 지원했습니다', '예약 달력, 예약금 결제 외 2개 기능 · 지원 3건째', '09:15', true, 'Compare-Client.dc.html', '제안 비교'],
       ['어제', 'cut', 'amber', '김세라님과의 임시 계약이 결렬되었습니다 — 7일 안에 서명이 없었습니다', '포장 주문 접수 외 1개 기능 · 예치 전이라 오간 금액은 없습니다', '18:00', true, 'Contracts-Client.dc.html', '내 계약'],
@@ -56,12 +56,13 @@ export default class NotifyClientScreen extends Screen {
     ];
     const dl = (this.props.view ?? '안 읽음 있음') === '기한 알림';
     const src = dl ? (sup ? SD : CD) : (sup ? S : C);
-    let nUn = 0;
+    // '전체 / 안 읽음'은 드롭다운 안 필터(알림 전체 페이지는 없다)
+    const onlyUn = (this.state || {}).filter === 'unread';
+    const nUn = src.filter(r => r[6] && !allRead).length;
     const order = [...new Set(src.map(r => r[0]))];
     const groups = order.map(lbl => {
-      const rows = src.filter(r => r[0] === lbl).map((r, i) => {
+      const rows = src.filter(r => r[0] === lbl && (!onlyUn || (r[6] && !allRead))).map((r, i) => {
         const un = r[6] && !allRead;
-        if (un) nUn++;
         return { cls: 'nr' + (i === 0 ? ' first' : '') + (un ? ' un' : ''), href: r[7], icCls: 'ic' + (r[2] ? ' ' + r[2] : ''), icon: I[r[1]],
           msg: r[3], sub: r[4], time: r[5], un: un, go: r[8] };
       });
@@ -69,6 +70,9 @@ export default class NotifyClientScreen extends Screen {
     }).filter(g => g.rows.length);
     return {
       isClient: !sup, isSupplier: sup, groups: groups, nAll: src.length, nUn: nUn,
+      allTab: onlyUn ? '' : 'on', unTab: onlyUn ? 'on' : '', allCur: onlyUn ? null : 'true', unCur: onlyUn ? 'true' : null,
+      showAll: () => this.setState({ filter: 'all' }), showUn: () => this.setState({ filter: 'unread' }),
+      noRows: groups.length === 0,
       bellCls: 'bell open' + (nUn ? ' dot' : ''), hasUn: nUn > 0, allCls: 'allread' + (nUn ? '' : ' off'),
       sub: nUn ? '읽지 않은 알림이 ' + nUn + '건 있습니다. 누르면 그 화면으로 이동합니다.' : '모든 알림을 읽었습니다. 누르면 그 화면으로 이동합니다.'
     };

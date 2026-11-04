@@ -5,13 +5,13 @@ export default class ContractSupplierScreen extends Screen {
   static override readonly id = "Contract-Supplier";
   static override readonly title = "공급자 — 계약·전자서명";
   static override readonly sharedStyles = true;
-  static override readonly props: PropSpecs = {"state": {"editor": "enum", "options": ["상대가 먼저 서명", "아무도 서명 전", "내가 먼저 서명", "양쪽 서명 완료", "서명 거절 확인", "결렬 — 기한 초과"], "default": "상대가 먼저 서명", "section": "상태"}};
+  static override readonly props: PropSpecs = {"state": {"editor": "enum", "options": ["상대가 먼저 서명", "아무도 서명 전", "내가 먼저 서명", "양쪽 서명 완료", "서명 거절 확인", "결렬 — 서명 거절함", "결렬 — 기한 초과"], "default": "상대가 먼저 서명", "section": "상태"}};
 
 
   renderVals(): Values {
     const view: string = '공급자';
     const st0 = this.props.state ?? '상대가 먼저 서명';
-    const rejectOpen = st0 === '서명 거절 확인', broken = st0 === '결렬 — 기한 초과';
+    const rejectOpen = st0 === '서명 거절 확인', refused = st0 === '결렬 — 서명 거절함', broken = st0 === '결렬 — 기한 초과' || refused;
     const state = rejectOpen ? '상대가 먼저 서명' : (broken ? '아무도 서명 전' : st0);
     const isClient = view === '의뢰인';
     const won = (n: number) => n.toLocaleString('ko-KR');
@@ -24,13 +24,15 @@ export default class ContractSupplierScreen extends Screen {
     const mine = isClient ? cli : sup;
     const other = isClient ? sup : cli;
     const signed = (on: boolean, at: string) => on ? { chip: '서명 완료', cls: 'teal', at: ' · 11월 4일 ' + at } : (broken ? { chip: '서명 안 함', cls: 'out', at: '' } : { chip: '대기 중', cls: 'amber', at: '' });
-    const S = signed(sup, '15:20'), C = signed(cli, '16:05');
+    const S = refused ? { chip: '서명 거절', cls: 'out', at: ' · 11월 5일 10:40' } : signed(sup, '15:20'), C = refused ? { chip: '대기 중', cls: 'out', at: '' } : signed(cli, '16:05');
     let chip = '임시 계약 · 서명 대기', chipCls = 'amber';
     if (mine && !both) { chip = '임시 계약 · 상대 서명 대기'; chipCls = 'amber'; }
     if (both) { chip = isClient ? '계약 체결 · 예치 대기' : '계약 체결 · 의뢰인 예치 대기'; chipCls = isClient ? 'amber' : 'blue'; }
     if (broken) { chip = '결렬'; chipCls = 'out'; }
     return {
       isClient: isClient, isSupplier: !isClient,
+      brokeWhy: refused ? ' · 서명을 거절했습니다' : '',
+      brokeText: refused ? '11월 5일 서명을 거절해 임시 계약이 바로 결렬되었습니다. 정민재님에게 알림이 갔습니다.' : '11월 10일까지 두 분 모두 서명하지 않아 결렬되었습니다.',
       chip: chip, chipCls: chipCls,
       supChip: S.chip, supCls: S.cls, supAt: S.at,
       cliChip: C.chip, cliCls: C.cls, cliAt: C.at,

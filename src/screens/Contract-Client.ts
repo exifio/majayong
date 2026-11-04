@@ -5,7 +5,7 @@ export default class ContractClientScreen extends Screen {
   static override readonly id = "Contract-Client";
   static override readonly title = "의뢰인 — 계약·전자서명";
   static override readonly sharedStyles = true;
-  static override readonly props: PropSpecs = {"state": {"editor": "enum", "options": ["상대가 먼저 서명", "아무도 서명 전", "내가 먼저 서명", "양쪽 서명 완료", "결렬 — 공급자 서명 거절", "결렬 — 기한 초과", "임시 계약 취소 확인"], "default": "상대가 먼저 서명", "section": "상태"}};
+  static override readonly props: PropSpecs = {"state": {"editor": "enum", "options": ["상대가 먼저 서명", "아무도 서명 전", "내가 먼저 서명", "양쪽 서명 완료", "결렬 — 공급자 서명 거절", "결렬 — 기한 초과", "임시 계약 취소 확인", "결렬 — 임시 계약 취소함"], "default": "상대가 먼저 서명", "section": "상태"}};
 
 
   renderVals(): Values {
@@ -15,7 +15,7 @@ export default class ContractClientScreen extends Screen {
     const won = (n: number) => n.toLocaleString('ko-KR');
     // 누가 서명했는지 — 공급자 / 의뢰인
     let sup = false, cli = false;
-    const refused = state === '결렬 — 공급자 서명 거절', expired = state === '결렬 — 기한 초과', broke = refused || expired;
+    const refused = state === '결렬 — 공급자 서명 거절', expired = state === '결렬 — 기한 초과', canceled = state === '결렬 — 임시 계약 취소함', broke = refused || expired || canceled;
     const cancelM = state === '임시 계약 취소 확인';
     if (state === '상대가 먼저 서명' || cancelM) { if (isClient) sup = true; else cli = true; }
     if (state === '내가 먼저 서명') { if (isClient) cli = true; else sup = true; }
@@ -29,12 +29,12 @@ export default class ContractClientScreen extends Screen {
     if (broke) { chip = '결렬'; chipCls = 'out'; }
     if (mine && !both) { chip = '임시 계약 · 상대 서명 대기'; chipCls = 'amber'; }
     if (both) { chip = isClient ? '계약 체결 · 예치 대기' : '계약 체결 · 의뢰인 예치 대기'; chipCls = isClient ? 'amber' : 'blue'; }
-    const supSt = refused ? { chip: '서명 거절', cls: 'out', at: ' · 11월 5일 10:40' } : (expired ? { chip: '서명 안 함', cls: 'out', at: '' } : S);
-    const cliSt = expired ? { chip: '서명 안 함', cls: 'out', at: '' } : (refused ? { chip: '대기 중', cls: 'out', at: '' } : C);
+    const supSt = canceled ? { chip: '서명함', cls: 'out', at: ' · 11월 4일 11:20' } : refused ? { chip: '서명 거절', cls: 'out', at: ' · 11월 5일 10:40' } : (expired ? { chip: '서명 안 함', cls: 'out', at: '' } : S);
+    const cliSt = canceled ? { chip: '취소함', cls: 'out', at: ' · 11월 5일 09:30' } : expired ? { chip: '서명 안 함', cls: 'out', at: '' } : (refused ? { chip: '대기 중', cls: 'out', at: '' } : C);
     return {
       isClient: isClient, isSupplier: !isClient, broke: broke, cancelM: cancelM,
-      brokeWhy: refused ? '공급자가 서명을 거절했습니다' : '서명 기한이 지났습니다',
-      brokeText: refused ? '11월 5일 최준호님이 계약서 서명을 거절해 임시 계약이 바로 결렬되었습니다.' : '11월 10일까지 두 분의 서명이 모두 끝나지 않아 임시 계약이 결렬되었습니다.',
+      brokeWhy: canceled ? '임시 계약을 취소했습니다' : refused ? '공급자가 서명을 거절했습니다' : '서명 기한이 지났습니다',
+      brokeText: canceled ? '11월 5일 임시 계약을 취소해 결렬되었습니다. 최준호님에게 알림이 갔습니다.' : refused ? '11월 5일 최준호님이 계약서 서명을 거절해 임시 계약이 바로 결렬되었습니다.' : '11월 10일까지 두 분의 서명이 모두 끝나지 않아 임시 계약이 결렬되었습니다.',
       chip: chip, chipCls: chipCls,
       supChip: supSt.chip, supCls: supSt.cls, supAt: supSt.at,
       cliChip: cliSt.chip, cliCls: cliSt.cls, cliAt: cliSt.at,

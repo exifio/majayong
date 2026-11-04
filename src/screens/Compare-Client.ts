@@ -5,13 +5,13 @@ export default class CompareClientScreen extends Screen {
   static override readonly id = "Compare-Client";
   static override readonly title = "의뢰인 — 제안 비교";
   static override readonly sharedStyles = true;
-  static override readonly props: PropSpecs = {"view": {"editor": "enum", "options": ["지원 3건", "지원 1건", "이전 명세 기준", "임시 계약 중", "결렬 후 선택 중", "지원 0건 · 마감", "거절 확인"], "default": "지원 3건", "section": "상태"}};
+  static override readonly props: PropSpecs = {"view": {"editor": "enum", "options": ["지원 3건", "지원 1건", "이전 명세 기준", "임시 계약 중", "결렬 후 선택 중", "지원 0건 · 마감", "거절 확인", "거절함"], "default": "지원 3건", "section": "상태"}};
 
 
   renderVals(): Values {
     const view0 = this.props.view ?? '지원 3건';
-    const rejM = view0 === '거절 확인';
-    const view = rejM ? '지원 3건' : view0;
+    const rejM = view0 === '거절 확인', rejDone = view0 === '거절함';
+    const view = rejM || rejDone ? '지원 3건' : view0;
     const stale = view === '이전 명세 기준';
     const held = view === '임시 계약 중';
     const broke = view === '결렬 후 선택 중';
@@ -34,26 +34,28 @@ export default class CompareClientScreen extends Screen {
     if (zero) list = [];
     const sups = list.map(p => {
       const chosen = held && p.id === 'cjh';
-      const locked = (held && !chosen) || stale;
+      const gone = rejDone && p.id === 'ksr';
+      const locked = (held && !chosen) || stale || gone;
       let chip = '', chipCls = 'chip';
       if (chosen) { chip = '임시 계약 · 서명 대기'; chipCls = 'chip amber'; }
       else if (held) { chip = '보류'; chipCls = 'chip'; }
       else if (stale) { chip = '이전 명세 기준'; chipCls = 'chip out'; }
-      const why = held && !chosen ? '임시 계약이 끝나야 계약할 수 있습니다' : (stale ? '새 견적이 들어오면 계약할 수 있습니다' : '');
+      if (gone) { chip = '직접 거절'; chipCls = 'chip out'; }
+      const why = gone ? '11월 2일 거절함 · 되돌릴 수 없습니다' : held && !chosen ? '임시 계약이 끝나야 계약할 수 있습니다' : (stale ? '새 견적이 들어오면 계약할 수 있습니다' : '');
       return {
         ini: p.ini, name: p.name, career: p.career, reviews: p.reviews, applied: p.applied,
         rating: p.rating === '—' ? '평점 없음' : p.rating, hasRating: p.rating !== '—',
         hasSum: !!p.summary, noSum: !p.summary, summary: p.summary, linkCnt: p.links || 0,
         total: won(p.amt), withFee: won(p.amt + Math.floor(p.amt * 0.05)), chg: p.chg,
-        chatLabel: '문의하기 (채팅)', unread: p.unread || '', qn: p.qn || 0, hasQ: !!p.qn && !held,
-        cls: 'sc' + (held && !chosen ? ' hold' : ''),
+        chatLabel: gone ? '채팅 보기 (읽기 전용)' : '문의하기 (채팅)', unread: p.unread || '', qn: p.qn || 0, hasQ: !!p.qn && !held && !gone,
+        cls: 'sc' + ((held && !chosen) || gone ? ' hold' : ''),
         chip: chip, chipCls: chipCls, why: why,
         canAct: !chosen && !locked, chosen: chosen, locked: locked
       };
     });
     const n = list.length;
     return {
-      h1: n === 1 ? '받은 견적' : '제안 비교', rejM: rejM, rejName: '김세라',
+      h1: n === 1 ? '받은 견적' : '제안 비교', rejM: rejM, rejDone: rejDone, subRej: rejDone ? ' · 거절 1건' : '', rejName: '김세라',
       nApp: n, stale: stale, held: held, broke: broke, zero: zero, notZero: !zero,
       deadChip: zero ? '모집 마감 · 11월 3일' : broke ? '선택 기간 · 11월 17일까지' : (held ? '마감 11월 3일 · 임시 계약 중' : '마감 11월 3일 · 2일 남음'),
       sups: sups

@@ -13,6 +13,7 @@ const MIME: Record<string, string> = {
   '.woff2': 'font/woff2',
   '.svg': 'image/svg+xml',
   '.png': 'image/png',
+  '.pdf': 'application/pdf',
 };
 
 function send(res: ServerResponse, status: number, type: string, body: string | Buffer, cache = 'no-cache') {
