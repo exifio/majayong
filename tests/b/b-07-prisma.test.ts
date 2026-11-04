@@ -219,16 +219,25 @@ function inquiryDb(rows: InquiryRow[]) {
     },
     eventLog: { create: unused },
     notification: {
-      findByKey: async () => null,
-      async create(input) {
-        notifications.push({ ...input });
-        return { ...input, id: 'n1', isRead: false } satisfies NotificationDbRow;
+      async findUnique(input) {
+        const key = input.where.userId_type_targetId;
+        return notifications.find(
+          (row) => row.userId === key.userId && row.type === key.type && row.targetId === key.targetId,
+        ) ?? null;
       },
-      refreshBundled: unused,
-      listRecent: async () => [],
-      countUnread: async () => 0,
-      markRead: async () => false,
-      markAllRead: async () => 0,
+      async create(input) {
+        const data = input.data as Record<string, unknown>;
+        if (
+          notifications.some(
+            (row) => row.userId === data.userId && row.type === data.type && row.targetId === data.targetId,
+          )
+        ) {
+          throw Object.assign(new Error('duplicate'), { code: 'P2002' });
+        }
+        const created = { ...data, id: 'n1', isRead: false };
+        notifications.push(created);
+        return created;
+      },
     },
   };
   return { db, notifications };

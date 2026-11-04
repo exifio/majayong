@@ -23,6 +23,7 @@ const notificationDelegate = {
 
 const notificationTx = {
   findByKey: async () => null,
+  findUnique: async () => null,
   create: unused,
   refreshBundled: unused,
   listRecent: async () => [],

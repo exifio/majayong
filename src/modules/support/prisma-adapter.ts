@@ -3,10 +3,6 @@
  *
  * 첨부는 `{url,name,size}` JSON으로만 저장하고 파일 원문은 다루지 않는다.
  */
-import {
-  createNotificationOnceInTransaction,
-  type NotificationTx,
-} from '../notification/notifications.js';
 import type {
   InquiryAttachment,
   InquiryCategory,
@@ -55,7 +51,18 @@ export interface InquiryDbClient {
   readonly eventLog: {
     create(input: { readonly data: Readonly<Record<string, unknown>> }): Promise<unknown>;
   };
-  readonly notification: NotificationTx;
+  readonly notification: {
+    findUnique(input: {
+      readonly where: {
+        readonly userId_type_targetId: {
+          readonly userId: string;
+          readonly type: string;
+          readonly targetId: string;
+        };
+      };
+    }): Promise<unknown | null>;
+    create(input: { readonly data: Readonly<Record<string, unknown>> }): Promise<unknown>;
+  };
 }
 
 export interface InquiryPrismaClient extends InquiryDbClient {
@@ -162,12 +169,24 @@ export function createInquiryTx(db: InquiryDbClient, now: () => Date): InquiryTx
     },
 
     async notifyAuthor(input) {
-      await createNotificationOnceInTransaction(db.notification, {
-        userId: input.userId,
-        type: 'INQUIRY_ANSWERED',
-        targetId: input.inquiryId,
-        now: now(),
+      const existing = await db.notification.findUnique({
+        where: { userId_type_targetId: { userId: input.userId, type: 'INQUIRY_ANSWERED', targetId: input.inquiryId } },
       });
+      if (existing !== null) return;
+      try {
+        await db.notification.create({
+          data: {
+            userId: input.userId,
+            type: 'INQUIRY_ANSWERED',
+            targetUrl: `/help/inquiries/${input.inquiryId}`,
+            targetId: input.inquiryId,
+            payload: null,
+            createdAt: now(),
+          },
+        });
+      } catch (error) {
+        if ((error as { code?: string }).code !== 'P2002') throw error;
+      }
     },
 
     async logEvent(input) {
