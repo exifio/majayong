@@ -61,7 +61,11 @@ export interface ContractActor {
 }
 
 export interface ContractItemRecord {
+  /** DB 계약 항목 id. API 조회 시 포함되며 생성 계획 단계에서는 없을 수 있다. */
+  readonly id?: string;
   readonly blockId: string;
+  readonly approvedAt?: Date | null;
+  readonly autoApproved?: boolean;
   readonly title: string;
   readonly description: string;
   readonly origin: BlockOrigin;

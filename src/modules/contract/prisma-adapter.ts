@@ -32,7 +32,10 @@ export type ContractStatusRow =
   | 'CANCELLED';
 
 export interface ContractItemRow {
+  readonly id?: string;
   readonly blockId: string;
+  readonly approvedAt?: Date | null;
+  readonly autoApproved?: boolean;
   readonly title: string;
   readonly description: string;
   readonly origin: ContractItemRecord['origin'];
@@ -133,7 +136,10 @@ export function toContractRecord(row: ContractRow): ContractRecord {
     paymentStatus: row.paymentStatus,
     totalDeposited: row.totalDeposited,
     items: row.items.map((item) => ({
+      ...(item.id ? { id: item.id } : {}),
       blockId: item.blockId,
+      approvedAt: item.approvedAt ?? null,
+      autoApproved: item.autoApproved ?? false,
       title: item.title,
       description: item.description,
       origin: item.origin,

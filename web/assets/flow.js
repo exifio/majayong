@@ -88,6 +88,38 @@
     }).format(date);
   }
 
+  async function activeContract(contractId) {
+    if (contractId) return MJ.request(`/contracts/${encodeURIComponent(contractId)}`);
+    const rows = await MJ.request('/me/contracts');
+    const list = Array.isArray(rows) ? rows : [];
+    const chosen = list.find((row) => row.status === 'ACTIVE')
+      || list.find((row) => row.status === 'PENDING_CONSENT')
+      || list[0];
+    if (!chosen) throw new Error('진행 중인 계약이 없습니다.');
+    return MJ.request(`/contracts/${encodeURIComponent(chosen.id)}`);
+  }
+
+  async function contractInstallments(contractId) {
+    const data = await MJ.request(`/contracts/${encodeURIComponent(contractId)}/installments`);
+    return Array.isArray(data) ? data : (Array.isArray(data?.installments) ? data.installments : []);
+  }
+
+  function stageLabel(stage) {
+    return stage === 'FINAL' ? '최종' : '중간';
+  }
+
+  function installmentStatusLabel(status) {
+    return ({
+      PENDING: '납품 전',
+      DELIVERED: '검수 대기',
+      PARTIALLY_APPROVED: '일부 승인',
+      REWORK_REQUESTED: '보완 요청',
+      APPROVED: '지급 승인',
+      RELEASED: '지급 완료',
+      REFUNDED: '환불',
+    })[status] || status;
+  }
+
   function showError(anchor, message) {
     let box = $('#flow-error');
     if (!box) {
@@ -154,6 +186,207 @@
     const next = new Date(date);
     next.setDate(next.getDate() + days);
     return next;
+  }
+
+  if (screen === 'Deliver-Supplier') {
+    if (!MJ.requireLogin(location.pathname + location.search)) return;
+    const params = new URLSearchParams(location.search);
+
+    void (async () => {
+      try {
+        const contract = await activeContract(params.get('contractId'));
+        if (contract.status !== 'ACTIVE' || contract.paymentStatus !== 'DEPOSITED') {
+          throw new Error('예치가 완료된 진행 계약이 필요합니다.');
+        }
+        const installments = await contractInstallments(contract.id);
+        const stage = params.get('stage') === 'FINAL' ? 'FINAL' : 'INTERIM';
+        const installment = installments.find((row) => row.stage === stage);
+        if (!installment) throw new Error('해당 구간을 찾을 수 없습니다.');
+
+        const items = (contract.items || []).filter((item) => item.stage === stage);
+        const unapproved = items.filter((item) => !item.approvedAt);
+        const host = document.createElement('section');
+        host.className = 'card';
+        host.id = 'live-delivery';
+        host.style.marginBottom = '16px';
+        host.innerHTML = `<h2 class="ct">납품 제출 · ${stageLabel(stage)}</h2>
+          <p class="sec">구간 상태 ${escapeHtml(installmentStatusLabel(installment.status))} · 검수 기한 ${installment.status === 'DELIVERED' ? '7일' : '제출 후 7일'}</p>
+          <div style="display:flex;gap:8px;margin:12px 0">
+            <a class="btn sm ${stage === 'INTERIM' ? 'tint' : 'gh'}" href="?contractId=${encodeURIComponent(contract.id)}&stage=INTERIM">중간 구간</a>
+            <a class="btn sm ${stage === 'FINAL' ? 'tint' : 'gh'}" href="?contractId=${encodeURIComponent(contract.id)}&stage=FINAL">최종 구간</a>
+          </div>
+          ${unapproved.length === 0
+            ? '<p class="note">이 구간의 모든 항목이 승인되었습니다.</p>'
+            : unapproved.map((item) => `<div class="fc" data-contract-item="${item.id}" style="margin:12px 0">
+                <div class="nmrow"><span class="nm">${escapeHtml(item.title)}</span></div>
+                <p class="ds">${escapeHtml(item.description)}</p>
+                <p class="k">공급자와 정할 것</p>
+                <div class="tg2">${(item.conditions || []).map((condition) => `<span>${escapeHtml(condition.text || condition.key)}</span>`).join('')}</div>
+                <label class="lbl" style="margin-top:10px">결과물 링크</label>
+                <input class="inp" data-link type="url" placeholder="https://…">
+                <label class="lbl" style="margin-top:8px">확인 방법</label>
+                <textarea class="inp" data-memo placeholder="어디서 무엇을 확인하면 되는지 적어 주세요"></textarea>
+              </div>`).join('')}
+          ${unapproved.length > 0 ? '<button type="button" class="btn" id="deliver-submit">납품 제출</button>' : ''}`;
+        const head = document.querySelector('.head');
+        head?.parentElement?.insertBefore(host, head.nextSibling);
+        const layout = document.querySelector('.lay');
+        if (layout) layout.style.display = 'none';
+
+        const submit = host.querySelector('#deliver-submit');
+        if (submit) {
+          submit.addEventListener('click', async (event) => {
+            event.preventDefault();
+            clearError();
+            const rows = [...host.querySelectorAll('[data-contract-item]')].map((row) => {
+              const link = row.querySelector('[data-link]')?.value.trim() || '';
+              const memo = row.querySelector('[data-memo]')?.value.trim() || '';
+              return {
+                contractItemId: row.dataset.contractItem,
+                links: link ? [link] : [],
+                files: [],
+                howToCheck: memo || '확인 방법 미기재',
+              };
+            });
+            busy(submit, true, '제출하는 중…');
+            try {
+              await MJ.request(`/installments/${encodeURIComponent(installment.id)}/deliveries`, {
+                method: 'POST',
+                body: { items: rows },
+              });
+              location.reload();
+            } catch (error) {
+              busy(submit, false);
+              showError(submit, error.message);
+            }
+          });
+        }
+      } catch (error) {
+        showError(document.body, error.message);
+      }
+    })();
+    return;
+  }
+
+  if (screen === 'Inspect-Client') {
+    if (!MJ.requireLogin(location.pathname + location.search)) return;
+    const params = new URLSearchParams(location.search);
+
+    void (async () => {
+      try {
+        const contract = await activeContract(params.get('contractId'));
+        const installments = await contractInstallments(contract.id);
+        const requested = params.get('stage');
+        const candidates = installments.filter((row) => ['DELIVERED', 'PARTIALLY_APPROVED', 'REWORK_REQUESTED'].includes(row.status));
+        const installment = (requested ? installments.find((row) => row.stage === requested) : null)
+          || candidates[0]
+          || installments.find((row) => row.stage === 'INTERIM');
+        if (!installment) throw new Error('검수할 구간이 없습니다.');
+        const deliveries = await MJ.request(`/installments/${encodeURIComponent(installment.id)}/deliveries`);
+        const latest = Array.isArray(deliveries) ? deliveries.at(-1) : null;
+        const stageItems = (contract.items || []).filter((item) => item.stage === installment.stage);
+        const byId = new Map(stageItems.map((item) => [item.id, item]));
+
+        const host = document.createElement('section');
+        host.className = 'card';
+        host.id = 'live-inspect';
+        host.style.marginBottom = '16px';
+        host.innerHTML = `<h2 class="ct">검수 · ${stageLabel(installment.stage)} 구간</h2>
+          <p class="sec">구간 상태 ${escapeHtml(installmentStatusLabel(installment.status))}${latest ? ` · ${kstDate(latest.submittedAt)} 납품` : ' · 아직 납품 전'}</p>
+          ${latest ? latest.items.map((payload) => {
+            const item = byId.get(payload.contractItemId);
+            if (!item) return '';
+            return `<div class="fc" data-contract-item="${item.id}" style="margin:12px 0">
+              <div class="nmrow"><span class="nm">${escapeHtml(item.title)}</span>${item.approvedAt ? '<span class="chip teal">승인</span>' : '<span class="chip blue">검수 대기</span>'}</div>
+              <p class="ds">${escapeHtml(item.description)}</p>
+              <p class="k">공급자 납품물</p>
+              <p class="sec">${(payload.links || []).map((link) => `<a class="ft" href="${escapeHtml(link)}" target="_blank" rel="noreferrer">${escapeHtml(link)}</a>`).join('<br>') || '링크 없음'}</p>
+              <p class="sec">${escapeHtml(payload.howToCheck || '확인 방법 미기재')}</p>
+              ${item.approvedAt ? '' : `<div style="display:flex;gap:8px;margin-top:10px">
+                <button type="button" class="btn sm tint" data-approve>승인</button>
+                <button type="button" class="btn sm gh" data-rework>보완 요청</button>
+              </div>`}
+            </div>`;
+          }).join('') : '<p class="note">아직 납품이 없습니다.</p>'}
+          ${latest && stageItems.every((item) => item.approvedAt) ? `<p class="note"><b>모든 항목 승인 완료</b> · 지급 처리는 정산 화면에서 확인할 수 있습니다.</p>
+            <a class="btn sm tint" href="/Settle-Client?contractId=${encodeURIComponent(contract.id)}">정산 보기</a>` : ''}`;
+        const head = document.querySelector('.head');
+        head?.parentElement?.insertBefore(host, head.nextSibling);
+        const layout = document.querySelector('.lay');
+        if (layout) layout.style.display = 'none';
+
+        host.querySelectorAll('[data-approve]').forEach((button) => {
+          button.addEventListener('click', async (event) => {
+            event.preventDefault();
+            const itemId = button.closest('[data-contract-item]')?.dataset.contractItem;
+            busy(button, true, '승인 중…');
+            try {
+              await MJ.request(`/contract-items/${encodeURIComponent(itemId)}/approve`, {
+                method: 'POST',
+                body: { deliveryId: latest.id },
+              });
+              location.reload();
+            } catch (error) {
+              busy(button, false);
+              showError(button, error.message);
+            }
+          });
+        });
+        host.querySelectorAll('[data-rework]').forEach((button) => {
+          button.addEventListener('click', async (event) => {
+            event.preventDefault();
+            const itemId = button.closest('[data-contract-item]')?.dataset.contractItem;
+            const note = window.prompt('보완 요청 내용을 적어 주세요.');
+            if (note === null) return;
+            busy(button, true, '보내는 중…');
+            try {
+              await MJ.request(`/contract-items/${encodeURIComponent(itemId)}/rework-requests`, {
+                method: 'POST',
+                body: { deliveryId: latest.id, reason: 'CONDITION_MISMATCH', note },
+              });
+              location.reload();
+            } catch (error) {
+              busy(button, false);
+              showError(button, error.message);
+            }
+          });
+        });
+      } catch (error) {
+        showError(document.body, error.message);
+      }
+    })();
+    return;
+  }
+
+  if (screen === 'Settle-Client') {
+    if (!MJ.requireLogin(location.pathname + location.search)) return;
+    const params = new URLSearchParams(location.search);
+
+    void (async () => {
+      try {
+        const contract = await activeContract(params.get('contractId'));
+        const installments = (await contractInstallments(contract.id)).sort((a, b) => (a.stage === "INTERIM" ? -1 : 1));
+        const total = Number(contract.totalDeposited) || (Number(contract.agreedAmount) + Number(contract.clientFee));
+        const host = document.createElement('section');
+        host.className = 'card';
+        host.id = 'live-settle';
+        host.style.marginBottom = '16px';
+        host.innerHTML = `<h2 class="ct">정산 내역</h2>
+          <p class="sec">계약 ${escapeHtml(contract.id.slice(0, 8))} · ${escapeHtml(contract.status)} · 예치 ${won(total)}</p>
+          <div class="tl">
+            <div class="tr"><span class="d">예치</span><span class="kd">예치금</span><span class="nt">${escapeHtml(contract.paymentStatus)}</span><span class="am">${won(total)}<i>합의 ${won(Number(contract.agreedAmount))} + 수수료 ${won(Number(contract.clientFee))}</i></span><span class="st"><span class="chip teal">확인</span></span></div>
+            ${installments.map((row) => `<div class="tr"><span class="d">${stageLabel(row.stage)}</span><span class="kd">${stageLabel(row.stage)} 구간</span><span class="nt">${escapeHtml(installmentStatusLabel(row.status))}</span><span class="am">${won(Number(row.amount))}<i>지급액 ${won(Number(row.releaseAmount ?? row.amount))}${row.holdReason ? ` · 보류 ${escapeHtml(row.holdReason)}` : ''}</i></span><span class="st"><span class="chip ${row.status === 'RELEASED' ? 'teal' : row.status === 'APPROVED' ? 'blue' : 'out'}">${escapeHtml(installmentStatusLabel(row.status))}</span></span></div>`).join('')}
+          </div>
+          <p class="note" style="margin-top:12px">표시된 금액은 정산 내역이며 실제 송금은 운영자 처리 단계에서 확정됩니다.</p>
+          <a class="btn sm gh" style="margin-top:10px" href="/Contract-Client?contractId=${encodeURIComponent(contract.id)}">계약서 보기</a>`;
+        const head = document.querySelector('.head');
+        head?.parentElement?.insertBefore(host, head.nextSibling);
+        document.querySelectorAll('.smCls, .pc, .grp3').forEach((element) => { element.style.display = 'none'; });
+      } catch (error) {
+        showError(document.body, error.message);
+      }
+    })();
+    return;
   }
 
   if (screen === 'Escrow-Client') {
@@ -366,8 +599,11 @@
         const signbox = document.querySelector('.signbox');
         if (signbox) {
           if (contract.status === 'ACTIVE') {
-            signbox.innerHTML = `<p class="done">계약이 체결되었습니다. 3일 안에 예치해 주세요.</p>
-              <a class="btn full" href="/Escrow-Client?contractId=${encodeURIComponent(contractId)}">${won(total)} 예치하기</a>`;
+            const deposited = contract.paymentStatus !== 'PENDING';
+            signbox.innerHTML = `<p class="done">${deposited ? '예치가 완료되어 작업이 진행 중입니다.' : '계약이 체결되었습니다. 3일 안에 예치해 주세요.'}</p>
+              <a class="btn full" href="${deposited
+                ? `/Inspect-Client?contractId=${encodeURIComponent(contractId)}`
+                : `/Escrow-Client?contractId=${encodeURIComponent(contractId)}`}">${deposited ? '납품 검수하기' : `${won(total)} 예치하기`}</a>`;
           } else if (clientSigned) {
             signbox.innerHTML = '<p class="done">서명 완료. 공급자 서명을 기다리고 있습니다.</p>';
           } else {
