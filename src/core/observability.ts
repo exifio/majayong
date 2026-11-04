@@ -27,3 +27,14 @@ export function sanitizeLogContext(input: Record<string, unknown>): Record<strin
   const cleaned = sanitize(input);
   return isRecord(cleaned) ? cleaned : {};
 }
+
+export type LogLevel = "info" | "warn" | "error";
+export type Logger = { log(level: LogLevel, event: string, context?: Record<string, unknown>): void };
+
+export function createLogger(write: (line: string) => void = line => process.stdout.write(`${line}\n`)): Logger {
+  return {
+    log(level, event, context = {}) {
+      write(JSON.stringify({ level, event, at: new Date().toISOString(), ...sanitizeLogContext(context) }));
+    },
+  };
+}
