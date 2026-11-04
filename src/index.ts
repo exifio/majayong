@@ -1,5 +1,8 @@
 import { PrismaClient } from "@prisma/client";
+import { createIntegrationPorts } from "./integration/external-ports.js";
+import { createPrismaIntegrationDb, createPrismaPorts } from "./integration/prisma-wiring.js";
 import { createApp } from "./app.js";
+import { createBRouters } from "./server.js";
 
 const databaseUrl = process.env.DATABASE_URL;
 const tokenSecret = process.env.TOKEN_SECRET;
@@ -17,6 +20,12 @@ const google = process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET 
   : undefined;
 
 const db = new PrismaClient();
+const now = () => new Date();
+const integrationPorts = createIntegrationPorts(createPrismaIntegrationDb(db), { now });
+const bRouters = createBRouters(createPrismaPorts(db), integrationPorts).map(
+  (mounted) => mounted.router,
+);
+
 const app = createApp({
   db,
   tokenSecret,
@@ -26,6 +35,7 @@ const app = createApp({
     encryptionKey: process.env.PROFILE_DATA_KEY,
     supplierNdaVersion: process.env.SUPPLIER_NDA_VERSION,
   },
+  routers: bRouters,
 });
 const server = app.listen(port);
 

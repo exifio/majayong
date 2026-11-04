@@ -97,11 +97,10 @@ export interface ExternalPorts {
   readonly now: () => Date;
 }
 
-export function buildBApp(
+export function createBRouters(
   prisma: BPrismaPorts,
   external: ExternalPorts,
-  auth: AuthVerifier,
-): Express {
+): MountedRouter[] {
   const applicationRead = createPrismaApplicationReadPort(prisma.applicationRead);
   const notificationUow = createPrismaNotificationUnitOfWork(prisma.notification);
   const agreements: AgreementDraftStore = createPrismaAgreementDraftStore(
@@ -177,5 +176,14 @@ export function buildBApp(
     },
   ];
 
-  return createApp({ auth, routers });
+  return routers;
+}
+
+/** B 단독 부팅·계약 테스트용. 통합 앱에서는 `createBRouters`를 A 앱에 mount한다. */
+export function buildBApp(
+  prisma: BPrismaPorts,
+  external: ExternalPorts,
+  auth: AuthVerifier,
+): Express {
+  return createApp({ auth, routers: createBRouters(prisma, external) });
 }

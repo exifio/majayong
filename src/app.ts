@@ -1,5 +1,5 @@
 import { Role } from "@prisma/client";
-import express, { type ErrorRequestHandler, type Express, type Request, type RequestHandler, type Response } from "express";
+import express, { type ErrorRequestHandler, type Express, type Request, type RequestHandler, type Response, type Router } from "express";
 import { createRequestId, errorResponse } from "./core/observability.js";
 import {
   authenticateWithEmail,
@@ -44,6 +44,8 @@ export type AppOptions = {
   sendEmailChange?: (email: string, token: string) => Promise<void>;
   projectDisclosureConsentVersion?: () => string | null;
   profile?: ProfilePorts;
+  /** B/C 라우터. A와 같은 세션 인증으로 `/api/v1` 아래에 mount한다. */
+  routers?: readonly Router[];
 };
 
 class ApiError extends Error {
@@ -115,6 +117,11 @@ function statusFor(error: unknown): { status: number; code: string; message: str
     if (error.code === "DELIVERY_UNAVAILABLE") return { status: 503, code: error.code, message: "인증 메일 발송을 사용할 수 없습니다." };
     return { status: 422, code: error.code, message: "요청 값을 확인해 주세요." };
   }
+  if (isRecord(error) && typeof error.status === "number" && typeof error.code === "string") {
+    const status = error.status;
+    const message = typeof error.message === "string" ? error.message : "요청을 확인해 주세요.";
+    return { status, code: error.code, message };
+  }
   const parserStatus = isRecord(error) && typeof error.status === "number" ? error.status : 0;
   if (parserStatus === 400 || parserStatus === 413) {
     return { status: parserStatus, code: parserStatus === 413 ? "REQUEST_TOO_LARGE" : "INVALID_JSON", message: "요청 형식을 확인해 주세요." };
@@ -133,6 +140,23 @@ function authenticated(options: AppOptions, handler: (req: Request, res: Respons
     const actor = await requireActor(options.db, match[1]!, options.tokenSecret, (options.now?.() ?? new Date()).getTime());
     await handler(req, res, actor);
   });
+}
+
+function requireActorMiddleware(options: AppOptions): RequestHandler {
+  return (req, _res, next) => {
+    void (async () => {
+      const match = /^Bearer ([^\s]+)$/.exec(req.get("authorization") ?? "");
+      if (!match) throw new SessionError("INVALID_ACCESS_TOKEN");
+      const actor = await requireActor(
+        options.db,
+        match[1]!,
+        options.tokenSecret,
+        (options.now?.() ?? new Date()).getTime(),
+      );
+      (req as Request & { actor?: Actor }).actor = actor;
+      next();
+    })().catch(next);
+  };
 }
 
 function sendSession(res: Response, user: IdentityUser, tokens: SessionTokens, status = 200): void {
@@ -320,6 +344,16 @@ export function createApp(options: AppOptions): Express {
   );
 
   app.use("/api/v1", router);
+
+  const extraAuth = requireActorMiddleware(options);
+  for (const extra of options.routers ?? []) {
+    app.use("/api/v1", extraAuth, extra);
+  }
+
+  app.get("/health", (_req, res) => {
+    res.json({ data: { status: "ok" } });
+  });
+
   app.use((_req, res) => {
     const requestId = String(res.locals.requestId);
     res.status(404).json(errorResponse("NOT_FOUND", "경로를 찾을 수 없습니다.", requestId));
