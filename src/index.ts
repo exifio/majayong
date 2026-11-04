@@ -34,7 +34,7 @@ import {
   type ApplicationDbClient,
 } from "./modules/application/prisma-adapter.js";
 import { createNotificationBridge } from "./modules/notification/c-bridge.js";
-import { createPrismaNotificationTx } from "./modules/notification/prisma-adapter.js";
+import { createPrismaNotificationTx, type NotificationDbClient } from "./modules/notification/prisma-adapter.js";
 import { HttpError } from "./http/envelope.js";
 
 const databaseUrl = process.env.DATABASE_URL;
@@ -87,7 +87,7 @@ const cHandler = createAppHandler(
       ),
       notifications: createNotificationBridge(
         createPrismaNotificationTx(prismaPorts.notification),
-        { now },
+        { now, notificationTxFor: (tx) => createPrismaNotificationTx(tx as NotificationDbClient) },
       ),
       profileReview: {
         async updateProfileReviewStats(input) {

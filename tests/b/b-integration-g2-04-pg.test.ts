@@ -18,7 +18,7 @@ import { createPrismaApplicationReadPort } from "../../src/modules/application/p
 import { createAProjectViewPort } from "../../src/integration/a-ports.ts";
 import { createAProjectDb } from "../../src/integration/prisma-wiring.ts";
 import { createNotificationBridge } from "../../src/modules/notification/c-bridge.ts";
-import { createPrismaNotificationTx } from "../../src/modules/notification/prisma-adapter.ts";
+import { createPrismaNotificationTx, type NotificationDbClient } from "../../src/modules/notification/prisma-adapter.ts";
 import { SettlementService } from "../../src/modules/settlement/policy.ts";
 import type { FileStorageAdapter } from "../../src/modules/files/index.ts";
 
@@ -55,6 +55,8 @@ type SeedOptions = {
   workDueAt?: Date | null;
   withInstallment?: boolean;
   withInspectionDue?: boolean;
+  inspectionDueAt?: Date;
+  approvedItem?: boolean;
 };
 
 async function seed(prisma: PrismaClient, options: SeedOptions = {}): Promise<Ids> {
@@ -174,7 +176,12 @@ async function seed(prisma: PrismaClient, options: SeedOptions = {}): Promise<Id
         description: "예약 기능",
         origin: "AGREEMENT",
         stage: "INTERIM",
-        approvedAt: options.withInstallment === true && options.withInspectionDue !== true ? NOW : null,
+        approvedAt:
+          options.approvedItem === false
+            ? null
+            : options.withInstallment === true && options.withInspectionDue !== true
+              ? NOW
+              : null,
       },
     });
     if (options.withInstallment === true) {
@@ -207,7 +214,7 @@ async function seed(prisma: PrismaClient, options: SeedOptions = {}): Promise<Id
               },
             ],
             status: "SUBMITTED",
-            inspectionDueAt: INSPECTION_DUE_AT,
+            inspectionDueAt: options.inspectionDueAt ?? INSPECTION_DUE_AT,
           },
         });
       }
@@ -315,6 +322,130 @@ describe("INT-G2-04: 알림·이벤트·검수 경계", { skip: hasDatabase ? fa
     }
   });
 
+  it("작업 마감이 지나면 WORK_OVERDUE를 양쪽에 1회씩 만든다", async () => {
+    const prisma = new PrismaClient();
+    const ids = await seed(prisma, {
+      paymentStatus: "DEPOSITED",
+      workDueAt: new Date("2026-11-03T05:20:00.000Z"),
+    });
+    try {
+      const { inspections } = services(prisma, ids);
+      await inspections.sendDueNotifications(ids.contractId as string, NOW);
+      await inspections.sendDueNotifications(ids.contractId as string, NOW);
+
+      for (const userId of [ids.clientId, ids.supplierId]) {
+        const rows = await prisma.notification.findMany({
+          where: { userId, type: "WORK_OVERDUE", targetId: ids.contractId as string },
+        });
+        assert.equal(rows.length, 1);
+        assert.deepEqual(rows[0]?.payload, { dueAt: "2026-11-03T05:20:00.000Z" });
+      }
+    } finally {
+      await cleanup(prisma, ids);
+      await prisma.$disconnect();
+    }
+  });
+
+  it("검수 미승인 항목이 남아 있으면 구간 승인을 막는다", async () => {
+    const prisma = new PrismaClient();
+    const ids = await seed(prisma, {
+      withInstallment: true,
+      approvedItem: false,
+      paymentStatus: "DEPOSITED",
+    });
+    try {
+      const repos = createPrismaRepositories(prisma);
+      const settlement = new SettlementService({
+        repo: repos.settlementRepository,
+        clock: { now: () => NOW },
+      });
+      await assert.rejects(
+        () => settlement.approveInstallment({
+          contractId: ids.contractId as string,
+          installmentId: ids.installmentId as string,
+        }),
+        /모든 계약 항목이 승인/,
+      );
+      const stored = await prisma.paymentInstallment.findUniqueOrThrow({
+        where: { id: ids.installmentId as string },
+      });
+      assert.equal(stored.status, "PENDING");
+    } finally {
+      await cleanup(prisma, ids);
+      await prisma.$disconnect();
+    }
+  });
+
+  it("검수 기한이 지나면 미승인 항목을 자동 승인하고 AUTO_APPROVED를 보낸다", async () => {
+    const prisma = new PrismaClient();
+    const ids = await seed(prisma, {
+      withInstallment: true,
+      withInspectionDue: true,
+      inspectionDueAt: new Date("2026-11-04T04:00:00.000Z"),
+      paymentStatus: "DEPOSITED",
+    });
+    try {
+      const { inspections } = services(prisma, ids);
+      const result = await inspections.processAutoApproval(ids.deliveryId as string, NOW);
+      assert.equal(result.autoApprovedCount, 1);
+
+      assert.ok(
+        (await prisma.contractItem.findUniqueOrThrow({ where: { id: ids.contractItemId as string } })).approvedAt !== null,
+      );
+      assert.equal(
+        (await prisma.paymentInstallment.findUniqueOrThrow({ where: { id: ids.installmentId as string } })).status,
+        "APPROVED",
+      );
+      for (const userId of [ids.clientId, ids.supplierId]) {
+        assert.equal(
+          await prisma.notification.count({
+            where: { userId, type: "AUTO_APPROVED", targetId: ids.deliveryId as string },
+          }),
+          1,
+        );
+      }
+    } finally {
+      await cleanup(prisma, ids);
+      await prisma.$disconnect();
+    }
+  });
+
+  it("취소 요청 중에는 구간 승인·지급을 막는다", async () => {
+    const prisma = new PrismaClient();
+    const ids = await seed(prisma, { withInstallment: true, paymentStatus: "DEPOSITED" });
+    try {
+      const repos = createPrismaRepositories(prisma);
+      const settlement = new SettlementService({
+        repo: repos.settlementRepository,
+        clock: { now: () => NOW },
+      });
+      await prisma.contract.update({
+        where: { id: ids.contractId as string },
+        data: { status: "CANCEL_REQUESTED" },
+      });
+
+      await assert.rejects(
+        () => settlement.approveInstallment({
+          contractId: ids.contractId as string,
+          installmentId: ids.installmentId as string,
+        }),
+        /취소 중에는/,
+      );
+      await assert.rejects(
+        () => settlement.releaseInstallment({ installmentId: ids.installmentId as string }),
+        /취소 중에는/,
+      );
+      const stored = await prisma.paymentInstallment.findUniqueOrThrow({
+        where: { id: ids.installmentId as string },
+      });
+      assert.equal(stored.status, "PENDING");
+      assert.equal(stored.releasedAt, null);
+    } finally {
+      await cleanup(prisma, ids);
+      await prisma.$disconnect();
+    }
+  });
+
   it("계좌 미인증이면 승인돼도 지급하지 않고, 인증 후 지급한다", async () => {
     const prisma = new PrismaClient();
     const ids = await seed(prisma, {
@@ -372,6 +503,69 @@ describe("INT-G2-04: 알림·이벤트·검수 경계", { skip: hasDatabase ? fa
       assert.equal(rows.length, 2);
       assert.equal(rows[0]?.occurredAt.getTime(), earlier.getTime());
       assert.equal(rows[0]?.userId, ids.supplierId);
+    } finally {
+      await cleanup(prisma, ids);
+      await prisma.$disconnect();
+    }
+  });
+
+  it("기한 알림 중 하나가 실패하면 같은 계약의 알림이 모두 롤백된다", async () => {
+    const prisma = new PrismaClient();
+    const ids = await seed(prisma, {
+      depositDeadline: DEPOSIT_DUE_AT,
+      workDueAt: WORK_DUE_AT,
+    });
+    try {
+      const prismaPorts = createPrismaPorts(prisma);
+      const realBridge = createNotificationBridge(
+        createPrismaNotificationTx(prismaPorts.notification),
+        {
+          now: () => NOW,
+          notificationTxFor: (tx) => createPrismaNotificationTx(tx as NotificationDbClient),
+        },
+      );
+      let calls = 0;
+      const { inspections } = createIntegrationServices({
+        prisma,
+        webhookSecret: "unused",
+        clock: { now: () => NOW },
+        ports: {
+          marketplace: {
+            async autoRejectCompetingApplications() {
+              return { rejectedCount: 0 };
+            },
+          },
+          notifications: {
+            async createOnce(input, tx) {
+              calls += 1;
+              if (calls === 2) throw new Error("SECOND_NOTIFICATION_FAILED");
+              return realBridge.createOnce(input, tx);
+            },
+          },
+          profileReview: {
+            async updateProfileReviewStats() {
+              return { success: true };
+            },
+          },
+          storage: {} as unknown as FileStorageAdapter,
+          catalogAdmin: {
+            async executeBlockAction(input) {
+              return { success: true, blockId: input.blockId, action: input.action };
+            },
+          },
+        },
+      });
+
+      await assert.rejects(
+        () => inspections.sendDueNotifications(ids.contractId as string, NOW),
+        /SECOND_NOTIFICATION_FAILED/,
+      );
+      assert.equal(
+        await prisma.notification.count({
+          where: { userId: { in: [ids.clientId, ids.supplierId] } },
+        }),
+        0,
+      );
     } finally {
       await cleanup(prisma, ids);
       await prisma.$disconnect();

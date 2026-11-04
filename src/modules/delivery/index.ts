@@ -97,7 +97,7 @@ export interface NotificationPorts {
     targetUrl?: string;
     /** 기한 알림(DEPOSIT_DUE/INSPECTION_DUE/WORK_DUE/WORK_OVERDUE)은 dueAt이 필수다. */
     dueAt?: Date;
-  }): Promise<{ created: boolean }>;
+  }, tx?: unknown): Promise<{ created: boolean }>;
 }
 
 export interface SettlementApprovalPort {
@@ -655,6 +655,8 @@ export interface InspectionBatchOptions {
   clock?: { now(): Date };
   settlementPort?: SettlementApprovalPort;
   opsPorts?: InspectionOpsPorts;
+  /** 기한 알림 묶음을 계약 단위 트랜잭션으로 실행한다. */
+  transactionRunner?: { run<T>(work: (tx: unknown) => Promise<T>): Promise<T> };
 }
 
 export class InspectionBatchService {
@@ -663,6 +665,7 @@ export class InspectionBatchService {
   private readonly clock: { now(): Date };
   private readonly settlementPort?: SettlementApprovalPort;
   private readonly opsPorts?: InspectionOpsPorts;
+  private readonly transactionRunner?: InspectionBatchOptions["transactionRunner"];
 
   constructor(options: InspectionBatchOptions) {
     this.repo = options.repo;
@@ -670,6 +673,7 @@ export class InspectionBatchService {
     this.clock = options.clock ?? { now: () => new Date() };
     this.settlementPort = options.settlementPort;
     this.opsPorts = options.opsPorts;
+    this.transactionRunner = options.transactionRunner;
   }
 
   private async announceDecision(
@@ -853,6 +857,14 @@ export class InspectionBatchService {
   }
 
   async sendDueNotifications(contractId: string, now: Date): Promise<void> {
+    if (this.transactionRunner === undefined) {
+      return this.sendDueNotificationsInTransaction(contractId, now);
+    }
+    // 계약 단위 트랜잭션: 알림 하나가 실패하면 같은 계약의 기한 알림이 모두 롤백된다.
+    return this.transactionRunner.run((tx) => this.sendDueNotificationsInTransaction(contractId, now, tx));
+  }
+
+  private async sendDueNotificationsInTransaction(contractId: string, now: Date, tx?: unknown): Promise<void> {
     const contract = await this.repo.getContract(contractId);
     if (!contract || contract.status !== "ACTIVE") return;
 
@@ -868,7 +880,7 @@ export class InspectionBatchService {
           type: "DEPOSIT_DUE",
           targetId: contract.id,
           dueAt: contract.depositDeadline,
-        });
+        }, tx);
       }
     }
 
@@ -897,7 +909,7 @@ export class InspectionBatchService {
         type: "INSPECTION_DUE",
         targetId: latest.id,
         dueAt: latest.inspectionDueAt,
-      });
+      }, tx);
     }
 
     const finalInstallment = installments.find((i) => i.stage === "FINAL");
@@ -912,7 +924,7 @@ export class InspectionBatchService {
             type: "WORK_DUE",
             targetId: contract.id,
             dueAt: contract.workDueAt,
-          });
+          }, tx);
         }
       } else if (
         this.isWorkOverdue({
@@ -926,13 +938,13 @@ export class InspectionBatchService {
           type: "WORK_OVERDUE",
           targetId: contract.id,
           dueAt: contract.workDueAt,
-        });
+        }, tx);
         await this.notificationPorts.createOnce({
           userId: contract.supplierUserId,
           type: "WORK_OVERDUE",
           targetId: contract.id,
           dueAt: contract.workDueAt,
-        });
+        }, tx);
       }
     }
   }

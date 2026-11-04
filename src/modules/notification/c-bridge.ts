@@ -18,21 +18,30 @@ export interface CNotificationPorts {
     readonly targetUrl?: string;
     /** 기한 알림 4종은 dueAt이 있어야 B가 payload를 만들 수 있다. */
     readonly dueAt?: Date;
-  }): Promise<{ readonly created: boolean }>;
+  }, tx?: unknown): Promise<{ readonly created: boolean }>;
 }
 
 export function createNotificationBridge(
   notificationTx: NotificationTx,
-  options: { readonly now: () => Date },
+  options: {
+    readonly now: () => Date;
+    /** 배치의 transaction client를 B 알림 Tx로 옮긴다. 없으면 루트 delegate를 쓴다. */
+    readonly notificationTxFor?: (tx: unknown) => NotificationTx;
+  },
 ): CNotificationPorts {
   return {
-    createOnce: (input) =>
-      createNotificationOnceInTransaction(notificationTx, {
+    createOnce: (input, tx) => {
+      const target =
+        tx !== undefined && options.notificationTxFor !== undefined
+          ? options.notificationTxFor(tx)
+          : notificationTx;
+      return createNotificationOnceInTransaction(target, {
         userId: input.userId,
         type: input.type,
         targetId: input.targetId,
         ...(input.dueAt === undefined ? {} : { payload: { dueAt: input.dueAt.toISOString() } }),
         now: options.now(),
-      }),
+      });
+    },
   };
 }

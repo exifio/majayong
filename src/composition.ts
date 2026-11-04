@@ -71,6 +71,9 @@ export function createIntegrationServices(config: IntegrationConfig) {
     settlementPort: settlement,
     opsPorts: config.ports.inspectionOps,
     clock,
+    transactionRunner: {
+      run: (work) => config.prisma.$transaction((tx) => work(tx)),
+    },
   });
   const cancellations = new CancellationService({
     repo: repos.cancellationRepository,
