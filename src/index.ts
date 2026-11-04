@@ -2,7 +2,6 @@ import { createServer } from "node:http";
 import { PrismaClient } from "@prisma/client";
 import { createAppHandler, type IntegrationPorts } from "./composition.ts";
 import type { HttpActor } from "./app.ts";
-import { createInMemoryFileRepository } from "./modules/files/index.ts";
 
 const prisma = new PrismaClient();
 
@@ -66,7 +65,6 @@ async function main() {
       prisma,
       webhookSecret: requireEnv("TOSS_WEBHOOK_SECRET"),
       bucket: process.env.SUPABASE_STORAGE_BUCKET ?? "private-assets",
-      fileRepository: createInMemoryFileRepository(),
       ports,
     },
     authenticate,

@@ -12,7 +12,7 @@ import {
   type NotificationPorts,
 } from "./modules/delivery/index.ts";
 import { DepositCompletionService, DepositService, type MarketplacePorts } from "./modules/deposit/index.ts";
-import { FileService, type FileRepository, type FileStorageAdapter } from "./modules/files/index.ts";
+import { FileService, type FileStorageAdapter } from "./modules/files/index.ts";
 import { ReviewService, type ProfileReviewPorts } from "./modules/review/index.ts";
 import { SettlementService } from "./modules/settlement/policy.ts";
 
@@ -33,8 +33,6 @@ export interface IntegrationConfig {
   bucket?: string;
   clock?: { now(): Date };
   ports: IntegrationPorts;
-  /** Prisma 스키마에 파일 메타데이터 모델이 없어 Gate 0 전까지 주입한다. */
-  fileRepository: FileRepository;
 }
 
 export function createIntegrationServices(config: IntegrationConfig) {
@@ -46,6 +44,9 @@ export function createIntegrationServices(config: IntegrationConfig) {
     repo: repos.depositRepository,
     contractsPort: repos.contractsPort,
     marketplacePort: config.ports.marketplace,
+    transactionRunner: {
+      run: (work) => config.prisma.$transaction((tx) => work(tx as never)),
+    },
     clock,
   });
   const deposits = new DepositService({
@@ -79,7 +80,7 @@ export function createIntegrationServices(config: IntegrationConfig) {
     clock,
   });
   const files = new FileService({
-    repo: config.fileRepository,
+    repo: repos.fileRepository,
     storageAdapter: config.ports.storage,
     bucket: config.bucket,
     clock,

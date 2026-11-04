@@ -997,3 +997,30 @@ model EventLog {
   @@index([contractId, occurredAt])
   @@map("event_logs")
 }
+
+// ── 파일 메타데이터 (C-08, INT-C-02) ─────────────────────────
+// presign 발급 시 저장하고 다운로드 권한·문의 첨부 제한의 근거로 쓴다.
+
+enum FilePurpose {
+  DELIVERY
+  PORTFOLIO
+  SUPPORT_INQUIRY
+  CONTRACT_DOCUMENT
+}
+
+model FileAttachment {
+  id         String      @id @default(uuid())
+  purpose    FilePurpose
+  contractId String?
+  inquiryId  String?
+  uploaderId String
+  objectKey  String      @unique
+  fileName   String
+  fileSize   Int
+  mimeType   String
+  createdAt  DateTime    @default(now())
+
+  @@index([inquiryId])
+  @@index([contractId])
+  @@map("file_attachments")
+}

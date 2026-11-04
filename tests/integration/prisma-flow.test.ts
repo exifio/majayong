@@ -149,7 +149,21 @@ describe("INT-C-02: Prisma 저장소 골든 패스", { skip: hasDatabase ? false
       );
       assert.equal((await settlement.releaseInstallment({ installmentId: final.id })).status, "RELEASED");
       assert.equal((await repos.settlementRepository.getContract(contractId))?.status, "COMPLETED");
+
+      // 파일 메타데이터가 Prisma에 저장되고 문의 첨부 건수로 쓰인다.
+      const file = await repos.fileRepository.saveFileMetadata({
+        purpose: "SUPPORT_INQUIRY",
+        inquiryId: "inquiry-1",
+        uploaderId: clientId,
+        objectKey: `inquiry/inquiry-1/${randomUUID()}/a.pdf`,
+        fileName: "a.pdf",
+        fileSize: 10,
+        mimeType: "application/pdf",
+      });
+      assert.equal((await repos.fileRepository.getFileMetadata(file.id))?.fileSize, 10);
+      assert.equal(await repos.fileRepository.countFilesInquiry("inquiry-1"), 1);
     } finally {
+      await prisma.fileAttachment.deleteMany({ where: { uploaderId: clientId } });
       await prisma.inspectionRequest.deleteMany({ where: { delivery: { installment: { contractId } } } });
       await prisma.delivery.deleteMany({ where: { installment: { contractId } } });
       await prisma.paymentEvent.deleteMany({ where: { deposit: { contractId } } });

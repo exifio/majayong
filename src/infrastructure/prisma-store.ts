@@ -17,6 +17,7 @@ import type {
 import type { SettlementRepository } from "../modules/settlement/policy.ts";
 import type { CancellationRepository } from "../modules/cancellation/index.ts";
 import type { ReviewRepository } from "../modules/review/index.ts";
+import type { FileContractEntity, FileEntity, FileRepository } from "../modules/files/index.ts";
 import type {
   AdminBlock,
   AdminCancellationContract,
@@ -260,8 +261,10 @@ export interface PrismaStoreOptions {
 }
 
 export function createPrismaRepositories(prisma: PrismaClient, options: PrismaStoreOptions = {}) {
-  async function loadContract(id: string) {
-    const row = (await prisma.contract.findUnique({
+  const db = (tx?: unknown) => (tx as PrismaClient | undefined) ?? prisma;
+
+  async function loadContract(id: string, tx?: unknown) {
+    const row = (await db(tx).contract.findUnique({
       where: { id },
       include: contractInclude,
     })) as ContractRow | null;
@@ -269,8 +272,8 @@ export function createPrismaRepositories(prisma: PrismaClient, options: PrismaSt
   }
 
   const depositRepository: DepositRepository = {
-    async createDeposit(data) {
-      const row = await prisma.escrowDeposit.create({
+    async createDeposit(data, tx) {
+      const row = await db(tx).escrowDeposit.create({
         data: {
           contractId: data.contractId,
           principal: data.principal,
@@ -285,24 +288,24 @@ export function createPrismaRepositories(prisma: PrismaClient, options: PrismaSt
       });
       return { ...row, status: row.status as EscrowDeposit["status"], heldReason: null } as EscrowDeposit;
     },
-    async findByIdempotencyKey(key) {
-      const row = await prisma.escrowDeposit.findUnique({ where: { idempotencyKey: key } });
+    async findByIdempotencyKey(key, tx) {
+      const row = await db(tx).escrowDeposit.findUnique({ where: { idempotencyKey: key } });
       return row ? ({ ...row, status: row.status as EscrowDeposit["status"], heldReason: null } as EscrowDeposit) : null;
     },
-    async findById(id) {
-      const row = await prisma.escrowDeposit.findUnique({ where: { id } });
+    async findById(id, tx) {
+      const row = await db(tx).escrowDeposit.findUnique({ where: { id } });
       return row ? ({ ...row, status: row.status as EscrowDeposit["status"], heldReason: null } as EscrowDeposit) : null;
     },
-    async findByContractId(contractId) {
-      const rows = await prisma.escrowDeposit.findMany({ where: { contractId } });
+    async findByContractId(contractId, tx) {
+      const rows = await db(tx).escrowDeposit.findMany({ where: { contractId } });
       return rows.map((row) => ({
         ...row,
         status: row.status as EscrowDeposit["status"],
         heldReason: null,
       })) as EscrowDeposit[];
     },
-    async updateDeposit(id, patch) {
-      const row = await prisma.escrowDeposit.update({
+    async updateDeposit(id, patch, tx) {
+      const row = await db(tx).escrowDeposit.update({
         where: { id },
         data: {
           ...(patch.status === undefined ? {} : { status: patch.status as never }),
@@ -314,8 +317,8 @@ export function createPrismaRepositories(prisma: PrismaClient, options: PrismaSt
       });
       return { ...row, status: row.status as EscrowDeposit["status"], heldReason: patch.heldReason ?? null } as EscrowDeposit;
     },
-    async createPaymentEvent(data) {
-      const row = await prisma.paymentEvent.create({
+    async createPaymentEvent(data, tx) {
+      const row = await db(tx).paymentEvent.create({
         data: {
           depositId: data.depositId,
           eventType: data.eventType as never,
@@ -326,26 +329,26 @@ export function createPrismaRepositories(prisma: PrismaClient, options: PrismaSt
       });
       return { ...row, eventType: row.eventType as PaymentEvent["eventType"], payload: row.payload } as PaymentEvent;
     },
-    async findPaymentEventByDedupKey(depositId, dedupKey) {
-      const row = await prisma.paymentEvent.findUnique({
+    async findPaymentEventByDedupKey(depositId, dedupKey, tx) {
+      const row = await db(tx).paymentEvent.findUnique({
         where: { depositId_dedupKey: { depositId, dedupKey } },
       });
       return row
         ? ({ ...row, eventType: row.eventType as PaymentEvent["eventType"], payload: row.payload } as PaymentEvent)
         : null;
     },
-    async listPaymentEvents(depositId) {
-      const rows = await prisma.paymentEvent.findMany({ where: { depositId }, orderBy: { occurredAt: "asc" } });
+    async listPaymentEvents(depositId, tx) {
+      const rows = await db(tx).paymentEvent.findMany({ where: { depositId }, orderBy: { occurredAt: "asc" } });
       return rows.map((row) => ({
         ...row,
         eventType: row.eventType as PaymentEvent["eventType"],
         payload: row.payload,
       })) as PaymentEvent[];
     },
-    async createInstallments(rows) {
+    async createInstallments(rows, tx) {
       const created: PaymentInstallment[] = [];
       for (const row of rows) {
-        const record = await prisma.paymentInstallment.upsert({
+        const record = await db(tx).paymentInstallment.upsert({
           where: { contractId_stage: { contractId: row.contractId, stage: row.stage as never } },
           update: {},
           create: {
@@ -366,12 +369,12 @@ export function createPrismaRepositories(prisma: PrismaClient, options: PrismaSt
       }
       return created;
     },
-    async listInstallments(contractId) {
-      const rows = await prisma.paymentInstallment.findMany({ where: { contractId } });
+    async listInstallments(contractId, tx) {
+      const rows = await db(tx).paymentInstallment.findMany({ where: { contractId } });
       return rows.map(mapInstallment);
     },
-    async deleteInstallments(contractId) {
-      await prisma.paymentInstallment.deleteMany({ where: { contractId } });
+    async deleteInstallments(contractId, tx) {
+      await db(tx).paymentInstallment.deleteMany({ where: { contractId } });
     },
   };
 
@@ -935,8 +938,8 @@ export function createPrismaRepositories(prisma: PrismaClient, options: PrismaSt
   };
 
   const contractsPort = {
-    async getContract(id: string) {
-      const row = await loadContract(id);
+    async getContract(id: string, tx?: unknown) {
+      const row = await loadContract(id, tx);
       if (!row) return null;
       const mapped = mapContract(row);
       return {
@@ -956,8 +959,8 @@ export function createPrismaRepositories(prisma: PrismaClient, options: PrismaSt
         workDueAt: mapped.workDueAt,
       } satisfies DepositContractInfo;
     },
-    async updateContract(id: string, patch: Partial<DepositContractInfo>) {
-      await prisma.contract.update({
+    async updateContract(id: string, patch: Partial<DepositContractInfo>, tx?: unknown) {
+      await db(tx).contract.update({
         where: { id },
         data: {
           ...(patch.status === undefined ? {} : { status: patch.status as never }),
@@ -966,15 +969,54 @@ export function createPrismaRepositories(prisma: PrismaClient, options: PrismaSt
           ...(patch.workDueAt === undefined ? {} : { workDueAt: patch.workDueAt }),
         },
       });
-      const updated = await contractsPort.getContract(id);
+      const updated = await contractsPort.getContract(id, tx);
       if (!updated) throw new Error(`contract not found: ${id}`);
       return updated;
+    },
+  };
+
+  const fileRepository: FileRepository = {
+    seedContract() {
+      throw new Error("PRISMA_SEED_NOT_SUPPORTED: use prisma seed data");
+    },
+    async getContract(id) {
+      const row = await loadContract(id);
+      if (!row) return null;
+      const mapped = mapContract(row);
+      return {
+        id: mapped.id,
+        clientUserId: mapped.clientUserId,
+        supplierUserId: mapped.supplierUserId,
+      } satisfies FileContractEntity;
+    },
+    async saveFileMetadata(data) {
+      const row = await prisma.fileAttachment.create({
+        data: {
+          purpose: data.purpose as never,
+          contractId: data.contractId,
+          inquiryId: data.inquiryId,
+          uploaderId: data.uploaderId,
+          objectKey: data.objectKey,
+          fileName: data.fileName,
+          fileSize: data.fileSize,
+          mimeType: data.mimeType,
+        },
+      });
+      return { ...row, purpose: row.purpose as FileEntity["purpose"] } as FileEntity;
+    },
+    async getFileMetadata(id) {
+      const row = await prisma.fileAttachment.findUnique({ where: { id } });
+      return row ? ({ ...row, purpose: row.purpose as FileEntity["purpose"] } as FileEntity) : null;
+    },
+    async countFilesInquiry(inquiryId) {
+      return prisma.fileAttachment.count({ where: { inquiryId } });
     },
   };
 
   return {
     contractsPort,
     depositRepository,
+    fileRepository,
     deliveryRepository,
     settlementRepository,
     cancellationRepository,
