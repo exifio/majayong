@@ -294,6 +294,7 @@ describe("C-05: 지급 구간·정산 카드·세금 증빙", () => {
       contract.id,
     );
     assert.equal("payoutAccountNo" in clientView, false);
+    assert.ok("totalDeposited" in clientView);
     assert.equal(clientView.totalDeposited, 3_255_000);
 
     // 공급자가 조회 시: 본인 정보 확인, 계좌번호는 마스킹되거나 비공개
@@ -409,6 +410,7 @@ describe("C-05: 지급 구간·정산 카드·세금 증빙", () => {
       individual.contract.id,
     );
     // 1,421,350 × 2구간 (지급 전에도 동일 정책)
+    assert.ok("expectedToReceive" in individualView);
     assert.equal(individualView.expectedToReceive, 2_842_700);
 
     const business = createTestSetup({ supplierKind: "BUSINESS" });
@@ -416,6 +418,7 @@ describe("C-05: 지급 구간·정산 카드·세금 증빙", () => {
       { userId: business.contract.supplierUserId, role: "SUPPLIER" },
       business.contract.id,
     );
+    assert.ok("expectedToReceive" in businessView);
     assert.equal(businessView.expectedToReceive, 2_945_000);
   });
 

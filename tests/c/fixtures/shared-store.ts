@@ -242,7 +242,7 @@ export function createSharedStore(seed: SharedContractSeed) {
     async createDeposit(data) {
       const record: DepositRecord = { ...data, id: nextId("dep"), createdAt: new Date() };
       deposits.set(record.id, record);
-      return record;
+      return record as never;
     },
     async findByIdempotencyKey(key) {
       for (const row of deposits.values()) if (row.idempotencyKey === key) return row as never;
@@ -400,7 +400,12 @@ export function createSharedStore(seed: SharedContractSeed) {
       return updated as never;
     },
     async createInspectionRequest(data) {
-      const record: InspectionRecord = { ...data, id: nextId("insp") };
+      const record: InspectionRecord = {
+        ...data,
+        id: nextId("insp"),
+        note: data.note ?? null,
+        resolvedAt: data.resolvedAt ?? null,
+      };
       inspections.set(record.id, record);
       return record as never;
     },
@@ -543,7 +548,7 @@ export function createSharedStore(seed: SharedContractSeed) {
     async listInstallments(contractId) {
       return Array.from(installments.values())
         .filter((row) => row.contractId === contractId)
-        .map((row) => ({ id: row.id, contractId: row.contractId, stage: row.stage, amount: row.amount, status: row.status }));
+        .map((row) => ({ id: row.id, contractId: row.contractId, stage: row.stage, amount: row.amount, status: row.status })) as never;
     },
     async updateInstallment(id, patch) {
       const updated = await updateInstallment(id, patch as never);

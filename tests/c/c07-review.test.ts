@@ -157,9 +157,9 @@ describe("C-07: 완료 후 상호 리뷰·공개 평점", () => {
     );
 
     // 수정 불가
-    assert.equal(typeof (service as Record<string, unknown>).updateReview, "undefined");
+    assert.equal(typeof (service as unknown as Record<string, unknown>).updateReview, "undefined");
     // 삭제 불가
-    assert.equal(typeof (service as Record<string, unknown>).deleteReview, "undefined");
+    assert.equal(typeof (service as unknown as Record<string, unknown>).deleteReview, "undefined");
   });
 
   it("C-07-T05 중복 제출 시 평점 캐시 중복계산 0", async () => {
@@ -273,7 +273,7 @@ describe("C-07 재검수: 공개 DTO·조회 권한·태그 검증·동시성", 
 
     const publicReviews = await service.listSupplierReviews(contract.supplierUserId);
     assert.equal(publicReviews.length, 1);
-    const dto = publicReviews[0] as Record<string, unknown>;
+    const dto = publicReviews[0] as unknown as Record<string, unknown>;
     assert.equal("reviewerId" in dto, false);
     assert.equal("revieweeId" in dto, false);
     assert.equal("contractId" in dto, false);

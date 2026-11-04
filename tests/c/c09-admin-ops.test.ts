@@ -804,7 +804,7 @@ describe("C-09: 관리자 블록/예치/분쟁/정산/감사 API", () => {
     const { service } = await createTestSetup();
 
     // 신고(reports) 및 문의(inquiries) 조치는 B 담당이므로 C 관리자 서비스에 중복 메서드 없음
-    assert.equal(typeof (service as Record<string, unknown>).resolveReport, "undefined");
-    assert.equal(typeof (service as Record<string, unknown>).answerInquiry, "undefined");
+    assert.equal(typeof (service as unknown as Record<string, unknown>).resolveReport, "undefined");
+    assert.equal(typeof (service as unknown as Record<string, unknown>).answerInquiry, "undefined");
   });
 });

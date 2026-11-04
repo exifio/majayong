@@ -392,7 +392,7 @@ describe("C-00", () => {
       interimRatio: 40,
       durationDays: 35,
     };
-    delete missingDays.durationDays;
+    delete (missingDays as Partial<typeof missingDays>).durationDays;
     const missingRatio = {
       id: "missing-ratio",
       status: "ACTIVE" as const,
@@ -402,7 +402,7 @@ describe("C-00", () => {
       interimRatio: 40,
       durationDays: 35,
     };
-    delete missingRatio.interimRatio;
+    delete (missingRatio as Partial<typeof missingRatio>).interimRatio;
     const ports = createMemoryContractPorts([
       missingDays,
       missingRatio,

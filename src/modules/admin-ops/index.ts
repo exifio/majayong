@@ -57,6 +57,8 @@ export interface AdminCancellationContract {
   cancelPayoutAt?: Date | null;
   depositedAt?: Date | null;
   cancelRequestedAt?: Date | null;
+  cancelEscalatedAt?: Date | null;
+  objectionRate?: number | null;
   installmentStatuses?: readonly string[];
 }
 
