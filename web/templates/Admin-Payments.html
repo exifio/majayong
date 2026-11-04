@@ -122,7 +122,7 @@ table.py-cmp tr.diff td.n.b{color:var(--amber-700);font-weight:600}
       <div class="py-grid">
         <section class="py-list" aria-label="보류된 결제 목록">
           <sc-for list="{{items}}" as="it" hint-placeholder-count="2">
-            <a class="{{it.cls}}" href="#pay">
+            <a class="{{it.cls}}" href="{{it.href}}">
               <div class="top"><span class="{{it.chipCls}}">{{it.chip}}</span><span class="tm">{{it.tm}}</span></div>
               <div class="nm">{{it.nm}}</div>
               <div class="ds">{{it.ds}}</div>
@@ -130,7 +130,7 @@ table.py-cmp tr.diff td.n.b{color:var(--amber-700);font-weight:600}
           </sc-for>
           <sc-if value="{{hasDone}}" hint-placeholder-val="{{ false }}">
             <div class="py-gh">오늘 처리 완료</div>
-            <a class="py-it done" href="#pay"><div class="top"><span class="chip teal" style="font-size:11px;padding:1px 7px;font-weight:600">예치 완료로 확정</span><span class="tm">14:53</span></div><div class="nm">골목 파스타 · 2,100,000원</div><div class="ds">결제 건 •••3307 · 운영자 김하늘</div></a>
+            <a class="py-it done" href="?view=확정"><div class="top"><span class="chip teal" style="font-size:11px;padding:1px 7px;font-weight:600">예치 완료로 확정</span><span class="tm">14:53</span></div><div class="nm">골목 파스타 · 2,100,000원</div><div class="ds">결제 건 •••3307 · 운영자 김하늘</div></a>
           </sc-if>
         </section>
         <section class="py-dt" aria-label="결제 상세">
@@ -166,7 +166,7 @@ table.py-cmp tr.diff td.n.b{color:var(--amber-700);font-weight:600}
                 <div class="bt">
                   <a class="btn sm gh" href="#requery">결제사에 다시 조회</a>
                   <a class="{{d.cancelCls}}" href="#cancel">결제 취소 · 다시 결제 요청</a>
-                  <a class="{{d.okCls}}" href="#confirm">예치 완료로 확정</a>
+                  <a class="{{d.okCls}}" href="{{d.okHref}}">예치 완료로 확정</a>
                 </div>
               </div>
               <sc-if value="{{d.hasOkWhy}}" hint-placeholder-val="{{ false }}"><p class="py-why" style="text-align:right">{{d.okWhy}}</p></sc-if>

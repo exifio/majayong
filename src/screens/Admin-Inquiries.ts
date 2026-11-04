@@ -28,7 +28,7 @@ export default class AdminInquiriesScreen extends Screen {
     if (doneTab) list = D.map(d => Object.assign(d, { status: '답변 완료', sCls: 'chip teal', ageCls: 'age' }));
     else if (sent) list = W.slice(1).map(d => Object.assign(d, { status: '답변 대기', sCls: 'chip amber', ageCls: d.late ? 'age late' : 'age' }));
     else list = W.map(d => Object.assign(d, { status: '답변 대기', sCls: 'chip amber', ageCls: d.late ? 'age late' : 'age' }));
-    const items = list.map((it, i) => Object.assign(it, { cls: 'iq-li' + (i === 0 ? ' first' : '') + ((i === 0 && !sent) ? ' sel' : '') }));
+    const items = list.map((it, i) => Object.assign(it, { cls: 'iq-li' + (i === 0 ? ' first' : '') + ((i === 0 && !sent) ? ' sel' : ''), href: doneTab ? '?view=답변+완료+탭' : '?view=답변+대기' }));
     const nWait = sent || doneTab ? 3 : 4;
     return {
       items: items, nWait: nWait, nDone: answered ? 13 : 12,

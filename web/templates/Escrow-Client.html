@@ -218,11 +218,11 @@
               </div>
             </sc-if>
             <sc-if value="{{isBefore}}" hint-placeholder-val="{{ true }}">
-              <a class="btn" href="#pay">3,255,000원 예치하기</a>
+              <a class="btn" href="?view=확인+중">3,255,000원 예치하기</a>
               <p class="tiny">누르면 결제 창이 열립니다.</p>
             </sc-if>
             <sc-if value="{{isFail}}" hint-placeholder-val="{{ false }}">
-              <a class="btn" href="#pay">다시 결제하기</a>
+              <a class="btn" href="?view=확인+중">다시 결제하기</a>
               <p class="tiny">새 결제로 시도합니다 · 실패한 결제는 청구되지 않습니다</p>
             </sc-if>
             <sc-if value="{{isWait}}" hint-placeholder-val="{{ false }}">

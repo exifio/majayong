@@ -50,7 +50,7 @@ export default class TermsScreen extends Screen {
     const d = D[v];
     return {
       guest: who === '비로그인', isClient: who === '의뢰인', isSupplier: who === '공급자',
-      tabs: names.map(n => ({ n: n, cls: n === v ? 'on' : '' })),
+      tabs: names.map(n => ({ n: n, cls: n === v ? 'on' : '', href: '?view=' + n.replace(/ /g, '+') })),
       h: d.h, who: d.who, lead: d.lead, hasTbl: !!d.hasTbl,
       arts: d.arts.map(a => ({ h: a.h, p: a.p, hasList: !!a.list, list: a.list || [] }))
     };

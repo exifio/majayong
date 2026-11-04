@@ -97,7 +97,7 @@ textarea.ad-in{min-height:76px;resize:vertical;line-height:1.6}
     <main class="ad-main">
       <h1 class="t">1:1 문의</h1>
       <p class="sub">고객센터에서 들어온 문의에 답합니다. 평일 기준 하루 안에 답하고, 관련 계약이 있으면 상태를 확인한 뒤 답합니다.</p>
-      <nav class="ad-tabs" aria-label="문의 보기"><a class="{{tabWait}}" href="#wait">답변 대기<span class="n">{{nWait}}</span></a><a class="{{tabDone}}" href="#done">답변 완료<span class="n">{{nDone}}</span></a></nav>
+      <nav class="ad-tabs" aria-label="문의 보기"><a class="{{tabWait}}" href="?view=답변+대기">답변 대기<span class="n">{{nWait}}</span></a><a class="{{tabDone}}" href="?view=답변+완료+탭">답변 완료<span class="n">{{nDone}}</span></a></nav>
       <sc-if value="{{justSent}}" hint-placeholder-val="{{ false }}">
         <div class="iq-done"><b>답변을 보냈습니다 · 11월 4일 15:02 · 운영자 김하늘</b><p>정민재님에게 알림이 갔고, 고객센터 '내 문의'에 답변 완료로 보입니다. 답변은 <a class="ft" href="Admin-Events.dc.html">이벤트 기록</a>에 남았습니다.</p></div>
       </sc-if>
@@ -105,7 +105,7 @@ textarea.ad-in{min-height:76px;resize:vertical;line-height:1.6}
         <section class="iq-list" aria-label="문의 목록">
           <div class="iq-fl"><select aria-label="유형"><option>모든 유형</option></select><input type="search" placeholder="제목 · 이름으로 찾기" aria-label="찾기"></div>
           <sc-for list="{{items}}" as="it" hint-placeholder-count="4">
-            <a class="{{it.cls}}" href="Admin-Inquiries.dc.html">
+            <a class="{{it.cls}}" href="{{it.href}}">
               <div class="tp"><span class="chip">{{it.cat}}</span><span class="{{it.sCls}}">{{it.status}}</span><span class="{{it.ageCls}}">{{it.age}}</span></div>
               <b>{{it.title}}</b>
               <div class="mt">{{it.who}}</div>
@@ -139,11 +139,11 @@ textarea.ad-in{min-height:76px;resize:vertical;line-height:1.6}
           <div class="iq-sec">
             <sc-if value="{{showForm}}" hint-placeholder-val="{{ true }}">
               <label class="ad-lbl" for="iq-ans" style="margin-top:0">답변<i>필수</i></label>
-              <div class="iq-tpl" aria-label="자주 쓰는 문구"><a href="Admin-Inquiries.dc.html">인사말</a><a href="Admin-Inquiries.dc.html">결제 확인 중 안내</a><a href="Admin-Inquiries.dc.html">추가 정보 요청</a></div>
+              <div class="iq-tpl" aria-label="자주 쓰는 문구"><a href="?view=답변+작성">인사말</a><a href="?view=답변+작성">결제 확인 중 안내</a><a href="?view=답변+작성">추가 정보 요청</a></div>
               <textarea id="iq-ans" class="ad-in" style="min-height:184px" placeholder="문의한 분이 바로 이해할 수 있게 적어 주세요. 계약 · 결제 정보는 끝자리만 적습니다.">{{answer}}</textarea>
               <div class="iq-foot">
                 <p>보내면 문의한 분에게 알림이 가고 '내 문의'에 표시됩니다 · 답변은 이벤트 기록에 남습니다</p>
-                <sc-if value="{{canSend}}" hint-placeholder-val="{{ false }}"><a class="btn" href="Admin-Inquiries.dc.html">답변 보내기</a></sc-if>
+                <sc-if value="{{canSend}}" hint-placeholder-val="{{ false }}"><a class="btn" href="?view=답변+보냄">답변 보내기</a></sc-if>
                 <sc-if value="{{cantSend}}" hint-placeholder-val="{{ true }}"><button type="button" class="btn off" disabled>답변 보내기</button></sc-if>
               </div>
               <sc-if value="{{cantSend}}" hint-placeholder-val="{{ true }}"><p class="iq-off">답변을 적으면 보낼 수 있습니다</p></sc-if>

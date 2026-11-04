@@ -134,7 +134,7 @@ textarea.inp.tx{width:100%;box-sizing:border-box;min-height:140px;font-size:15px
             <h2>별점</h2>
             <p class="hint">{{starHint}}</p>
             <div class="stars" role="radiogroup" aria-label="별점">
-              <sc-for list="{{stars}}" as="s" hint-placeholder-count="5"><button type="button" class="{{s.cls}}" role="radio" aria-checked="{{s.chk}}" aria-label="{{s.n}}점"><svg viewBox="0 0 24 24" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"></path></svg></button></sc-for>
+              <sc-for list="{{stars}}" as="s" hint-placeholder-count="5"><button type="button" class="{{s.cls}}" role="radio" onClick="{{s.pick}}" aria-checked="{{s.chk}}" aria-label="{{s.n}}점"><svg viewBox="0 0 24 24" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"></path></svg></button></sc-for>
               <span class="lbl2">{{score}}점<span>{{scoreWord}}</span></span>
             </div>
           </div>
@@ -142,7 +142,7 @@ textarea.inp.tx{width:100%;box-sizing:border-box;min-height:140px;font-size:15px
             <h2>어땠나요? <span class="sec" style="font-weight:400;font-size:14px">여러 개 고를 수 있습니다</span></h2>
             <p class="hint">고른 태그는 {{tagWhere}}에 많이 받은 순으로 보입니다.</p>
             <div class="chips2">
-              <sc-for list="{{tags}}" as="t" hint-placeholder-count="5"><button type="button" class="{{t.cls}}" aria-pressed="{{t.p}}">{{t.name}}</button></sc-for>
+              <sc-for list="{{tags}}" as="t" hint-placeholder-count="5"><button type="button" class="{{t.cls}}" aria-pressed="{{t.p}}" onClick="{{t.pick}}">{{t.name}}</button></sc-for>
             </div>
           </div>
           <div class="blk last">

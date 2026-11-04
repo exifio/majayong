@@ -162,7 +162,7 @@
             <h3 id="h-act">견적 고치기</h3>
             <p class="note4">견적은 채팅의 '견적 수정'으로만 고칩니다. 고치면 새 회차가 되고, 지금 회차는 '대체됨'으로 남습니다.</p>
             <sc-if value="{{isAsk}}" hint-placeholder-val="{{ true }}">
-              <a class="btn tint" href="Chat-Supplier.dc.html">채팅에서 견적 수정</a>
+              <a class="btn tint" href="Chat-Supplier.dc.html?view=견적+수정">채팅에서 견적 수정</a>
               <a class="btn gh" href="Project-Supplier.dc.html">프로젝트 보기</a>
             </sc-if>
             <sc-if value="{{isStale}}" hint-placeholder-val="{{ false }}">
@@ -181,7 +181,7 @@
             <div class="r2"><span>희망 예산</span><b>5,000,000원</b></div>
             <div class="r2"><span>지원</span><b>10월 29일</b></div>
             <sc-if value="{{canWithdraw}}" hint-placeholder-val="{{ true }}">
-              <a class="btn warn sm lnk" href="#withdraw" style="display:inline-flex;width:auto;margin-top:12px">지원 철회</a>
+              <a class="btn warn sm lnk" href="Apps-Supplier.dc.html?view=지원+철회+확인" style="display:inline-flex;width:auto;margin-top:12px">지원 철회</a>
             </sc-if>
             <sc-if value="{{isHeld}}" hint-placeholder-val="{{ false }}">
               <p class="off2" style="margin-top:12px">임시 계약 중에는 지원을 철회할 수 없습니다. 원하지 않으면 계약서에서 서명을 거절하세요.</p>

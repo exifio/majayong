@@ -21,4 +21,10 @@ npm start          # http://localhost:3000  · 전체 화면 목록: /screens
 라우트는 화면 이름 그대로입니다(`/Home-Client`, `/Admin-Events`, `/`는 의뢰인 랜딩).
 화면 상태는 쿼리로 고릅니다: `/Account-Client?view=탈퇴 확인`. `/screens`에 모든 화면과 상태가 있습니다.
 
+`npm run check:links`는 모든 화면 · 상태의 내부 링크가 있는 화면과 올바른 상태로 가는지 검사합니다.
+
+화면 연결 규칙: 같은 화면의 다른 상태는 `href="?view=탈퇴+확인"`(지금 주소의 다른 값은 유지),
+다른 화면의 상태는 `href="Apps-Supplier.dc.html?view=…"`, `<button>`은 `data-action-href="…"`,
+화면 안에서만 바뀌는 선택은 `onClick="{{handler}}"` + `this.setState()`로 씁니다.
+
 `npm run snapshot -- <dir>`는 모든 화면 · 상태를 HTML로 렌더링해 리팩터링 전후 비교에 씁니다.

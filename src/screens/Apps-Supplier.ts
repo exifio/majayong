@@ -66,7 +66,8 @@ export default class AppsSupplierScreen extends Screen {
     ];
     if (sent) ended.shift();
     const T = sent ? [['전체', 5], ['검토 중', 3], ['문의 중', 0], ['선택됨', 0], ['보류', 0], ['종료', 2]] : [['전체', 7], ['검토 중', 1], ['문의 중', picked ? 1 : 2], ['선택됨', picked ? 1 : 0], ['보류', 1], ['종료', 3]];
-    const tabs = T.map(t => ({ name: t[0], n: t[1], cls: (held ? t[0] === '보류' : t[0] === '전체') ? 'on' : '' }));
+    const tabHref: Record<string, string> = { '전체': '?view=전체', '보류': '?view=보류+중' };
+    const tabs = T.map(t => ({ name: t[0], n: t[1], cls: (held ? t[0] === '보류' : t[0] === '전체') ? 'on' : '', href: tabHref[t[0] as string] ?? '#apps' }));
     return { sent: sent, picked: picked, rows: rows, ended: ended, showEnded: !held, tabs: tabs, wdOpen: wd };
   }
 }

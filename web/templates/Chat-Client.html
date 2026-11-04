@@ -208,25 +208,25 @@
             <sc-if value="{{roThread}}" hint-placeholder-val="{{ false }}">
               <div class="day">11월 2일 (월)</div>
               <div class="m me"><p class="by">나 · 10:15</p><div class="bb">안녕하세요, 견적 잘 봤습니다. 예약금 환불은 어떻게 두는 게 좋을까요? 손님이 헷갈리지 않았으면 해요.</div></div>
-              <div class="m"><p class="by">김세라 · 10:42 <a class="rp" href="Chat-Client.dc.html" title="이 메시지 신고">신고</a></p><div class="bb">전날 취소는 전액 환불로 두는 게 좋겠습니다. 당일 취소만 환불하지 않으면 손님 안내도 간단하고, 노쇼도 줄어듭니다.</div></div>
+              <div class="m"><p class="by">김세라 · 10:42 <a class="rp" href="?view=신고" title="이 메시지 신고">신고</a></p><div class="bb">전날 취소는 전액 환불로 두는 게 좋겠습니다. 당일 취소만 환불하지 않으면 손님 안내도 간단하고, 노쇼도 줄어듭니다.</div></div>
               <div class="m me"><p class="by">나 · 11:05</p><div class="bb">좋네요. 리마인드는 문자로도 보낼 수 있나요?</div></div>
-              <div class="m"><p class="by">김세라 · 11:20 <a class="rp" href="Chat-Client.dc.html" title="이 메시지 신고">신고</a></p><div class="bb">네, 문자 알림 연동은 여러 번 해 봤습니다. 방문 전날 오후에 보내는 걸 권합니다.</div></div>
+              <div class="m"><p class="by">김세라 · 11:20 <a class="rp" href="?view=신고" title="이 메시지 신고">신고</a></p><div class="bb">네, 문자 알림 연동은 여러 번 해 봤습니다. 방문 전날 오후에 보내는 걸 권합니다.</div></div>
               <p class="sys">11월 4일 다른 공급자와의 계약에 대금이 예치되어 이 지원은 자동으로 거절되었습니다.</p>
             </sc-if>
             <sc-if value="{{mainThread}}" hint-placeholder-val="{{ true }}">
               <div class="day">11월 1일 (일)</div>
               <div class="m me"><p class="by">나 · 14:02</p><div class="bb">안녕하세요, 견적 잘 봤습니다. 예약금 환불 기준을 어떻게 정하면 좋을지 여쭤보고 싶어요. 전날 취소면 돌려주고 싶은데, 회차마다 다르게도 할 수 있나요?</div></div>
-              <div class="m"><p class="by">{{cur.name}} · 14:20 <a class="rp" href="Chat-Client.dc.html" title="이 메시지 신고">신고</a></p><div class="bb">네, 가능합니다. 점심과 저녁 회차마다 마감 시각을 따로 두고, 그 전에 취소하면 전액 환불, 이후는 환불 없음으로 설정하실 수 있게 만들 수 있습니다.</div></div>
-              <sc-if value="{{showRev}}" hint-placeholder-val="{{ true }}"><div class="m"><p class="by">{{cur.name}} · 14:21 <a class="rp" href="Chat-Client.dc.html" title="이 메시지 신고">신고</a></p><div class="bb">다만 회차별로 기준을 다르게 두면 관리 화면 작업이 늘어서 견적을 조금 올려야 할 것 같습니다.</div></div>
+              <div class="m"><p class="by">{{cur.name}} · 14:20 <a class="rp" href="?view=신고" title="이 메시지 신고">신고</a></p><div class="bb">네, 가능합니다. 점심과 저녁 회차마다 마감 시각을 따로 두고, 그 전에 취소하면 전액 환불, 이후는 환불 없음으로 설정하실 수 있게 만들 수 있습니다.</div></div>
+              <sc-if value="{{showRev}}" hint-placeholder-val="{{ true }}"><div class="m"><p class="by">{{cur.name}} · 14:21 <a class="rp" href="?view=신고" title="이 메시지 신고">신고</a></p><div class="bb">다만 회차별로 기준을 다르게 두면 관리 화면 작업이 늘어서 견적을 조금 올려야 할 것 같습니다.</div></div>
               <p class="sys chg">{{cur.name}}님이 견적을 고쳤습니다 · <b>3,000,000원 → 3,100,000원</b> · 기간 42일 그대로<br>사유: 환불 기준을 회차별로 다르게 두려면 작업이 늘어납니다 · <a href="Quote-Client.dc.html">견적서 보기</a></p></sc-if>
               <div class="m me"><p class="by">나 · 14:35</p><div class="bb">좋아요. 예약금은 1인당 3만 원으로 생각하고 있어요. 리마인드는 어떤 방식이 좋을까요?</div></div>
-              <div class="m"><p class="by">{{cur.name}} · 14:48 <a class="rp" href="Chat-Client.dc.html" title="이 메시지 신고">신고</a></p><div class="bb">알림톡을 권합니다. 실패하면 문자로 다시 보내게 해 두겠습니다. 방문 전날 18시에 보내는 걸로 할까요?</div></div>
+              <div class="m"><p class="by">{{cur.name}} · 14:48 <a class="rp" href="?view=신고" title="이 메시지 신고">신고</a></p><div class="bb">알림톡을 권합니다. 실패하면 문자로 다시 보내게 해 두겠습니다. 방문 전날 18시에 보내는 걸로 할까요?</div></div>
               <div class="m me"><p class="by">나 · 15:02</p><div class="bb">네, 그렇게 해 주세요. 진행 상황은 전화로도 여쭤봐도 될까요? 제 번호는 <span class="hid">연락처 가림</span> 입니다.</div></div>
               <p class="sys">계약이 체결되기 전에는 전화번호 · 이메일 · 메신저 아이디가 자동으로 가려집니다.</p>
               <div class="day">11월 3일 (화)</div>
               <sc-if value="{{showNew}}" hint-placeholder-val="{{ true }}"><div class="newline">새 메시지</div></sc-if>
-              <sc-if value="{{report}}" hint-placeholder-val="{{ false }}"><div class="m flag"><p class="by">{{cur.name}} · 09:12 <a class="rp" href="Chat-Client.dc.html" title="이 메시지 신고">신고</a></p><div class="bb">마자용 밖에서 직접 계약하시면 수수료 없이 해 드릴 수 있어요. 편하실 때 <span class="hid">연락처 가림</span> 으로 연락 주세요.</div></div></sc-if>
-              <sc-if value="{{noReport}}" hint-placeholder-val="{{ true }}"><div class="m"><p class="by">{{cur.name}} · 09:12 <a class="rp" href="Chat-Client.dc.html" title="이 메시지 신고">신고</a></p><div class="bb">노쇼 판정 기준도 정해 두면 좋겠습니다. 예약 시각 30분이 지나도 연락이 없으면 노쇼로 볼까요?</div></div></sc-if>
+              <sc-if value="{{report}}" hint-placeholder-val="{{ false }}"><div class="m flag"><p class="by">{{cur.name}} · 09:12 <a class="rp" href="?view=신고" title="이 메시지 신고">신고</a></p><div class="bb">마자용 밖에서 직접 계약하시면 수수료 없이 해 드릴 수 있어요. 편하실 때 <span class="hid">연락처 가림</span> 으로 연락 주세요.</div></div></sc-if>
+              <sc-if value="{{noReport}}" hint-placeholder-val="{{ true }}"><div class="m"><p class="by">{{cur.name}} · 09:12 <a class="rp" href="?view=신고" title="이 메시지 신고">신고</a></p><div class="bb">노쇼 판정 기준도 정해 두면 좋겠습니다. 예약 시각 30분이 지나도 연락이 없으면 노쇼로 볼까요?</div></div></sc-if>
               <sc-if value="{{isHeld}}" hint-placeholder-val="{{ false }}">
                 <div class="m me"><p class="by">나 · 09:30</p><div class="bb">네, 30분으로 해 주세요. 노쇼 표시 방식은 따로 정하지 않고 진행할게요. 합의 마칠게요.</div></div>
                 <p class="sys ok"><b>최종 합의 내용으로 임시 계약이 되었습니다</b> · 서명 기한 11월 10일<br><a href="Contract-Client.dc.html">계약서 보기</a></p>
@@ -235,7 +235,7 @@
                 <div class="day">11월 4일 (수)</div>
                 <p class="sys ok"><b>계약이 체결되었습니다</b> · 이제 연락처를 주고받을 수 있습니다. 계약 전에 가려진 연락처는 그대로 가려져 있습니다.</p>
                 <div class="m me"><p class="by">나 · 14:30</p><div class="bb">예치까지 마쳤어요. 급한 일은 전화 주셔도 됩니다. 제 번호는 <span class="tel">010-0000-1234</span> 입니다.</div></div>
-                <div class="m"><p class="by">{{cur.name}} · 14:41 <a class="rp" href="Chat-Client.dc.html" title="이 메시지 신고">신고</a></p><div class="bb">감사합니다. 중간 납품은 11월 25일로 맞추겠습니다. 진행 상황은 여기에도 계속 남기겠습니다.</div></div>
+                <div class="m"><p class="by">{{cur.name}} · 14:41 <a class="rp" href="?view=신고" title="이 메시지 신고">신고</a></p><div class="bb">감사합니다. 중간 납품은 11월 25일로 맞추겠습니다. 진행 상황은 여기에도 계속 남기겠습니다.</div></div>
               </sc-if>
             </sc-if>
           </div>
@@ -261,7 +261,7 @@
   <sc-if value="{{report}}" hint-placeholder-val="{{ false }}">
     <div class="rp-scrim" aria-hidden="true"></div>
     <section class="rp-mdl" role="dialog" aria-modal="true" aria-labelledby="rp-h">
-      <div class="rph"><h2 id="rp-h">이 메시지를 신고할까요?</h2><button type="button" class="x" aria-label="닫기">×</button></div>
+      <div class="rph"><h2 id="rp-h">이 메시지를 신고할까요?</h2><button type="button" class="x" aria-label="닫기" data-action-href="?view=문의+중">×</button></div>
       <div class="rpb">
         <div class="q"><i>최준호 · 11월 3일 09:12</i>마자용 밖에서 직접 계약하시면 수수료 없이 해 드릴 수 있어요. 편하실 때 [연락처 가림] 으로 연락 주세요.</div>
         <p class="lb">사유</p>

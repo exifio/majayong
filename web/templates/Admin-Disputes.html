@@ -135,7 +135,7 @@
     <main class="ad-main">
       <h1 class="t">이견 개입</h1>
       <p class="ad-sub">같은 항목에 보완 요청이 반복되면 개입합니다. 판단 근거는 계약서에 첨부된 합의 내용의 조건 줄이고, 화면은 근거를 모아 보여 줍니다.</p>
-      <nav class="ad-tabs" aria-label="이견 상태"><a class="{{tabO}}" href="#o">검토 중<span class="ad-c">{{nO}}</span></a><a class="{{tabD}}" href="#d">판정 완료<span class="ad-c">{{nD}}</span></a></nav>
+      <nav class="ad-tabs" aria-label="이견 상태"><a class="{{tabO}}" href="?view=검토+중">검토 중<span class="ad-c">{{nO}}</span></a><a class="{{tabD}}" href="?view=판정+완료">판정 완료<span class="ad-c">{{nD}}</span></a></nav>
       <sc-if value="{{isDone}}" hint-placeholder-val="{{ false }}">
         <div class="ad-done"><div><b>판정을 보냈습니다 · 11월 28일 16:40 · 운영자 김하늘</b><p>양쪽 채팅과 내 계약에 판정이 기록되었습니다. 판정 사유는 이벤트 기록에 남았습니다.</p></div></div>
       </sc-if>
@@ -191,9 +191,9 @@
             <div class="ad-sec">
               <p class="ad-sh">판정</p>
               <div class="ad-opts" role="radiogroup" aria-label="판정">
-                <label class="lbl"><input type="radio" name="dp"><span><b>보완이 맞다</b><span class="d">조건 줄을 지키지 못했다 — 공급자가 다시 작업하고 이 항목은 검수 대기로 돌아갑니다</span></span></label>
-                <label class="lbl"><input type="radio" name="dp"><span><b>승인이 맞다</b><span class="d">조건 줄을 충족했다 — 이 항목을 승인 처리합니다. 구간의 항목이 모두 승인되면 지급됩니다</span></span></label>
-                <label class="lbl"><input type="radio" name="dp"><span><b>정하지 않은 조건이다</b><span class="d">요청한 부분이 '정하지 않음' 조건이다 — 기능 설명 기준으로 보고 그 부분은 검수 대상에서 뺍니다</span></span></label>
+                <label class="lbl" data-action-href="?view=판정+작성"><input type="radio" name="dp"><span><b>보완이 맞다</b><span class="d">조건 줄을 지키지 못했다 — 공급자가 다시 작업하고 이 항목은 검수 대기로 돌아갑니다</span></span></label>
+                <label class="lbl" data-action-href="?view=판정+작성"><input type="radio" name="dp"><span><b>승인이 맞다</b><span class="d">조건 줄을 충족했다 — 이 항목을 승인 처리합니다. 구간의 항목이 모두 승인되면 지급됩니다</span></span></label>
+                <label class="lbl" data-action-href="?view=판정+작성"><input type="radio" name="dp"><span><b>정하지 않은 조건이다</b><span class="d">요청한 부분이 '정하지 않음' 조건이다 — 기능 설명 기준으로 보고 그 부분은 검수 대상에서 뺍니다</span></span></label>
               </div>
               <p class="ad-sh" style="margin:16px 0 6px">판정 사유<span class="ad-req">필수</span></p>
               <textarea class="inp ad-reason" aria-label="판정 사유" placeholder="어느 조건 줄을 근거로 판단했는지 적어 주세요. 양쪽에 그대로 전달됩니다."></textarea>
@@ -227,7 +227,7 @@
             <div class="ad-foot">
               <p>판정은 양쪽 채팅과 내 계약에 기록되고, 이벤트 기록에 남습니다. 판정 근거는 계약서의 조건 줄입니다.</p>
               <sc-if value="{{isReview}}" hint-placeholder-val="{{ true }}"><div class="ad-bt"><button type="button" class="btn off" disabled>판정 보내기</button><small>판정과 사유를 적으면 켜집니다</small></div></sc-if>
-              <sc-if value="{{isWrite}}" hint-placeholder-val="{{ false }}"><div class="ad-bt"><a class="btn" href="#send">판정 보내기</a></div></sc-if>
+              <sc-if value="{{isWrite}}" hint-placeholder-val="{{ false }}"><div class="ad-bt"><a class="btn" href="?view=판정+완료">판정 보내기</a></div></sc-if>
               <sc-if value="{{isDone}}" hint-placeholder-val="{{ false }}"><div class="ad-bt"><a class="btn gh" href="Admin-Events.dc.html">이벤트 기록 보기</a></div></sc-if>
             </div>
           </div>

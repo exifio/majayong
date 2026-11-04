@@ -11,6 +11,6 @@ export default class HomeSupplierScreen extends Screen {
   renderVals(): Values {
     const menuOpen = this.props.menuOpen ?? false;
     const first = (this.props.view ?? '기본') === '첫 방문';
-    return { isFirst: first, isBase: !first, menuOpen: menuOpen, expanded: menuOpen ? 'true' : 'false' };
+    return { isFirst: first, isBase: !first, menuOpen: menuOpen, expanded: menuOpen ? 'true' : 'false', menuHref: menuOpen ? '?menuOpen=false' : '?menuOpen=true' };
   }
 }

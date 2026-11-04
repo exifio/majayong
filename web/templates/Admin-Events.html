@@ -126,7 +126,7 @@ table.ev td.why{color:var(--s600)}
           <thead><tr><th scope="col">시각</th><th scope="col">행위자</th><th scope="col">종류</th><th scope="col">대상</th><th scope="col">전 → 후</th><th scope="col">사유</th></tr></thead>
           <tbody>
             <sc-for list="{{rows}}" as="r" hint-placeholder-count="12">
-              <tr class="{{r.cls}}"><td class="tm">{{r.t}}</td><td><span class="who">{{r.who}}</span><span class="who2">{{r.who2}}</span></td><td><span class="{{r.chipCls}}">{{r.kind}}</span></td><td>{{r.tg}}</td><td class="ba"><s>{{r.bf}}</s> → <b>{{r.af}}</b></td><td class="why">{{r.why}}</td></tr>
+              <tr class="{{r.cls}}" data-action-href="?view=상세"><td class="tm">{{r.t}}</td><td><span class="who">{{r.who}}</span><span class="who2">{{r.who2}}</span></td><td><span class="{{r.chipCls}}">{{r.kind}}</span></td><td>{{r.tg}}</td><td class="ba"><s>{{r.bf}}</s> → <b>{{r.af}}</b></td><td class="why">{{r.why}}</td></tr>
             </sc-for>
           </tbody>
         </table>
@@ -139,7 +139,7 @@ table.ev td.why{color:var(--s600)}
     <aside class="ev-dr" role="dialog" aria-modal="true" aria-label="이벤트 상세">
       <div class="dh">
         <div><span class="chip amber" style="font-size:12px;padding:2px 8px">단가 수정</span><h2>‘주차 안내’ 블록 단가 수정</h2><p>11월 2일 10:05 · 운영자 김하늘</p></div>
-        <button type="button" class="x" aria-label="닫기">×</button>
+        <button type="button" class="x" aria-label="닫기" data-action-href="?view=목록">×</button>
       </div>
       <div class="db">
         <dl class="ev-kv">

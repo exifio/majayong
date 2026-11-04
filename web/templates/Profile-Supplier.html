@@ -116,8 +116,8 @@
       </div>
 
       <nav class="tabs" aria-label="프로필 메뉴">
-        <a class="{{tabB}}" href="#basic">기본 정보</a>
-        <a class="{{tabR}}" href="#reviews">받은 리뷰 <span style="color:var(--s600);font-weight:400">12</span></a>
+        <a class="{{tabB}}" href="?view=기본+정보">기본 정보</a>
+        <a class="{{tabR}}" href="?view=받은+리뷰">받은 리뷰 <span style="color:var(--s600);font-weight:400">12</span></a>
         <a href="Account-Supplier.dc.html">계정 설정</a>
       </nav>
 
@@ -224,10 +224,10 @@
               <sc-if value="{{hasText}}" hint-placeholder-val="{{ true }}"><p>소규모 식당 예약 사이트 12곳을 만들었습니다. 예약 달력과 PG 결제 연동 작업이 대부분이고, 가장 최근 작업은 회차제 코스 레스토랑의 예약 사이트입니다.</p></sc-if>
               <sc-if value="{{isHidden}}" hint-placeholder-val="{{ false }}"><p style="color:var(--s600);font-size:14px">숨겨 두었습니다. 의뢰인에게는 등록한 링크만 보입니다.</p></sc-if>
               <div class="acts">
-                <sc-if value="{{isDraft}}" hint-placeholder-val="{{ false }}"><a class="btn sm tint" href="#publish">확인하고 공개</a></sc-if>
+                <sc-if value="{{isDraft}}" hint-placeholder-val="{{ false }}"><a class="btn sm tint" href="?summary=공개+중">확인하고 공개</a></sc-if>
                 <button type="button">다시 만들기</button>
-                <sc-if value="{{isHidden}}" hint-placeholder-val="{{ false }}"><button type="button">다시 보이기</button></sc-if>
-                <sc-if value="{{canHide}}" hint-placeholder-val="{{ true }}"><button type="button">숨기기</button></sc-if>
+                <sc-if value="{{isHidden}}" hint-placeholder-val="{{ false }}"><button type="button" data-action-href="?summary=공개+중">다시 보이기</button></sc-if>
+                <sc-if value="{{canHide}}" hint-placeholder-val="{{ true }}"><button type="button" data-action-href="?summary=숨김">숨기기</button></sc-if>
               </div>
             </div>
             <p class="hint">문장은 직접 고칠 수 없습니다. 링크나 파일을 바꾸면 요약을 새로 만들고, 확인하실 때까지 공개하지 않습니다. 다시 만들기는 하루 5번까지입니다.</p>

@@ -209,7 +209,7 @@
       </sc-if>
       <sc-if value="{{isFail}}" hint-placeholder-val="{{ false }}">
         <div class="mk-fail"><b>초안을 만들지 못했습니다</b><p>잠시 연결이 불안정했습니다. 적어 주신 문장은 그대로 남아 있고, 채팅 수정 횟수도 줄지 않았습니다.</p>
-          <div class="acts"><a class="btn" href="Draft-Client.dc.html">다시 만들기</a><a class="ft" href="Draft-Client.dc.html" style="font-size:14px">업종 기본 구성으로 시작</a><a class="ft" href="Input-Client.dc.html" style="font-size:14px">문장 고치기</a></div></div>
+          <div class="acts"><a class="btn" href="?view=초안+만드는+중">다시 만들기</a><a class="ft" href="Draft-Client.dc.html" style="font-size:14px">업종 기본 구성으로 시작</a><a class="ft" href="Input-Client.dc.html" style="font-size:14px">문장 고치기</a></div></div>
       </sc-if>
     </div></div>
     </sc-if>
@@ -400,7 +400,7 @@
             <sc-if value="{{overBudget}}" hint-placeholder-val="{{ false }}">
               <p class="over">생각해 두신 예산 5,000,000원보다 {{gap}} 많습니다. 항목을 빼면 합계가 바로 줄어듭니다.</p>
             </sc-if>
-            <sc-if value="{{notApplied}}" hint-placeholder-val="{{ true }}"><button type="button" class="btn sm gh">예산을 이 금액으로 맞추기</button></sc-if>
+            <sc-if value="{{notApplied}}" hint-placeholder-val="{{ true }}"><button type="button" class="btn sm gh" data-action-href="?budgetApplied=true">예산을 이 금액으로 맞추기</button></sc-if>
           </div>
           <p class="sec basis">예상 총액은 AI가 기능마다 분석해 둔 단가를 더한 참고용 추정치이며, 실제 견적과 다를 수 있습니다. 공급자에게는 보이지 않고, 명세를 확정하면 더 이상 표시하지 않습니다.</p>
         </section>

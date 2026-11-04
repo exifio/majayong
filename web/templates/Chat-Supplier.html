@@ -201,7 +201,7 @@
             </div>
             <div class="acts">
               <a class="btn sm gh" href="Project-Supplier.dc.html">프로젝트 보기</a>
-              <sc-if value="{{canRev}}" hint-placeholder-val="{{ true }}"><button type="button" class="btn sm tint" aria-expanded="{{revOpen}}">견적 수정</button></sc-if>
+              <sc-if value="{{canRev}}" hint-placeholder-val="{{ true }}"><button type="button" class="btn sm tint" aria-expanded="{{revOpen}}" data-action-href="{{revHref}}">견적 수정</button></sc-if>
               <sc-if value="{{isHeld}}" hint-placeholder-val="{{ false }}">
                 <button type="button" class="btn sm off" disabled="" title="임시 계약 중에는 견적을 고칠 수 없습니다">견적 수정</button>
               </sc-if>
@@ -252,7 +252,7 @@
               </div>
               <div class="ft2">
                 <p>새 회차로 저장되고 이전 회차는 '대체됨'이 됩니다. 의뢰인 채팅에 기록이 남고, 제안 비교에는 새 금액이 보입니다.</p>
-                <div class="acts2"><button type="button" class="btn gh">취소</button><button type="button" class="btn">수정 보내기</button></div>
+                <div class="acts2"><button type="button" class="btn gh" data-action-href="?view=문의+중">취소</button><button type="button" class="btn">수정 보내기</button></div>
               </div>
             </section>
           </sc-if>
@@ -269,24 +269,24 @@
             <sc-if value="{{main}}" hint-placeholder-val="{{ true }}">
               <div class="day">11월 1일 (일)</div>
               <p class="sys">정민재님이 문의를 시작했습니다</p>
-              <div class="m"><p class="by">정민재 · 14:02<button type="button" class="rp" aria-label="이 메시지 신고">신고</button></p><div class="bb">안녕하세요, 견적 잘 봤습니다. 예약금 환불 기준을 어떻게 정하면 좋을지 여쭤보고 싶어요. 전날 취소면 돌려주고 싶은데, 회차마다 다르게도 할 수 있나요?</div></div>
+              <div class="m"><p class="by">정민재 · 14:02<button type="button" class="rp" aria-label="이 메시지 신고" data-action-href="?view=신고">신고</button></p><div class="bb">안녕하세요, 견적 잘 봤습니다. 예약금 환불 기준을 어떻게 정하면 좋을지 여쭤보고 싶어요. 전날 취소면 돌려주고 싶은데, 회차마다 다르게도 할 수 있나요?</div></div>
               <div class="m me"><p class="by">나 · 14:20</p><div class="bb">네, 가능합니다. 점심과 저녁 회차마다 마감 시각을 따로 두고, 그 전에 취소하면 전액 환불, 이후는 환불 없음으로 설정하실 수 있게 만들 수 있습니다.</div></div>
               <div class="m me"><p class="by">나 · 14:21</p><div class="bb">다만 회차별로 기준을 다르게 두면 관리 화면 작업이 늘어서 견적을 조금 올려야 할 것 같습니다.</div></div>
               <p class="sys chg">견적을 고쳤습니다 · <b>1회차 3,000,000원 → 2회차 3,100,000원</b> · 기간 42일 그대로<br>사유: 환불 기준을 회차별로 다르게 두려면 작업이 늘어납니다 · 의뢰인에게도 같은 기록이 보입니다</p>
-              <div class="m"><p class="by">정민재 · 14:35<button type="button" class="rp" aria-label="이 메시지 신고">신고</button></p><div class="bb">좋아요. 예약금은 1인당 3만 원으로 생각하고 있어요. 리마인드는 어떤 방식이 좋을까요?</div></div>
+              <div class="m"><p class="by">정민재 · 14:35<button type="button" class="rp" aria-label="이 메시지 신고" data-action-href="?view=신고">신고</button></p><div class="bb">좋아요. 예약금은 1인당 3만 원으로 생각하고 있어요. 리마인드는 어떤 방식이 좋을까요?</div></div>
               <div class="m me"><p class="by">나 · 14:48</p><div class="bb">알림톡을 권합니다. 실패하면 문자로 다시 보내게 해 두겠습니다. 방문 전날 18시에 보내는 걸로 할까요?</div></div>
-              <div class="{{flagCls}}"><p class="by">정민재 · 15:02<button type="button" class="rp" aria-label="이 메시지 신고">신고</button></p><div class="bb">네, 그렇게 해 주세요. 진행 상황은 전화로도 여쭤봐도 될까요? 제 번호는 <span class="hid">연락처 가림</span> 입니다.</div></div>
+              <div class="{{flagCls}}"><p class="by">정민재 · 15:02<button type="button" class="rp" aria-label="이 메시지 신고" data-action-href="?view=신고">신고</button></p><div class="bb">네, 그렇게 해 주세요. 진행 상황은 전화로도 여쭤봐도 될까요? 제 번호는 <span class="hid">연락처 가림</span> 입니다.</div></div>
               <p class="sys">계약이 체결되기 전에는 전화번호 · 이메일 · 메신저 아이디가 자동으로 가려집니다.</p>
               <div class="day">11월 3일 (화)</div>
               <div class="m me"><p class="by">나 · 09:12</p><div class="bb">노쇼 판정 기준도 정해 두면 좋겠습니다. 예약 시각 30분이 지나도 연락이 없으면 노쇼로 볼까요?</div></div>
               <sc-if value="{{heldMsgs}}" hint-placeholder-val="{{ false }}">
-                <div class="m"><p class="by">정민재 · 09:30<button type="button" class="rp" aria-label="이 메시지 신고">신고</button></p><div class="bb">네, 30분으로 해 주세요. 이제 다 정해진 것 같아요. 합의 마칠게요.</div></div>
+                <div class="m"><p class="by">정민재 · 09:30<button type="button" class="rp" aria-label="이 메시지 신고" data-action-href="?view=신고">신고</button></p><div class="bb">네, 30분으로 해 주세요. 이제 다 정해진 것 같아요. 합의 마칠게요.</div></div>
                 <p class="sys ok"><b>의뢰인이 최종 합의를 마쳐 임시 계약이 되었습니다</b> · 서명 기한 11월 10일<br>7일 안에 서명하지 않으면 결렬됩니다 · <a href="Contract-Supplier.dc.html">계약서 확인하기</a></p>
               </sc-if>
               <sc-if value="{{isSigned}}" hint-placeholder-val="{{ false }}">
                 <div class="day">11월 4일 (수)</div>
                 <p class="sys ok"><b>계약이 체결되어 연락처를 주고받을 수 있습니다</b> · 11월 4일 16:05 두 분 모두 서명<br>이제부터 보내는 전화번호 · 이메일은 가리지 않습니다 · <a href="Contract-Supplier.dc.html">계약서 보기</a></p>
-                <div class="m"><p class="by">정민재 · 16:20<button type="button" class="rp" aria-label="이 메시지 신고">신고</button></p><div class="bb">계약 축하드려요! 급한 일은 이 번호로 연락 주세요. 010-2345-6789 입니다. 예치도 방금 마쳤습니다.</div></div>
+                <div class="m"><p class="by">정민재 · 16:20<button type="button" class="rp" aria-label="이 메시지 신고" data-action-href="?view=신고">신고</button></p><div class="bb">계약 축하드려요! 급한 일은 이 번호로 연락 주세요. 010-2345-6789 입니다. 예치도 방금 마쳤습니다.</div></div>
                 <div class="m me"><p class="by">나 · 16:32</p><div class="bb">감사합니다. 내일부터 예약 달력부터 작업하겠습니다. 진행 상황은 여기 채팅으로 정리해서 남기겠습니다.</div></div>
               </sc-if>
             </sc-if>
@@ -320,7 +320,7 @@
   <sc-if value="{{rpOpen}}" hint-placeholder-val="{{ false }}">
     <div class="rp-scrim"></div>
     <div class="rp-mdl" role="dialog" aria-modal="true" aria-labelledby="rp-t">
-      <div class="rp-hd"><h2 id="rp-t">메시지 신고</h2><button type="button" class="rp-x" aria-label="닫기">×</button></div>
+      <div class="rp-hd"><h2 id="rp-t">메시지 신고</h2><button type="button" class="rp-x" aria-label="닫기" data-action-href="?view=문의+중">×</button></div>
       <div class="rp-bd">
         <div class="rp-q"><span>신고할 메시지 · 정민재 · 11월 1일 15:02</span>진행 상황은 전화로도 여쭤봐도 될까요? 제 번호는 <span class="hid" style="display:inline-block;margin:0">연락처 가림</span> 입니다.</div>
         <p class="rp-l">사유</p>
@@ -334,7 +334,7 @@
         <textarea class="rp-ta" aria-label="신고 설명">계약 전에 전화번호를 보내며 전화로 진행하자고 했습니다.</textarea>
         <p class="rp-nt">상대에게 알리지 않습니다. 운영자가 메시지와 사유를 보고 조치하며, 조치 결과는 알림으로 알려 드립니다. 대화는 그대로 이어갈 수 있습니다.</p>
       </div>
-      <div class="rp-ft"><button type="button" class="btn gh">취소</button><button type="button" class="btn warn">신고하기</button></div>
+      <div class="rp-ft"><button type="button" class="btn gh" data-action-href="?view=문의+중">취소</button><button type="button" class="btn warn" data-action-href="?view=문의+중">신고하기</button></div>
     </div>
   </sc-if>
 

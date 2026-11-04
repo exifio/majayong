@@ -129,7 +129,7 @@
       <section class="ac-sec" aria-labelledby="h-login">
         <h2 id="h-login">로그인 정보</h2>
         <p class="ds">계정 이메일은 로그인과 안내 메일에만 쓰고, 다른 사용자에게는 어느 단계에서도 공개되지 않습니다.</p>
-        <div class="ac-row"><div><p class="k">계정 이메일</p><p class="v" style="margin:0">junho.choi@example.com<span class="ac-prv">공개 안 함</span></p></div><a class="btn sm gh" href="#email">이메일 바꾸기</a></div>
+        <div class="ac-row"><div><p class="k">계정 이메일</p><p class="v" style="margin:0">junho.choi@example.com<span class="ac-prv">공개 안 함</span></p></div><a class="btn sm gh" href="?view=이메일+바꾸기">이메일 바꾸기</a></div>
         <div class="ac-row"><div><p class="k">이메일 로그인</p><p class="v" style="margin:0">비밀번호 사용 중</p></div></div>
         <div class="ac-row"><div><p class="k">구글 로그인</p><p class="v" style="margin:0"><span class="ac-g">G</span>연결 안 됨</p></div><a class="btn sm gh" href="#google">구글 연결하기</a></div>
         <div class="ac-row"><div><p class="k">역할</p><p class="v" style="margin:0"><span class="chip" style="margin-left:0">공급자</span></p></div><p class="sec" style="margin:0;text-align:right;flex:1 1 300px">가입 때 정해지고 바꿀 수 없습니다. 의뢰인으로 프로젝트를 맡기시려면 다른 이메일로 계정을 만들어 주세요.</p></div>
@@ -143,14 +143,14 @@
           <div class="f"><label class="lbl" for="pw1">새 비밀번호</label><input class="inp" id="pw1" type="password" value="{{pw1}}" placeholder="새 비밀번호"></div>
           <div class="f"><label class="lbl" for="pw2">새 비밀번호 확인</label><input class="inp" id="pw2" type="password" value="{{pw1}}" placeholder="한 번 더"></div>
         </div>
-        <div class="ac-act"><p class="sec">바꾸면 다른 기기의 로그인은 끝납니다.</p><a class="btn" href="Account-Supplier.dc.html">비밀번호 바꾸기</a></div>
+        <div class="ac-act"><p class="sec">바꾸면 다른 기기의 로그인은 끝납니다.</p><a class="btn" href="?view=비밀번호+변경+완료">비밀번호 바꾸기</a></div>
       </section>
 
       <section class="ac-sec" aria-labelledby="h-pay">
         <h2 id="h-pay">정산 정보</h2>
         <p class="ds">승인된 구간 금액에서 수수료 5%를 뺀 금액이 정산 계좌로 지급됩니다. 바꾼 계좌는 다음 지급부터 쓰입니다.</p>
         <div class="ac-row"><div><p class="k">구분</p><p class="v" style="margin:0"><span class="ac-seg" role="group" aria-label="구분"><span class="on">사업자</span><span>개인</span></span>사업자등록번호 끝자리 2731</p></div><p class="sec" style="margin:0;text-align:right;flex:1 1 280px">사업자는 대금 세금계산서를 의뢰인에게 직접 발행합니다. 개인이면 지급 때 3.3% 원천징수합니다.</p></div>
-        <div class="ac-row"><div><p class="k">정산 계좌</p><p class="v" style="margin:0">신한은행 · 끝자리 2048 · 예금주 최준호</p></div><a class="btn sm gh" href="#bank">계좌 바꾸기</a></div>
+        <div class="ac-row"><div><p class="k">정산 계좌</p><p class="v" style="margin:0">신한은행 · 끝자리 2048 · 예금주 최준호</p></div><a class="btn sm gh" href="?view=계좌+바꾸기">계좌 바꾸기</a></div>
       </section>
 
       <section class="ac-sec ac-out" aria-labelledby="h-out">
@@ -160,7 +160,7 @@
           <li><b>진행 중인 계약 · 임시 계약 · 정산 처리 중</b>인 건이 있으면 탈퇴할 수 없습니다. 모두 끝난 뒤에 탈퇴해 주세요.</li>
           <li>리뷰 · 계약 · 정산 기록은 법에서 정한 보관 기간 동안 남긴 뒤 지웁니다.</li>
         </ul>
-        <div class="ac-act" style="margin-top:0"><p class="sec">상대방 화면에는 '탈퇴한 사용자'로 표시됩니다.</p><a class="btn sm warn" href="#leave">탈퇴하기</a></div>
+        <div class="ac-act" style="margin-top:0"><p class="sec">상대방 화면에는 '탈퇴한 사용자'로 표시됩니다.</p><a class="btn sm warn" href="?view=탈퇴+확인">탈퇴하기</a></div>
       </section>
 
     </div>
@@ -169,7 +169,7 @@
   <sc-if value="{{isLeave}}" hint-placeholder-val="{{ false }}">
     <div class="m-scrim" aria-hidden="true"></div>
     <section class="m-dlg" role="dialog" aria-modal="true" aria-label="탈퇴 확인">
-      <div class="mh"><div><h2>지금은 탈퇴할 수 없습니다</h2><p>진행 중인 계약이 끝나야 탈퇴할 수 있습니다.</p></div><button type="button" class="x" aria-label="닫기">×</button></div>
+      <div class="mh"><div><h2>지금은 탈퇴할 수 없습니다</h2><p>진행 중인 계약이 끝나야 탈퇴할 수 있습니다.</p></div><button type="button" class="x" aria-label="닫기" data-action-href="?view=기본">×</button></div>
       <div class="mb">
         <div class="m-blk"><b>진행 중인 계약 1건</b>
           <div class="m-ct"><div><div class="t">예약 달력, 예약금 결제 외 2개 기능</div><div class="s">의뢰인 온도 다이닝 · 작업 마감 12월 16일</div></div><span class="chip blue">진행 중</span></div>
@@ -187,7 +187,7 @@
   <sc-if value="{{isEmail}}" hint-placeholder-val="{{ false }}">
     <div class="m-scrim" aria-hidden="true"></div>
     <section class="m-dlg" role="dialog" aria-modal="true" aria-label="이메일 바꾸기">
-      <div class="mh"><div><h2>이메일 바꾸기</h2><p>새 이메일로 확인 메일을 보내고, 메일의 링크를 누르면 바뀝니다.</p></div><button type="button" class="x" aria-label="닫기">×</button></div>
+      <div class="mh"><div><h2>이메일 바꾸기</h2><p>새 이메일로 확인 메일을 보내고, 메일의 링크를 누르면 바뀝니다.</p></div><button type="button" class="x" aria-label="닫기" data-action-href="?view=기본">×</button></div>
       <div class="mb">
         <div class="m-now"><span>지금 이메일</span><b>junho.choi@example.com</b></div>
         <div class="m-f"><label class="lbl" for="em1">새 이메일</label><input class="inp" id="em1" type="text" value="junho.dev@example.com" placeholder="새 이메일 주소"></div>
@@ -204,7 +204,7 @@
   <sc-if value="{{isBank}}" hint-placeholder-val="{{ false }}">
     <div class="m-scrim" aria-hidden="true"></div>
     <section class="m-dlg" role="dialog" aria-modal="true" aria-label="계좌 바꾸기" style="width:600px">
-      <div class="mh"><div><h2>계좌 바꾸기</h2><p>바꾼 계좌는 다음 지급부터 적용됩니다.</p></div><button type="button" class="x" aria-label="닫기">×</button></div>
+      <div class="mh"><div><h2>계좌 바꾸기</h2><p>바꾼 계좌는 다음 지급부터 적용됩니다.</p></div><button type="button" class="x" aria-label="닫기" data-action-href="?view=기본">×</button></div>
       <div class="mb">
         <div class="m-now"><span>지금 계좌</span><b>신한은행 · 끝자리 2048 · 예금주 최준호</b></div>
         <div class="m-g2">

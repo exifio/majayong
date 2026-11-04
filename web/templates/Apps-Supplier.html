@@ -130,7 +130,7 @@
             <p>온도 다이닝이 최종 합의 내용을 확인하고 임시 계약을 만들었습니다. 계약서에서 합의한 기능과 조건을 확인하고 서명하시면, 의뢰인도 서명할 때 계약이 체결됩니다. 기한이 지나면 결렬됩니다.</p>
             <div class="acts2">
               <a class="btn lg onnavy" href="Contract-Supplier.dc.html">계약서 확인하고 서명</a>
-              <button type="button" class="txb">서명 거절</button>
+              <button type="button" class="txb" data-action-href="Contract-Supplier.dc.html?state=서명+거절+확인">서명 거절</button>
             </div>
           </div>
           <div class="rt">
@@ -148,7 +148,7 @@
 
       <div class="bar2">
         <nav class="tabs" aria-label="상태별 보기">
-          <sc-for list="{{tabs}}" as="t" hint-placeholder-count="6"><a class="{{t.cls}}" href="#apps">{{t.name}}<span class="n2">{{t.n}}</span></a></sc-for>
+          <sc-for list="{{tabs}}" as="t" hint-placeholder-count="6"><a class="{{t.cls}}" href="{{t.href}}">{{t.name}}<span class="n2">{{t.n}}</span></a></sc-for>
         </nav>
         <span class="lim">지원한 날짜 최신순</span>
       </div>
@@ -168,7 +168,7 @@
                 <div class="amt2">{{r.amount}}</div>
                 <div class="amtx">{{r.amtSub}}</div>
                 <div class="acts">
-                  <sc-if value="{{r.hasTx}}" hint-placeholder-val="{{ false }}"><button type="button" class="txb">{{r.tx}}</button></sc-if>
+                  <sc-if value="{{r.hasTx}}" hint-placeholder-val="{{ false }}"><button type="button" class="txb" data-action-href="?view=지원+철회+확인">{{r.tx}}</button></sc-if>
                   <sc-if value="{{r.hasLink}}" hint-placeholder-val="{{ true }}"><a class="ft" href="{{r.linkHref}}" style="font-size:14px">{{r.link}}</a></sc-if>
                   <sc-if value="{{r.hasBtn}}" hint-placeholder-val="{{ true }}"><a class="{{r.btnCls}}" href="{{r.href}}">{{r.action}}<sc-if value="{{r.unread}}" hint-placeholder-val="{{ false }}"><span class="unread">{{r.unread}}</span></sc-if></a></sc-if>
                 </div>
@@ -214,7 +214,7 @@
   <sc-if value="{{wdOpen}}" hint-placeholder-val="{{ false }}">
     <div class="m-scrim" aria-hidden="true"></div>
     <section class="m-dlg" role="dialog" aria-modal="true" aria-labelledby="m-wd">
-      <div class="m-h"><h2 id="m-wd">지원을 철회할까요?</h2><button type="button" class="m-x" aria-label="닫기">×</button></div>
+      <div class="m-h"><h2 id="m-wd">지원을 철회할까요?</h2><button type="button" class="m-x" aria-label="닫기" data-action-href="?view=전체">×</button></div>
       <div class="m-b">
         <p>단골 등급 관리, 재방문 알림 외 1개 기능 · 브루잉 랩 · 내 견적 1,800,000원</p>
         <ul>
@@ -223,7 +223,7 @@
           <li>의뢰인과의 채팅은 읽기 전용이 됩니다. <b>되돌릴 수 없습니다.</b></li>
         </ul>
       </div>
-      <div class="m-f"><button type="button" class="btn gh">돌아가기</button><a class="btn warn" href="Apps-Supplier.dc.html">지원 철회</a></div>
+      <div class="m-f"><button type="button" class="btn gh" data-action-href="?view=전체">돌아가기</button><a class="btn warn" href="Apps-Supplier.dc.html">지원 철회</a></div>
     </section>
   </sc-if>
 

@@ -193,12 +193,12 @@
             </div>
             <div class="acts3">
               <a class="btn tint" href="Compare-Client.dc.html">제안 비교 보기</a>
-              <sc-if value="{{canEdit}}" hint-placeholder-val="{{ true }}"><a class="btn gh" href="Draft-Client.dc.html">명세 고치기</a></sc-if>
+              <sc-if value="{{canEdit}}" hint-placeholder-val="{{ true }}"><a class="btn gh" href="?view=명세+고치기+확인">명세 고치기</a></sc-if>
               <sc-if value="{{held}}" hint-placeholder-val="{{ false }}">
                 <button type="button" class="btn off" disabled="">명세 고치기</button>
                 <p class="why2">최준호님과 임시 계약 중이라 명세를 고칠 수 없습니다. 고치려면 임시 계약을 먼저 취소해야 합니다.</p>
               </sc-if>
-              <sc-if value="{{canEdit}}" hint-placeholder-val="{{ true }}"><a class="ft lk" href="#extend">마감 연장</a></sc-if>
+              <sc-if value="{{canEdit}}" hint-placeholder-val="{{ true }}"><a class="ft lk" href="?view=마감+연장">마감 연장</a></sc-if>
             </div>
           </section>
           <p class="sec" style="margin:0">명세를 고치면 받은 견적은 '이전 명세 기준'이 되고 공급자에게 재견적을 요청합니다.</p>
@@ -213,7 +213,7 @@
     <section class="m-box" role="dialog" aria-modal="true" aria-labelledby="me-h">
       <div class="mh">
         <div><h2 id="me-h">명세를 고칠까요?</h2><p>고친 명세는 바로 공급자에게 보입니다.</p></div>
-        <button type="button" class="x" aria-label="닫기">×</button>
+        <button type="button" class="x" aria-label="닫기" data-action-href="?view=기본">×</button>
       </div>
       <div class="mb">
         <div class="warnb"><b>지금 받은 견적 3건이 '이전 명세 기준'이 됩니다.</b> 고친 명세로 새 견적이 들어오기 전까지 이 견적들로는 계약을 진행할 수 없습니다.</div>
@@ -224,7 +224,7 @@
           <li>임시 계약 중에는 명세를 고칠 수 없습니다.</li>
         </ul>
       </div>
-      <div class="mf"><a class="btn gh" href="Spec-Client.dc.html">취소</a><a class="btn" href="Draft-Client.dc.html">명세 고치기</a></div>
+      <div class="mf"><a class="btn gh" href="?view=기본">취소</a><a class="btn" href="Draft-Client.dc.html">명세 고치기</a></div>
     </section>
   </sc-if>
 
@@ -233,7 +233,7 @@
     <section class="m-box" role="dialog" aria-modal="true" aria-labelledby="mx-h">
       <div class="mh">
         <div><h2 id="mx-h">마감 연장</h2><p>더 많은 견적을 받고 싶을 때 모집 기간을 늘립니다.</p></div>
-        <button type="button" class="x" aria-label="닫기">×</button>
+        <button type="button" class="x" aria-label="닫기" data-action-href="?view=기본">×</button>
       </div>
       <div class="mb">
         <div class="dr">
@@ -244,7 +244,7 @@
         <p class="hint">지금 마감일부터 최대 14일까지 늘릴 수 있습니다.</p>
         <p class="hint">지원은 계속 받고, 이미 받은 견적 3건은 그대로 둡니다. 지원한 공급자에게는 마감이 바뀌었다는 표시만 보입니다.</p>
       </div>
-      <div class="mf"><a class="btn gh" href="Spec-Client.dc.html">취소</a><a class="btn" href="Spec-Client.dc.html">마감 연장</a></div>
+      <div class="mf"><a class="btn gh" href="?view=기본">취소</a><a class="btn" href="Spec-Client.dc.html">마감 연장</a></div>
     </section>
   </sc-if>
 

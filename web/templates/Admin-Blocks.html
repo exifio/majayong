@@ -160,9 +160,9 @@ table.bl-cmp td.k{color:var(--s600);white-space:nowrap;width:64px}
           </div>
           <div class="bl-acts">
             <a class="btn sm gh" href="#keep">그대로 두기</a>
-            <a class="btn sm tint" href="#merge">기존 블록에 병합</a>
-            <a class="btn sm gh" href="#price">단가 수정</a>
-            <a class="btn sm warn" href="#deactivate">비활성화</a>
+            <a class="btn sm tint" href="?view=병합">기존 블록에 병합</a>
+            <a class="btn sm gh" href="?view=단가+수정">단가 수정</a>
+            <a class="btn sm warn" href="?view=비활성화">비활성화</a>
           </div>
           <p class="ad-log">처리하면 사유와 함께 이벤트 기록에 남습니다</p>
         </aside>
@@ -172,7 +172,7 @@ table.bl-cmp td.k{color:var(--s600);white-space:nowrap;width:64px}
   <sc-if value="{{isMerge}}" hint-placeholder-val="{{ false }}">
     <div class="ad-scrim" aria-hidden="true"></div>
     <section class="ad-mdl" role="dialog" aria-modal="true" aria-label="블록 병합">
-      <div class="mh"><div><h2>‘노쇼 관리’를 기존 블록에 병합</h2><p>새 블록 · 11월 2일 09:14 생성 · AI 단가 950,000원</p></div><button type="button" class="x" aria-label="닫기">×</button></div>
+      <div class="mh"><div><h2>‘노쇼 관리’를 기존 블록에 병합</h2><p>새 블록 · 11월 2일 09:14 생성 · AI 단가 950,000원</p></div><button type="button" class="x" aria-label="닫기" data-action-href="?view=새+블록+목록">×</button></div>
       <div class="mb">
         <span class="ad-lbl" style="margin-top:0">합칠 기존 블록</span>
         <div class="bl-sel">노쇼 기록<span>유사도 92% · AI 단가 1,000,000원 · 사용 중 12건 ▾</span></div>
@@ -185,13 +185,13 @@ table.bl-cmp td.k{color:var(--s600);white-space:nowrap;width:64px}
         <label class="ad-lbl" for="mg-why">사유<i>필수</i></label>
         <textarea id="mg-why" class="ad-in">기능 요약과 정할 것이 ‘노쇼 기록’과 같고 이름만 다릅니다.</textarea>
       </div>
-      <div class="mf"><p>병합 전후 블록과 사유가 이벤트 기록에 남습니다</p><div class="bt"><a class="btn sm gh" href="Admin-Blocks.dc.html" style="white-space:nowrap">취소</a><a class="btn sm" href="Admin-Blocks.dc.html" style="white-space:nowrap">병합하기</a></div></div>
+      <div class="mf"><p>병합 전후 블록과 사유가 이벤트 기록에 남습니다</p><div class="bt"><a class="btn sm gh" href="?view=새+블록+목록" style="white-space:nowrap">취소</a><a class="btn sm" href="Admin-Blocks.dc.html" style="white-space:nowrap">병합하기</a></div></div>
     </section>
   </sc-if>
   <sc-if value="{{isPrice}}" hint-placeholder-val="{{ false }}">
     <div class="ad-scrim" aria-hidden="true"></div>
     <section class="ad-mdl" role="dialog" aria-modal="true" aria-label="단가 수정">
-      <div class="mh"><div><h2>‘주차 안내’ 단가 수정</h2><p>새 블록 · 10월 31일 16:40 생성 · 음식점(한식)</p></div><button type="button" class="x" aria-label="닫기">×</button></div>
+      <div class="mh"><div><h2>‘주차 안내’ 단가 수정</h2><p>새 블록 · 10월 31일 16:40 생성 · 음식점(한식)</p></div><button type="button" class="x" aria-label="닫기" data-action-href="?view=새+블록+목록">×</button></div>
       <div class="mb">
         <div class="bl-pr2">
           <div><span class="ad-lbl" style="margin-top:0">지금 단가</span><div class="cur">800,000원</div></div>
@@ -207,13 +207,13 @@ table.bl-cmp td.k{color:var(--s600);white-space:nowrap;width:64px}
           <li>공급자 화면에는 단가가 보이지 않습니다.</li>
         </ul></div>
       </div>
-      <div class="mf"><p>수정 전후 값과 사유가 이벤트 기록에 남습니다</p><div class="bt"><a class="btn sm gh" href="Admin-Blocks.dc.html" style="white-space:nowrap">취소</a><a class="btn sm" href="Admin-Blocks.dc.html" style="white-space:nowrap">단가 수정</a></div></div>
+      <div class="mf"><p>수정 전후 값과 사유가 이벤트 기록에 남습니다</p><div class="bt"><a class="btn sm gh" href="?view=새+블록+목록" style="white-space:nowrap">취소</a><a class="btn sm" href="Admin-Blocks.dc.html" style="white-space:nowrap">단가 수정</a></div></div>
     </section>
   </sc-if>
   <sc-if value="{{isDeact}}" hint-placeholder-val="{{ false }}">
     <div class="ad-scrim" aria-hidden="true"></div>
     <section class="ad-mdl" role="dialog" aria-modal="true" aria-label="블록 비활성화">
-      <div class="mh"><div><h2>‘방문 후 리뷰 요청’ 비활성화</h2><p>새 블록 · 10월 30일 10:05 생성 · AI 단가 450,000원 · 사용 중 0건</p></div><button type="button" class="x" aria-label="닫기">×</button></div>
+      <div class="mh"><div><h2>‘방문 후 리뷰 요청’ 비활성화</h2><p>새 블록 · 10월 30일 10:05 생성 · AI 단가 450,000원 · 사용 중 0건</p></div><button type="button" class="x" aria-label="닫기" data-action-href="?view=새+블록+목록">×</button></div>
       <div class="mb">
         <span class="ad-lbl" style="margin-top:0">비활성화하면</span>
         <div class="bl-imp"><ul>
@@ -224,7 +224,7 @@ table.bl-cmp td.k{color:var(--s600);white-space:nowrap;width:64px}
         <label class="ad-lbl" for="da-why">사유<i>필수</i></label>
         <textarea id="da-why" class="ad-in">방문 다음 날 안내는 ‘리마인드 알림’의 발송 시점 조건으로 다룰 수 있어 따로 둘 블록이 아닙니다. 쓰인 초안이 없어 병합 대신 끕니다.</textarea>
       </div>
-      <div class="mf"><p>비활성화와 사유가 이벤트 기록에 남습니다</p><div class="bt"><a class="btn sm gh" href="Admin-Blocks.dc.html" style="white-space:nowrap">취소</a><a class="btn sm warn" href="Admin-Blocks.dc.html" style="white-space:nowrap">비활성화</a></div></div>
+      <div class="mf"><p>비활성화와 사유가 이벤트 기록에 남습니다</p><div class="bt"><a class="btn sm gh" href="?view=새+블록+목록" style="white-space:nowrap">취소</a><a class="btn sm warn" href="Admin-Blocks.dc.html" style="white-space:nowrap">비활성화</a></div></div>
     </section>
   </sc-if>
 </div>

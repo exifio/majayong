@@ -15,7 +15,10 @@
 export type Scope = Record<string, unknown>;
 
 export interface RenderContext {
-  /** Map a design link target such as `Home-Client.dc.html#x` to a URL. */
+  /**
+   * Map a link target to a URL: `Home-Client.dc.html?view=x#y` (another screen)
+   * or `?view=x` (another state of the current screen).
+   */
   resolveHref(href: string): string;
   /** Turn an event handler into a URL that, when visited, shows the resulting state. */
   actionHref(handler: (...args: unknown[]) => unknown): string | null;
@@ -122,7 +125,7 @@ function renderText(text: string, scopes: Scope[]): string {
 }
 
 function renderTag(source: string, scopes: Scope[], ctx: RenderContext): string {
-  if (source.startsWith('</') || (!source.includes('{{') && !source.includes('.dc.html'))) return source;
+  if (source.startsWith('</') || !/\{\{|\.dc\.html|href="\?/.test(source)) return source;
   const name = /^<([\w:-]+)/.exec(source)![1]!;
   const selfClosing = /\/>$/.test(source);
   let out = `<${name}`;
@@ -160,7 +163,7 @@ function renderTag(source: string, scopes: Scope[], ctx: RenderContext): string 
         return v === undefined || v === null ? '' : escapeAttr(String(v));
       });
     }
-    if (attr === 'href') encoded = escapeAttr(ctx.resolveHref(decodeEntities(encoded)));
+    if (attr === 'href' || attr === 'data-action-href') encoded = escapeAttr(ctx.resolveHref(decodeEntities(encoded)));
     out += raw === '' && !whole ? ` ${attr}` : ` ${attr}="${encoded.replace(/"/g, '&quot;')}"`;
   }
   return out + (selfClosing ? ' />' : '>');

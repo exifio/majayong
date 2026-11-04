@@ -40,9 +40,10 @@ export default class ContractClientScreen extends Screen {
       cliChip: cliSt.chip, cliCls: cliSt.cls, cliAt: cliSt.at,
       canSign: !mine && !broke, waiting: mine && !both && !broke, bothSigned: both, pending: !both && !broke,
       signLabel: isClient ? (other ? '서명하고 예치하기' : '서명하기') : '서명하기',
-      signHref: isClient && other ? 'Escrow-Client.dc.html' : '#signed',
+      signHref: isClient && other ? 'Escrow-Client.dc.html' : (other ? '?state=양쪽+서명+완료' : '?state=내가+먼저+서명'),
       cancelTail: isClient ? '서명 기한 전에 임시 계약을 취소할 수 있습니다. 취소하면 결렬로 처리되고, 제안 비교에서 보류한 지원 중 다시 고르실 수 있습니다.' : '조건에 동의하지 않으면 서명을 거절하실 수 있습니다. 거절하면 바로 결렬되고 이 지원은 거절로 남습니다.',
       cancelLabel: isClient ? '임시 계약 취소' : '서명 거절',
+      cancelHref: '?state=임시+계약+취소+확인',
       waitText: isClient ? '최준호님이 11월 10일까지 서명하면 계약이 체결되고 대금을 예치할 수 있습니다.' : '정민재님이 11월 10일까지 서명하면 계약이 체결됩니다. 대금이 예치되면 작업을 시작합니다.',
       doneText: isClient ? '계약이 체결되었습니다. 3일 안에 예치해 주세요(11월 7일까지) · 지나면 자동 결렬됩니다. 예치 다음 날부터 작업 기간 42일이 시작되고, 보류했던 지원은 그때 자동으로 거절됩니다.' : '계약이 체결되었습니다. 이제 채팅에서 연락처를 주고받을 수 있습니다. 의뢰인이 3일 안에(11월 7일까지) 예치하면 다음 날부터 작업 기간 42일이 시작됩니다 · 지나면 자동 결렬.'
     };

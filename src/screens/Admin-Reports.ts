@@ -19,16 +19,18 @@ export default class AdminReportsScreen extends Screen {
       ['계정 정지', '로그인 불가 · 프로필 숨김', '로그인할 수 없고 공개 프로필이 숨겨집니다. 진행 중인 계약은 운영자가 따로 취소 정산합니다.']
     ];
     const pick = ban ? 3 : ((write || done) ? 1 : -1);
-    const acts = A.map((a, i) => ({ name: a[0], desc: a[1], cls: i === pick ? 'on' : '', chk: i === pick ? 'checked' : '' }));
+    const acts = A.map((a, i) => ({ name: a[0], desc: a[1], cls: i === pick ? 'on' : '', chk: i === pick ? 'checked' : '',
+      // 디자인된 선택 상태는 경고(조치 작성)와 계정 정지(계정 정지 선택)뿐입니다.
+      href: done ? undefined : (i === 1 ? '?view=조치+작성' : (i === 3 ? '?view=계정+정지+선택' : undefined)) }));
     const items = [
       { reason: '연락처 · 외부 거래 유도', rCls: 'chip amber', status: done ? '처리 완료 · 경고' : '처리 대기', sCls: done ? 'chip teal' : 'chip',
         title: '음료 사전 주문, 픽업 알림 외 1개 기능', who: '의뢰인 오후 세시 → 공급자 강태오', when: '11월 2일 15:40 · 자동 탐지 2회' },
       { reason: '욕설 · 비방', rCls: 'chip', status: '처리 대기', sCls: 'chip',
         title: '수조 현황판, 포장 주문 외 1개 기능', who: '공급자 윤재하 → 의뢰인 바다 횟집', when: '11월 3일 09:05' }
-    ].map((it, i) => Object.assign(it, { cls: 'rp-li' + (i === 0 ? ' first sel' : '') }));
+    ].map((it, i) => Object.assign(it, { cls: 'rp-li' + (i === 0 ? ' first sel' : ''), href: done && i === 0 ? '?view=처리+완료' : '?view=처리+대기' }));
     const nWait = done ? 1 : 2;
     return {
-      items: items, acts: acts, nWait: nWait, nDone: done ? 6 : 5, isDone: done,
+      items: items, acts: acts, tabCls: { wait: done ? '' : 'on', done: done ? 'on' : '' }, nWait: nWait, nDone: done ? 6 : 5, isDone: done,
       moreNote: done ? '처리 완료 6건은 \'처리 완료\' 탭에 있습니다' : '처리 완료 5건은 \'처리 완료\' 탭에 있습니다',
       dChip: done ? '처리 완료 · 경고' : '처리 대기', dChipCls: done ? 'chip teal' : 'chip',
       prev: pick < 0 ? '조치를 고르면 무엇이 바뀌는지 여기에 보입니다.' : A[pick][2],

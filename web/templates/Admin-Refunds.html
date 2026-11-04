@@ -129,7 +129,7 @@
     <main class="ad-main">
       <h1 class="t">환불 처리</h1>
       <p class="ad-sub">예치 후 취소된 계약의 정산을 처리합니다. 사유를 두고 양쪽이 다투면 근거를 보고 판정합니다.</p>
-      <nav class="ad-tabs" aria-label="환불 상태"><a class="{{tabP}}" href="#p">처리 대기<span class="ad-c">{{nP}}</span></a><a class="{{tabJ}}" href="#j">판정 필요<span class="ad-c">{{nJ}}</span></a><a class="{{tabD}}" href="#d">처리 완료<span class="ad-c">{{nD}}</span></a></nav>
+      <nav class="ad-tabs" aria-label="환불 상태"><a class="{{tabP}}" href="?view=처리+대기">처리 대기<span class="ad-c">{{nP}}</span></a><a class="{{tabJ}}" href="?view=사유+다툼+판정">판정 필요<span class="ad-c">{{nJ}}</span></a><a class="{{tabD}}" href="?view=처리+완료">처리 완료<span class="ad-c">{{nD}}</span></a></nav>
       <sc-if value="{{isDone}}" hint-placeholder-val="{{ false }}">
         <div class="ad-done"><div><b>정산 처리를 마쳤습니다 · 11월 21일 15:10 · 운영자 김하늘</b><p>의뢰인 · 공급자 정산 내역의 이 건이 '완료'로 바뀌었습니다. 운영자 처리 메모는 이벤트 기록에 남았습니다.</p></div></div>
       </sc-if>
@@ -141,7 +141,7 @@
           </sc-if>
           <sc-if value="{{isJudge}}" hint-placeholder-val="{{ false }}">
           <a class="ad-li on" href="Admin-Refunds.dc.html"><div class="ad-lt"><span class="chip amber">사유 다툼</span><span class="chip amber">판정 필요</span></div><b>주문 접수, 픽업 알림 외 1개 기능</b><div class="ad-lm">의뢰인 소담 분식 · 공급자 오세린<br>11월 22일 이견 · 예치 1,680,000원</div></a>
-          <a class="ad-li" href="Admin-Refunds.dc.html"><div class="ad-lt"><span class="chip">의뢰인 사유</span><span class="chip amber">처리 대기</span></div><b>런치 예약, 단체 문의 외 1개 기능</b><div class="ad-lm">의뢰인 소이 비스트로 · 공급자 윤재하<br>11월 20일 정산 확정 · 환불 1,575,000원</div></a>
+          <a class="ad-li" href="?view=처리+대기"><div class="ad-lt"><span class="chip">의뢰인 사유</span><span class="chip amber">처리 대기</span></div><b>런치 예약, 단체 문의 외 1개 기능</b><div class="ad-lm">의뢰인 소이 비스트로 · 공급자 윤재하<br>11월 20일 정산 확정 · 환불 1,575,000원</div></a>
           </sc-if>
           <sc-if value="{{isDone}}" hint-placeholder-val="{{ false }}">
           <a class="ad-li on" href="Admin-Refunds.dc.html"><div class="ad-lt"><span class="chip">의뢰인 사유</span><span class="chip teal">처리 완료</span></div><b>런치 예약, 단체 문의 외 1개 기능</b><div class="ad-lm">의뢰인 소이 비스트로 · 공급자 윤재하<br>11월 21일 처리 · 환불 1,575,000원</div></a>
@@ -186,11 +186,11 @@
                 <sc-if value="{{isPending}}" hint-placeholder-val="{{ true }}">
                   <div class="ad-ci">
                     <div class="ad-cr"><div><b>의뢰인에게 환불</b><span class="d">결제한 수단으로 — 카드 · 끝자리 7310</span></div><span class="ad-amt">1,575,000원</span></div>
-                    <div class="ad-in"><input class="inp" type="text" placeholder="PG 환불 승인 번호 · 메모 (필수)" aria-label="환불 처리 메모"><a class="btn sm tint" href="#done1">처리 완료로 표시</a></div>
+                    <div class="ad-in"><input class="inp" type="text" placeholder="PG 환불 승인 번호 · 메모 (필수)" aria-label="환불 처리 메모"><a class="btn sm tint" href="?view=처리+완료">처리 완료로 표시</a></div>
                   </div>
                   <div class="ad-ci">
                     <div class="ad-cr"><div><b>공급자에게 지급</b><span class="d">등록한 정산 계좌 — 끝자리 2048</span></div><span class="ad-amt">475,000원</span></div>
-                    <div class="ad-in"><input class="inp" type="text" placeholder="이체 확인 번호 · 메모 (필수)" aria-label="지급 처리 메모"><a class="btn sm tint" href="#done2">처리 완료로 표시</a></div>
+                    <div class="ad-in"><input class="inp" type="text" placeholder="이체 확인 번호 · 메모 (필수)" aria-label="지급 처리 메모"><a class="btn sm tint" href="?view=처리+완료">처리 완료로 표시</a></div>
                   </div>
                 </sc-if>
                 <sc-if value="{{isDone}}" hint-placeholder-val="{{ false }}">
@@ -249,7 +249,7 @@
             </div>
             <div class="ad-foot">
               <p>판정은 양쪽 채팅과 내 계약에 기록되고 이벤트 기록에 남습니다. 판정 뒤 정산은 '처리 대기'로 넘어가고, 취소 정산은 계약당 한 번입니다.</p>
-              <div class="ad-bt"><a class="btn" href="#confirm">판정 확정</a></div>
+              <div class="ad-bt"><a class="btn" href="?view=처리+대기">판정 확정</a></div>
             </div>
           </div>
           </sc-if>

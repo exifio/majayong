@@ -244,7 +244,7 @@
             <div class="signbox">
               <div class="cbx"><input type="checkbox" id="agree"><label for="agree">계약 본문과 첨부된 최종 합의 내용을 모두 확인했습니다.</label></div>
               <a class="btn full" href="{{signHref}}">{{signLabel}}</a>
-              <p class="cancel">{{cancelTail}} <button type="button">{{cancelLabel}}</button></p>
+              <p class="cancel">{{cancelTail}} <button type="button" data-action-href="{{cancelHref}}">{{cancelLabel}}</button></p>
             </div>
           </sc-if>
           <sc-if value="{{waiting}}" hint-placeholder-val="{{ false }}">
@@ -263,7 +263,7 @@
   <sc-if value="{{cancelM}}" hint-placeholder-val="{{ false }}">
     <div class="m-scrim" aria-hidden="true"></div>
     <section class="m-mdl" role="dialog" aria-modal="true" aria-labelledby="m-h">
-      <div class="mh"><h2 id="m-h">임시 계약을 취소할까요?</h2><button type="button" class="x" aria-label="닫기">×</button></div>
+      <div class="mh"><h2 id="m-h">임시 계약을 취소할까요?</h2><button type="button" class="x" aria-label="닫기" data-action-href="?state=상대가+먼저+서명">×</button></div>
       <div class="mb">
         <ul>
           <li>결렬과 같이 처리되고, 최준호님의 지원은 <b>거절</b>로 바뀝니다. 최준호님에게 결렬 알림이 갑니다.</li>
@@ -273,7 +273,7 @@
         <p class="lb">취소 사유 <span style="font-weight:400">(선택 · 공급자에게 보이지 않습니다)</span></p>
         <textarea aria-label="취소 사유" placeholder="예: 예산을 다시 검토하려고 합니다"></textarea>
       </div>
-      <div class="mf"><a class="btn gh" href="Contract-Client.dc.html">돌아가기</a><a class="btn warn" href="Compare-Client.dc.html">임시 계약 취소</a></div>
+      <div class="mf"><a class="btn gh" href="?state=상대가+먼저+서명">돌아가기</a><a class="btn warn" href="Compare-Client.dc.html">임시 계약 취소</a></div>
     </section>
   </sc-if>
 

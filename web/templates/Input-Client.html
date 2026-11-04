@@ -168,7 +168,7 @@ textarea.inp.big{min-height:132px;font-size:17px;line-height:1.65}
                 <sc-if value="{{d.hasTbd}}" hint-placeholder-val="{{ true }}"><div class="amtx">{{d.tbd}}</div></sc-if>
                 <div class="acts">
                   <button type="button" class="keep">보관하기</button>
-                  <button type="button" class="keep del">삭제</button>
+                  <button type="button" class="keep del" data-action-href="?deleteConfirm=true">삭제</button>
                   <a class="btn sm tint" href="Draft-Client.dc.html">이어서 고치기</a>
                 </div>
               </div>
@@ -195,7 +195,7 @@ textarea.inp.big{min-height:132px;font-size:17px;line-height:1.65}
                   <div class="amtl">수수료 포함 예상 총액</div>
                   <div class="amt2">640,500원</div>
                   <div class="acts">
-                    <button type="button" class="keep del">삭제</button>
+                    <button type="button" class="keep del" data-action-href="?deleteConfirm=true">삭제</button>
                     <sc-if value="{{canStart}}" hint-placeholder-val="{{ true }}">
                       <a class="btn sm tint" href="Draft-Client.dc.html">다시 열기</a>
                     </sc-if>
@@ -242,7 +242,7 @@ textarea.inp.big{min-height:132px;font-size:17px;line-height:1.65}
     <div class="modal" role="dialog" aria-modal="true" aria-labelledby="del-h">
       <h2 id="del-h">이 초안을 삭제할까요?</h2>
       <p class="mdsub" style="margin:0">‘{{delTitle}}’을 삭제합니다. 적으신 문장과 고친 내용이 모두 사라지고 <b>되돌릴 수 없습니다.</b> 나중에 다시 볼 수도 있다면 보관해 두세요.</p>
-      <div class="mbtns"><button type="button" class="btn gh">취소</button><button type="button" class="btn">삭제하기</button></div>
+      <div class="mbtns"><button type="button" class="btn gh" data-action-href="?deleteConfirm=false">취소</button><button type="button" class="btn" data-action-href="?deleteConfirm=false">삭제하기</button></div>
     </div>
   </div>
 </sc-if>

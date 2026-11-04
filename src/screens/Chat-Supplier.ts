@@ -52,6 +52,7 @@ export default class ChatSupplierScreen extends Screen {
       stamp: ro ? '10월 30일 기준' : (sgn ? '11월 4일 16:05 기준' : (held ? '11월 3일 09:30 기준' : '11월 3일 09:15 기준')),
       list: list, cur: cur,
       main: !ro, isHeld: held, isSigned: sgn, heldMsgs: held || sgn, readOnly: ro, revOpen: rev,
+      revHref: rev ? '?view=문의+중' : '?view=견적+수정',
       canRev: !held && !ro && !sgn, canWrite: !ro,
       hint: sgn ? '계약이 체결되어 연락처를 주고받을 수 있습니다. 납품과 검수는 내 계약 › 납품에서 합니다.' : held ? '서명 전까지 대화를 이어갈 수 있습니다. 계약 체결 전에는 연락처가 자동으로 가려집니다.'
                  : '계약 체결 전에는 연락처가 자동으로 가려집니다. 금액 · 기간을 바꾸려면 위의 \'견적 수정\'을 쓰세요 — 이 대화에 기록이 남습니다.'

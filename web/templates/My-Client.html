@@ -118,7 +118,7 @@
                   <sc-if value="{{r.hasTbd}}" hint-placeholder-val="{{ false }}"><div class="amtx">{{r.tbd}}</div></sc-if>
                   <div class="acts">
                     <sc-if value="{{r.hasLink}}" hint-placeholder-val="{{ false }}"><a class="ft" href="{{r.linkHref}}" style="font-size:14px">{{r.link}}</a></sc-if>
-                    <sc-if value="{{r.isDraft}}" hint-placeholder-val="{{ false }}"><button type="button" class="keep">보관하기</button><button type="button" class="keep del">삭제</button></sc-if>
+                    <sc-if value="{{r.isDraft}}" hint-placeholder-val="{{ false }}"><button type="button" class="keep">보관하기</button><button type="button" class="keep del" data-action-href="?deleteConfirm=true">삭제</button></sc-if>
                     <a class="btn sm tint" href="{{r.href}}">{{r.action}}</a>
                   </div>
                 </div>
@@ -144,7 +144,7 @@
                 <div class="rt">
                   <div class="amtl">수수료 포함 예상 총액</div>
                   <div class="amt2">640,500원</div>
-                  <div class="acts"><button type="button" class="keep del">삭제</button><a class="btn sm tint" href="Draft-Client.dc.html">다시 열기</a></div>
+                  <div class="acts"><button type="button" class="keep del" data-action-href="?deleteConfirm=true">삭제</button><a class="btn sm tint" href="Draft-Client.dc.html">다시 열기</a></div>
                 </div>
               </div>
               <p class="sec archnote">30일 동안 손대지 않았거나 '처음부터'로 새로 시작한 초안은 여기 보관합니다. 다시 열어도 예상 금액은 처음 그대로입니다. 필요 없는 초안은 삭제할 수 있지만, 삭제하면 되살릴 수 없습니다.</p>
@@ -171,7 +171,7 @@
     <div class="modal" role="dialog" aria-modal="true" aria-labelledby="del-h">
       <h2 id="del-h">이 초안을 삭제할까요?</h2>
       <p class="mdsub" style="margin:0">‘{{delTitle}}’을 삭제합니다. 적으신 문장과 고친 내용이 모두 사라지고 <b>되살릴 수 없습니다.</b> 나중에 다시 볼 수도 있다면 보관해 두세요.</p>
-      <div class="mbtns"><button type="button" class="btn gh">취소</button><button type="button" class="btn warn">삭제하기</button></div>
+      <div class="mbtns"><button type="button" class="btn gh" data-action-href="?deleteConfirm=false">취소</button><button type="button" class="btn warn" data-action-href="?deleteConfirm=false">삭제하기</button></div>
     </div>
   </div>
 </sc-if>

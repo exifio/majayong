@@ -15,20 +15,35 @@ async function loadTemplate(id: string): Promise<string> {
   return tpl;
 }
 
-/** Design link targets (`Foo.dc.html#x`) become app routes (`/Foo#x`). */
-export function resolveHref(href: string): string {
-  const m = /^([\w.-]+)\.dc\.html(#.*)?$/.exec(href);
+/**
+ * Design link targets become app routes:
+ *   `Foo.dc.html?view=x#y` → `/Foo?view=x#y`
+ *   `?view=x`              → current screen, current props with `view` replaced
+ *                            (UI state from setState is kept).
+ */
+export function resolveHref(href: string, current?: { id: string; query: URLSearchParams }): string {
+  if (href.startsWith('?') && current) {
+    const [qs = '', frag] = href.slice(1).split('#');
+    const q = new URLSearchParams(current.query);
+    for (const [k, v] of new URLSearchParams(qs)) q.set(k, v);
+    const query = q.toString();
+    return routeFor(current.id) + (query ? `?${query}` : '') + (frag !== undefined ? `#${frag}` : '');
+  }
+  const m = /^([\w.-]+)\.dc\.html(\?[^#]*)?(#.*)?$/.exec(href);
   if (!m) return href;
-  const route = m[1] === 'Main' ? '/' : `/${m[1]}`;
-  return route + (m[2] ?? '');
+  const query = m[2] ? new URLSearchParams(m[2].slice(1)).toString() : '';
+  return routeFor(m[1]!) + (query ? `?${query}` : '') + (m[3] ?? '');
 }
 
 export function routeFor(id: string): string {
   return id === 'Main' ? '/' : `/${id}`;
 }
 
-// Elements carrying data-action-href (rendered from onClick handlers) navigate to
-// the URL of the state they produce; scroll position is kept across that reload.
+// Elements carrying data-action-href navigate to that URL. For onClick handlers it is
+// the URL of the state they produce (`_state=`), and the scroll position is kept so an
+// in-page change (a selected star, an expanded section) doesn't jump to the top.
+// Other targets (opening a modal state, switching a tab) start at the top, where the
+// designs place their dialogs.
 const ACTION_SCRIPT = `<script>
 (() => {
   const key = 'majayong:scroll:' + location.pathname;
@@ -37,8 +52,9 @@ const ACTION_SCRIPT = `<script>
     const el = e.target instanceof Element && e.target.closest('[data-action-href]');
     if (!el) return;
     e.preventDefault();
-    try { sessionStorage.setItem(key, String(scrollY)); } catch {}
-    location.assign(el.getAttribute('data-action-href'));
+    const href = el.getAttribute('data-action-href');
+    if (href.includes('_state=')) { try { sessionStorage.setItem(key, String(scrollY)); } catch {} }
+    location.assign(href);
   });
 })();
 </script>`;
@@ -60,7 +76,7 @@ export async function renderScreen(Screen: ScreenClass, query: URLSearchParams):
   const values = screen.renderVals();
 
   const ctx: RenderContext = {
-    resolveHref,
+    resolveHref: (href) => resolveHref(href, { id: Screen.id, query }),
     actionHref(handler) {
       const next = screen.captureState(handler);
       if (!next) return null;
