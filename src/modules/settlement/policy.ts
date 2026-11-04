@@ -518,6 +518,7 @@ export interface SettlementRepository {
   seedContractItems(items: SettlementContractItemEntity[]): void;
   getContract(contractId: string): Promise<SettlementContractInfo | null>;
   updateContract(contractId: string, patch: Partial<SettlementContractInfo>): Promise<SettlementContractInfo>;
+  listContractsForUser(userId: string): Promise<SettlementContractInfo[]>;
   getInstallment(installmentId: string): Promise<SettlementInstallmentEntity | null>;
   listInstallments(contractId: string): Promise<SettlementInstallmentEntity[]>;
   updateInstallment(
@@ -560,6 +561,11 @@ export function createInMemorySettlementRepository(): SettlementRepository {
       contracts.set(id, updated);
       return updated;
     },
+    async listContractsForUser(userId) {
+      return Array.from(contracts.values()).filter(
+        (c) => c.clientUserId === userId || c.supplierUserId === userId,
+      );
+    },
     async getInstallment(id) {
       return installments.get(id) ?? null;
     },
@@ -592,6 +598,8 @@ export interface SettlementServiceOptions {
 }
 
 export interface ClientStatementView {
+  simulated: true;
+  transferNote: string;
   contractId: string;
   totalDeposited: number;
   paidToSupplier: number;
@@ -606,6 +614,8 @@ export interface ClientStatementView {
 }
 
 export interface SupplierStatementView {
+  simulated: true;
+  transferNote: string;
   contractId: string;
   totalAgreed: number;
   totalReceived: number;
@@ -624,6 +634,8 @@ export interface SupplierStatementView {
   }>;
 }
 
+const SIMULATED_TRANSFER_NOTE = "실제 이체가 아닌 시뮬레이션/수동 처리 기록입니다.";
+
 export class SettlementService {
   private readonly repo: SettlementRepository;
   private readonly clock: { now(): Date };
@@ -631,6 +643,12 @@ export class SettlementService {
   constructor(options: SettlementServiceOptions) {
     this.repo = options.repo;
     this.clock = options.clock ?? { now: () => new Date() };
+  }
+
+  private assertNotCancelled(contract: SettlementContractInfo, action: string): void {
+    if (contract.status === "CANCEL_REQUESTED" || contract.status === "CANCELLED") {
+      throw new SettlementHttpError(409, `취소 중에는 ${action} 수 없습니다.`);
+    }
   }
 
   async approveInstallment(input: {
@@ -643,6 +661,14 @@ export class SettlementService {
     const installment = await this.repo.getInstallment(input.installmentId);
     if (!installment || installment.contractId !== contract.id) {
       throw new SettlementHttpError(404, "구간을 찾을 수 없습니다.");
+    }
+
+    this.assertNotCancelled(contract, "구간을 승인할");
+    if (installment.status === "APPROVED" || installment.status === "RELEASED") {
+      return installment;
+    }
+    if (contract.status !== "ACTIVE") {
+      throw new SettlementHttpError(409, "진행 중(ACTIVE) 계약만 구간을 승인할 수 있습니다.");
     }
 
     const items = await this.repo.listContractItems(contract.id);
@@ -687,6 +713,8 @@ export class SettlementService {
     const contract = await this.repo.getContract(installment.contractId);
     if (!contract) throw new SettlementHttpError(404, "계약을 찾을 수 없습니다.");
 
+    this.assertNotCancelled(contract, "지급할");
+
     if (!contract.payoutVerifiedAt) {
       throw new SettlementHttpError(
         400,
@@ -696,6 +724,14 @@ export class SettlementService {
 
     if (installment.status !== "APPROVED") {
       throw new SettlementHttpError(400, "승인 완료된 구간만 지급할 수 있습니다.");
+    }
+
+    if (installment.stage === "FINAL") {
+      const allInstallments = await this.repo.listInstallments(contract.id);
+      const interim = allInstallments.find((i) => i.stage === "INTERIM");
+      if (!interim || interim.status !== "RELEASED") {
+        throw new SettlementHttpError(400, "중간 구간이 먼저 지급되어야 합니다.");
+      }
     }
 
     const calculation = calculateSupplierRelease({
@@ -749,6 +785,12 @@ export class SettlementService {
       throw new SettlementHttpError(400, "사업자 공급자만 세금계산서를 발행할 수 있습니다.");
     }
 
+    this.assertNotCancelled(contract, "세금계산서 발행을 표시할");
+    if (installment.taxInvoiceIssuedAt) return installment;
+    if (installment.status !== "APPROVED" && installment.status !== "RELEASED") {
+      throw new SettlementHttpError(409, "승인 또는 지급 완료된 구간만 세금계산서 발행을 표시할 수 있습니다.");
+    }
+
     return this.repo.updateInstallment(installment.id, {
       taxInvoiceIssuedAt: this.clock.now(),
     });
@@ -777,6 +819,8 @@ export class SettlementService {
         .reduce((sum, i) => sum + i.amount, 0);
 
       return {
+        simulated: true,
+        transferNote: SIMULATED_TRANSFER_NOTE,
         contractId: contract.id,
         totalDeposited: contract.totalDeposited,
         paidToSupplier,
@@ -791,29 +835,113 @@ export class SettlementService {
       };
     }
 
-    const releasedList = installments.filter((i) => i.status === "RELEASED");
-    const totalReceived = releasedList.reduce((sum, i) => sum + i.releaseAmount, 0);
-    const expectedToReceive = installments.reduce((sum, i) => sum + i.releaseAmount, 0);
-    const supplierFeePaid = releasedList.reduce((sum, i) => sum + i.supplierFee, 0);
-    const withholdingTaxTotal = releasedList.reduce((sum, i) => sum + i.withholdingTax, 0);
+    // 지급 전 구간도 같은 5% 수수료·개인 3.3% 원천징수 정책으로 예상 실수령액을 계산한다.
+    const priced = installments.map((installment) => ({
+      installment,
+      ...calculateSupplierRelease({ amount: installment.amount, kind: contract.supplierKind }),
+    }));
+    const releasedList = priced.filter((row) => row.installment.status === "RELEASED");
+    const totalReceived = releasedList.reduce((sum, row) => sum + row.releaseAmount, 0);
+    const expectedToReceive = priced.reduce((sum, row) => sum + row.releaseAmount, 0);
+    const supplierFeePaid = releasedList.reduce((sum, row) => sum + row.supplierFee, 0);
+    const withholdingTaxTotal = releasedList.reduce((sum, row) => sum + row.withholdingTax, 0);
 
     return {
+      simulated: true,
+      transferNote: SIMULATED_TRANSFER_NOTE,
       contractId: contract.id,
       totalAgreed: contract.agreedAmount,
       totalReceived,
       expectedToReceive,
       supplierFeePaid,
       withholdingTaxTotal,
-      installments: installments.map((i) => ({
-        stage: i.stage,
-        amount: i.amount,
-        releaseAmount: i.releaseAmount,
-        supplierFee: i.supplierFee,
-        withholdingTax: i.withholdingTax,
-        status: i.status,
-        taxInvoiceIssuedAt: i.taxInvoiceIssuedAt,
-        releasedAt: i.releasedAt,
+      installments: priced.map(({ installment, supplierFee, withholdingTax, releaseAmount }) => ({
+        stage: installment.stage,
+        amount: installment.amount,
+        releaseAmount,
+        supplierFee,
+        withholdingTax,
+        status: installment.status,
+        taxInvoiceIssuedAt: installment.taxInvoiceIssuedAt,
+        releasedAt: installment.releasedAt,
       })),
     };
+  }
+
+  async listInstallments(
+    actor: { userId: string; role: string },
+    contractId: string,
+  ): Promise<{
+    simulated: true;
+    transferNote: string;
+    installments: Array<{
+      id: string;
+      stage: InstallmentStage;
+      ratio: number;
+      amount: number;
+      status: InstallmentStatus;
+      approvedAt: Date | null;
+      releasedAt: Date | null;
+      holdReason: string | null;
+    }>;
+  }> {
+    const contract = await this.repo.getContract(contractId);
+    if (!contract) throw new SettlementHttpError(404, "계약을 찾을 수 없습니다.");
+    await this.getContractStatement(actor, contractId);
+
+    const installments = await this.repo.listInstallments(contract.id);
+    return {
+      simulated: true,
+      transferNote: SIMULATED_TRANSFER_NOTE,
+      installments: installments.map((i) => ({
+        id: i.id,
+        stage: i.stage,
+        ratio: i.ratio,
+        amount: i.amount,
+        status: i.status,
+        approvedAt: i.approvedAt,
+        releasedAt: i.releasedAt,
+        holdReason: i.holdReason ?? null,
+      })),
+    };
+  }
+
+  async getMyPaymentStatements(actor: { userId: string; role: string }): Promise<{
+    simulated: true;
+    transferNote: string;
+    statements: Array<ClientStatementView | SupplierStatementView>;
+  }> {
+    if (actor.role !== "CLIENT" && actor.role !== "SUPPLIER") {
+      throw new SettlementHttpError(403, "의뢰인 또는 공급자만 본인 정산 내역을 조회할 수 있습니다.");
+    }
+    const contracts = await this.repo.listContractsForUser(actor.userId);
+    const statements: Array<ClientStatementView | SupplierStatementView> = [];
+    for (const contract of contracts) {
+      statements.push(await this.getContractStatement(actor, contract.id));
+    }
+    return { simulated: true, transferNote: SIMULATED_TRANSFER_NOTE, statements };
+  }
+
+  /**
+   * 계좌 인증 완료 후 `APPROVED(HOLD)` 구간의 보류만 해제한다.
+   * 호출 트리거(A 이벤트 vs runDueJobs)는 Gate 0에서 정하기 전까지 이 메서드에 고정하지 않는다.
+   */
+  async resumeHeldInstallments(contractId: string): Promise<{ resumed: number }> {
+    const contract = await this.repo.getContract(contractId);
+    if (!contract) throw new SettlementHttpError(404, "계약을 찾을 수 없습니다.");
+    if (contract.status === "CANCEL_REQUESTED" || contract.status === "CANCELLED") {
+      return { resumed: 0 };
+    }
+    if (!contract.payoutVerifiedAt) return { resumed: 0 };
+
+    const installments = await this.repo.listInstallments(contractId);
+    let resumed = 0;
+    for (const installment of installments) {
+      if (installment.status === "APPROVED" && installment.holdReason === "PAYOUT_ACCOUNT_UNVERIFIED") {
+        await this.repo.updateInstallment(installment.id, { holdReason: null });
+        resumed += 1;
+      }
+    }
+    return { resumed };
   }
 }

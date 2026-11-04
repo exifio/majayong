@@ -335,4 +335,183 @@ describe("C-05: 지급 구간·정산 카드·세금 증빙", () => {
       globalThis.fetch = origFetch;
     }
   });
+
+  async function approveAllInterimItem(
+    repo: ReturnType<typeof createInMemorySettlementRepository>,
+    item1: { id: string },
+    item2: { id: string },
+  ) {
+    await repo.updateContractItem(item1.id, { approvedAt: baseTime });
+    await repo.updateContractItem(item2.id, { approvedAt: baseTime });
+  }
+
+  it("C-05-F01 취소 요청 중 승인·지급은 실제 호출에서 차단됨", async () => {
+    const { service, contract, interimInstallment, item1, item2, repo } = createTestSetup();
+    await approveAllInterimItem(repo, item1, item2);
+    repo.seedContract({ ...contract, status: "CANCEL_REQUESTED" });
+
+    await assert.rejects(
+      () =>
+        service.approveInstallment({
+          contractId: contract.id,
+          installmentId: interimInstallment.id,
+        }),
+      (err: unknown) => err instanceof SettlementHttpError && err.status === 409,
+    );
+    assert.equal((await repo.getInstallment(interimInstallment.id))?.status, "PENDING");
+
+    repo.seedInstallments([{ ...interimInstallment, status: "APPROVED" }]);
+    await assert.rejects(
+      () => service.releaseInstallment({ installmentId: interimInstallment.id }),
+      (err: unknown) => err instanceof SettlementHttpError && err.status === 409,
+    );
+    const stored = await repo.getInstallment(interimInstallment.id);
+    assert.equal(stored?.status, "APPROVED");
+    assert.equal(stored?.releasedAt, null);
+  });
+
+  it("C-05-F02 RELEASED는 되돌아가지 않고 최종 release도 중간 지급을 강제함", async () => {
+    const { service, contract, interimInstallment, item1, item2, repo } = createTestSetup();
+    await approveAllInterimItem(repo, item1, item2);
+    await service.approveInstallment({ contractId: contract.id, installmentId: interimInstallment.id });
+    const released = await service.releaseInstallment({ installmentId: interimInstallment.id });
+
+    const reApproved = await service.approveInstallment({
+      contractId: contract.id,
+      installmentId: interimInstallment.id,
+    });
+    assert.equal(reApproved.status, "RELEASED");
+    assert.equal(reApproved.releasedAt?.toISOString(), released.releasedAt?.toISOString());
+
+    await assert.rejects(
+      () => service.releaseInstallment({ installmentId: interimInstallment.id }),
+      (err: unknown) => err instanceof SettlementHttpError,
+    );
+    const after = await repo.getInstallment(interimInstallment.id);
+    assert.equal(after?.status, "RELEASED");
+    assert.equal(after?.releasedAt?.toISOString(), released.releasedAt?.toISOString());
+
+    // 중간 구간 미지급 상태에서 FINAL을 이미 APPROVED로 만든 뒤 release만 호출해도 거부.
+    const fresh = createTestSetup();
+    await fresh.repo.updateContractItem(fresh.finalItem.id, { approvedAt: baseTime });
+    fresh.repo.seedInstallments([{ ...fresh.finalInstallment, status: "APPROVED" }]);
+    await assert.rejects(
+      () => fresh.service.releaseInstallment({ installmentId: fresh.finalInstallment.id }),
+      (err: unknown) => err instanceof SettlementHttpError && /중간 구간/.test(err.message),
+    );
+    assert.equal((await fresh.repo.getInstallment(fresh.finalInstallment.id))?.status, "APPROVED");
+  });
+
+  it("C-05-F03 미지급 구간 예상 실수령액에 수수료·원천징수 반영", async () => {
+    const individual = createTestSetup({ supplierKind: "INDIVIDUAL" });
+    const individualView = await individual.service.getContractStatement(
+      { userId: individual.contract.supplierUserId, role: "SUPPLIER" },
+      individual.contract.id,
+    );
+    // 1,421,350 × 2구간 (지급 전에도 동일 정책)
+    assert.equal(individualView.expectedToReceive, 2_842_700);
+
+    const business = createTestSetup({ supplierKind: "BUSINESS" });
+    const businessView = await business.service.getContractStatement(
+      { userId: business.contract.supplierUserId, role: "SUPPLIER" },
+      business.contract.id,
+    );
+    assert.equal(businessView.expectedToReceive, 2_945_000);
+  });
+
+  it("C-05-F04 정산 조회 서비스·시뮬레이션 표기·세금계산서 상태 가드", async () => {
+    const { service, contract, interimInstallment, item1, item2, repo } = createTestSetup({
+      supplierKind: "BUSINESS",
+    });
+
+    const statements = await service.getMyPaymentStatements({
+      userId: contract.clientUserId,
+      role: "CLIENT",
+    });
+    assert.equal(statements.simulated, true);
+    assert.match(statements.transferNote, /이체/);
+    assert.equal(statements.statements.length, 1);
+    assert.equal(JSON.stringify(statements).includes("110-123-456789"), false);
+
+    const installments = await service.listInstallments(
+      { userId: contract.clientUserId, role: "CLIENT" },
+      contract.id,
+    );
+    assert.equal(installments.simulated, true);
+    assert.equal(installments.installments.length, 2);
+    assert.equal(JSON.stringify(installments).includes("110-123-456789"), false);
+
+    await assert.rejects(
+      () => service.listInstallments({ userId: "outsider", role: "CLIENT" }, contract.id),
+      (err: unknown) => err instanceof SettlementHttpError && err.status === 403,
+    );
+    const empty = await service.getMyPaymentStatements({ userId: "outsider", role: "CLIENT" });
+    assert.equal(empty.statements.length, 0);
+
+    // 승인 전(PENDING)에는 세금계산서 발행 표시 불가.
+    await assert.rejects(
+      () =>
+        service.markTaxInvoiceIssued(
+          { userId: contract.supplierUserId, role: "SUPPLIER" },
+          { installmentId: interimInstallment.id },
+        ),
+      (err: unknown) => err instanceof SettlementHttpError && err.status === 409,
+    );
+    assert.equal((await repo.getInstallment(interimInstallment.id))?.taxInvoiceIssuedAt, null);
+
+    await approveAllInterimItem(repo, item1, item2);
+    await service.approveInstallment({ contractId: contract.id, installmentId: interimInstallment.id });
+    const marked = await service.markTaxInvoiceIssued(
+      { userId: contract.supplierUserId, role: "SUPPLIER" },
+      { installmentId: interimInstallment.id },
+    );
+    assert.ok(marked.taxInvoiceIssuedAt);
+  });
+
+  it("C-05-F05 계좌 인증 후 보류 구간 재개는 안전하고 멱등", async () => {
+    const { service, contract, interimInstallment, item1, item2, repo } = createTestSetup({
+      payoutVerified: false,
+    });
+    await approveAllInterimItem(repo, item1, item2);
+    const held = await service.approveInstallment({
+      contractId: contract.id,
+      installmentId: interimInstallment.id,
+    });
+    assert.equal(held.holdReason, "PAYOUT_ACCOUNT_UNVERIFIED");
+
+    // 인증 전에는 재개 0.
+    assert.equal((await service.resumeHeldInstallments(contract.id)).resumed, 0);
+
+    await repo.updateContract(contract.id, { payoutVerifiedAt: baseTime });
+    const resumed = await service.resumeHeldInstallments(contract.id);
+    assert.equal(resumed.resumed, 1);
+    const after = await repo.getInstallment(interimInstallment.id);
+    assert.equal(after?.status, "APPROVED");
+    assert.equal(after?.holdReason, null);
+
+    // 중복 트리거에도 추가 변경 없음.
+    assert.equal((await service.resumeHeldInstallments(contract.id)).resumed, 0);
+
+    const released = await service.releaseInstallment({ installmentId: interimInstallment.id });
+    assert.equal(released.status, "RELEASED");
+    await assert.rejects(
+      () => service.releaseInstallment({ installmentId: interimInstallment.id }),
+      (err: unknown) => err instanceof SettlementHttpError,
+    );
+
+    // 취소 중에는 재개하지 않는다.
+    const cancelled = createTestSetup({ payoutVerified: false });
+    await approveAllInterimItem(cancelled.repo, cancelled.item1, cancelled.item2);
+    await cancelled.service.approveInstallment({
+      contractId: cancelled.contract.id,
+      installmentId: cancelled.interimInstallment.id,
+    });
+    await cancelled.repo.updateContract(cancelled.contract.id, { payoutVerifiedAt: baseTime });
+    cancelled.repo.seedContract({ ...cancelled.contract, status: "CANCEL_REQUESTED" });
+    assert.equal((await cancelled.service.resumeHeldInstallments(cancelled.contract.id)).resumed, 0);
+    assert.equal(
+      (await cancelled.repo.getInstallment(cancelled.interimInstallment.id))?.holdReason,
+      "PAYOUT_ACCOUNT_UNVERIFIED",
+    );
+  });
 });
