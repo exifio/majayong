@@ -1,8 +1,9 @@
 {
   "version": 2,
   "buildCommand": "npm run build",
+  "outputDirectory": "web/assets/fonts",
   "functions": {
-    "api/index.ts": {
+    "api/index.js": {
       "includeFiles": "web/**"
     }
   },
