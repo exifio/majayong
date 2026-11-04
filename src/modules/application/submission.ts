@@ -448,37 +448,43 @@ export async function markApplicationsStale(
   uow: ApplicationUnitOfWork,
   input: { readonly projectId: string; readonly now: Date },
 ): Promise<number> {
-  return uow.run(async (tx) => {
-    const rows = await tx.listByProject(input.projectId);
-    let changed = 0;
-    const staleRows: ApplicationRevision[] = [];
+  return uow.run((tx) => markApplicationsStaleInTransaction(tx, input));
+}
 
-    for (const row of rows) {
-      if (row.status !== 'SUBMITTED') continue;
+/** A의 명세 버전 변경 트랜잭션에서 직접 호출하는 변형. */
+export async function markApplicationsStaleInTransaction(
+  tx: Pick<ApplicationTx, 'listByProject' | 'updateStatus' | 'notifications'>,
+  input: { readonly projectId: string; readonly now: Date },
+): Promise<number> {
+  const rows = await tx.listByProject(input.projectId);
+  let changed = 0;
+  const staleRows: ApplicationRevision[] = [];
 
-      const updated = await tx.updateStatus({
-        applicationId: row.id,
-        from: ['SUBMITTED'],
-        to: 'STALE',
-      });
-      if (updated) {
-        changed += 1;
-        staleRows.push(row);
-      }
+  for (const row of rows) {
+    if (row.status !== 'SUBMITTED') continue;
+
+    const updated = await tx.updateStatus({
+      applicationId: row.id,
+      from: ['SUBMITTED'],
+      to: 'STALE',
+    });
+    if (updated) {
+      changed += 1;
+      staleRows.push(row);
     }
+  }
 
-    for (const row of staleRows) {
-      await tx.notifications.notifyApplication({
-        type: 'REQUOTE_REQUESTED',
-        clientUserId: row.clientUserId,
-        supplierUserId: row.supplierId,
-        targetId: row.id,
-        now: input.now,
-      });
-    }
+  for (const row of staleRows) {
+    await tx.notifications.notifyApplication({
+      type: 'REQUOTE_REQUESTED',
+      clientUserId: row.clientUserId,
+      supplierUserId: row.supplierId,
+      targetId: row.id,
+      now: input.now,
+    });
+  }
 
-    return changed;
-  });
+  return changed;
 }
 
 /**
