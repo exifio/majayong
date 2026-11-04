@@ -2,7 +2,9 @@ import { readFile } from 'node:fs/promises';
 import { escapeAttr, escapeHtml, render, type RenderContext } from './template.js';
 import { propsFromQuery, type ScreenClass, type Values } from './screen.js';
 
-export const WEB_ROOT = new URL('../../web/', import.meta.url);
+import { pathToFileURL } from 'node:url';
+import { join } from 'node:path';
+export const WEB_ROOT = pathToFileURL(join(process.cwd(), 'web') + '/');
 
 const templates = new Map<string, string>();
 
