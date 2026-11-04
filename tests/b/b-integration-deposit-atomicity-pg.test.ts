@@ -131,6 +131,14 @@ async function seed(prisma: PrismaClient): Promise<Ids> {
 }
 
 async function cleanup(prisma: PrismaClient, ids: Ids): Promise<void> {
+  await prisma.notification.deleteMany({
+    where: {
+      OR: [
+        { userId: { in: [ids.clientId, ids.acceptedSupplierId, ids.rivalSupplierId] } },
+        { targetId: { in: [ids.acceptedApplicationId, ids.rivalApplicationId] } },
+      ],
+    },
+  });
   await prisma.paymentEvent.deleteMany({ where: { deposit: { contractId: ids.contractId } } });
   await prisma.paymentInstallment.deleteMany({ where: { contractId: ids.contractId } });
   await prisma.escrowDeposit.deleteMany({ where: { contractId: ids.contractId } });

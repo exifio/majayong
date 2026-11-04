@@ -96,6 +96,7 @@ export interface MarketplacePorts {
     input: {
       projectId: string;
       acceptedApplicationId: string;
+      now: Date;
     },
     tx?: DepositTransaction,
   ): Promise<{ rejectedCount: number }>;
@@ -721,6 +722,7 @@ export class DepositCompletionService {
           {
             projectId: contract.projectId,
             acceptedApplicationId: contract.applicationId,
+            now: completionTime,
           },
           tx,
         );

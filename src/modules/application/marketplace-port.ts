@@ -16,6 +16,7 @@ export interface MarketplaceAutoRejectPort {
     input: {
       readonly projectId: string;
       readonly acceptedApplicationId: string;
+      readonly now: Date;
     },
     tx?: unknown,
   ): Promise<{ readonly rejectedCount: number }>;
@@ -27,7 +28,7 @@ export interface MarketplaceAutoRejectPort {
  */
 export type ResolveApplicationTx = (
   tx: unknown,
-) => Pick<ApplicationTx, 'listByProject' | 'updateStatus'>;
+) => Pick<ApplicationTx, 'listByProject' | 'updateStatus' | 'notifications'>;
 
 export function createMarketplaceAutoRejectPort(
   uow: ApplicationUnitOfWork,

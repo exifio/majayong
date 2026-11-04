@@ -64,7 +64,14 @@ function fakeApplicationDb(rows: ApplicationRow[]): ApplicationDbClient {
     eventLog: { findFirst: async () => null },
     notification: {
       findUnique: async () => null,
-      create: async () => ({}) as never,
+      create: async (input: { data: Record<string, unknown> }) =>
+        ({
+          id: 'notification-1',
+          targetUrl: '/x',
+          isRead: false,
+          createdAt: FIXED_NOW,
+          ...input.data,
+        }) as never,
       update: async () => ({}) as never,
       findMany: async () => [],
       count: async () => 0,
@@ -97,7 +104,7 @@ describe('G2-03: 예치 완료 자동 거절이 C 예치 트랜잭션에 참여'
     );
 
     const result = await port.autoRejectCompetingApplications(
-      { projectId: 'prj-1', acceptedApplicationId: 'app-1' },
+      { projectId: 'prj-1', acceptedApplicationId: 'app-1', now: FIXED_NOW },
       txDb,
     );
 

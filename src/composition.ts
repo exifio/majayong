@@ -11,7 +11,7 @@ import {
   type InspectionOpsPorts,
   type NotificationPorts,
 } from "./modules/delivery/index.ts";
-import { DepositCompletionService, DepositService, type MarketplacePorts } from "./modules/deposit/index.ts";
+import { DepositCompletionService, DepositService, type MarketplacePorts, type TossVerifyAdapter } from "./modules/deposit/index.ts";
 import { FileService, type FileStorageAdapter } from "./modules/files/index.ts";
 import { ReviewService, type ProfileReviewPorts } from "./modules/review/index.ts";
 import { SettlementService } from "./modules/settlement/policy.ts";
@@ -24,6 +24,8 @@ export interface IntegrationPorts {
   profileReview: ProfileReviewPorts;
   storage: FileStorageAdapter;
   catalogAdmin: CatalogAdminPort;
+  /** D-08: 검증된 Toss sandbox 계약이 확인되기 전에는 주입하지 않는다(웹훅은 HELD로 격리). */
+  tossVerifier?: TossVerifyAdapter;
   projectClientId?(projectId: string): Promise<string | null>;
 }
 
@@ -53,6 +55,7 @@ export function createIntegrationServices(config: IntegrationConfig) {
     repo: repos.depositRepository,
     contractsPort: repos.contractsPort,
     webhookSecret: config.webhookSecret,
+    ...(config.ports.tossVerifier === undefined ? {} : { tossAdapter: config.ports.tossVerifier }),
     completionPort: completion,
     clock,
   });

@@ -609,6 +609,7 @@ describe('B-02 보조: 예치 완료 자동 거절 Port', () => {
     const count = await autoRejectCompetingApplications(new FakeUnitOfWork(tx), {
       projectId: 'prj-1',
       acceptedApplicationId: 'app-1',
+      now: FIXED_NOW,
     });
 
     assert.equal(count, 2);
@@ -632,6 +633,7 @@ describe('B-02 보조: 예치 완료 자동 거절 Port', () => {
     const result = await autoRejectCompetingApplicationsInTransaction(tx, {
       projectId: 'prj-1',
       acceptedApplicationId: 'app-1',
+      now: FIXED_NOW,
     });
 
     assert.deepEqual(result, { rejectedCount: 2 });
@@ -721,6 +723,7 @@ describe('B-02 보조: C 예치 완료 자동 거절 adapter', () => {
     const result = await port.autoRejectCompetingApplications({
       projectId: 'prj-1',
       acceptedApplicationId: 'app-1',
+      now: FIXED_NOW,
     });
 
     assert.deepEqual(result, { rejectedCount: 2 });
@@ -743,7 +746,7 @@ describe('B-02 보조: C 예치 완료 자동 거절 adapter', () => {
     const port = createMarketplaceAutoRejectPort(failing);
 
     await assert.rejects(
-      port.autoRejectCompetingApplications({ projectId: 'prj-1', acceptedApplicationId: 'app-1' }),
+      port.autoRejectCompetingApplications({ projectId: 'prj-1', acceptedApplicationId: 'app-1', now: FIXED_NOW }),
       /deposit tx failed/,
     );
   });

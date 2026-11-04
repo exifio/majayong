@@ -49,7 +49,7 @@ export interface NewApplicationRevision {
 /** B-02 업무 액션의 알림 발행 Port. B-06 어댑터가 연결한다. */
 export interface ApplicationNotificationPort {
   notifyApplication(input: {
-    readonly type: 'APPLICATION_RECEIVED' | 'APPLICATION_REJECTED' | 'REQUOTE_REQUESTED';
+    readonly type: 'APPLICATION_RECEIVED' | 'APPLICATION_REJECTED' | 'APPLICATION_AUTO_REJECTED' | 'REQUOTE_REQUESTED';
     readonly clientUserId: string;
     readonly supplierUserId: string;
     readonly targetId: string;
@@ -533,7 +533,7 @@ export async function markApplicationsStaleInTransaction(
  */
 export async function autoRejectCompetingApplications(
   uow: ApplicationUnitOfWork,
-  input: { readonly projectId: string; readonly acceptedApplicationId: string },
+  input: { readonly projectId: string; readonly acceptedApplicationId: string; readonly now: Date },
 ): Promise<number> {
   return uow.run(async (tx) => {
     const result = await autoRejectCompetingApplicationsInTransaction(tx, input);
@@ -543,8 +543,8 @@ export async function autoRejectCompetingApplications(
 
 /** C의 예치 완료 트랜잭션이 제공한 tx에 참여하는 변형. */
 export async function autoRejectCompetingApplicationsInTransaction(
-  tx: Pick<ApplicationTx, 'listByProject' | 'updateStatus'>,
-  input: { readonly projectId: string; readonly acceptedApplicationId: string },
+  tx: Pick<ApplicationTx, 'listByProject' | 'updateStatus' | 'notifications'>,
+  input: { readonly projectId: string; readonly acceptedApplicationId: string; readonly now: Date },
 ): Promise<{ readonly rejectedCount: number }> {
   const rows = await tx.listByProject(input.projectId);
   let changed = 0;
@@ -556,7 +556,15 @@ export async function autoRejectCompetingApplicationsInTransaction(
       from: REVISABLE_STATUSES,
       to: 'AUTO_REJECTED',
     });
-    if (updated) changed += 1;
+    if (!updated) continue;
+    changed += 1;
+    await tx.notifications.notifyApplication({
+      type: 'APPLICATION_AUTO_REJECTED',
+      clientUserId: row.clientUserId,
+      supplierUserId: row.supplierId,
+      targetId: row.id,
+      now: input.now,
+    });
   }
 
   return { rejectedCount: changed };
