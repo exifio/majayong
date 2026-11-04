@@ -3,8 +3,8 @@ import { mutableClock, systemClock } from "./clock.ts";
 import { loadCoreConfig } from "./config.ts";
 import { withTransaction, type TransactionHost } from "./transaction.ts";
 
-describe("A-00 common port proposals", () => {
-  it("provides a mutable clock for time boundary tests", () => {
+describe("A-00 공통 Port 제안", () => {
+  it("시간 경계 테스트를 위한 가변 시계를 제공한다", () => {
     const clock = mutableClock(new Date("2026-11-04T00:00:00.000Z"));
     expect(clock.now().toISOString()).toBe("2026-11-04T00:00:00.000Z");
 
@@ -17,7 +17,7 @@ describe("A-00 common port proposals", () => {
     expect(Math.abs(systemClock().now().getTime() - Date.now())).toBeLessThan(1000);
   });
 
-  it("validates runtime environment configuration", () => {
+  it("런타임 환경 설정을 검증한다", () => {
     const base = {
       DATABASE_URL: "postgresql://tester@localhost:5432/majayong_a00_test",
       TOKEN_SECRET: "x".repeat(32),
@@ -33,7 +33,7 @@ describe("A-00 common port proposals", () => {
     expect(() => loadCoreConfig({ ...base, PORT: "70000" })).toThrow();
   });
 
-  it("hands a typed transaction handle and correlation ID to the callback", async () => {
+  it("콜백에 타입이 지정된 트랜잭션 핸들과 상관관계 ID를 전달한다", async () => {
     const host: TransactionHost<string> = {
       async $transaction<Result>(run: (tx: string) => Promise<Result>): Promise<Result> {
         return run("tx-handle");

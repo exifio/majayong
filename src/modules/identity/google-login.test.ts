@@ -25,8 +25,8 @@ function makeGoogleStore(existingByEmail = null as typeof account | null) {
   return store;
 }
 
-describe("Google identity login", () => {
-  it("creates a first account with the selected role and terms", async () => {
+describe("Google 로그인", () => {
+  it("선택한 역할과 약관으로 최초 계정을 생성한다", async () => {
     const store = makeGoogleStore();
     await authenticateWithGoogle(store, {
       subject: "google-subject",
@@ -45,7 +45,7 @@ describe("Google identity login", () => {
     });
   });
 
-  it("links an existing email without changing its fixed role", async () => {
+  it("기존 이메일에는 고정 역할을 바꾸지 않고 연결한다", async () => {
     const store = makeGoogleStore(account);
     await expect(authenticateWithGoogle(store, {
       subject: "google-subject",
@@ -58,7 +58,7 @@ describe("Google identity login", () => {
     expect(store.createGoogleUser).not.toHaveBeenCalled();
   });
 
-  it("rejects an existing email requested under a different role", async () => {
+  it("다른 역할로 요청된 기존 이메일은 거부한다", async () => {
     await expect(authenticateWithGoogle(makeGoogleStore(account), {
       subject: "google-subject",
       email: "person@example.com",

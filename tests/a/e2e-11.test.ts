@@ -77,8 +77,8 @@ afterAll(async () => {
   await db.$disconnect();
 });
 
-describe("E2E-11 AI failure safety", () => {
-  it("keeps draft usable as pending when AI extractor is unavailable", async () => {
+describe("E2E-11 AI 실패 안전성", () => {
+  it("AI 추출기를 사용할 수 없어도 초안을 대기 상태로 사용할 수 있게 한다", async () => {
     const clientId = await makeClient();
     const token = issueAccessToken({ userId: clientId, role: Role.CLIENT, expiresAt: Date.now() + 60_000 }, tokenSecret);
     const { baseUrl, close } = await startApp();

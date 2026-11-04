@@ -95,8 +95,8 @@ afterAll(async () => {
   await db.$disconnect();
 });
 
-describe("E2E-03 chat and agreement", () => {
-  it("opens chat, exchanges messages, and confirms agreement", async () => {
+describe("E2E-03 채팅과 합의", () => {
+  it("채팅을 열고 메시지를 주고받은 뒤 합의를 확정한다", async () => {
     const clientId = await makeClient();
     const clientToken = issueAccessToken({ userId: clientId, role: Role.CLIENT, expiresAt: Date.now() + 60_000 }, tokenSecret);
     const supplierId = await makeSupplier();

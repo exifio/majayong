@@ -19,8 +19,8 @@ function fetchReplies(emailVerified: boolean) {
   return fetcher;
 }
 
-describe("Google authorization code exchange", () => {
-  it("returns provider subject only after verified email is confirmed", async () => {
+describe("Google 인가 코드 교환", () => {
+  it("검증된 이메일이 확인된 뒤에만 제공자 subject를 반환한다", async () => {
     const fetcher = fetchReplies(true);
     await expect(exchangeGoogleCode("authorization-code", config, fetcher)).resolves.toEqual({
       subject: "google-user-1",
@@ -31,7 +31,7 @@ describe("Google authorization code exchange", () => {
     expect(fetcher).toHaveBeenCalledTimes(2);
   });
 
-  it("rejects unverified Google email", async () => {
+  it("검증되지 않은 Google 이메일은 거부한다", async () => {
     await expect(exchangeGoogleCode("authorization-code", config, fetchReplies(false)))
       .rejects.toMatchObject({ code: "GOOGLE_EMAIL_UNVERIFIED" });
   });

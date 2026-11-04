@@ -1,8 +1,8 @@
 import { describe, expect, it } from "@jest/globals";
 import { calculatePriceEstimate } from "./policy.ts";
 
-describe("A-05-T01 price estimate", () => {
-  it("sums only included snapshot prices and floors the client fee to whole won", () => {
+describe("A-05-T01 가격 견적", () => {
+  it("포함된 스냅샷 가격만 합산하고 의뢰인 수수료는 원 단위로 내린다", () => {
     expect(calculatePriceEstimate([
       { blockId: "b1", name: "달력", status: "ADDED", unitPrice: 1, priceBasis: "작업 1" },
       { blockId: "b2", name: "결제", status: "ADDED", unitPrice: 19, priceBasis: "작업 2" },
@@ -22,7 +22,7 @@ describe("A-05-T01 price estimate", () => {
     });
   });
 
-  it("preserves zero and handles a one-won fee boundary", () => {
+  it("0원을 보존하고 1원 수수료 경계를 처리한다", () => {
     const zero = calculatePriceEstimate([
       { blockId: "zero", name: "무료", status: "ADDED", unitPrice: 0, priceBasis: "무료" },
     ], 0);
@@ -37,7 +37,7 @@ describe("A-05-T01 price estimate", () => {
     ], 0)).toMatchObject({ subtotal: 20, clientFee: 1, estimatedTotal: 21 });
   });
 
-  it("rejects invalid snapshot money and an estimate outside the schema Int range", () => {
+  it("잘못된 스냅샷 금액과 스키마 Int 범위를 벗어난 견적을 거부한다", () => {
     expect(() => calculatePriceEstimate([
       { blockId: "negative", name: "잘못된 단가", status: "ADDED", unitPrice: -1, priceBasis: "" },
     ], 0)).toThrow(RangeError);

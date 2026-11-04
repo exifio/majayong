@@ -96,8 +96,8 @@ afterAll(async () => {
   await db.$disconnect();
 });
 
-describe("E2E-10 permissions and concurrency", () => {
-  it("blocks cross-user access and duplicate application", async () => {
+describe("E2E-10 권한과 동시성", () => {
+  it("다른 사용자 접근과 중복 지원을 차단한다", async () => {
     const clientId = await makeClient();
     const clientToken = issueAccessToken({ userId: clientId, role: Role.CLIENT, expiresAt: Date.now() + 60_000 }, tokenSecret);
     const supplierA = await makeSupplier();

@@ -22,8 +22,8 @@ const row: PublicProjectRow = {
   hopeBudget: 4_000_000,
 };
 
-describe("A-06 project policy", () => {
-  it("freezes the spec once a contract is in progress", () => {
+describe("A-06 프로젝트 정책", () => {
+  it("계약이 진행되면 명세를 고정한다", () => {
     for (const status of [ProjectStatus.SCHEDULED, ProjectStatus.RECRUITING, ProjectStatus.SELECTING, ProjectStatus.EXPIRED]) {
       expect(canEditSpec(status)).toBe(true);
       expect(canDeleteProject(status)).toBe(true);
@@ -34,7 +34,7 @@ describe("A-06 project policy", () => {
     }
   });
 
-  it("allows deadline extension only from an open recruitment state", () => {
+  it("모집이 열린 상태에서만 마감 연장을 허용한다", () => {
     expect(canExtendDeadline(ProjectStatus.RECRUITING)).toBe(true);
     expect(canExtendDeadline(ProjectStatus.SELECTING)).toBe(true);
     expect(canExtendDeadline(ProjectStatus.EXPIRED)).toBe(true);
@@ -43,13 +43,13 @@ describe("A-06 project policy", () => {
     expect(canExtendDeadline(ProjectStatus.CONTRACTED)).toBe(false);
   });
 
-  it("picks SELECTING when applicants wait and EXPIRED when none does", () => {
+  it("지원자가 대기하면 SELECTING, 없으면 EXPIRED를 선택한다", () => {
     expect(resolveClosingOutcome(0)).toBe("EXPIRED");
     expect(resolveClosingOutcome(1)).toBe("SELECTING");
     expect(resolveClosingOutcome(4)).toBe("SELECTING");
   });
 
-  it("caps a deadline extension at exactly fourteen days", () => {
+  it("마감 연장을 정확히 14일로 제한한다", () => {
     const from = new Date("2026-11-10T09:00:00.000Z");
     expect(isWithinExtensionCap(from, new Date(from.getTime() + 14 * 24 * 60 * 60 * 1000))).toBe(true);
     expect(isWithinExtensionCap(from, new Date(from.getTime() + 14 * 24 * 60 * 60 * 1000 + 1))).toBe(false);
@@ -57,14 +57,14 @@ describe("A-06 project policy", () => {
     expect(isWithinExtensionCap(from, new Date(from.getTime() - 1))).toBe(false);
   });
 
-  it("bands the hope budget so the exact amount never leaves the server", () => {
+  it("정확한 금액이 서버를 떠나지 않도록 희망 예산을 구간화한다", () => {
     expect(hopeBudgetBand(null)).toBeNull();
     expect(hopeBudgetBand(900_000)).toBe("100만원 미만");
     expect(hopeBudgetBand(4_000_000)).toBe("400~500만원");
     expect(hopeBudgetBand(12_000_000)).toBe("500만원 이상");
   });
 
-  it("returns only allowlisted public summary fields", () => {
+  it("허용 목록에 있는 공개 요약 필드만 반환한다", () => {
     const summary = publicProjectSummary(row, 3);
     expect(Object.keys(summary).sort()).toEqual([
       "deadline", "hopeBudgetBand", "industryCode", "itemCount", "projectId", "requiredSkills", "status", "title",
@@ -74,7 +74,7 @@ describe("A-06 project policy", () => {
     expect(JSON.stringify(summary)).not.toContain("4000000");
   });
 
-  it("returns detail fields without any internal price or contact data", () => {
+  it("내부 가격·연락처 없이 상세 필드를 반환한다", () => {
     const detail = publicProjectDetail(row, {
       summary: "예약 관련 기능 3종",
       items: [{ title: "예약 달력", description: "달력 조회", conditions: [{ key: "k", text: "조건" }], wireframe: { parts: [] } }],

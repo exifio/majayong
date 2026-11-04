@@ -113,8 +113,8 @@ afterAll(async () => {
   await db.$disconnect();
 });
 
-describe("A-06 spec revision", () => {
-  it("A-06-T01 copies every current spec item into a new version and stales applicants", async () => {
+describe("A-06 명세 수정", () => {
+  it("A-06-T01 현재 명세 항목을 모두 새 버전으로 복사하고 지원자를 STALE 처리한다", async () => {
     const clientId = await makeClient();
     const projectId = await makeProject(clientId);
     await addSpecItems(projectId, 1, 3);
@@ -132,7 +132,7 @@ describe("A-06 spec revision", () => {
     expect(await db.eventLog.count({ where: { projectId, type: EventType.SPEC_REVISED } })).toBe(1);
   });
 
-  it("A-06-T01 refuses a spec edit once the project is accepted or contracted", async () => {
+  it("A-06-T01 프로젝트가 수락·계약되면 명세 수정을 거부한다", async () => {
     const clientId = await makeClient();
     const accepted = await makeProject(clientId, { status: ProjectStatus.ACCEPTED });
     await addSpecItems(accepted, 1, 1);
@@ -142,7 +142,7 @@ describe("A-06 spec revision", () => {
     expect(await db.specItem.count({ where: { projectId: accepted, versionNo: 2 } })).toBe(0);
   });
 
-  it("does not let a non-owner revise the spec", async () => {
+  it("소유자가 아니면 명세를 수정하지 못하게 한다", async () => {
     const clientId = await makeClient();
     const stranger = await makeClient();
     const projectId = await makeProject(clientId);
@@ -152,8 +152,8 @@ describe("A-06 spec revision", () => {
   });
 });
 
-describe("A-06 deadline batch", () => {
-  it("A-06-T04 selects with a seven day window when applicants wait", async () => {
+describe("A-06 마감 배치", () => {
+  it("A-06-T04 지원자가 대기하면 7일 기간으로 SELECTING 처리한다", async () => {
     const clientId = await makeClient();
     const projectId = await makeProject(clientId, { deadline: pastDeadline });
     const port = applicationPort({ countPending: 3 });
@@ -166,14 +166,14 @@ describe("A-06 deadline batch", () => {
     expect(result.selecting).toBeGreaterThanOrEqual(1);
   });
 
-  it("A-06-T04 expires when no applicant waits", async () => {
+  it("A-06-T04 대기 지원자가 없으면 EXPIRED 처리한다", async () => {
     const clientId = await makeClient();
     const projectId = await makeProject(clientId, { deadline: pastDeadline });
     await runProjectDeadlineBatch(db, { application: applicationPort({ countPending: 0 }), notification: notificationPort() }, now);
     expect(await db.project.findUniqueOrThrow({ where: { id: projectId } })).toMatchObject({ status: ProjectStatus.EXPIRED, selectionEndsAt: null });
   });
 
-  it("A-06-T05 moves a selecting project to expired and rejects waiting applicants", async () => {
+  it("A-06-T05 SELECTING 프로젝트를 EXPIRED로 바꾸고 대기 지원자를 거절한다", async () => {
     const clientId = await makeClient();
     const projectId = await makeProject(clientId, { status: ProjectStatus.SELECTING, selectionEndsAt: pastDeadline });
     const port = applicationPort({ rejectPendingOnDelete: 2 });
@@ -182,7 +182,7 @@ describe("A-06 deadline batch", () => {
     expect(port.rejectPendingOnDelete).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ projectId }));
   });
 
-  it("A-06-T06 leaves accepted and contracted projects untouched", async () => {
+  it("A-06-T06 수락·계약된 프로젝트는 건드리지 않는다", async () => {
     const clientId = await makeClient();
     const accepted = await makeProject(clientId, { deadline: pastDeadline, status: ProjectStatus.ACCEPTED });
     const contracted = await makeProject(clientId, { deadline: pastDeadline, status: ProjectStatus.CONTRACTED });
@@ -192,7 +192,7 @@ describe("A-06 deadline batch", () => {
     expect(await db.project.findUniqueOrThrow({ where: { id: contracted } })).toMatchObject({ status: ProjectStatus.CONTRACTED });
   });
 
-  it("A-06-T07 is idempotent across repeated runs without duplicate notifications", async () => {
+  it("A-06-T07 여러 번 실행해도 알림 중복 없이 멱등하다", async () => {
     const clientId = await makeClient();
     const projectId = await makeProject(clientId, { deadline: pastDeadline });
     const port = applicationPort({ countPending: 0 });
@@ -206,7 +206,7 @@ describe("A-06 deadline batch", () => {
     expect(first.expired).toBeGreaterThanOrEqual(1);
   });
 
-  it("A-06-T03 promotes a scheduled project to recruiting only after its start time", async () => {
+  it("A-06-T03 시작 시각 이후에만 예약 프로젝트를 모집 중으로 전환한다", async () => {
     const clientId = await makeClient();
     const future = await makeProject(clientId, { status: ProjectStatus.SCHEDULED, recruitStartAt: new Date(now.getTime() + day) });
     const due = await makeProject(clientId, { status: ProjectStatus.SCHEDULED, recruitStartAt: new Date(now.getTime() - day) });
@@ -216,8 +216,8 @@ describe("A-06 deadline batch", () => {
   });
 });
 
-describe("A-06 read surfaces", () => {
-  it("lists the owner's projects with application and detail-view counts", async () => {
+describe("A-06 조회 표면", () => {
+  it("소유자 프로젝트를 지원·상세 열람 수와 함께 조회한다", async () => {
     const clientId = await makeClient();
     const projectId = await makeProject(clientId);
     await addSpecItems(projectId, 1, 2);
@@ -231,7 +231,7 @@ describe("A-06 read surfaces", () => {
     expect(card).toMatchObject({ projectId, status: ProjectStatus.RECRUITING, applicationCount: 1, detailViewCount: 1, currentVersion: 1 });
   });
 
-  it("A-06-T03/T05 lists public projects through the search port without leaking the exact budget", async () => {
+  it("A-06-T03/T05 검색 Port로 정확한 예산을 노출하지 않고 공개 프로젝트를 조회한다", async () => {
     const clientId = await makeClient();
     const projectId = await makeProject(clientId);
     await addSpecItems(projectId, 1, 2);
@@ -247,7 +247,7 @@ describe("A-06 read surfaces", () => {
     expect(JSON.stringify(page.items)).not.toContain("4000000");
   });
 
-  it("A-06-T05 records exactly one first view and returns the public detail after NDA", async () => {
+  it("A-06-T05 최초 열람을 정확히 한 번 기록하고 NDA 후 공개 상세를 반환한다", async () => {
     const clientId = await makeClient();
     const projectId = await makeProject(clientId);
     await addSpecItems(projectId, 1, 2);
@@ -263,7 +263,7 @@ describe("A-06 read surfaces", () => {
     for (const forbidden of ["unitPrice", "estimatedTotal", "clientFee", "email"]) expect(detail).not.toHaveProperty(forbidden);
   });
 
-  it("blocks public detail without the current supplier NDA", async () => {
+  it("현재 공급자 NDA 없이는 공개 상세를 막는다", async () => {
     const clientId = await makeClient();
     const projectId = await makeProject(clientId);
     const supplierId = await makeSupplier(null);
@@ -273,7 +273,7 @@ describe("A-06 read surfaces", () => {
     expect(recordFirstView).not.toHaveBeenCalled();
   });
 
-  it("soft deletes an owner's project and rejects waiting applications", async () => {
+  it("소유자 프로젝트를 소프트 삭제하고 대기 지원을 거절한다", async () => {
     const clientId = await makeClient();
     const projectId = await makeProject(clientId);
     const port = applicationPort({ rejectPendingOnDelete: 1 });
@@ -284,8 +284,8 @@ describe("A-06 read surfaces", () => {
   });
 });
 
-describe("A-06 output ports for B/C", () => {
-  it("transitions a project through the contract states and rejects invalid jumps", async () => {
+describe("A-06 B/C용 출력 Port", () => {
+  it("프로젝트를 계약 상태로 전이하고 잘못된 점프를 거부한다", async () => {
     const clientId = await makeClient();
     const projectId = await makeProject(clientId);
     const ports = createProjectOutputPorts(db);
@@ -306,8 +306,8 @@ describe("A-06 output ports for B/C", () => {
   });
 });
 
-describe("A-06 deadline extension", () => {
-  it("A-06-T05 caps the extension at fourteen days and reopens recruitment", async () => {
+describe("A-06 마감 연장", () => {
+  it("A-06-T05 연장을 14일로 제한하고 모집을 다시 연다", async () => {
     const clientId = await makeClient();
     const projectId = await makeProject(clientId, { status: ProjectStatus.SELECTING, selectionEndsAt: pastDeadline });
 
@@ -321,7 +321,7 @@ describe("A-06 deadline extension", () => {
     expect(await db.eventLog.count({ where: { projectId, type: EventType.DEADLINE_EXTENDED } })).toBe(1);
   });
 
-  it("refuses to extend a project that is already in a contract", async () => {
+  it("이미 계약된 프로젝트의 연장을 거부한다", async () => {
     const clientId = await makeClient();
     const projectId = await makeProject(clientId, { status: ProjectStatus.CONTRACTED });
     await expect(extendDeadline(db, projectId, clientId, new Date(futureDeadline.getTime() + day), now))

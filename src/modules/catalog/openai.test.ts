@@ -24,12 +24,12 @@ function response(text: string) {
   }), { status: 200 });
 }
 
-describe("A-03 OpenAI block generator", () => {
-  it("exports a generator factory", () => {
+describe("A-03 OpenAI 블록 생성기", () => {
+  it("생성기 팩토리를 내보낸다", () => {
     expect(typeof catalog.createOpenAiCatalogBlockGenerator).toBe("function");
   });
 
-  it("uses strict structured output and returns parsed data with metered cost", async () => {
+  it("엄격한 구조화 출력을 사용하고 비용을 계량해 파싱된 데이터를 반환한다", async () => {
     const fetcher = jest.fn<typeof fetch>().mockResolvedValue(response(JSON.stringify(generatedBlock)));
     const create = catalog.createOpenAiCatalogBlockGenerator;
     expect(typeof create).toBe("function");
@@ -50,7 +50,7 @@ describe("A-03 OpenAI block generator", () => {
     });
   });
 
-  it("rejects provider errors without exposing provider response text", async () => {
+  it("제공자 오류 시 응답 원문을 노출하지 않고 거부한다", async () => {
     const fetcher = jest.fn<typeof fetch>().mockResolvedValue(new Response("private provider error body", { status: 500 }));
     const create = catalog.createOpenAiCatalogBlockGenerator;
     expect(typeof create).toBe("function");
@@ -65,8 +65,8 @@ describe("A-03 OpenAI block generator", () => {
   });
 });
 
-describe("A-03 OpenAI feature extractor", () => {
-  it("returns extracted feature purposes with metered cost", async () => {
+describe("A-03 OpenAI 기능 추출기", () => {
+  it("추출된 기능 목적과 계량 비용을 반환한다", async () => {
     const extracted = { features: ["예약 달력", "예약금 결제", "노쇼 기록", "예약 알림", "리뷰 요청"] };
     const fetcher = jest.fn<typeof fetch>().mockResolvedValue(response(JSON.stringify(extracted)));
     const create = catalog.createOpenAiCatalogFeatureExtractor;
@@ -88,7 +88,7 @@ describe("A-03 OpenAI feature extractor", () => {
     });
   });
 
-  it("returns an invalid empty result for malformed JSON instead of leaking parser errors", async () => {
+  it("잘못된 JSON에는 파서 오류를 노출하는 대신 안전한 빈 결과를 반환한다", async () => {
     const fetcher = jest.fn<typeof fetch>().mockResolvedValue(response("not json"));
     const extractor = catalog.createOpenAiCatalogFeatureExtractor("test-key", "gpt-5.4-mini", "1341", fetcher);
     expect(extractor).toBeDefined();

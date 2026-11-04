@@ -93,8 +93,8 @@ afterAll(async () => {
   await prisma.$disconnect();
 });
 
-describe("A-02 profile and disclosure API", () => {
-  it("prevents client and supplier cross-role profile mutation", async () => {
+describe("A-02 프로필·공개 API", () => {
+  it("의뢰인·공급자의 교차 역할 프로필 변경을 막는다", async () => {
     const client = await user(Role.CLIENT);
     const vendor = await supplier();
     await withServer({ encryptionKey }, async baseUrl => {
@@ -121,7 +121,7 @@ describe("A-02 profile and disclosure API", () => {
     expect(await prisma.clientProfile.findUnique({ where: { userId: client.id } })).toMatchObject({ businessName: "Shop One", profileCompleted: true });
   });
 
-  it("encrypts tax and payout identifiers, masks reads, and leaves failed verification unverified", async () => {
+  it("세금·지급 식별자를 암호화하고 조회는 마스킹하며 검증 실패는 미검증으로 둔다", async () => {
     const vendor = await supplier();
     const verify = jest.fn(async () => false).mockResolvedValueOnce(false).mockResolvedValueOnce(true);
     await withServer({ encryptionKey, payoutVerification: { verify } }, async baseUrl => {
@@ -163,7 +163,7 @@ describe("A-02 profile and disclosure API", () => {
     });
   });
 
-  it("rejects payout-account changes from non-suppliers and mismatched holders", async () => {
+  it("비공급자와 명의 불일치 계좌의 지급 계좌 변경을 거부한다", async () => {
     const client = await user(Role.CLIENT, "Some Client");
     const vendor = await supplier("Supplier Name");
     await withServer({ encryptionKey }, async baseUrl => {
@@ -183,7 +183,7 @@ describe("A-02 profile and disclosure API", () => {
     });
   });
 
-  it("requires consent and enforces five daily summary generations under concurrent requests", async () => {
+  it("동의를 요구하고 동시 요청에서도 일일 요약 생성 5회를 강제한다", async () => {
     const vendor = await supplier();
     const sourceText = "private source text that must not enter event logs";
     const sourceReader = { read: jest.fn(async () => [sourceText]) };
@@ -212,7 +212,7 @@ describe("A-02 profile and disclosure API", () => {
     expect(JSON.stringify(quotaEvents)).not.toContain("portfolio.example.invalid");
   });
 
-  it("fails closed when real payout and portfolio providers are not configured", async () => {
+  it("실제 지급·포트폴리오 제공자가 설정되지 않으면 안전하게 차단한다", async () => {
     const vendor = await supplier();
     await prisma.supplierProfile.update({ where: { userId: vendor.id }, data: {
       portfolioConsentAt: now,
@@ -229,7 +229,7 @@ describe("A-02 profile and disclosure API", () => {
     expect(await prisma.supplierProfile.findUniqueOrThrow({ where: { userId: vendor.id } })).toMatchObject({ payoutVerifiedAt: null });
   });
 
-  it("exposes a review rating cache port for the review writer", async () => {
+  it("리뷰 작성자를 위한 평점 캐시 Port를 노출한다", async () => {
     const client = await user(Role.CLIENT, "Review Client");
     const vendor = await supplier();
     await prisma.clientProfile.create({ data: { userId: client.id, businessName: "Review Client", profileCompleted: true } });
@@ -259,7 +259,7 @@ describe("A-02 profile and disclosure API", () => {
     expect(await prisma.clientProfile.findUniqueOrThrow({ where: { userId: client.id } })).toMatchObject({ ratingAvg: 4, reviewCount: 1 });
   });
 
-  it("publishes only consented summaries and returns a strict supplier allowlist with signed files", async () => {
+  it("동의된 요약만 공개하고 서명된 파일과 함께 엄격한 공급자 허용 목록을 반환한다", async () => {
     const vendor = await supplier();
     const privateVendor = await supplier("Private Supplier");
     await prisma.supplierProfile.update({ where: { userId: privateVendor.id }, data: {
@@ -312,7 +312,7 @@ describe("A-02 profile and disclosure API", () => {
     });
   });
 
-  it("does not expose a client profile before supplier NDA and detailed-disclosure evidence", async () => {
+  it("공급자 NDA와 상세 공개 근거 전에는 의뢰인 프로필을 노출하지 않는다", async () => {
     const client = await user(Role.CLIENT, "Client Owner");
     await prisma.clientProfile.create({ data: { userId: client.id, businessName: "Client Shop", industryField: "Cafe", storeAddress: "Private after NDA", bizRegNo: "111-22-33333", taxInvoiceEmail: "client-tax@example.invalid", profileCompleted: true } });
     const vendor = await supplier();

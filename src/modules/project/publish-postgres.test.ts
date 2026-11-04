@@ -133,8 +133,8 @@ afterAll(async () => {
   await db.$disconnect();
 });
 
-describe("A-05 project publish", () => {
-  it("A-05-T04 creates the project and complete version-one spec from price snapshots exactly once", async () => {
+describe("A-05 프로젝트 게시", () => {
+  it("A-05-T04 가격 스냅샷으로 프로젝트와 완전한 1차 명세를 정확히 한 번 생성한다", async () => {
     expect(PROJECT_DISCLOSURE_CONSENT_DRAFT_VERSION).toBe("project-disclosure-v0.1-draft");
     const { clientId, draftId, blockId } = await makeDraft();
     const baseUrl = await startServer({ userId: clientId, role: Role.CLIENT });
@@ -176,7 +176,7 @@ describe("A-05 project publish", () => {
     expect(await db.specItem.count({ where: { projectId: project.id } })).toBe(1);
   });
 
-  it("A-05-T04 serializes concurrent publish requests without a partial or duplicate project", async () => {
+  it("A-05-T04 동시 게시 요청을 직렬화해 부분·중복 프로젝트를 만들지 않는다", async () => {
     const { clientId, draftId } = await makeDraft();
     const input = {
       recruitStartAt: new Date(validInput.recruitStartAt),
@@ -196,7 +196,7 @@ describe("A-05 project publish", () => {
     expect(await db.eventLog.count({ where: { projectId: project.id, type: "PROJECT_PUBLISHED" } })).toBe(1);
   });
 
-  it("A-05-T05 rejects invalid recruitment period without writing project data", async () => {
+  it("A-05-T05 잘못된 모집 기간이면 프로젝트 데이터를 쓰지 않고 거부한다", async () => {
     const { clientId, draftId } = await makeDraft();
     const baseUrl = await startServer({ userId: clientId, role: Role.CLIENT });
     const response = await publish(baseUrl, draftId, { ...validInput, recruitStartAt: validInput.deadline });
@@ -204,7 +204,7 @@ describe("A-05 project publish", () => {
     expect(await db.project.count({ where: { draftId } })).toBe(0);
   });
 
-  it("A-05-T06 requires disclosure consent and the client's business name", async () => {
+  it("A-05-T06 공개 동의와 의뢰인 상호를 요구한다", async () => {
     const withoutConsent = await makeDraft();
     const baseUrl = await startServer({ userId: withoutConsent.clientId, role: Role.CLIENT });
     expect((await publish(baseUrl, withoutConsent.draftId, { ...validInput, disclosureConsent: false })).status).toBe(422);
@@ -234,7 +234,7 @@ describe("A-05 project publish", () => {
     expect(await db.project.count({ where: { draftId: withoutProfile.draftId } })).toBe(0);
   });
 
-  it("rejects a consent version that does not identify the attached draft", async () => {
+  it("첨부된 초안을 식별하지 못하는 동의 버전은 거부한다", async () => {
     const { clientId, draftId } = await makeDraft();
     const baseUrl = await startServer({ userId: clientId, role: Role.CLIENT });
     const response = await publish(baseUrl, draftId, { ...validInput, disclosureConsentVersion: "v2.0" });
@@ -246,7 +246,7 @@ describe("A-05 project publish", () => {
     expect(await db.eventLog.count({ where: { userId: clientId, type: "PROJECT_PUBLISHED" } })).toBe(0);
   });
 
-  it("publishes immediately when recruitment has already started", async () => {
+  it("모집이 이미 시작됐으면 즉시 게시한다", async () => {
     const { clientId, draftId } = await makeDraft();
     const baseUrl = await startServer({ userId: clientId, role: Role.CLIENT });
     const response = await publish(baseUrl, draftId, {
@@ -257,7 +257,7 @@ describe("A-05 project publish", () => {
     expect(await db.project.findUniqueOrThrow({ where: { draftId }, select: { status: true } })).toEqual({ status: "RECRUITING" });
   });
 
-  it("denies supplier role and hides another client's draft", async () => {
+  it("공급자 역할을 거부하고 다른 의뢰인의 초안을 숨긴다", async () => {
     const { draftId } = await makeDraft();
     const supplierId = randomUUID();
     const otherClientId = randomUUID();

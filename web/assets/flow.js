@@ -56,6 +56,18 @@
       .join(' · ');
   }
 
+  function escapedCareer(profile) {
+    return profile?.careerYears === null || profile?.careerYears === undefined
+      ? ''
+      : `경력 ${profile.careerYears}년 · `;
+  }
+
+  function escapedRating(profile) {
+    return profile?.ratingAvg === null || profile?.ratingAvg === undefined
+      ? '평점 없음 · '
+      : `★ ${profile.ratingAvg} · 리뷰 ${profile.reviewCount ?? 0}건 · `;
+  }
+
   function showError(anchor, message) {
     let box = $('#flow-error');
     if (!box) {
@@ -122,6 +134,180 @@
     const next = new Date(date);
     next.setDate(next.getDate() + days);
     return next;
+  }
+
+  if (screen === 'Compare-Client') {
+    if (!MJ.requireLogin(location.pathname + location.search)) return;
+    const list = document.querySelector('section.list');
+    if (!list) return;
+
+    void (async () => {
+      try {
+        const projects = await MJ.request('/me/projects');
+        if (!Array.isArray(projects) || projects.length === 0) {
+          list.innerHTML = '<div class="zero"><h2>프로젝트가 없습니다</h2><p>먼저 초안을 만들고 명세를 확정해 주세요.</p><a class="btn tint" href="/Input-Client">프로젝트 시작</a></div>';
+          return;
+        }
+        const params = new URLSearchParams(location.search);
+        let projectId = params.get('projectId');
+        if (!projectId || !projects.some((project) => project.projectId === projectId)) {
+          projectId = (projects.find((project) => project.applicationCount > 0) || projects[0]).projectId;
+        }
+        const project = projects.find((row) => row.projectId === projectId);
+        const cards = await MJ.request(`/projects/${encodeURIComponent(projectId)}/applications`);
+
+        const sub = document.querySelector('.head .sub');
+        if (sub) sub.innerHTML = `<b>지원 ${cards.length}건</b> · ${escapeHtml(project?.title || '프로젝트')}`;
+
+        let picker = document.getElementById('compare-project');
+        if (!picker) {
+          picker = document.createElement('select');
+          picker.id = 'compare-project';
+          picker.className = 'inp';
+          picker.style.cssText = 'max-width:420px;margin:0 0 14px';
+          list.parentElement.insertBefore(picker, list);
+          picker.addEventListener('change', () => {
+            location.assign(`/Compare-Client?projectId=${encodeURIComponent(picker.value)}`);
+          });
+        }
+        picker.innerHTML = projects.map((row) => `<option value="${row.projectId}"${row.projectId === projectId ? ' selected' : ''}>${escapeHtml(row.title)} · ${Number(row.applicationCount) || 0}건</option>`).join('');
+
+        list.innerHTML = '';
+        if (!Array.isArray(cards) || cards.length === 0) {
+          list.innerHTML = '<div class="zero"><h2>아직 지원이 없습니다</h2><p>공급자가 지원하면 이 화면에서 견적과 포트폴리오를 비교할 수 있습니다.</p></div>';
+          return;
+        }
+
+        const profiles = await Promise.all(cards.map((card) =>
+          MJ.request(`/profiles/suppliers/${encodeURIComponent(card.supplierId)}`).catch(() => null)));
+        cards.forEach((card, index) => {
+          const profile = profiles[index];
+          const name = profile?.displayName || profile?.name || '공급자';
+          const rating = profile?.ratingAvg === null || profile?.ratingAvg === undefined
+            ? '평점 없음'
+            : `★ ${profile.ratingAvg} · 리뷰 ${profile.reviewCount ?? 0}건`;
+          const career = profile?.careerYears === null || profile?.careerYears === undefined
+            ? ''
+            : `경력 ${profile.careerYears}년 · `;
+          const submitted = new Date(card.submittedAt);
+          const fee = Math.floor(Number(card.totalAmount) * 0.05);
+          const article = document.createElement('article');
+          article.className = 'sc';
+          article.innerHTML = `<div class="l">
+            <span class="av" aria-hidden="true">${escapeHtml(name.slice(0, 1))}</span>
+            <div class="bd">
+              <div class="top">
+                <p class="nm">${escapeHtml(name)}</p>
+                ${card.questionCount ? `<span class="chip blue qchip">질문 ${Number(card.questionCount)}</span>` : ''}
+              </div>
+              <p class="mt">${escapeHtml(career)}${escapeHtml(rating)}<span class="sep">|</span>${Number.isNaN(submitted.getTime()) ? '' : escapeHtml(new Intl.DateTimeFormat('ko-KR', { month: 'long', day: 'numeric', timeZone: 'Asia/Seoul' }).format(submitted))} 지원</p>
+              ${profile?.portfolioSummary
+                ? `<div class="pf"><p class="k">포트폴리오 요약<span>AI가 등록 자료를 읽고 정리</span></p><p>${escapeHtml(profile.portfolioSummary)}</p></div>`
+                : '<div class="pf none"><p class="k">포트폴리오</p><p>요약이 없습니다.</p></div>'}
+              <div class="links"><a class="ft" href="/PublicSupplier?supplierId=${encodeURIComponent(card.supplierId)}">프로필 보기</a></div>
+            </div>
+          </div>
+          <div class="r">
+            <div class="amt"><p class="k">견적 금액</p><div class="v">${won(Number(card.totalAmount))}</div><div class="fx">수수료 포함 ${won(Number(card.totalAmount) + fee)}</div></div>
+            <div class="acts"><a class="btn sm tint" href="/Chat-Client?applicationId=${encodeURIComponent(card.applicationId)}">문의하기 (채팅)</a></div>
+          </div>`;
+          list.appendChild(article);
+        });
+      } catch (error) {
+        list.innerHTML = `<div class="zero"><h2>지원 목록을 불러오지 못했습니다</h2><p>${escapeHtml(error.message)}</p></div>`;
+      }
+    })();
+    return;
+  }
+
+  if (screen === 'Chat-Client') {
+    const applicationId = new URLSearchParams(location.search).get('applicationId');
+    if (!applicationId) return;
+    if (!MJ.requireLogin(location.pathname + location.search)) return;
+
+    void (async () => {
+      try {
+        await MJ.request(`/applications/${encodeURIComponent(applicationId)}/chat/open`, { method: 'POST', body: {} }).catch(() => null);
+        const [application, view, projects] = await Promise.all([
+          MJ.request(`/applications/${encodeURIComponent(applicationId)}`),
+          MJ.request(`/applications/${encodeURIComponent(applicationId)}/messages`),
+          MJ.request('/me/projects').catch(() => []),
+        ]);
+        const profile = await MJ.request(`/profiles/suppliers/${encodeURIComponent(application.supplierId)}`).catch(() => null);
+        const me = MJ.session().user;
+        const name = profile?.displayName || profile?.name || '공급자';
+        const project = (Array.isArray(projects) ? projects : []).find((row) => row.projectId === application.projectId);
+        const messages = Array.isArray(view?.messages) ? view.messages : [];
+
+        const aside = document.querySelector('aside.ls');
+        if (aside) {
+          aside.innerHTML = `<div class="lh">채팅</div>
+            <div class="pj">${escapeHtml(project?.title || '프로젝트')}</div>
+            <a class="it on" href="#">
+              <span class="av" aria-hidden="true">${escapeHtml(name.slice(0, 1))}</span>
+              <span class="bd">
+                <span class="r1"><span class="nm">${escapeHtml(name)}</span><span class="tm"></span></span>
+                <span class="pv" style="display:block">${escapeHtml(messages.at(-1)?.body || '아직 메시지가 없습니다')}</span>
+                <span class="r3"><span class="chip blue">문의 중</span></span>
+              </span>
+            </a>
+            <p class="foot3">메시지는 계약 전까지 저장되며 연락처는 자동으로 가려집니다.</p>`;
+        }
+
+        const heading = document.querySelector('.cvh .who3 .nm');
+        if (heading) heading.innerHTML = `${escapeHtml(name)} <span class="chip blue">문의 중</span>`;
+        const meta = document.querySelector('.cvh .mt');
+        if (meta) meta.innerHTML = `${escapedCareer(profile)}${escapedRating(profile)}<a class="ft" href="/Compare-Client?projectId=${encodeURIComponent(application.projectId)}">${escapeHtml(project?.title || '제안 비교')}</a>`;
+        const acts = document.querySelector('.cvh .acts');
+        if (acts) acts.innerHTML = `<a class="btn sm gh" href="/Compare-Client?projectId=${encodeURIComponent(application.projectId)}">제안 비교로</a>`;
+
+        const items = Array.isArray(application.items) ? application.items : [];
+        const qbar = document.querySelector('.qbar');
+        if (qbar) qbar.innerHTML = `<span>지금 견적 <b>${won(Number(application.totalAmount))}</b></span><span>작업 기간 <b>${Number(application.durationDays)}일</b></span><span>할 수 있는 항목 <b>${items.filter((item) => item.isAvailable).length} / ${items.length}</b></span>`;
+        document.querySelector('.cond')?.remove();
+        document.querySelector('.stl')?.remove();
+
+        const host = document.querySelector('.msgs');
+        if (host) {
+          host.innerHTML = messages.length === 0
+            ? '<div class="starter"><p><b style="color:var(--s900)">아직 메시지가 없습니다.</b><br>첫 메시지를 보내면 대화가 시작됩니다.</p></div>'
+            : messages.map((message) => {
+              if (message.kind === 'SYSTEM') return `<p class="sys">${escapeHtml(message.body)}</p>`;
+              const mine = message.senderId === me?.id;
+              const time = new Intl.DateTimeFormat('ko-KR', {
+                timeZone: 'Asia/Seoul', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit',
+              }).format(new Date(message.createdAt));
+              return `<div class="m${mine ? ' me' : ''}"><p class="by">${mine ? '나' : escapeHtml(name)} · ${escapeHtml(time)}</p><div class="bb">${escapeHtml(message.body)}</div></div>`;
+            }).join('');
+        }
+
+        const input = document.querySelector('.in .row input');
+        const button = document.querySelector('.in .row button');
+        if (input && button) {
+          const send = async () => {
+            const body = input.value.trim();
+            if (!body) return;
+            busy(button, true, '보내는 중…');
+            try {
+              await MJ.request(`/applications/${encodeURIComponent(applicationId)}/messages`, { method: 'POST', body: { body } });
+              location.reload();
+            } catch (error) {
+              busy(button, false);
+              showError(button, error.message);
+            }
+          };
+          button.addEventListener('click', (event) => { event.preventDefault(); void send(); });
+          input.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') { event.preventDefault(); void send(); }
+          });
+        }
+
+        await MJ.request(`/applications/${encodeURIComponent(applicationId)}/messages/read`, { method: 'POST', body: {} }).catch(() => null);
+      } catch (error) {
+        showError(document.body, error.message);
+      }
+    })();
+    return;
   }
 
   if (screen === 'Find-Supplier') {

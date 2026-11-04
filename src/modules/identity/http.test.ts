@@ -52,7 +52,7 @@ async function register(baseUrl: string, email = `a01-http-${randomUUID()}@examp
 const createdEmails = new Set<string>();
 const createdIds = new Set<string>();
 
-describe("A-01 HTTP identity API", () => {
+describe("A-01 HTTP 인증 API", () => {
   afterAll(async () => prisma.$disconnect());
   afterEach(async () => {
     for (const id of createdIds) {
@@ -67,7 +67,7 @@ describe("A-01 HTTP identity API", () => {
     createdEmails.clear();
   });
 
-  it("registers, logs in, and requires Bearer access for the caller's own account", async () => {
+  it("가입·로그인하고 본인 계정에는 Bearer 접근을 요구한다", async () => {
     await withServer({ db: prisma, tokenSecret: secret, now: () => now }, async baseUrl => {
       const account = await register(baseUrl);
       const rejected = await json(baseUrl, "/me");
@@ -98,7 +98,7 @@ describe("A-01 HTTP identity API", () => {
     });
   });
 
-  it("returns unavailable for email flows when no delivery adapter is configured", async () => {
+  it("발송 어댑터가 없으면 이메일 흐름에 unavailable을 반환한다", async () => {
     await withServer({ db: prisma, tokenSecret: secret, now: () => now }, async baseUrl => {
       const response = await json(baseUrl, "/auth/password-reset/request", { email: "anyone@example.invalid" });
       expect(response.status).toBe(503);
@@ -106,7 +106,7 @@ describe("A-01 HTTP identity API", () => {
     });
   });
 
-  it("rotates refresh tokens, rejects replay, and ends the active session on logout", async () => {
+  it("리프레시 토큰을 회전하고 재사용을 거부하며 로그아웃 시 활성 세션을 종료한다", async () => {
     await withServer({ db: prisma, tokenSecret: secret, now: () => now }, async baseUrl => {
       const account = await register(baseUrl);
       const refreshed = await json(baseUrl, "/auth/refresh", { refreshToken: account.refreshToken });
@@ -121,7 +121,7 @@ describe("A-01 HTTP identity API", () => {
     });
   });
 
-  it("sends a reset link without revealing account existence and consumes it once", async () => {
+  it("계정 존재 여부를 노출하지 않고 재설정 링크를 보내며 한 번만 사용한다", async () => {
     let deliveredToken = "";
     const sendPasswordReset = jest.fn(async (_email: string, token: string) => { deliveredToken = token; });
     await withServer({ db: prisma, tokenSecret: secret, now: () => now, sendPasswordReset }, async baseUrl => {
@@ -142,7 +142,7 @@ describe("A-01 HTTP identity API", () => {
     });
   });
 
-  it("completes Google onboarding only with a server-signed verified identity", async () => {
+  it("서버가 서명한 검증된 신원으로만 Google 온보딩을 완료한다", async () => {
       createdEmails.add("google-http@example.invalid");
     const fetcher = jest.fn<typeof fetch>()
       .mockResolvedValueOnce(new Response(JSON.stringify({ access_token: "google-token-1" }), { status: 200 }))
@@ -170,7 +170,7 @@ describe("A-01 HTTP identity API", () => {
     });
   });
 
-  it("updates own profile, confirms email changes, changes password, disconnects Google, and withdraws", async () => {
+  it("본인 프로필 수정, 이메일 변경 확인, 비밀번호 변경, Google 연결 해제, 탈퇴를 수행한다", async () => {
     let emailToken = "";
     const sendEmailChange = jest.fn(async (_email: string, token: string) => { emailToken = token; });
     await withServer({ db: prisma, tokenSecret: secret, now: () => now, sendEmailChange }, async baseUrl => {

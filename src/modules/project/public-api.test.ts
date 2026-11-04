@@ -125,8 +125,8 @@ afterAll(async () => {
   await db.$disconnect();
 });
 
-describe("A-06 project HTTP API", () => {
-  it("serves the client's own project list", async () => {
+describe("A-06 프로젝트 HTTP API", () => {
+  it("의뢰인 본인의 프로젝트 목록을 제공한다", async () => {
     const client = await makeClient();
     const projectId = await makeProject(client.userId);
     await addSpecItem(projectId, 1);
@@ -137,7 +137,7 @@ describe("A-06 project HTTP API", () => {
     expect(data.find(row => row.projectId === projectId)).toMatchObject({ projectId, currentVersion: 1 });
   });
 
-  it("serves the public list through the search port exactly once and denies clients", async () => {
+  it("검색 Port로 공개 목록을 정확히 한 번 제공하고 의뢰인은 거부한다", async () => {
     const client = await makeClient();
     const supplier = await makeSupplier();
     const projectId = await makeProject(client.userId);
@@ -158,7 +158,7 @@ describe("A-06 project HTTP API", () => {
     expect(body.data[0]).not.toHaveProperty("hopeBudget");
   });
 
-  it("fails closed for the public list when no search port is wired", async () => {
+  it("검색 Port가 연결되지 않으면 공개 목록을 안전하게 차단한다", async () => {
     const supplier = await makeSupplier();
     const baseUrl = await startServer({});
     const response = await request(baseUrl, "GET", "/projects", supplier);
@@ -166,7 +166,7 @@ describe("A-06 project HTTP API", () => {
     expect((await response.json() as { error: { code: string } }).error.code).toBe("PROJECT_SEARCH_UNAVAILABLE");
   });
 
-  it("serves the public detail after NDA and records exactly one first view", async () => {
+  it("NDA 후 공개 상세를 제공하고 최초 열람을 정확히 한 번 기록한다", async () => {
     const client = await makeClient();
     const supplier = await makeSupplier();
     const projectId = await makeProject(client.userId);
@@ -183,7 +183,7 @@ describe("A-06 project HTTP API", () => {
     expect(JSON.stringify(data)).not.toContain("clientFee");
   });
 
-  it("revises the spec over HTTP and denies suppliers", async () => {
+  it("HTTP로 명세를 수정하고 공급자는 거부한다", async () => {
     const client = await makeClient();
     const supplier = await makeSupplier();
     const projectId = await makeProject(client.userId);
@@ -203,7 +203,7 @@ describe("A-06 project HTTP API", () => {
     expect(markSpecStale).toHaveBeenCalledTimes(1);
   });
 
-  it("extends the deadline and rejects an over-cap value", async () => {
+  it("마감을 연장하고 상한 초과 값을 거부한다", async () => {
     const client = await makeClient();
     const projectId = await makeProject(client.userId);
     const baseUrl = await startServer({ notification: { enqueue: jest.fn(async () => undefined) } });
@@ -220,7 +220,7 @@ describe("A-06 project HTTP API", () => {
     expect((await ok.json() as { data: { status: ProjectStatus } }).data.status).toBe(ProjectStatus.RECRUITING);
   });
 
-  it("soft deletes an owner's project over HTTP", async () => {
+  it("HTTP로 소유자 프로젝트를 소프트 삭제한다", async () => {
     const client = await makeClient();
     const projectId = await makeProject(client.userId);
     const rejectPendingOnDelete = jest.fn(async () => 0);
@@ -232,8 +232,8 @@ describe("A-06 project HTTP API", () => {
   });
 });
 
-describe("A-06 common-app wiring", () => {
-  it("exposes #044~#049 through createApp and fails closed without ports", async () => {
+describe("A-06 공통 앱 연결", () => {
+  it("createApp으로 #044~#049를 노출하고 Port가 없으면 안전하게 차단한다", async () => {
     const client = await makeClient();
     const supplier = await makeSupplier();
     const projectId = await makeProject(client.userId);
@@ -261,7 +261,7 @@ describe("A-06 common-app wiring", () => {
     expect(softDelete.status).toBe(503);
   });
 
-  it("A-06-T05/T06 injects view and application ports from createApp when provided", async () => {
+  it("A-06-T05/T06 제공된 경우 createApp에서 열람·지원 Port를 주입한다", async () => {
     const client = await makeClient();
     const supplier = await makeSupplier();
     const projectId = await makeProject(client.userId);

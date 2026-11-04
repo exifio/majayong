@@ -1,8 +1,8 @@
 import { describe, expect, it } from "@jest/globals";
 import { createRequestId, errorResponse, sanitizeLogContext } from "./observability.ts";
 
-describe("A-00 request and log context", () => {
-  it("includes the generated request ID in the error envelope", () => {
+describe("A-00 요청·로그 컨텍스트", () => {
+  it("생성된 요청 ID를 오류 응답 봉투에 포함한다", () => {
     const requestId = createRequestId();
     expect(requestId).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i);
     expect(errorResponse("INTERNAL_ERROR", "요청을 처리할 수 없습니다.", requestId)).toEqual({
@@ -10,7 +10,7 @@ describe("A-00 request and log context", () => {
     });
   });
 
-  it("removes sensitive fields recursively before structured logging", () => {
+  it("구조화 로그 전에 민감 필드를 재귀적으로 제거한다", () => {
     const sanitized = sanitizeLogContext({
       event: "request_failed",
       requestId: "req-1",

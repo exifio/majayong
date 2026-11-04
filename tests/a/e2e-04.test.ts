@@ -96,8 +96,8 @@ afterAll(async () => {
   await db.$disconnect();
 });
 
-describe("E2E-04 signing", () => {
-  it("both parties sign and contract becomes active", async () => {
+describe("E2E-04 서명", () => {
+  it("양측이 서명하면 계약이 활성화된다", async () => {
     const clientId = await makeClient();
     const clientToken = issueAccessToken({ userId: clientId, role: Role.CLIENT, expiresAt: Date.now() + 60_000 }, tokenSecret);
     const supplierId = await makeSupplier();

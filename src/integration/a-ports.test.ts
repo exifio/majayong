@@ -123,8 +123,8 @@ afterAll(async () => {
   await db.$disconnect();
 });
 
-describe("A-06-G2-01: real public-project ports against PostgreSQL", () => {
-  it("lists through the real candidate source without leaking the exact budget", async () => {
+describe("A-06-G2-01: 실제 PostgreSQL 기반 공개 프로젝트 Port", () => {
+  it("실제 후보 소스로 목록을 조회하면서 정확한 예산을 노출하지 않는다", async () => {
     const clientId = await makeClient();
     const projectId = await makeProject(clientId);
 
@@ -135,7 +135,7 @@ describe("A-06-G2-01: real public-project ports against PostgreSQL", () => {
     expect(JSON.stringify(page.items)).not.toContain("4000000");
   });
 
-  it("serves NDA detail and records the first view through the real view port", async () => {
+  it("NDA 상세를 제공하고 실제 열람 Port로 최초 열람을 기록한다", async () => {
     const clientId = await makeClient();
     const supplierId = await makeSupplier();
     const projectId = await makeProject(clientId);
@@ -145,7 +145,7 @@ describe("A-06-G2-01: real public-project ports against PostgreSQL", () => {
     expect(await db.eventLog.count({ where: { type: "SPEC_DETAIL_VIEWED", projectId, userId: supplierId } })).toBe(1);
   });
 
-  it("stales applicants and enqueues a requote notification in the same transaction", async () => {
+  it("같은 트랜잭션에서 지원자를 STALE 처리하고 재견적 알림을 적재한다", async () => {
     const clientId = await makeClient();
     const supplierId = await makeSupplier();
     const projectId = await makeProject(clientId);
@@ -169,7 +169,7 @@ describe("A-06-G2-01: real public-project ports against PostgreSQL", () => {
     expect(notifications[0]).toMatchObject({ targetId: applicationId, targetUrl: `/applications/${applicationId}` });
   });
 
-  it("serves GET /projects over HTTP through createApp with the real search port", async () => {
+  it("실제 검색 Port와 createApp으로 HTTP GET /projects를 제공한다", async () => {
     const clientId = await makeClient();
     const supplierId = await makeSupplier();
     const projectId = await makeProject(clientId);
@@ -190,7 +190,7 @@ describe("A-06-G2-01: real public-project ports against PostgreSQL", () => {
     expect(JSON.stringify(body.data)).not.toContain("4000000");
   });
 
-  it("completes list → NDA detail → application → spec revision through the integrated HTTP app", async () => {
+  it("통합 HTTP 앱으로 목록 → NDA 상세 → 지원 → 명세 수정 흐름을 완료한다", async () => {
     const clientId = await makeClient();
     const supplierId = await makeSupplier();
     const projectId = await makeProject(clientId);

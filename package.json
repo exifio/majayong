@@ -19,6 +19,7 @@
     "test:b": "npm run test:node",
     "test:c": "npm run test:node",
     "test:integration": "DATABASE_URL=\"${DATABASE_URL:-}\" node --import ./src/test-support/resolve-ts.mjs --test 'tests/integration/*.test.ts'",
+    "test:coverage": "node scripts/coverage.mjs",
     "test:typecheck": "tsc -p tsconfig.test.json",
     "check:rules": "node scripts/check-rules.mjs"
   },

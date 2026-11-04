@@ -117,8 +117,8 @@ afterAll(async () => {
   await prisma.$disconnect();
 });
 
-describe("A-03 catalog generation and reuse", () => {
-  it("seeds all reviewed restaurant blocks once and activates them", async () => {
+describe("A-03 카탈로그 생성·재사용", () => {
+  it("검수된 식당 블록을 한 번만 시드하고 활성화한다", async () => {
     const codes = reservationRestaurantSeedBlocks.map(block => block.code);
     const existing = await prisma.blockCatalog.count({ where: { code: { in: codes } } });
     try {
@@ -134,7 +134,7 @@ describe("A-03 catalog generation and reuse", () => {
     }
   });
 
-  it("redacts client profile data before AI input and reuses an existing price", async () => {
+  it("AI 입력 전에 의뢰인 프로필 데이터를 마스킹하고 기존 가격을 재사용한다", async () => {
     const client = await createClient();
     const industryCode = testIndustryCode();
     const existing = await createExistingBlock(industryCode, 7000);
@@ -157,7 +157,7 @@ describe("A-03 catalog generation and reuse", () => {
     expect(await prisma.blockCatalog.count({ where: { industryCode } })).toBe(1);
   });
 
-  it("does not reuse inactive or merged blocks", async () => {
+  it("비활성·병합된 블록은 재사용하지 않는다", async () => {
     const client = await createClient();
     const industryCode = testIndustryCode();
     const inactive = await createExistingBlock(industryCode, 7000);
@@ -175,7 +175,7 @@ describe("A-03 catalog generation and reuse", () => {
     expect(await prisma.blockCatalog.count({ where: { industryCode, isActive: true, mergedIntoId: null } })).toBe(2);
   });
 
-  it("serializes concurrent same-industry creation and stores one block", async () => {
+  it("같은 업종의 동시 생성을 직렬화하고 블록 하나만 저장한다", async () => {
     const client = await createClient();
     const industryCode = testIndustryCode();
     const calls: string[] = [];
@@ -196,7 +196,7 @@ describe("A-03 catalog generation and reuse", () => {
     expect(await prisma.blockCatalog.count({ where: { industryCode, isActive: true, mergedIntoId: null } })).toBe(1);
   });
 
-  it("retries one invalid private output, then stores only the safe response", async () => {
+  it("잘못된 개인정보 출력 1회를 재시도한 뒤 안전한 응답만 저장한다", async () => {
     const client = await createClient();
     const industryCode = testIndustryCode();
     const outputs = [generationResponse(generatedBlock({ name: "Cafe Blue schedule" })), generationResponse()];
@@ -213,7 +213,7 @@ describe("A-03 catalog generation and reuse", () => {
     expect(await prisma.blockCatalog.count({ where: { industryCode } })).toBe(1);
   });
 
-  it("records token cost for each completed catalog generation call", async () => {
+  it("완료된 카탈로그 생성 호출마다 토큰 비용을 기록한다", async () => {
     const client = await createClient();
     const industryCode = testIndustryCode();
     const result = await generateOrReuseCatalogBlock(prisma, generationInput(client.id, industryCode), async () => ({
@@ -228,7 +228,7 @@ describe("A-03 catalog generation and reuse", () => {
     ]);
   });
 
-  it("redacts private input values and meters feature extraction", async () => {
+  it("개인정보 입력값을 마스킹하고 기능 추출 비용을 계량한다", async () => {
     const client = await createClient();
     const industryCode = testIndustryCode();
     const sent: string[] = [];
@@ -251,7 +251,7 @@ describe("A-03 catalog generation and reuse", () => {
       .toEqual([{ payload: { purpose: "BLOCK_CLASSIFY", model: "gpt-5.4-mini", tokens: { input: 100, output: 50 }, costKrw: 2, latencyMs: 30, succeeded: true } }]);
   });
 
-  it("rejects malformed or failed feature extraction without returning model output", async () => {
+  it("기능 추출이 잘못되거나 실패하면 모델 출력을 반환하지 않고 거부한다", async () => {
     const client = await createClient();
     const industryCode = testIndustryCode();
     const malformed = await extractCatalogFeatures(prisma, generationInput(client.id, industryCode), async () => ({
@@ -272,7 +272,7 @@ describe("A-03 catalog generation and reuse", () => {
       ]);
   });
 
-  it("redacts profile-known private values repeated in extracted feature summaries", async () => {
+  it("추출된 기능 요약에 반복된 프로필 기반 개인정보 값을 마스킹한다", async () => {
     const client = await createClient();
     const industryCode = testIndustryCode();
     const features = await extractCatalogFeatures(prisma, generationInput(client.id, industryCode), async () => ({
@@ -282,7 +282,7 @@ describe("A-03 catalog generation and reuse", () => {
     expect(features).toEqual(["예약 달력", "[비공개] 예약 관리"]);
   });
 
-  it("returns generic pending after exactly two invalid generation attempts", async () => {
+  it("잘못된 생성 시도가 정확히 두 번이면 일반 대기 상태를 반환한다", async () => {
     const client = await createClient();
     const industryCode = testIndustryCode();
     let calls = 0;
@@ -307,8 +307,8 @@ describe("A-03 catalog generation and reuse", () => {
   });
 });
 
-describe("A-03 catalog admin mutations", () => {
-  it("requires ADMIN and a reason, and leaves draft/spec price snapshots unchanged", async () => {
+describe("A-03 카탈로그 관리자 변경", () => {
+  it("ADMIN 권한과 사유를 요구하고 초안·명세 가격 스냅샷은 그대로 둔다", async () => {
     const client = await createClient();
     const admin = await createAdmin();
     const industryCode = testIndustryCode();
@@ -365,7 +365,7 @@ describe("A-03 catalog admin mutations", () => {
     expect(await prisma.eventLog.count({ where: { userId: admin.id, type: { in: ["BLOCK_PRICE_UPDATED", "BLOCK_MERGED", "BLOCK_DEACTIVATED"] } } })).toBe(4);
   });
 
-  it("guards operator price, merge, and activation invariants", async () => {
+  it("운영자 가격·병합·활성화 불변식을 지킨다", async () => {
     const admin = await createAdmin();
     const industry = testIndustryCode();
     const foreignIndustry = testIndustryCode();

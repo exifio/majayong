@@ -92,7 +92,7 @@ function completionHarness(contract: DepositContractInfo) {
   return { repo, service, rejectedCount: () => rejected };
 }
 
-describe("C-00", () => {
+describe("C-00 예치·정산 계약", () => {
   it("C-00-T01 합의금 1,000,000원의 의뢰인 수수료와 예치액", () => {
     assert.deepEqual(calculateClientDeposit(1_000_000), {
       principal: 1_000_000,

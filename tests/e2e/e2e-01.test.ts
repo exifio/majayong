@@ -87,8 +87,8 @@ afterAll(async () => {
   await db.$disconnect();
 });
 
-describe("E2E-01 draft to spec", () => {
-  it("creates a default draft and publishes a project", async () => {
+describe("E2E-01 초안에서 명세까지", () => {
+  it("기본 초안을 만들고 프로젝트를 게시한다", async () => {
     const clientId = await makeClient();
     const token = issueAccessToken({ userId: clientId, role: Role.CLIENT, expiresAt: Date.now() + 60_000 }, tokenSecret);
     const { baseUrl } = await startApp();
