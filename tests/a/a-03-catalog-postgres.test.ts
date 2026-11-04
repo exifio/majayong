@@ -4,6 +4,7 @@ import { BlockOrigin, BlockSource, DraftEntryType, PrismaClient, Role } from "@p
 import { generateOrReuseCatalogBlock } from "../../src/modules/catalog/service.ts";
 import { mergeCatalogBlock, setCatalogBlockActive, updateCatalogBlockPrice } from "../../src/modules/catalog/admin.ts";
 import type { CatalogBlockGenerator } from "../../src/modules/catalog/service.ts";
+import { reservationRestaurantSeedBlocks, seedReservationRestaurantCatalog } from "../../src/modules/catalog/seed.ts";
 
 const testDatabaseUrl = process.env.TEST_DATABASE_URL;
 if (!testDatabaseUrl) throw new Error("A-03 tests require the dedicated local majayong_a00_test database");
@@ -40,6 +41,10 @@ function generatedBlock(overrides: Record<string, unknown> = {}): Record<string,
     priceBasis: "Implement reservation calendar and API.\nConnect booking data and validation.\nFinal scope may change the effort.",
     ...overrides,
   };
+}
+
+function generationResponse(content = generatedBlock()) {
+  return { content, metadata: { model: "gpt-5.4-mini", tokens: { input: 100, output: 50 }, costKrw: 2, latencyMs: 30 } };
 }
 
 async function createClient() {
@@ -112,6 +117,19 @@ afterAll(async () => {
 });
 
 describe("A-03 catalog generation and reuse", () => {
+  it("seeds all proposed restaurant blocks once and leaves them inactive", async () => {
+    const codes = reservationRestaurantSeedBlocks.map(block => block.code);
+    try {
+      expect(await seedReservationRestaurantCatalog(prisma)).toBe(36);
+      expect(await seedReservationRestaurantCatalog(prisma)).toBe(0);
+      const seeded = await prisma.blockCatalog.findMany({ where: { code: { in: codes } } });
+      expect(seeded).toHaveLength(36);
+      expect(seeded.every(block => !block.isActive && block.reviewedAt === null)).toBe(true);
+    } finally {
+      await prisma.blockCatalog.deleteMany({ where: { code: { in: codes } } });
+    }
+  });
+
   it("redacts client profile data before AI input and reuses an existing price", async () => {
     const client = await createClient();
     const industryCode = testIndustryCode();
@@ -119,7 +137,7 @@ describe("A-03 catalog generation and reuse", () => {
     const providerInputs: string[] = [];
     const generator: CatalogBlockGenerator = async input => {
       providerInputs.push(input.text);
-      return generatedBlock({ unitPrice: 120000 });
+      return generationResponse(generatedBlock({ unitPrice: 120000 }));
     };
 
     const result = await generateOrReuseCatalogBlock(prisma, generationInput(client.id, industryCode), generator);
@@ -144,7 +162,7 @@ describe("A-03 catalog generation and reuse", () => {
     const merged = await createExistingBlock(industryCode, 8000);
     await prisma.blockCatalog.update({ where: { id: merged.id }, data: { mergedIntoId: target.id } });
 
-    const result = await generateOrReuseCatalogBlock(prisma, generationInput(client.id, industryCode), async () => generatedBlock());
+    const result = await generateOrReuseCatalogBlock(prisma, generationInput(client.id, industryCode), async () => generationResponse());
 
     expect(result.status).toBe("CREATED");
     if (result.status !== "CREATED") throw new Error("Expected a new catalog block");
@@ -160,7 +178,7 @@ describe("A-03 catalog generation and reuse", () => {
     const generator: CatalogBlockGenerator = async input => {
       calls.push(input.text);
       await new Promise(resolve => setTimeout(resolve, 10));
-      return generatedBlock();
+      return generationResponse();
     };
 
     const results = await Promise.all([
@@ -177,7 +195,7 @@ describe("A-03 catalog generation and reuse", () => {
   it("retries one invalid private output, then stores only the safe response", async () => {
     const client = await createClient();
     const industryCode = testIndustryCode();
-    const outputs = [generatedBlock({ name: "Cafe Blue schedule" }), generatedBlock()];
+    const outputs = [generationResponse(generatedBlock({ name: "Cafe Blue schedule" })), generationResponse()];
     let calls = 0;
     const generator: CatalogBlockGenerator = async () => outputs[calls++];
 
@@ -191,13 +209,27 @@ describe("A-03 catalog generation and reuse", () => {
     expect(await prisma.blockCatalog.count({ where: { industryCode } })).toBe(1);
   });
 
+  it("records token cost for each completed catalog generation call", async () => {
+    const client = await createClient();
+    const industryCode = testIndustryCode();
+    const result = await generateOrReuseCatalogBlock(prisma, generationInput(client.id, industryCode), async () => ({
+      content: generatedBlock(),
+      metadata: { model: "gpt-5.4-mini", tokens: { input: 100, output: 50 }, costKrw: 2, latencyMs: 30 },
+    }));
+    expect(result.status).toBe("CREATED");
+    if (result.status !== "CREATED") throw new Error("Expected a catalog block");
+    blockIds.add(result.block.id);
+    expect(await prisma.eventLog.findMany({ where: { userId: client.id, type: "LLM_CALLED" }, select: { payload: true } })).toEqual([
+      { payload: { purpose: "BLOCK_CREATE", model: "gpt-5.4-mini", tokens: { input: 100, output: 50 }, costKrw: 2, latencyMs: 30, succeeded: true } },
+    ]);
+  });
   it("returns generic pending after exactly two invalid generation attempts", async () => {
     const client = await createClient();
     const industryCode = testIndustryCode();
     let calls = 0;
     const generator: CatalogBlockGenerator = async () => {
       calls += 1;
-      return generatedBlock({ unitPrice: 1.5 });
+      return generationResponse(generatedBlock({ unitPrice: 1.5 }));
     };
 
     const result = await generateOrReuseCatalogBlock(prisma, generationInput(client.id, industryCode), generator);
@@ -207,6 +239,12 @@ describe("A-03 catalog generation and reuse", () => {
     expect(JSON.stringify(result)).not.toContain("Cafe Blue");
     expect(JSON.stringify(result)).not.toContain("예약 달력을 만들고 싶어요");
     expect(await prisma.blockCatalog.count({ where: { industryCode } })).toBe(0);
+    const failedCalls = await prisma.eventLog.findMany({ where: { userId: client.id, type: "LLM_CALLED" }, select: { payload: true } });
+    expect(failedCalls).toHaveLength(2);
+    expect(failedCalls).toEqual(expect.arrayContaining([
+      { payload: { purpose: "BLOCK_CREATE", model: "gpt-5.4-mini", tokens: { input: 100, output: 50 }, costKrw: 2, latencyMs: 30, succeeded: false } },
+      { payload: { purpose: "BLOCK_CREATE", model: "gpt-5.4-mini", tokens: { input: 100, output: 50 }, costKrw: 2, latencyMs: 30, succeeded: false } },
+    ]));
   });
 });
 
