@@ -3,7 +3,9 @@ import { BlockOrigin, DraftEntryType, PrismaClient, ProjectStatus, Role, SpecIte
 import express, { type NextFunction, type Request, type Response } from "express";
 import { createServer, type Server } from "node:http";
 import { randomUUID } from "node:crypto";
+import { createApp } from "../../src/app.ts";
 import type { AuthenticatedDraftRoute } from "../../src/modules/draft/api.ts";
+import { issueAccessToken } from "../../src/modules/identity/auth.ts";
 import type { Actor } from "../../src/modules/identity/session.ts";
 import { mountProjectApi } from "../../src/modules/project/api.ts";
 import type { ProjectPorts } from "../../src/modules/project/ports.ts";
@@ -23,6 +25,7 @@ const projectIds: string[] = [];
 const blockIds: string[] = [];
 
 const nda = "nda-v1";
+const tokenSecret = "a-06-http-test-token-secret-longer-than-32-bytes";
 
 const authenticated: AuthenticatedDraftRoute = handler => (req, res, next) => {
   const userId = req.header("x-actor-id") ?? "";
@@ -226,5 +229,35 @@ describe("A-06 project HTTP API", () => {
     expect(response.status).toBe(200);
     expect(rejectPendingOnDelete).toHaveBeenCalledTimes(1);
     expect(await db.project.findUniqueOrThrow({ where: { id: projectId } })).toMatchObject({ deletedAt: now });
+  });
+});
+
+describe("A-06 common-app wiring", () => {
+  it("exposes #044~#049 through createApp and fails closed without ports", async () => {
+    const client = await makeClient();
+    const supplier = await makeSupplier();
+    const projectId = await makeProject(client.userId);
+
+    const server = createServer(createApp({ db, tokenSecret, now: () => now }));
+    await new Promise<void>(resolve => server.listen(0, "127.0.0.1", resolve));
+    servers.push(server);
+    const address = server.address();
+    if (!address || typeof address === "string") throw new Error("HTTP server did not bind");
+    const baseUrl = `http://127.0.0.1:${address.port}/api/v1`;
+
+    const clientToken = issueAccessToken({ userId: client.userId, role: Role.CLIENT, expiresAt: now.getTime() + 60_000 }, tokenSecret);
+    const supplierToken = issueAccessToken({ userId: supplier.userId, role: Role.SUPPLIER, expiresAt: now.getTime() + 60_000 }, tokenSecret);
+
+    const mine = await fetch(`${baseUrl}/me/projects`, { headers: { authorization: `Bearer ${clientToken}` } });
+    expect(mine.status).toBe(200);
+
+    const list = await fetch(`${baseUrl}/projects`, { headers: { authorization: `Bearer ${supplierToken}` } });
+    expect(list.status).toBe(503);
+
+    const detail = await fetch(`${baseUrl}/projects/${projectId}`, { headers: { authorization: `Bearer ${supplierToken}` } });
+    expect(detail.status).toBe(503);
+
+    const softDelete = await fetch(`${baseUrl}/projects/${projectId}`, { method: "DELETE", headers: { authorization: `Bearer ${clientToken}` } });
+    expect(softDelete.status).toBe(503);
   });
 });
