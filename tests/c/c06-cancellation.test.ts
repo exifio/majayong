@@ -5,13 +5,15 @@ import {
   CancellationHttpError,
   createInMemoryCancellationRepository,
   type CancellationContractEntity,
+  type CancellationMessagePort,
+  type CancelCause,
 } from "../../src/modules/cancellation/index.ts";
 
 describe("C-06: 예치 후 계약 취소·이의·운영자 수동 처리", () => {
   const depositTime = new Date("2026-11-04T05:20:00.000Z"); // 예치 완료 시점
   const requestTime = new Date("2026-11-10T10:00:00.000Z"); // 6일 후 취소 요청
 
-  function createTestSetup() {
+  function createTestSetup(options?: { messagePort?: CancellationMessagePort }) {
     const repo = createInMemoryCancellationRepository();
 
     const contract: CancellationContractEntity = {
@@ -66,6 +68,7 @@ describe("C-06: 예치 후 계약 취소·이의·운영자 수동 처리", () =
     const service = new CancellationService({
       repo,
       clock: { now: () => requestTime },
+      messagePort: options?.messagePort,
     });
 
     return { repo, contract, interimInstallment, finalInstallment, service };
@@ -246,6 +249,56 @@ describe("C-06: 예치 후 계약 취소·이의·운영자 수동 처리", () =
     assert.equal(stored?.status, "CANCEL_REQUESTED");
   });
 
+  it("C-06-F07 이의 비율 하한은 의뢰인 사정에만 적용(D-19)", async () => {
+    // 공급자 사정: 의뢰인이 30% 이의 → 하한 없음
+    const supplierCase = createTestSetup();
+    await supplierCase.service.requestCancellation(
+      { userId: supplierCase.contract.supplierUserId, role: "SUPPLIER" },
+      { contractId: supplierCase.contract.id, cause: "SUPPLIER", note: "공급자 사정" },
+    );
+    const supplierObjection = await supplierCase.service.objectCancellation(
+      { userId: supplierCase.contract.clientUserId, role: "CLIENT" },
+      { contractId: supplierCase.contract.id, objectionRate: 30, note: "30% 이의" },
+    );
+    assert.equal(supplierObjection.objectionRate, 30);
+
+    // 서로 합의: 공급자가 20% 이의 → 하한 없음
+    const mutualCase = createTestSetup();
+    await mutualCase.service.requestCancellation(
+      { userId: mutualCase.contract.clientUserId, role: "CLIENT" },
+      {
+        contractId: mutualCase.contract.id,
+        cause: "MUTUAL",
+        note: "합의",
+        proposedCompensationRate: 30,
+      },
+    );
+    const mutualObjection = await mutualCase.service.objectCancellation(
+      { userId: mutualCase.contract.supplierUserId, role: "SUPPLIER" },
+      { contractId: mutualCase.contract.id, objectionRate: 20, note: "20% 이의" },
+    );
+    assert.equal(mutualObjection.objectionRate, 20);
+
+    // 의뢰인 사정: 49% 이의는 거부(raw 제약 6)
+    const clientCase = createTestSetup();
+    await clientCase.service.requestCancellation(
+      { userId: clientCase.contract.clientUserId, role: "CLIENT" },
+      { contractId: clientCase.contract.id, cause: "CLIENT", note: "의뢰인 사정" },
+    );
+    await assert.rejects(
+      () =>
+        clientCase.service.objectCancellation(
+          { userId: clientCase.contract.supplierUserId, role: "SUPPLIER" },
+          { contractId: clientCase.contract.id, objectionRate: 49, note: "49% 이의" },
+        ),
+      (err: unknown) => {
+        if (!(err instanceof CancellationHttpError)) return false;
+        assert.equal(err.status, 422);
+        return true;
+      },
+    );
+  });
+
   it("C-06-T05 비율 CHECK 경계(0/49/50/100/101)", async () => {
     const { service, contract, repo } = createTestSetup();
 
@@ -256,6 +309,7 @@ describe("C-06: 예치 후 계약 취소·이의·운영자 수동 처리", () =
       cancelRequestedBy: contract.clientUserId,
       cancelRequestedAt: requestTime,
       cancelNote: "취소",
+      cancelEscalatedAt: requestTime,
     });
 
     await assert.rejects(
@@ -299,12 +353,13 @@ describe("C-06: 예치 후 계약 취소·이의·운영자 수동 처리", () =
     assert.equal(decided50.refundAmount, 2_441_250);
   });
 
-  it("C-06-T06 이미 지급된 금액 초과 환불/보상 차단", async () => {
+  it("C-06-T06 이미 지급된 금액을 반영해 남은 잔액 안에서 분할", async () => {
     const { service, contract, interimInstallment, repo } = createTestSetup();
 
     // 중간 구간(1,550,000원)이 이미 지급 완료됨
     await repo.updateInstallment(interimInstallment.id, {
       status: "RELEASED",
+      amount: 1_550_000,
     });
 
     await repo.updateContract(contract.id, {
@@ -313,17 +368,34 @@ describe("C-06: 예치 후 계약 취소·이의·운영자 수동 처리", () =
       cancelRequestedBy: contract.clientUserId,
       cancelRequestedAt: requestTime,
       cancelNote: "취소",
+      cancelEscalatedAt: requestTime,
     });
 
-    await assert.rejects(
-      () => service.calculateCancellationSplit(contract.id, 50),
-      (err: unknown) => {
-        if (!(err instanceof CancellationHttpError)) return false;
-        assert.equal(err.status, 422);
-        assert.match(err.message, /이미 지급된 금액/);
-        return true;
-      },
+    // 남은 예치 잔액 1,705,000원에서 최종 구간 50% 보상.
+    const split = await service.calculateCancellationSplit(contract.id, 50);
+    assert.equal(split.ongoingStagePaidFull, false);
+    assert.equal(split.settledAmount, 736_250);
+    assert.equal(split.refundAmount, 891_250);
+    // 지급 완료 1,550,000 + 보상 원금 775,000 + 수수료 38,750 + 환불 891,250 = 3,255,000
+    assert.equal(1_550_000 + 775_000 + 38_750 + split.refundAmount, contract.totalDeposited);
+
+    // 공급자 사정 취소는 미지급 잔액 전액 환불.
+    const supplierCause = createTestSetup();
+    await supplierCause.repo.updateInstallment(supplierCause.interimInstallment.id, { status: "RELEASED" });
+    await supplierCause.repo.updateContract(supplierCause.contract.id, {
+      status: "CANCEL_REQUESTED",
+      cancelCause: "SUPPLIER",
+      cancelRequestedBy: supplierCause.contract.supplierUserId,
+      cancelRequestedAt: requestTime,
+      cancelNote: "공급자 사정",
+      cancelEscalatedAt: requestTime,
+    });
+    const supplierSplit = await supplierCause.service.calculateCancellationSplit(
+      supplierCause.contract.id,
+      50,
     );
+    assert.equal(supplierSplit.settledAmount, 0);
+    assert.equal(supplierSplit.refundAmount, 1_705_000);
   });
 
   it("C-06-T07 취소 중 자동 승인/지급 0", async () => {
@@ -384,6 +456,7 @@ describe("C-06: 예치 후 계약 취소·이의·운영자 수동 처리", () =
       cancelRequestedBy: contract.clientUserId,
       cancelRequestedAt: within24h,
       cancelNote: "24시간 이내 전액 환불 요청",
+      cancelEscalatedAt: within24h,
     });
 
     const decided = await service.decideCancellation({
@@ -403,6 +476,7 @@ describe("C-06: 예치 후 계약 취소·이의·운영자 수동 처리", () =
       cancelCause: "CLIENT",
       cancelRequestedBy: delivered.contract.clientUserId,
       cancelRequestedAt: within24h,
+      cancelEscalatedAt: within24h,
     });
     await assert.rejects(
       () =>
@@ -440,5 +514,237 @@ describe("C-06: 예치 후 계약 취소·이의·운영자 수동 처리", () =
     // 1구간 1,550,000원 전액 지급(수수료 77,500원 뺀 1,472,500원 지급), 2구간 1,550,000원 + 미사용 수수료 환불
     assert.equal(split.ongoingStagePaidFull, true);
     assert.equal(split.settledAmount, 1_472_500);
+  });
+
+  it("C-06-F01 일부 지급된 ACTIVE 계약도 취소 요청 가능", async () => {
+    const partial = createTestSetup();
+    await partial.repo.updateContract(partial.contract.id, { paymentStatus: "PARTIALLY_RELEASED" });
+    const requested = await partial.service.requestCancellation(
+      { userId: partial.contract.clientUserId, role: "CLIENT" },
+      { contractId: partial.contract.id, cause: "CLIENT", note: "남은 작업 중단" },
+    );
+    assert.equal(requested.status, "CANCEL_REQUESTED");
+
+    const completed = createTestSetup();
+    await completed.repo.updateContract(completed.contract.id, { status: "COMPLETED" });
+    await assert.rejects(
+      () =>
+        completed.service.requestCancellation(
+          { userId: completed.contract.clientUserId, role: "CLIENT" },
+          { contractId: completed.contract.id, cause: "CLIENT", note: "완료 후 취소" },
+        ),
+      (err: unknown) => err instanceof CancellationHttpError && err.status === 409,
+    );
+  });
+
+  it("C-06-F03 취소 사유 enum·설명·요청자 역할·근거 메시지 검증", async () => {
+    const messages = new Map([
+      ["msg-1", { id: "msg-1", contractId: "contract-c06", authorUserId: "client-c06" }],
+      ["msg-2", { id: "msg-2", contractId: "other-contract", authorUserId: "client-c06" }],
+      ["msg-3", { id: "msg-3", contractId: "contract-c06", authorUserId: "alien-user" }],
+    ]);
+    const messagePort: CancellationMessagePort = {
+      async getMessage(id) {
+        return messages.get(id) ?? null;
+      },
+    };
+    const { service, contract, repo } = createTestSetup({ messagePort });
+    const client = { userId: contract.clientUserId, role: "CLIENT" };
+    const supplier = { userId: contract.supplierUserId, role: "SUPPLIER" };
+
+    await assert.rejects(
+      () =>
+        service.requestCancellation(client, {
+          contractId: contract.id,
+          cause: "BOGUS" as CancelCause,
+          note: "잘못된 사유",
+        }),
+      (err: unknown) => err instanceof CancellationHttpError && err.status === 400,
+    );
+    await assert.rejects(
+      () => service.requestCancellation(client, { contractId: contract.id, cause: "CLIENT", note: "  " }),
+      (err: unknown) => err instanceof CancellationHttpError && err.status === 400,
+    );
+    // 공급자가 '의뢰인 사정'을 요청하는 것은 사유·요청자 역할 불일치.
+    await assert.rejects(
+      () =>
+        service.requestCancellation(supplier, {
+          contractId: contract.id,
+          cause: "CLIENT",
+          note: "역할 불일치",
+        }),
+      (err: unknown) => err instanceof CancellationHttpError && err.status === 422,
+    );
+
+    for (const messageId of ["missing-msg", "msg-2", "msg-3"]) {
+      await assert.rejects(
+        () =>
+          service.requestCancellation(client, {
+            contractId: contract.id,
+            cause: "CLIENT",
+            note: "근거 오류",
+            evidence: { messageIds: [messageId] },
+          }),
+        (err: unknown) => err instanceof CancellationHttpError && err.status === 422,
+      );
+    }
+    assert.equal((await repo.getContract(contract.id))?.status, "ACTIVE");
+
+    const accepted = await service.requestCancellation(client, {
+      contractId: contract.id,
+      cause: "CLIENT",
+      note: "채팅에서 합의된 취소",
+      evidence: { messageIds: ["msg-1"] },
+    });
+    assert.equal(accepted.status, "CANCEL_REQUESTED");
+    assert.deepEqual(accepted.cancelEvidence, { messageIds: ["msg-1"] });
+  });
+
+  it("C-06-F04 관리자 판정은 CANCEL_REQUESTED·이의/에스컬레이션에서만, 중복 판정 불변", async () => {
+    const active = createTestSetup();
+    await assert.rejects(
+      () =>
+        active.service.decideCancellation({
+          contractId: active.contract.id,
+          compensationRate: 50,
+          reason: "ACTIVE 직접 취소",
+        }),
+      (err: unknown) => err instanceof CancellationHttpError && err.status === 409,
+    );
+
+    const pendingEscalation = createTestSetup();
+    await pendingEscalation.repo.updateContract(pendingEscalation.contract.id, {
+      status: "CANCEL_REQUESTED",
+      cancelCause: "CLIENT",
+      cancelRequestedBy: pendingEscalation.contract.clientUserId,
+      cancelRequestedAt: requestTime,
+      cancelNote: "요청",
+    });
+    await assert.rejects(
+      () =>
+        pendingEscalation.service.decideCancellation({
+          contractId: pendingEscalation.contract.id,
+          compensationRate: 50,
+          reason: "아직 상대 응답 전",
+        }),
+      (err: unknown) => err instanceof CancellationHttpError && err.status === 409,
+    );
+
+    const { service, contract, repo } = createTestSetup();
+    await repo.updateContract(contract.id, {
+      status: "CANCEL_REQUESTED",
+      cancelCause: "CLIENT",
+      cancelRequestedBy: contract.clientUserId,
+      cancelRequestedAt: requestTime,
+      cancelNote: "요청",
+      cancelEscalatedAt: requestTime,
+    });
+    await assert.rejects(
+      () => service.decideCancellation({ contractId: contract.id, compensationRate: 50, reason: " " }),
+      (err: unknown) => err instanceof CancellationHttpError && err.status === 400,
+    );
+    await assert.rejects(
+      () => service.decideCancellation({ contractId: contract.id, compensationRate: 50.5, reason: "소수" }),
+      (err: unknown) => err instanceof CancellationHttpError && err.status === 422,
+    );
+
+    const first = await service.decideCancellation({
+      contractId: contract.id,
+      compensationRate: 50,
+      reason: "판정",
+    });
+    const second = await service.decideCancellation({
+      contractId: contract.id,
+      compensationRate: 100,
+      reason: "뒤늦은 재판정",
+    });
+    assert.equal(second.compensationRate, 50);
+    assert.equal(second.refundAmount, first.refundAmount);
+    assert.equal(second.cancelResolvedAt?.toISOString(), first.cancelResolvedAt?.toISOString());
+  });
+
+  it("C-06-F05 취소 상세 조회는 당사자/운영자만", async () => {
+    const { service, contract, repo } = createTestSetup();
+    await repo.updateContract(contract.id, {
+      status: "CANCEL_REQUESTED",
+      cancelCause: "CLIENT",
+      cancelRequestedBy: contract.clientUserId,
+      cancelRequestedAt: requestTime,
+      cancelNote: "사유",
+      cancelEscalatedAt: requestTime,
+    });
+
+    const clientView = await service.getCancellation(
+      { userId: contract.clientUserId, role: "CLIENT" },
+      contract.id,
+    );
+    assert.equal(clientView.status, "CANCEL_REQUESTED");
+    assert.equal(clientView.cancelCause, "CLIENT");
+    assert.equal(clientView.cancelNote, "사유");
+    assert.equal(clientView.paused, true);
+    assert.equal("payoutAccountNo" in clientView, false);
+
+    const adminView = await service.getCancellation({ userId: "admin-1", role: "ADMIN" }, contract.id);
+    assert.equal(adminView.contractId, contract.id);
+
+    await assert.rejects(
+      () => service.getCancellation({ userId: "outsider", role: "CLIENT" }, contract.id),
+      (err: unknown) => err instanceof CancellationHttpError && err.status === 403,
+    );
+    await assert.rejects(
+      () => service.getCancellation({ userId: "outsider", role: "SUPPLIER" }, "missing"),
+      (err: unknown) => err instanceof CancellationHttpError && err.status === 404,
+    );
+  });
+
+  it("C-06-F06 합의 비율은 요청에 기록된 값만 확정하고 이의는 재호출로 덮어쓰지 않음", async () => {
+    const mutual = createTestSetup();
+    await assert.rejects(
+      () =>
+        mutual.service.requestCancellation(
+          { userId: mutual.contract.clientUserId, role: "CLIENT" },
+          { contractId: mutual.contract.id, cause: "MUTUAL", note: "합의 취소" },
+        ),
+      (err: unknown) => err instanceof CancellationHttpError && err.status === 422,
+    );
+
+    const requested = await mutual.service.requestCancellation(
+      { userId: mutual.contract.clientUserId, role: "CLIENT" },
+      {
+        contractId: mutual.contract.id,
+        cause: "MUTUAL",
+        note: "합의 취소",
+        proposedCompensationRate: 30,
+      },
+    );
+    assert.equal(requested.compensationRate, 30);
+
+    const agreed = await mutual.service.agreeCancellation(
+      { userId: mutual.contract.supplierUserId, role: "SUPPLIER" },
+      { contractId: mutual.contract.id },
+    );
+    assert.equal(agreed.cancelResolution, "AGREED");
+    assert.equal(agreed.compensationRate, 30);
+    assert.equal(agreed.settledAmount, 441_750);
+    assert.equal(agreed.refundAmount, 2_766_750);
+
+    const objected = createTestSetup();
+    await objected.service.requestCancellation(
+      { userId: objected.contract.clientUserId, role: "CLIENT" },
+      { contractId: objected.contract.id, cause: "CLIENT", note: "취소" },
+    );
+    await objected.service.objectCancellation(
+      { userId: objected.contract.supplierUserId, role: "SUPPLIER" },
+      { contractId: objected.contract.id, objectionRate: 70, note: "70% 이의" },
+    );
+    await assert.rejects(
+      () =>
+        objected.service.objectCancellation(
+          { userId: objected.contract.supplierUserId, role: "SUPPLIER" },
+          { contractId: objected.contract.id, objectionRate: 80, note: "덮어쓰기 시도" },
+        ),
+      (err: unknown) => err instanceof CancellationHttpError && err.status === 409,
+    );
+    assert.equal((await objected.repo.getContract(objected.contract.id))?.objectionRate, 70);
   });
 });
