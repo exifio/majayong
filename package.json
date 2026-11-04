@@ -9,7 +9,8 @@
     "test": "node --import ./tests/b/resolve-ts.mjs --test tests/b",
     "db:validate": "prisma validate --schema prisma/schema.prisma",
     "db:generate": "prisma generate --schema prisma/schema.prisma",
-    "db:migrate": "prisma migrate deploy --schema prisma/schema.prisma"
+    "db:migrate": "prisma migrate deploy --schema prisma/schema.prisma",
+    "db:verify:b": "node scripts/verify-b-pg.mjs"
   },
   "devDependencies": {
     "@types/express": "^5.0.6",
