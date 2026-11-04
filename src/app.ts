@@ -378,10 +378,16 @@ export function createApp(options: AppOptions): Express {
       }
       const original = req.url;
       req.url = original.slice(prefix.length);
-      void fallback(req, res).catch((error: unknown) => {
-        req.url = original;
-        next(error);
-      });
+      void fallback(req, res)
+        .then(() => {
+          req.url = original;
+          // C가 매칭하지 않아 응답을 쓰지 않았으면 공통 404 봉투로 넘긴다.
+          if (!res.headersSent) next();
+        })
+        .catch((error: unknown) => {
+          req.url = original;
+          next(error);
+        });
     });
   }
 

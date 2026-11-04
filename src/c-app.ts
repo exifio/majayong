@@ -31,6 +31,11 @@ export interface AppOptions {
   /** 웹훅 서버 비밀키 헤더 이름. 기본 x-toss-webhook-secret. */
   webhookSecretHeader?: string;
   maxBodyBytes?: number;
+  /**
+   * true면 매칭되지 않은 경로에 C 자체 404를 쓰지 않고 반환한다.
+   * 통합 앱이 A/B와 같은 공통 오류 봉투로 응답할 때 쓴다. 단독 C 서버는 기본값(false)을 유지한다.
+   */
+  deferUnmatched?: boolean;
 }
 
 interface RouteContext {
@@ -303,6 +308,8 @@ export function createHttpHandler(options: AppOptions) {
     const url = new URL(req.url ?? "/", "http://localhost");
     const matched = matchRoute(req.method ?? "GET", url.pathname);
     if (!matched) {
+      // 통합 앱에서는 상위 Express의 공통 404 봉투가 응답하도록 넘긴다.
+      if (options.deferUnmatched === true) return;
       res.writeHead(404, { "content-type": "application/json; charset=utf-8" });
       res.end(JSON.stringify({ message: "NOT_FOUND" }));
       return;

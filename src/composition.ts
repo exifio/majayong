@@ -126,7 +126,11 @@ export function createIntegrationServices(config: IntegrationConfig) {
   return { services, runner, inspections };
 }
 
-export function createAppHandler(config: IntegrationConfig, authenticate: (req: import("node:http").IncomingMessage) => Promise<HttpActor | null> | HttpActor | null) {
+export function createAppHandler(
+  config: IntegrationConfig,
+  authenticate: (req: import("node:http").IncomingMessage) => Promise<HttpActor | null> | HttpActor | null,
+  options: { readonly deferUnmatched?: boolean } = {},
+) {
   const { services } = createIntegrationServices(config);
-  return createHttpHandler({ services, authenticate });
+  return createHttpHandler({ services, authenticate, deferUnmatched: options.deferUnmatched });
 }

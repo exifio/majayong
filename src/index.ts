@@ -116,6 +116,7 @@ const cHandler = createAppHandler(
       return null;
     }
   },
+  { deferUnmatched: true },
 );
 
 // A의 공개 프로젝트 라우트에 B 검색·열람·지원 어댑터를 주입한다.
