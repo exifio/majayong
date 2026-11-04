@@ -3,6 +3,7 @@ import { createServer } from "node:http";
 import type { AddressInfo } from "node:net";
 import { describe, it } from "node:test";
 import { createHttpHandler, ROUTE_PATHS, type AppServices, type HttpActor } from "../../src/app.ts";
+import { createTokenAuthenticator, signAccessToken } from "../../src/infrastructure/token-auth.ts";
 
 describe("INT-C-01: HTTP 라우트", () => {
   function services(overrides: Partial<AppServices> = {}): AppServices {
@@ -107,6 +108,50 @@ describe("INT-C-01: HTTP 라우트", () => {
       });
       assert.equal(webhook.status, 200);
       assert.equal(webhookSecret, "secret-1");
+    } finally {
+      await app.close();
+    }
+  });
+
+  it("HS256 Bearer 토큰을 검증하고 만료·변조를 거부", async () => {
+    const secret = "test-auth-secret";
+    const clock = { now: () => new Date("2026-11-04T00:00:00.000Z") };
+    const authenticate = createTokenAuthenticator(secret, clock);
+    const app = await start(
+      services({
+        deposits: { async getDeposits() { return []; } } as never,
+      }),
+      authenticate,
+    );
+    try {
+      const valid = signAccessToken(
+        { userId: "u1", role: "CLIENT", exp: Math.floor(new Date("2026-11-05T00:00:00.000Z").getTime() / 1000) },
+        secret,
+      );
+      const ok = await fetch(`${app.baseUrl}/contracts/c1/deposits`, {
+        headers: { authorization: `Bearer ${valid}` },
+      });
+      assert.equal(ok.status, 200);
+
+      const expired = signAccessToken(
+        { userId: "u1", role: "CLIENT", exp: Math.floor(new Date("2026-11-03T00:00:00.000Z").getTime() / 1000) },
+        secret,
+      );
+      assert.equal(
+        (await fetch(`${app.baseUrl}/contracts/c1/deposits`, { headers: { authorization: `Bearer ${expired}` } })).status,
+        401,
+      );
+
+      const tampered = `${valid.slice(0, -2)}xx`;
+      assert.equal(
+        (await fetch(`${app.baseUrl}/contracts/c1/deposits`, { headers: { authorization: `Bearer ${tampered}` } })).status,
+        401,
+      );
+      // 토큰 인증이 켜지면 개발 헤더는 무시된다.
+      assert.equal(
+        (await fetch(`${app.baseUrl}/contracts/c1/deposits`, { headers: { "x-user-id": "u1", "x-role": "ADMIN" } })).status,
+        401,
+      );
     } finally {
       await app.close();
     }

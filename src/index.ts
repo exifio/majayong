@@ -1,6 +1,7 @@
 import { createServer } from "node:http";
 import { PrismaClient } from "@prisma/client";
 import { createAppHandler, type IntegrationPorts } from "./composition.ts";
+import { createTokenAuthenticator } from "./infrastructure/token-auth.ts";
 import type { HttpActor } from "./app.ts";
 
 const prisma = new PrismaClient();
@@ -51,8 +52,13 @@ async function main() {
     throw new Error("INTEGRATION_PORTS_REQUIRED: A/B 어댑터를 연결하거나 INTEGRATION_MOCK_PORTS=1로 개발 모드를 켠다.");
   }
 
+  const tokenAuthenticator = process.env.AUTH_TOKEN_SECRET
+    ? createTokenAuthenticator(process.env.AUTH_TOKEN_SECRET)
+    : null;
+
   const authenticate = async (req: import("node:http").IncomingMessage): Promise<HttpActor | null> => {
-    // 실제 토큰 검증은 A/B 인증 모듈 연결 시 교체한다. 기본은 fail-closed.
+    if (tokenAuthenticator) return tokenAuthenticator(req);
+    // 토큰 시크릿이 없을 때만 개발용 헤더 모드. 기본은 fail-closed.
     if (process.env.ALLOW_DEV_AUTH !== "1") return null;
     const userId = req.headers["x-user-id"];
     const role = req.headers["x-role"];

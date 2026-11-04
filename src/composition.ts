@@ -102,7 +102,15 @@ export function createIntegrationServices(config: IntegrationConfig) {
     reviews,
     files,
     admin,
-    projectClientId: config.ports.projectClientId,
+    projectClientId:
+      config.ports.projectClientId ??
+      (async (projectId: string) => {
+        const row = await config.prisma.project.findUnique({
+          where: { id: projectId },
+          include: { draft: { select: { clientId: true } } },
+        });
+        return row?.draft.clientId ?? null;
+      }),
   };
 
   const runner = createDueJobRunner({
