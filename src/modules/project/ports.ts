@@ -35,7 +35,7 @@ export interface ProjectApplicationPort {
 }
 
 export interface ProjectNotificationPort {
-  enqueue(tx: ProjectTx, input: { userId: string; type: "DEADLINE_EXTENDED" | "PROJECT_CLOSED"; projectId: string; at: Date }): Promise<void>;
+  enqueue(tx: ProjectTx, input: { userId: string; type: "PROJECT_CLOSED"; projectId: string; at: Date }): Promise<void>;
 }
 
 export type ProjectPorts = {

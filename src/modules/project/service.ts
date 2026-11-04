@@ -444,7 +444,6 @@ export async function reviseSpec(
 
 export async function extendDeadline(
   db: PrismaClient,
-  ports: ProjectPorts,
   projectId: string,
   clientId: string,
   newDeadline: Date,
@@ -462,7 +461,7 @@ export async function extendDeadline(
       data: { deadline: newDeadline, status: ProjectStatus.RECRUITING, selectionEndsAt: null },
     });
     await tx.eventLog.create({ data: { userId: clientId, projectId, type: EventType.DEADLINE_EXTENDED, payload: { deadline: newDeadline.toISOString() }, occurredAt: now } });
-    if (ports.notification) await ports.notification.enqueue(tx, { userId: clientId, type: "DEADLINE_EXTENDED", projectId, at: now });
+    // D-10-R 승인: 알림 15종 불변. 마감 연장은 EventLog에만 남기고 B 알림을 만들지 않는다.
     return { projectId, deadline: newDeadline.toISOString(), status: ProjectStatus.RECRUITING };
   });
 }

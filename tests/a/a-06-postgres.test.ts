@@ -96,7 +96,7 @@ function applicationPort(overrides: Partial<{ countPending: number; markSpecStal
 }
 
 function notificationPort() {
-  return { enqueue: jest.fn(async (_tx: import("@prisma/client").Prisma.TransactionClient, _input: { userId: string; type: "DEADLINE_EXTENDED" | "PROJECT_CLOSED"; projectId: string; at: Date }) => undefined) };
+  return { enqueue: jest.fn(async (_tx: import("@prisma/client").Prisma.TransactionClient, _input: { userId: string; type: "PROJECT_CLOSED"; projectId: string; at: Date }) => undefined) };
 }
 
 afterAll(async () => {
@@ -310,13 +310,12 @@ describe("A-06 deadline extension", () => {
   it("A-06-T05 caps the extension at fourteen days and reopens recruitment", async () => {
     const clientId = await makeClient();
     const projectId = await makeProject(clientId, { status: ProjectStatus.SELECTING, selectionEndsAt: pastDeadline });
-    const ports: ProjectPorts = { notification: notificationPort() };
 
-    await expect(extendDeadline(db, ports, projectId, clientId, new Date(futureDeadline.getTime() + 14 * day + 1), now))
+    await expect(extendDeadline(db, projectId, clientId, new Date(futureDeadline.getTime() + 14 * day + 1), now))
       .rejects.toMatchObject({ code: "INVALID_DEADLINE_EXTENSION", status: 422 });
 
     const exactly = new Date(futureDeadline.getTime() + 14 * day);
-    const result = await extendDeadline(db, ports, projectId, clientId, exactly, now);
+    const result = await extendDeadline(db, projectId, clientId, exactly, now);
     expect(result).toMatchObject({ projectId, status: ProjectStatus.RECRUITING });
     expect(await db.project.findUniqueOrThrow({ where: { id: projectId } })).toMatchObject({ status: ProjectStatus.RECRUITING, selectionEndsAt: null });
     expect(await db.eventLog.count({ where: { projectId, type: EventType.DEADLINE_EXTENDED } })).toBe(1);
@@ -325,7 +324,7 @@ describe("A-06 deadline extension", () => {
   it("refuses to extend a project that is already in a contract", async () => {
     const clientId = await makeClient();
     const projectId = await makeProject(clientId, { status: ProjectStatus.CONTRACTED });
-    await expect(extendDeadline(db, {}, projectId, clientId, new Date(futureDeadline.getTime() + day), now))
+    await expect(extendDeadline(db, projectId, clientId, new Date(futureDeadline.getTime() + day), now))
       .rejects.toMatchObject({ code: "PROJECT_DEADLINE_NOT_EXTENDABLE", status: 409 });
   });
 });

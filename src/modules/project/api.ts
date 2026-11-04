@@ -182,6 +182,6 @@ export function mountProjectApi(
 
   router.post("/projects/:projectId/extend-deadline", authenticated(roleRoute(Role.CLIENT, async (req, res, actor) => {
     const deadline = requiredDate(body(req), "deadline");
-    res.json({ data: await extendDeadline(db, ports, pathId(req, "projectId"), actor.userId, deadline, now()) });
+    res.json({ data: await extendDeadline(db, pathId(req, "projectId"), actor.userId, deadline, now()) });
   })));
 }

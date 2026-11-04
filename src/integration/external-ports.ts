@@ -331,7 +331,8 @@ export function createAgreementPreviewPort(db: IntegrationDb): NonNullable<Integ
         select: { id: true, blockId: true, title: true, conditions: true, sortOrder: true },
         orderBy: [{ sortOrder: 'asc' }, { id: 'asc' }],
       });
-      const interimCount = Math.ceil(rows.length / 2);
+      // 끝수는 최종 구간(PRD 843) — 홀수 개수면 앞쪽 절반만 INTERIM.
+      const interimCount = Math.floor(rows.length / 2);
       return {
         items: rows.map((row, index) => ({
           blockId: row.blockId,

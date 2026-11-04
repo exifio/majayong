@@ -117,7 +117,7 @@ describe('A/C 읽기 Port 어댑터', () => {
     assert.deepEqual(await preview.getSpec('app-1'), {
       items: [
         { blockId: 'b1', specItemId: 's1', title: '첫 항목', stage: 'INTERIM', conditions: [{ key: 'scope', text: '범위' }] },
-        { blockId: 'b2', specItemId: 's2', title: '둘째 항목', stage: 'INTERIM', conditions: [] },
+        { blockId: 'b2', specItemId: 's2', title: '둘째 항목', stage: 'FINAL', conditions: [] },
         { blockId: 'b3', specItemId: 's3', title: '셋째 항목', stage: 'FINAL', conditions: [] },
       ],
       defaultInterimRatio: 50,

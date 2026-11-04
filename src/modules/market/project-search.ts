@@ -109,7 +109,8 @@ function matchesFilters(
     const range = project.hopeBudgetRange;
     if (range === null) return false;
     if (filters.minBudgetKrw !== undefined && range.maxKrw < filters.minBudgetKrw) return false;
-    if (filters.maxBudgetKrw !== undefined && range.minKrw > filters.maxBudgetKrw) return false;
+    // 상한은 미포함([min, max)) — "200만원 미만"에 정확히 200만원은 들지 않는다.
+    if (filters.maxBudgetKrw !== undefined && range.minKrw >= filters.maxBudgetKrw) return false;
   }
 
   if (skills.length > 0) {

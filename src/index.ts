@@ -120,8 +120,8 @@ const cHandler = createAppHandler(
 );
 
 // A의 공개 프로젝트 라우트에 B 검색·열람·지원 어댑터를 주입한다.
-// ponytail: 마감 알림(notification)은 DEADLINE_EXTENDED가 B 15종에 없어 D-10 정책 결정 전까지
-// 미주입 → 연장 알림 경로는 알림 없이 동작하고, 정책 승인 후 이 객체에 추가한다.
+// D-10-R 승인(2026-11-04): 알림 15종 불변. 마감 연장(DEADLINE_EXTENDED)은 A EventLog에만
+// 남기고 B 알림은 만들지 않는다. 따라서 projectPorts.notification을 주입하지 않는다.
 const aProjectDb = createAProjectDb(db);
 // 단일 경계 캐스트: A 서비스는 실제 Prisma tx를 넘기고, 어댑터는 테스트 가능한 구조 타입(AProjectDb)을 받는다.
 const projectPorts: ProjectPorts = {

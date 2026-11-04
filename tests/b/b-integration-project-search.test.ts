@@ -71,6 +71,29 @@ describe('G2-01: A 공개 검색 Port (후보 → 필터 → id 목록)', () => 
     assert.deepEqual(included.projectIds, ['prj-a']);
   });
 
+  it('예산 필터 상한은 미포함이다 (정확히 200만원은 200만원 미만이 아니다)', async () => {
+    const under = await searchPort([row({ id: 'prj-a', hopeBudget: 1_999_999 })]).searchPublicProjects({
+      filters: { maxBudget: 2_000_000 },
+      page: 1,
+      pageSize: 10,
+    });
+    assert.deepEqual(under.projectIds, ['prj-a']);
+
+    const boundary = await searchPort([row({ id: 'prj-b', hopeBudget: 2_000_000 })]).searchPublicProjects({
+      filters: { maxBudget: 2_000_000 },
+      page: 1,
+      pageSize: 10,
+    });
+    assert.deepEqual(boundary.projectIds, []);
+
+    const fromBoundary = await searchPort([row({ id: 'prj-c', hopeBudget: 2_000_000 })]).searchPublicProjects({
+      filters: { minBudget: 2_000_000 },
+      page: 1,
+      pageSize: 10,
+    });
+    assert.deepEqual(fromBoundary.projectIds, ['prj-c']);
+  });
+
   it('후보 변환 결과에 정확 예산이 없고 구간 경계만 있다', async () => {
     const candidates = (await createProjectCandidatePort(
       fakeDb([row({ id: 'prj-a', hopeBudget: 4_500_000 })]),
