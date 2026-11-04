@@ -1,0 +1,123 @@
+import type { PrismaClient } from "@prisma/client";
+import { createHttpHandler, type AppServices, type HttpActor } from "./app.ts";
+import { createDueJobRunner } from "./jobs/index.ts";
+import { createPrismaDueJobTargets } from "./infrastructure/prisma-due-targets.ts";
+import { createPrismaRepositories } from "./infrastructure/prisma-store.ts";
+import { AdminOpsService, type CatalogAdminPort } from "./modules/admin-ops/index.ts";
+import { CancellationService, type CancellationMessagePort } from "./modules/cancellation/index.ts";
+import {
+  DeliveryService,
+  InspectionBatchService,
+  type InspectionOpsPorts,
+  type NotificationPorts,
+} from "./modules/delivery/index.ts";
+import { DepositCompletionService, DepositService, type MarketplacePorts } from "./modules/deposit/index.ts";
+import { FileService, type FileRepository, type FileStorageAdapter } from "./modules/files/index.ts";
+import { ReviewService, type ProfileReviewPorts } from "./modules/review/index.ts";
+import { SettlementService } from "./modules/settlement/policy.ts";
+
+export interface IntegrationPorts {
+  marketplace: MarketplacePorts;
+  notifications: NotificationPorts;
+  inspectionOps?: InspectionOpsPorts;
+  cancellationMessages?: CancellationMessagePort;
+  profileReview: ProfileReviewPorts;
+  storage: FileStorageAdapter;
+  catalogAdmin: CatalogAdminPort;
+  projectClientId?(projectId: string): Promise<string | null>;
+}
+
+export interface IntegrationConfig {
+  prisma: PrismaClient;
+  webhookSecret: string;
+  bucket?: string;
+  clock?: { now(): Date };
+  ports: IntegrationPorts;
+  /** Prisma 스키마에 파일 메타데이터 모델이 없어 Gate 0 전까지 주입한다. */
+  fileRepository: FileRepository;
+}
+
+export function createIntegrationServices(config: IntegrationConfig) {
+  const repos = createPrismaRepositories(config.prisma);
+  const clock = config.clock ?? { now: () => new Date() };
+
+  const settlement = new SettlementService({ repo: repos.settlementRepository, clock });
+  const completion = new DepositCompletionService({
+    repo: repos.depositRepository,
+    contractsPort: repos.contractsPort,
+    marketplacePort: config.ports.marketplace,
+    clock,
+  });
+  const deposits = new DepositService({
+    repo: repos.depositRepository,
+    contractsPort: repos.contractsPort,
+    webhookSecret: config.webhookSecret,
+    completionPort: completion,
+    clock,
+  });
+  const deliveries = new DeliveryService({
+    repo: repos.deliveryRepository,
+    settlementPort: settlement,
+    opsPorts: config.ports.inspectionOps,
+    clock,
+  });
+  const inspections = new InspectionBatchService({
+    repo: repos.deliveryRepository,
+    notificationPorts: config.ports.notifications,
+    settlementPort: settlement,
+    opsPorts: config.ports.inspectionOps,
+    clock,
+  });
+  const cancellations = new CancellationService({
+    repo: repos.cancellationRepository,
+    messagePort: config.ports.cancellationMessages,
+    clock,
+  });
+  const reviews = new ReviewService({
+    repo: repos.reviewRepository,
+    profilePorts: config.ports.profileReview,
+    clock,
+  });
+  const files = new FileService({
+    repo: config.fileRepository,
+    storageAdapter: config.ports.storage,
+    bucket: config.bucket,
+    clock,
+  });
+  const admin = new AdminOpsService({
+    repo: repos.adminRepository,
+    catalogPort: config.ports.catalogAdmin,
+    depositPort: completion,
+    inspectionPort: inspections,
+    cancellationPort: cancellations,
+    clock,
+  });
+
+  const services: AppServices = {
+    deposits,
+    deliveries,
+    settlement,
+    cancellations,
+    reviews,
+    files,
+    admin,
+    projectClientId: config.ports.projectClientId,
+  };
+
+  const runner = createDueJobRunner({
+    services: {
+      completionService: completion,
+      cancellationService: cancellations,
+      batchService: inspections,
+    },
+    targets: createPrismaDueJobTargets(config.prisma),
+    clock,
+  });
+
+  return { services, runner, inspections };
+}
+
+export function createAppHandler(config: IntegrationConfig, authenticate: (req: import("node:http").IncomingMessage) => Promise<HttpActor | null> | HttpActor | null) {
+  const { services } = createIntegrationServices(config);
+  return createHttpHandler({ services, authenticate });
+}
