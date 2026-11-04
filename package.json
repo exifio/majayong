@@ -5,10 +5,19 @@
   "scripts": {
     "build": "tsc",
     "typecheck": "tsc --noEmit",
+    "test": "node --test tests/c/*.test.ts",
+    "test:typecheck": "tsc -p tsconfig.test.json",
+    "test:integration": "node --test tests/integration/*.test.ts",
+    "db:migrate": "prisma migrate deploy",
+    "db:generate": "prisma generate",
     "start": "node dist/index.js"
   },
   "devDependencies": {
     "@types/node": "^26.6.5",
+    "prisma": "^6.19.3",
     "typescript": "^7.0.2"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.19.3"
   }
 }
