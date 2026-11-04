@@ -21,6 +21,7 @@ const app = createApp({
   db,
   tokenSecret,
   google,
+  projectDisclosureConsentVersion: () => process.env.PROJECT_DISCLOSURE_CONSENT_VERSION ?? null,
   profile: {
     encryptionKey: process.env.PROFILE_DATA_KEY,
     supplierNdaVersion: process.env.SUPPLIER_NDA_VERSION,

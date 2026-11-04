@@ -30,6 +30,7 @@ import {
 import { createPrismaWithdrawalStore } from "./modules/identity/withdrawal.js";
 import { mountProfileApi, type ProfilePorts } from "./modules/profile/api.js";
 import { ProfileError } from "./modules/profile/errors.js";
+import { mountProjectApi } from "./modules/project/api.js";
 import type { PrismaClient } from "@prisma/client";
 
 export type AppOptions = {
@@ -40,6 +41,7 @@ export type AppOptions = {
   googleFetcher?: typeof fetch;
   sendPasswordReset?: (email: string, token: string) => Promise<void>;
   sendEmailChange?: (email: string, token: string) => Promise<void>;
+  projectDisclosureConsentVersion?: () => string | null;
   profile?: ProfilePorts;
 };
 
@@ -307,6 +309,13 @@ export function createApp(options: AppOptions): Express {
   }));
 
   mountProfileApi(router, options.db, options.profile ?? {}, now, handler => authenticated(options, handler));
+  mountProjectApi(
+    router,
+    options.db,
+    now,
+    options.projectDisclosureConsentVersion ?? (() => null),
+    handler => authenticated(options, handler),
+  );
 
   app.use("/api/v1", router);
   app.use((_req, res) => {

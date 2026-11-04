@@ -3,10 +3,12 @@ import { BlockOrigin, DraftEntryType, DraftStatus, PrismaClient, Role } from "@p
 import express, { type NextFunction, type Request, type Response } from "express";
 import { createServer, type Server } from "node:http";
 import { randomUUID } from "node:crypto";
+import { createApp } from "../../src/app.ts";
 import type { Actor } from "../../src/modules/identity/session.ts";
+import { issueAccessToken } from "../../src/modules/identity/auth.ts";
 import type { AuthenticatedDraftRoute } from "../../src/modules/draft/api.ts";
 import { mountProjectApi } from "../../src/modules/project/api.ts";
-import { publishDraft } from "../../src/modules/project/service.ts";
+import { publishDraft, PROJECT_DISCLOSURE_CONSENT_DRAFT_VERSION } from "../../src/modules/project/service.ts";
 
 const databaseUrl = process.env.TEST_DATABASE_URL;
 if (!databaseUrl || new URL(databaseUrl).pathname !== "/majayong_a00_test") {
@@ -20,6 +22,7 @@ const draftIds: string[] = [];
 const blockIds: string[] = [];
 const servers: Server[] = [];
 const now = new Date("2026-11-03T09:00:00.000Z");
+const tokenSecret = "a-05-project-test-token-secret-longer-than-32-bytes";
 
 async function makeDraft(pendingFeatures: unknown[] = []): Promise<{ clientId: string; draftId: string; blockIds: string[] }> {
   const clientId = randomUUID();
@@ -79,7 +82,7 @@ async function startProjectServer(actor: Actor): Promise<string> {
   const authenticated: AuthenticatedDraftRoute = handler => (req, res, next) => {
     Promise.resolve(handler(req, res, actor)).catch(next);
   };
-  mountProjectApi(router, db, () => now, () => "v2.0", authenticated);
+  mountProjectApi(router, db, () => now, () => PROJECT_DISCLOSURE_CONSENT_DRAFT_VERSION, authenticated);
   app.use("/api/v1", router);
   app.use((error: unknown, _req: Request, res: Response, _next: NextFunction) => {
     res.status(500).json({ error: error instanceof Error ? error.message : "INTERNAL_ERROR" });
@@ -92,10 +95,23 @@ async function startProjectServer(actor: Actor): Promise<string> {
   return `http://127.0.0.1:${address.port}/api/v1`;
 }
 
+async function startCommonAppServer(projectDisclosureConsentVersion?: () => string | null): Promise<string> {
+  const appOptions = { db, tokenSecret, now: () => now };
+  const options = projectDisclosureConsentVersion
+    ? Object.assign(appOptions, { projectDisclosureConsentVersion })
+    : appOptions;
+  const server = createServer(createApp(options));
+  await new Promise<void>(resolve => server.listen(0, "127.0.0.1", resolve));
+  const address = server.address();
+  if (!address || typeof address === "string") throw new Error("HTTP server did not bind");
+  servers.push(server);
+  return `http://127.0.0.1:${address.port}/api/v1`;
+}
+
 const publishInput = {
   recruitStartAt: new Date("2026-11-03T09:00:00.000Z"),
   deadline: new Date("2026-11-10T09:00:00.000Z"),
-  disclosureConsentVersion: "v2.0",
+  disclosureConsentVersion: PROJECT_DISCLOSURE_CONSENT_DRAFT_VERSION,
   disclosureScope: "DETAIL" as const,
   disclosureConsent: true as const,
 };
@@ -125,18 +141,72 @@ afterAll(async () => {
 });
 
 describe("A-05 project publication PostgreSQL integration", () => {
+  it("routes project publication through the common app", async () => {
+    const clientId = randomUUID();
+    await db.user.create({ data: { id: clientId, email: `a05-app-${clientId}@example.invalid`, role: Role.CLIENT } });
+    userIds.push(clientId);
+    const token = issueAccessToken({ userId: clientId, role: Role.CLIENT, expiresAt: now.getTime() + 60_000 }, tokenSecret);
+    const baseUrl = await startCommonAppServer();
+
+    const response = await fetch(`${baseUrl}/drafts/${randomUUID()}/publish`, {
+      method: "POST",
+      headers: { authorization: `Bearer ${token}`, "content-type": "application/json" },
+      body: JSON.stringify({
+        recruitStartAt: publishInput.recruitStartAt.toISOString(),
+        deadline: publishInput.deadline.toISOString(),
+        disclosureConsentVersion: PROJECT_DISCLOSURE_CONSENT_DRAFT_VERSION,
+        disclosureScope: "DETAIL",
+        disclosureConsent: true,
+      }),
+    });
+    const body = await response.json() as { error?: { code?: string } };
+
+    expect(response.status).toBe(404);
+    expect(body.error?.code).toBe("DRAFT_NOT_FOUND");
+  });
+
+  it("publishes a draft over authenticated HTTP through the common app", async () => {
+    const { clientId, draftId } = await makeDraft();
+    const token = issueAccessToken({ userId: clientId, role: Role.CLIENT, expiresAt: now.getTime() + 60_000 }, tokenSecret);
+    const baseUrl = await startCommonAppServer(() => PROJECT_DISCLOSURE_CONSENT_DRAFT_VERSION);
+    const response = await fetch(`${baseUrl}/drafts/${draftId}/publish`, {
+      method: "POST",
+      headers: { authorization: `Bearer ${token}`, "content-type": "application/json" },
+      body: JSON.stringify({
+        recruitStartAt: publishInput.recruitStartAt.toISOString(),
+        deadline: publishInput.deadline.toISOString(),
+        disclosureConsentVersion: PROJECT_DISCLOSURE_CONSENT_DRAFT_VERSION,
+        disclosureScope: "DETAIL",
+        disclosureConsent: true,
+      }),
+    });
+    const body = await response.json() as { data?: { itemCount?: number } };
+
+    expect(response.status).toBe(201);
+    expect(body.data?.itemCount).toBe(2);
+    const project = await db.project.findUniqueOrThrow({ where: { draftId } });
+    expect(project.disclosureConsentVersion).toBe("project-disclosure-v0.1-draft");
+    expect(await db.draft.findUniqueOrThrow({ where: { id: draftId }, select: { status: true } })).toEqual({ status: DraftStatus.CONFIRMED });
+    expect(await db.specItem.count({ where: { projectId: project.id, versionNo: 1 } })).toBe(2);
+  });
+
   it("A-05-T04 serializes duplicate publication and copies all selected rows into version 1", async () => {
     const { clientId, draftId } = await makeDraft();
     const outcomes = await Promise.allSettled([
-      publishDraft(db, draftId, clientId, publishInput, "v2.0", now),
-      publishDraft(db, draftId, clientId, publishInput, "v2.0", now),
+      publishDraft(db, draftId, clientId, publishInput, PROJECT_DISCLOSURE_CONSENT_DRAFT_VERSION, now),
+      publishDraft(db, draftId, clientId, publishInput, PROJECT_DISCLOSURE_CONSENT_DRAFT_VERSION, now),
     ]);
     expect(outcomes.filter(outcome => outcome.status === "fulfilled")).toHaveLength(1);
     expect(outcomes.filter(outcome => outcome.status === "rejected")).toHaveLength(1);
 
     const project = await db.project.findUniqueOrThrow({ where: { draftId } });
     const items = await db.specItem.findMany({ where: { projectId: project.id }, orderBy: { sortOrder: "asc" } });
-    expect(project).toMatchObject({ currentVersion: 1, status: "RECRUITING", title: "예약 달력, 예약금 결제" });
+    expect(project).toMatchObject({
+      currentVersion: 1,
+      status: "RECRUITING",
+      title: "예약 달력, 예약금 결제",
+      disclosureConsentVersion: PROJECT_DISCLOSURE_CONSENT_DRAFT_VERSION,
+    });
     expect(project.requiredSkills).toEqual(["react", "payments"]);
     expect(items).toHaveLength(2);
     expect(items[0]).toMatchObject({
@@ -164,7 +234,7 @@ describe("A-05 project publication PostgreSQL integration", () => {
     await db.$executeRaw`CREATE TRIGGER a05_test_reject_spec_item BEFORE INSERT ON spec_items
       FOR EACH ROW EXECUTE FUNCTION a05_test_reject_spec_item()`;
     try {
-      await expect(publishDraft(db, draftId, clientId, publishInput, "v2.0", now)).rejects.toThrow();
+      await expect(publishDraft(db, draftId, clientId, publishInput, PROJECT_DISCLOSURE_CONSENT_DRAFT_VERSION, now)).rejects.toThrow();
     } finally {
       await db.$executeRaw`DROP TRIGGER IF EXISTS a05_test_reject_spec_item ON spec_items`;
       await db.$executeRaw`DROP FUNCTION IF EXISTS a05_test_reject_spec_item()`;
@@ -178,7 +248,7 @@ describe("A-05 project publication PostgreSQL integration", () => {
     await expect(publishDraft(db, draftId, clientId, {
       ...publishInput,
       recruitStartAt: publishInput.deadline,
-    }, "v2.0", now)).rejects.toMatchObject({ code: "INVALID_RECRUITMENT_PERIOD", status: 422 });
+    }, PROJECT_DISCLOSURE_CONSENT_DRAFT_VERSION, now)).rejects.toMatchObject({ code: "INVALID_RECRUITMENT_PERIOD", status: 422 });
     expect(await db.project.findUnique({ where: { draftId } })).toBeNull();
   });
 
@@ -187,8 +257,18 @@ describe("A-05 project publication PostgreSQL integration", () => {
     await expect(publishDraft(db, draftId, clientId, {
       ...publishInput,
       disclosureConsentVersion: "",
-    }, "v2.0", now)).rejects.toMatchObject({ code: "DISCLOSURE_CONSENT_REQUIRED", status: 422 });
+    }, PROJECT_DISCLOSURE_CONSENT_DRAFT_VERSION, now)).rejects.toMatchObject({ code: "DISCLOSURE_CONSENT_REQUIRED", status: 422 });
     expect(await db.project.findUnique({ where: { draftId } })).toBeNull();
+  });
+
+  it("fails closed when the draft consent version is not configured", async () => {
+    const { clientId, draftId } = await makeDraft();
+    await expect(publishDraft(db, draftId, clientId, publishInput, null, now))
+      .rejects.toMatchObject({ code: "DISCLOSURE_CONSENT_UNAVAILABLE", status: 503 });
+    await expect(publishDraft(db, draftId, clientId, publishInput, "v2.0", now))
+      .rejects.toMatchObject({ code: "DISCLOSURE_CONSENT_VERSION_MISMATCH", status: 409 });
+    expect(await db.project.findUnique({ where: { draftId } })).toBeNull();
+    expect(await db.draft.findUniqueOrThrow({ where: { id: draftId }, select: { status: true } })).toEqual({ status: "IN_PROGRESS" });
   });
 
   it("returns only a public-safe project summary from POST /publish", async () => {
@@ -200,7 +280,7 @@ describe("A-05 project publication PostgreSQL integration", () => {
       body: JSON.stringify({
         recruitStartAt: publishInput.recruitStartAt.toISOString(),
         deadline: publishInput.deadline.toISOString(),
-        disclosureConsentVersion: "v2.0",
+        disclosureConsentVersion: PROJECT_DISCLOSURE_CONSENT_DRAFT_VERSION,
         disclosureScope: "DETAIL",
         disclosureConsent: true,
       }),
@@ -216,7 +296,7 @@ describe("A-05 project publication PostgreSQL integration", () => {
 
   it("does not publish a draft while generated features are still pending", async () => {
     const { clientId, draftId } = await makeDraft([{ key: "pending", summary: "회원 알림", attempts: 1, lastTriedAt: null }]);
-    await expect(publishDraft(db, draftId, clientId, publishInput, "v2.0", now))
+    await expect(publishDraft(db, draftId, clientId, publishInput, PROJECT_DISCLOSURE_CONSENT_DRAFT_VERSION, now))
       .rejects.toMatchObject({ code: "DRAFT_FEATURES_PENDING", status: 409 });
     expect(await db.project.findUnique({ where: { draftId } })).toBeNull();
   });

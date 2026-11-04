@@ -6,7 +6,7 @@ import { randomUUID } from "node:crypto";
 import type { Actor } from "../../src/modules/identity/session.ts";
 import type { AuthenticatedDraftRoute } from "../../src/modules/draft/api.ts";
 import { mountProjectApi } from "../../src/modules/project/api.ts";
-import { publishDraft } from "../../src/modules/project/service.ts";
+import { publishDraft, PROJECT_DISCLOSURE_CONSENT_DRAFT_VERSION } from "../../src/modules/project/service.ts";
 
 const databaseUrl = process.env.TEST_DATABASE_URL;
 if (!databaseUrl || new URL(databaseUrl).pathname !== "/majayong_a00_test") {
@@ -23,7 +23,7 @@ const now = new Date("2026-11-03T12:00:00.000Z");
 const validInput = {
   recruitStartAt: "2026-11-04T00:00:00.000Z",
   deadline: "2026-11-10T00:00:00.000Z",
-  disclosureConsentVersion: "v2.0",
+  disclosureConsentVersion: PROJECT_DISCLOSURE_CONSENT_DRAFT_VERSION,
   disclosureScope: "DETAIL",
   disclosureConsent: true,
 };
@@ -91,7 +91,7 @@ async function startServer(actor: Actor): Promise<string> {
   const authenticated: AuthenticatedDraftRoute = handler => (req, res, next) => {
     Promise.resolve(handler(req, res, actor)).catch(next);
   };
-  mountProjectApi(router, db, () => new Date(now), () => "v2.0", authenticated);
+  mountProjectApi(router, db, () => new Date(now), () => PROJECT_DISCLOSURE_CONSENT_DRAFT_VERSION, authenticated);
   app.use("/api/v1", router);
   app.use((error: unknown, _req: Request, res: Response, _next: NextFunction) => {
     res.status(500).json({ error: error instanceof Error ? error.message : "INTERNAL_ERROR" });
@@ -135,6 +135,7 @@ afterAll(async () => {
 
 describe("A-05 project publish", () => {
   it("A-05-T04 creates the project and complete version-one spec from price snapshots exactly once", async () => {
+    expect(PROJECT_DISCLOSURE_CONSENT_DRAFT_VERSION).toBe("project-disclosure-v0.1-draft");
     const { clientId, draftId, blockId } = await makeDraft();
     const baseUrl = await startServer({ userId: clientId, role: Role.CLIENT });
     const response = await publish(baseUrl, draftId);
@@ -149,7 +150,7 @@ describe("A-05 project publish", () => {
       industryCode: "RESERVATION_RESTAURANT",
       requiredSkills: ["WEB", "POSTGRESQL"],
       hopeBudget: 5_000_000,
-      disclosureConsentVersion: "v2.0",
+      disclosureConsentVersion: PROJECT_DISCLOSURE_CONSENT_DRAFT_VERSION,
       recruitStartAt: new Date(validInput.recruitStartAt),
       deadline: new Date(validInput.deadline),
     });
@@ -167,7 +168,7 @@ describe("A-05 project publish", () => {
     });
     expect(await db.draft.findUniqueOrThrow({ where: { id: draftId }, select: { status: true } })).toEqual({ status: "CONFIRMED" });
     const publishedEvent = await db.eventLog.findFirstOrThrow({ where: { projectId: project.id, type: "PROJECT_PUBLISHED" } });
-    expect(publishedEvent.payload).toMatchObject({ disclosureScope: "DETAIL", disclosureConsentVersion: "v2.0" });
+    expect(publishedEvent.payload).toMatchObject({ disclosureScope: "DETAIL", disclosureConsentVersion: PROJECT_DISCLOSURE_CONSENT_DRAFT_VERSION });
 
     const duplicate = await publish(baseUrl, draftId);
     expect(duplicate.status).toBe(409);
@@ -185,8 +186,8 @@ describe("A-05 project publish", () => {
       disclosureConsent: true as const,
     };
     const results = await Promise.allSettled([
-      publishDraft(db, draftId, clientId, input, "v2.0", now),
-      publishDraft(db, draftId, clientId, input, "v2.0", now),
+      publishDraft(db, draftId, clientId, input, PROJECT_DISCLOSURE_CONSENT_DRAFT_VERSION, now),
+      publishDraft(db, draftId, clientId, input, PROJECT_DISCLOSURE_CONSENT_DRAFT_VERSION, now),
     ]);
     expect(results.filter(result => result.status === "fulfilled")).toHaveLength(1);
     expect(results.filter(result => result.status === "rejected")).toHaveLength(1);
@@ -208,6 +209,9 @@ describe("A-05 project publish", () => {
     const baseUrl = await startServer({ userId: withoutConsent.clientId, role: Role.CLIENT });
     expect((await publish(baseUrl, withoutConsent.draftId, { ...validInput, disclosureConsent: false })).status).toBe(422);
     expect(await db.project.count({ where: { draftId: withoutConsent.draftId } })).toBe(0);
+    expect(await db.draft.findUniqueOrThrow({ where: { id: withoutConsent.draftId }, select: { status: true } })).toEqual({ status: "IN_PROGRESS" });
+    expect(await db.specItem.count({ where: { project: { draftId: withoutConsent.draftId } } })).toBe(0);
+    expect(await db.eventLog.count({ where: { userId: withoutConsent.clientId, type: "PROJECT_PUBLISHED" } })).toBe(0);
 
     const missingConsent = await makeDraft();
     const missingConsentUrl = await startServer({ userId: missingConsent.clientId, role: Role.CLIENT });
@@ -219,12 +223,27 @@ describe("A-05 project publish", () => {
     });
     expect(missingConsentResponse.status).toBe(422);
     expect(await db.project.count({ where: { draftId: missingConsent.draftId } })).toBe(0);
+    expect(await db.draft.findUniqueOrThrow({ where: { id: missingConsent.draftId }, select: { status: true } })).toEqual({ status: "IN_PROGRESS" });
+    expect(await db.specItem.count({ where: { project: { draftId: missingConsent.draftId } } })).toBe(0);
+    expect(await db.eventLog.count({ where: { userId: missingConsent.clientId, type: "PROJECT_PUBLISHED" } })).toBe(0);
 
     const withoutProfile = await makeDraft();
     await db.clientProfile.delete({ where: { userId: withoutProfile.clientId } });
     const noProfileUrl = await startServer({ userId: withoutProfile.clientId, role: Role.CLIENT });
     expect((await publish(noProfileUrl, withoutProfile.draftId)).status).toBe(422);
     expect(await db.project.count({ where: { draftId: withoutProfile.draftId } })).toBe(0);
+  });
+
+  it("rejects a consent version that does not identify the attached draft", async () => {
+    const { clientId, draftId } = await makeDraft();
+    const baseUrl = await startServer({ userId: clientId, role: Role.CLIENT });
+    const response = await publish(baseUrl, draftId, { ...validInput, disclosureConsentVersion: "v2.0" });
+
+    expect(response.status).toBe(409);
+    expect(await db.project.count({ where: { draftId } })).toBe(0);
+    expect(await db.draft.findUniqueOrThrow({ where: { id: draftId }, select: { status: true } })).toEqual({ status: "IN_PROGRESS" });
+    expect(await db.specItem.count({ where: { project: { draftId } } })).toBe(0);
+    expect(await db.eventLog.count({ where: { userId: clientId, type: "PROJECT_PUBLISHED" } })).toBe(0);
   });
 
   it("publishes immediately when recruitment has already started", async () => {

@@ -1,6 +1,8 @@
 import { DraftStatus, Prisma, PrismaClient, ProjectStatus, SpecItemStatus } from "@prisma/client";
 import { DraftError } from "../draft/rules.js";
 
+export const PROJECT_DISCLOSURE_CONSENT_DRAFT_VERSION = "project-disclosure-v0.1-draft";
+
 export type PublishDraftInput = {
   recruitStartAt?: Date;
   deadline: Date;
@@ -118,7 +120,9 @@ export async function publishDraft(
     if (!activeConsentVersion?.trim()) throw new DraftError("DISCLOSURE_CONSENT_UNAVAILABLE", 503);
     if (input.disclosureConsent !== true) throw new DraftError("DISCLOSURE_CONSENT_REQUIRED", 422);
     if (!input.disclosureConsentVersion.trim()) throw new DraftError("DISCLOSURE_CONSENT_REQUIRED", 422);
-    if (input.disclosureConsentVersion !== activeConsentVersion) throw new DraftError("DISCLOSURE_CONSENT_VERSION_MISMATCH", 409);
+    if (activeConsentVersion !== PROJECT_DISCLOSURE_CONSENT_DRAFT_VERSION || input.disclosureConsentVersion !== activeConsentVersion) {
+      throw new DraftError("DISCLOSURE_CONSENT_VERSION_MISMATCH", 409);
+    }
     if (input.disclosureScope !== "FULL" && input.disclosureScope !== "DETAIL") throw new DraftError("INVALID_DISCLOSURE_SCOPE", 422);
     if (Number.isNaN(input.deadline.getTime()) || (input.recruitStartAt !== undefined && Number.isNaN(input.recruitStartAt.getTime()))) {
       throw new DraftError("INVALID_RECRUITMENT_PERIOD", 422);
@@ -143,7 +147,7 @@ export async function publishDraft(
         draftId,
         currentVersion: 1,
         confirmedAt: now,
-        disclosureConsentVersion: activeConsentVersion,
+        disclosureConsentVersion: PROJECT_DISCLOSURE_CONSENT_DRAFT_VERSION,
         title,
         summary,
         industryCode: firstBlock.block.industryCode,
@@ -177,7 +181,7 @@ export async function publishDraft(
         userId: clientId,
         projectId: project.id,
         type: "PROJECT_PUBLISHED",
-        payload: { disclosureScope: input.disclosureScope, disclosureConsentVersion: activeConsentVersion },
+        payload: { disclosureScope: input.disclosureScope, disclosureConsentVersion: PROJECT_DISCLOSURE_CONSENT_DRAFT_VERSION },
       },
     });
     return {
