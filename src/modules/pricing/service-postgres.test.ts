@@ -113,8 +113,8 @@ afterAll(async () => {
   await db.$disconnect();
 });
 
-describe("A-05 pricing PostgreSQL integration", () => {
-  it("routes price reports through the common app with bearer authentication", async () => {
+describe("A-05 가격 PostgreSQL 통합", () => {
+  it("Bearer 인증과 공통 앱을 통해 가격 리포트를 라우팅한다", async () => {
     const { clientId, draftId } = await makeDraftWithBlock();
     const token = issueAccessToken({
       userId: clientId,
@@ -140,7 +140,7 @@ describe("A-05 pricing PostgreSQL integration", () => {
     expect(applyBody.data).toMatchObject({ estimatedTotal: 1050, hopeBudget: 1050 });
   });
 
-  it("A-05-T02 keeps the existing DraftBlock price snapshot after catalog price changes", async () => {
+  it("A-05-T02 카탈로그 가격이 바뀌어도 기존 DraftBlock 가격 스냅샷을 유지한다", async () => {
     const { clientId, draftId, blockId } = await makeDraftWithBlock();
     const before = await getPriceReport(db, draftId, clientId);
     await db.blockCatalog.update({ where: { id: blockId }, data: { unitPrice: 25_000 } });
@@ -151,7 +151,7 @@ describe("A-05 pricing PostgreSQL integration", () => {
     expect(after.items).toEqual(expect.arrayContaining([expect.objectContaining({ blockId, unitPrice: 1000 })]));
   });
 
-  it("applies the snapshot estimate to the owner's hope budget and records the user action", async () => {
+  it("스냅샷 견적을 소유자의 희망 예산에 적용하고 사용자 액션을 기록한다", async () => {
     const { clientId, draftId } = await makeDraftWithBlock();
     const now = new Date("2026-11-03T10:00:00.000Z");
     await db.draft.update({ where: { id: draftId }, data: { hopeBudget: 5000, lastActiveAt: new Date("2026-10-01T00:00:00.000Z") } });
@@ -164,7 +164,7 @@ describe("A-05 pricing PostgreSQL integration", () => {
     expect(savedDraft).toEqual({ hopeBudget: 1050, lastActiveAt: now });
   });
 
-  it("does not let another client apply the estimate to the draft", async () => {
+  it("다른 의뢰인이 견적을 초안에 적용하지 못하게 한다", async () => {
     const { clientId, draftId } = await makeDraftWithBlock();
     const otherClientId = await makeUser(Role.CLIENT);
     const original = await db.draft.findUniqueOrThrow({ where: { id: draftId }, select: { hopeBudget: true } });
@@ -175,7 +175,7 @@ describe("A-05 pricing PostgreSQL integration", () => {
     expect(clientId).not.toBe(otherClientId);
   });
 
-  it("A-05-T03 denies suppliers before any AI unit price is returned", async () => {
+  it("A-05-T03 AI 단가가 반환되기 전에 공급자를 거부한다", async () => {
     const { draftId } = await makeDraftWithBlock();
     const supplierId = await makeUser(Role.SUPPLIER);
     const baseUrl = await startPricingServer({ userId: supplierId, role: Role.SUPPLIER });
@@ -187,7 +187,7 @@ describe("A-05 pricing PostgreSQL integration", () => {
     expect(body).not.toContain("priceBasis");
   });
 
-  it("A-05-T03 hides another client's report as not found", async () => {
+  it("A-05-T03 다른 의뢰인의 리포트를 찾을 수 없음으로 숨긴다", async () => {
     const { draftId } = await makeDraftWithBlock();
     const otherClientId = await makeUser(Role.CLIENT);
     const baseUrl = await startPricingServer({ userId: otherClientId, role: Role.CLIENT });
@@ -199,7 +199,7 @@ describe("A-05 pricing PostgreSQL integration", () => {
     expect(body).not.toContain("priceBasis");
   });
 
-  it("POST /apply-estimate saves and returns the owner's snapshot total", async () => {
+  it("POST /apply-estimate는 소유자의 스냅샷 합계를 저장하고 반환한다", async () => {
     const { clientId, draftId } = await makeDraftWithBlock();
     const baseUrl = await startPricingServer({ userId: clientId, role: Role.CLIENT });
     const response = await fetch(`${baseUrl}/drafts/${draftId}/apply-estimate`, { method: "POST" });

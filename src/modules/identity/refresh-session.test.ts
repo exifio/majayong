@@ -33,8 +33,8 @@ async function withUser(run: (userId: string) => Promise<void>): Promise<void> {
 
 afterAll(async () => prisma.$disconnect());
 
-describe("A-01 rotating refresh sessions", () => {
-  it("stores only a token hash and applies the approved lifetimes", async () => {
+describe("A-01 회전 리프레시 세션", () => {
+  it("토큰 해시만 저장하고 승인된 수명을 적용한다", async () => {
     await withUser(async userId => {
       const tokens = await createSessionTokens(prisma, userId, secret, now);
       const stored = await prisma.refreshSession.findUnique({ where: { tokenHash: hashToken(tokens.refreshToken) } });
@@ -48,7 +48,7 @@ describe("A-01 rotating refresh sessions", () => {
     });
   });
 
-  it("rotates the refresh token and rejects reuse by revoking the family", async () => {
+  it("리프레시 토큰을 회전하고 재사용 시 패밀리를 폐기해 거부한다", async () => {
     await withUser(async userId => {
       const original = await createSessionTokens(prisma, userId, secret, now);
       const rotated = await rotateRefreshToken(prisma, original.refreshToken, secret, new Date(now.getTime() + 1_000));
@@ -65,7 +65,7 @@ describe("A-01 rotating refresh sessions", () => {
     });
   });
 
-  it("rejects forged and expired refresh tokens", async () => {
+  it("위조·만료된 리프레시 토큰을 거부한다", async () => {
     await withUser(async userId => {
       await expect(rotateRefreshToken(prisma, "forged-token", secret, now))
         .rejects.toMatchObject({ code: "REFRESH_TOKEN_INVALID" });
@@ -79,7 +79,7 @@ describe("A-01 rotating refresh sessions", () => {
     });
   });
 
-  it("logs out the current refresh family", async () => {
+  it("현재 리프레시 패밀리를 로그아웃한다", async () => {
     await withUser(async userId => {
       const tokens = await createSessionTokens(prisma, userId, secret, now);
       await revokeRefreshTokenFamily(prisma, tokens.refreshToken, now);
@@ -88,7 +88,7 @@ describe("A-01 rotating refresh sessions", () => {
     });
   });
 
-  it("allows only one concurrent refresh and revokes the winning family on replay", async () => {
+  it("동시 갱신을 하나만 허용하고 재사용 시 승리한 패밀리를 폐기한다", async () => {
     await withUser(async userId => {
       const tokens = await createSessionTokens(prisma, userId, secret, now);
       const outcomes = await Promise.allSettled([

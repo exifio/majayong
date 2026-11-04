@@ -33,8 +33,8 @@ const input = {
   now: new Date("2026-11-03T00:00:00.000Z"),
 };
 
-describe("identity email authentication", () => {
-  it("stores normalized email, fixed role, password hash, and terms consent", async () => {
+describe("이메일 인증", () => {
+  it("정규화된 이메일, 고정 역할, 비밀번호 해시, 약관 동의를 저장한다", async () => {
     const store = makeStore();
     await expect(registerWithEmail(store, input)).resolves.toEqual({
       id: "new-user",
@@ -51,7 +51,7 @@ describe("identity email authentication", () => {
     expect(created?.passwordHash).not.toBe(input.password);
   });
 
-  it("rejects duplicate emails with same or conflicting role", async () => {
+  it("같은 역할이든 충돌하는 역할이든 중복 이메일은 거부한다", async () => {
     const account = {
       id: "existing-user",
       email: "person@example.com",
@@ -70,7 +70,7 @@ describe("identity email authentication", () => {
     expect(store.createUser).not.toHaveBeenCalled();
   });
 
-  it("rejects invalid credentials and inactive accounts", async () => {
+  it("잘못된 자격 증명과 비활성 계정을 거부한다", async () => {
     const passwordHash = await hashPassword(input.password);
     const store = makeStore({
       id: "existing-user",

@@ -96,8 +96,8 @@ afterAll(async () => {
   await db.$disconnect();
 });
 
-describe("E2E-07 contract break", () => {
-  it("supplier can decline a provisional contract", async () => {
+describe("E2E-07 계약 결렬", () => {
+  it("공급자가 임시 계약을 거절할 수 있다", async () => {
     const clientId = await makeClient();
     const clientToken = issueAccessToken({ userId: clientId, role: Role.CLIENT, expiresAt: Date.now() + 60_000 }, tokenSecret);
     const supplierId = await makeSupplier();

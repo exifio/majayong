@@ -10,8 +10,8 @@ import {
 const secret = "a-test-secret-that-is-at-least-32-characters";
 const now = 1_800_000_000_000;
 
-describe("password reset completion", () => {
-  it("changes the password once and rejects token reuse", async () => {
+describe("비밀번호 재설정 완료", () => {
+  it("비밀번호를 한 번만 변경하고 토큰 재사용을 거부한다", async () => {
     let currentHash = await hashPassword("CurrentPass123");
     const originalHash = currentHash;
     const account = {

@@ -45,7 +45,7 @@ function me(baseUrl: string, token: string): Promise<Response> {
 const createdEmails = new Set<string>();
 const createdIds = new Set<string>();
 
-describe("A-01 access-token lifecycle and isolation", () => {
+describe("A-01 액세스 토큰 수명·격리", () => {
   afterAll(async () => prisma.$disconnect());
   afterEach(async () => {
     for (const id of createdIds) {
@@ -60,7 +60,7 @@ describe("A-01 access-token lifecycle and isolation", () => {
     createdEmails.clear();
   });
 
-  it("scopes /me to the bearer caller and never exposes another account", async () => {
+  it("/me를 Bearer 호출자로 한정하고 다른 계정을 노출하지 않는다", async () => {
     await withServer(async baseUrl => {
       const first = await register(baseUrl);
       const second = await register(baseUrl);
@@ -78,7 +78,7 @@ describe("A-01 access-token lifecycle and isolation", () => {
     });
   });
 
-  it("rejects an already-issued access token once the account is suspended or withdrawn", async () => {
+  it("계정이 정지·탈퇴되면 이미 발급된 액세스 토큰도 거부한다", async () => {
     await withServer(async baseUrl => {
       const account = await register(baseUrl);
       expect((await me(baseUrl, account.accessToken)).status).toBe(200);

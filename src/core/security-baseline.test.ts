@@ -19,8 +19,8 @@ const legacySensitiveKeys = [
   "refreshToken",
 ];
 
-describe("A-00 v0.6.1 -> v0.7 security baseline", () => {
-  it("masks every key v0.6.1 treated as sensitive, including nested objects", () => {
+describe("A-00 v0.6.1 → v0.7 보안 기준선", () => {
+  it("v0.6.1이 민감 정보로 취급한 모든 키를 중첩 객체까지 마스킹한다", () => {
     const nested: Record<string, unknown> = {};
     for (const key of legacySensitiveKeys) nested[key] = "secret-value";
     const sanitized = sanitizeLogContext({ event: "kept", requestId: "kept", nested });
@@ -31,7 +31,7 @@ describe("A-00 v0.6.1 -> v0.7 security baseline", () => {
     expect(text).toContain("kept");
   });
 
-  it("keeps non-sensitive diagnostics for observability", () => {
+  it("관측성을 위한 비민감 진단 정보는 유지한다", () => {
     const sanitized = sanitizeLogContext({ event: "request_failed", requestId: "req-1", status: "failed", latencyMs: 42 });
     const text = JSON.stringify(sanitized);
 

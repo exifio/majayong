@@ -4,46 +4,46 @@ import {
   initialPendingFeature, isInactiveForArchive, retryPendingAttempt, sanitizeDraftText, snapshotDraftBlock, visibleDrafts,
 } from "./rules.ts";
 
-describe("A-04 draft rules", () => {
-  it("A-04-T01 records a failed generation as pending and increments the retry attempt", () => {
+describe("A-04 초안 규칙", () => {
+  it("A-04-T01 생성 실패를 대기로 기록하고 재시도 횟수를 증가시킨다", () => {
     const pending = initialPendingFeature("pending-1");
     const retry = retryPendingAttempt(pending, new Date("2026-11-03T00:00:00.000Z"));
     expect(pending).toMatchObject({ attempts: 0, lastTriedAt: null });
     expect(retry).toMatchObject({ attempts: 1, lastTriedAt: "2026-11-03T00:00:00.000Z" });
   });
-  it("A-04-T02 rejects the 31st chat edit but allows block actions", () => {
+  it("A-04-T02 31번째 채팅 수정은 거부하되 블록 액션은 허용한다", () => {
     expect(() => assertActionAllowed("CHAT", 30)).toThrow(new DraftError("CHAT_EDIT_LIMIT_REACHED", 409));
     expect(() => assertActionAllowed("ADD_BLOCK", 30)).not.toThrow();
     expect(() => assertActionAllowed("REMOVE_BLOCK", 30)).not.toThrow();
   });
-  it("A-04-T03 enforces the three-active-draft limit", () => {
+  it("A-04-T03 활성 초안 3개 제한을 강제한다", () => {
     expect(() => assertDraftCapacity(2)).not.toThrow();
     expect(() => assertDraftCapacity(3)).toThrow(new DraftError("ACTIVE_DRAFT_LIMIT_REACHED", 409));
   });
-  it("A-04-T04 archives at the inclusive 30-day boundary", () => {
+  it("A-04-T04 30일 경계를 포함해 보관 처리한다", () => {
     const now = new Date("2026-11-03T00:00:00.000Z");
     expect(isInactiveForArchive(new Date(now.getTime() - 30 * 86_400_000), now)).toBe(true);
     expect(isInactiveForArchive(new Date(now.getTime() - 30 * 86_400_000 + 1), now)).toBe(false);
   });
-  it("A-04-T05 excludes soft-deleted drafts", () => {
+  it("A-04-T05 소프트 삭제된 초안은 제외한다", () => {
     expect(visibleDrafts([{ id: "live", deletedAt: null }, { id: "gone", deletedAt: new Date() }]).map(row => row.id)).toEqual(["live"]);
   });
-  it("A-04-T06 prevents duplicate rows from changing the first unit-price snapshot", () => {
+  it("A-04-T06 중복 행이 최초 단가 스냅샷을 바꾸지 못하게 한다", () => {
     const first = snapshotDraftBlock(null, { blockId: "b1", unitPrice: 5000 }, "RECOMMENDATION");
     const readded = snapshotDraftBlock({ ...first, status: "REMOVED" }, { blockId: "b1", unitPrice: 9000 }, "RECOMMENDATION");
     expect(readded).toMatchObject({ blockId: "b1", status: "ADDED", unitPrice: 5000 });
   });
-  it("A-04-T07 changes activity only for user actions", () => {
+  it("A-04-T07 사용자 액션에만 활동 시각을 갱신한다", () => {
     expect(changesUserActivity("ADD_BLOCK")).toBe(true);
     expect(changesUserActivity("BACKGROUND_RETRY")).toBe(false);
     expect(changesUserActivity("BATCH_ARCHIVE")).toBe(false);
     expect(changesUserActivity("READ")).toBe(false);
   });
-  it("A-04-T08 hides a draft from another owner", () => {
+  it("A-04-T08 다른 소유자의 초안을 숨긴다", () => {
     expect(() => assertDraftOwner({ id: "d1", clientId: "owner", status: "IN_PROGRESS", deletedAt: null }, "other"))
       .toThrow(new DraftError("DRAFT_NOT_FOUND", 404));
   });
-  it("redacts profile names, email addresses, and phone numbers before AI input", () => {
+  it("AI 입력 전에 프로필 이름·이메일·전화번호를 마스킹한다", () => {
     const safe = sanitizeDraftText("김하나 010-1234-5678 hana@example.invalid", ["김하나"]);
     expect(safe).not.toContain("김하나");
     expect(safe).not.toContain("010-1234-5678");

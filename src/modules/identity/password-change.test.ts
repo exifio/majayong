@@ -2,8 +2,8 @@ import { describe, expect, it, jest } from "@jest/globals";
 import { AuthProvider, Role } from "@prisma/client";
 import { PasswordResetStore, hashPassword, setPassword } from "./auth.ts";
 
-describe("account password change", () => {
-  it("lets an authenticated Google-only account create a password", async () => {
+describe("계정 비밀번호 변경", () => {
+  it("인증된 Google 전용 계정이 비밀번호를 만들 수 있다", async () => {
     let currentHash: string | null = null;
     const store: PasswordResetStore = {
       findByEmail: jest.fn(async () => null),

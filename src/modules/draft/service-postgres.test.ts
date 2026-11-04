@@ -109,7 +109,7 @@ postgresDescribe("A-04 PostgreSQL integration (safe only for majayong_a00_test)"
     await db.$disconnect();
   });
 
-  it("A-04-T01 keeps input and pending state after failure, then retries catalog resolution", async () => {
+  it("A-04-T01 실패 후에도 입력과 대기 상태를 유지하고 카탈로그 해석을 재시도한다", async () => {
     const client = await makeAccount();
     const blockId = await makeBlock(7100);
     const resolveExisting = jest.fn<DraftCatalogAdapter["resolveExisting"]>().mockRejectedValueOnce(new Error("temporary"));
@@ -134,7 +134,7 @@ postgresDescribe("A-04 PostgreSQL integration (safe only for majayong_a00_test)"
     } finally { await stopServer(running.server); }
   });
 
-  it("records one draft-rendered metric for the first persisted draft view", async () => {
+  it("최초로 저장된 초안 조회에 대해 렌더링 지표를 한 번만 기록한다", async () => {
     const client = await makeAccount();
     const blockId = await makeBlock();
     const resolveExisting = jest.fn<DraftCatalogAdapter["resolveExisting"]>().mockResolvedValue({ blockIds: [blockId], pendingFeatures: [], reusedBlocks: 1 });
@@ -153,7 +153,7 @@ postgresDescribe("A-04 PostgreSQL integration (safe only for majayong_a00_test)"
     } finally { await stopServer(running.server); }
   });
 
-  it("records one first-render event when draft creation and chat resolution overlap", async () => {
+  it("초안 생성과 채팅 해석이 겹쳐도 최초 렌더링 이벤트를 한 번만 기록한다", async () => {
     const client = await makeAccount();
     const blockId = await makeBlock();
     let resolveCount = 0;
@@ -181,7 +181,7 @@ postgresDescribe("A-04 PostgreSQL integration (safe only for majayong_a00_test)"
     } finally { await stopServer(running.server); }
   });
 
-  it("A-04-T02 preserves recommendation and removal actions after 30 chat edits", async () => {
+  it("A-04-T02 채팅 30회 수정 후에도 추천·제거 액션을 보존한다", async () => {
     const client = await makeAccount();
     const assigned = await makeBlock();
     const recommendations = await Promise.all(Array.from({ length: 4 }, () => makeBlock()));
@@ -200,7 +200,7 @@ postgresDescribe("A-04 PostgreSQL integration (safe only for majayong_a00_test)"
     } finally { await stopServer(running.server); }
   });
 
-  it("A-04-T03 enforces the three-draft limit and checks it again on restore", async () => {
+  it("A-04-T03 초안 3개 제한을 강제하고 복원 시에도 다시 확인한다", async () => {
     const client = await makeAccount();
     const running = await runServer();
     try {
@@ -220,7 +220,7 @@ postgresDescribe("A-04 PostgreSQL integration (safe only for majayong_a00_test)"
     } finally { await stopServer(running.server); }
   });
 
-  it("A-04-T04 archives exactly on the inclusive inactivity boundary without touching activity time", async () => {
+  it("A-04-T04 활동 시각을 건드리지 않고 비활동 경계에서 정확히 보관 처리한다", async () => {
     const client = await makeAccount();
     const running = await runServer();
     try {
@@ -236,7 +236,7 @@ postgresDescribe("A-04 PostgreSQL integration (safe only for majayong_a00_test)"
     } finally { await stopServer(running.server); }
   });
 
-  it("A-04-T05 omits soft-deleted drafts from list and detail", async () => {
+  it("A-04-T05 목록·상세에서 소프트 삭제 초안을 제외한다", async () => {
     const client = await makeAccount();
     const running = await runServer();
     try {
@@ -247,7 +247,7 @@ postgresDescribe("A-04 PostgreSQL integration (safe only for majayong_a00_test)"
     } finally { await stopServer(running.server); }
   });
 
-  it("A-04-T06 deduplicates concurrent block adds and preserves the first price snapshot", async () => {
+  it("A-04-T06 동시 블록 추가를 중복 제거하고 최초 가격 스냅샷을 보존한다", async () => {
     const client = await makeAccount();
     const blockId = await makeBlock(5000);
     const running = await runServer();
@@ -266,7 +266,7 @@ postgresDescribe("A-04 PostgreSQL integration (safe only for majayong_a00_test)"
     } finally { await stopServer(running.server); }
   });
 
-  it("A-04-T07 updates activity only for user actions, not reads or background retries", async () => {
+  it("A-04-T07 조회·백그라운드 재시도가 아닌 사용자 액션에만 활동 시각을 갱신한다", async () => {
     const client = await makeAccount();
     const catalog: DraftCatalogAdapter = {
       resolveExisting: async () => ({ blockIds: [], pendingFeatures: [{ key: "new", summary: "새 기능", attempts: 0, lastTriedAt: null }] }),
@@ -286,7 +286,7 @@ postgresDescribe("A-04 PostgreSQL integration (safe only for majayong_a00_test)"
     } finally { await stopServer(running.server); }
   });
 
-  it("A-04-T08 hides another client's draft and blocks supplier access to raw utterances", async () => {
+  it("A-04-T08 다른 의뢰인의 초안을 숨기고 공급자의 원문 발화 접근을 차단한다", async () => {
     const owner = await makeAccount(Role.CLIENT, "민들레 사장님");
     const other = await makeAccount();
     const supplier = await makeAccount(Role.SUPPLIER);

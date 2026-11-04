@@ -29,8 +29,8 @@ afterAll(async () => {
   await db.$disconnect();
 });
 
-describe("A-07 common event log", () => {
-  it("A-07-T01 keeps tokens and cost on a failed LLM call and rejects bad metrics", async () => {
+describe("A-07 공통 이벤트 로그", () => {
+  it("A-07-T01 LLM 호출 실패 시에도 토큰·비용을 남기고 잘못된 지표는 거부한다", async () => {
     const userId = await makeUser();
     const row = await db.$transaction(tx => recordLlmCall(tx, {
       userId, purpose: "BLOCK_CREATE", model: "gpt-test",
@@ -51,7 +51,7 @@ describe("A-07 common event log", () => {
       .rejects.toBeInstanceOf(EventError);
   });
 
-  it("A-07-T02 round-trips event payloads without lossy transformation", async () => {
+  it("A-07-T02 이벤트 payload를 손실 없이 왕복 변환한다", async () => {
     const userId = await makeUser();
     const payload = { status: "DRAFT", count: 3, nested: { ok: true }, tags: ["a", "b"] };
     const first = await recordEvent(db, { type: EventType.PORTFOLIO_SUMMARIZED, userId, payload });
@@ -62,7 +62,7 @@ describe("A-07 common event log", () => {
     expect(rows[1]!.payload).toEqual(payload);
   });
 
-  it("A-07-T03 never logs or stores raw personal text", async () => {
+  it("A-07-T03 개인정보 원문을 로그·저장하지 않는다", async () => {
     const userId = await makeUser();
     const lines: string[] = [];
     createLogger(line => lines.push(line)).log("error", "request_failed", {
@@ -79,7 +79,7 @@ describe("A-07 common event log", () => {
       .rejects.toBeInstanceOf(EventError);
   });
 
-  it("A-07-T04 keeps product metrics consistent with the recorded events", async () => {
+  it("A-07-T04 기록된 이벤트와 제품 지표를 일치시킨다", async () => {
     const userId = await makeUser();
     const from = new Date("2099-06-01T00:00:00.000Z");
     const to = new Date("2099-06-02T00:00:00.000Z");
@@ -98,7 +98,7 @@ describe("A-07 common event log", () => {
     });
   });
 
-  it("A-07-T05 rejects non-JSON payload values and clamps derived ratios", async () => {
+  it("A-07-T05 JSON이 아닌 payload 값을 거부하고 파생 비율을 범위 내로 제한한다", async () => {
     const userId = await makeUser();
     await expect(recordEvent(db, { type: EventType.SPEC_REVISED, userId, payload: { when: new Date() as unknown as string } }))
       .rejects.toBeInstanceOf(EventError);

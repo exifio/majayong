@@ -144,8 +144,8 @@ afterAll(async () => {
   await db.$disconnect();
 });
 
-describe("A-05 project publication PostgreSQL integration", () => {
-  it("routes project publication through the common app", async () => {
+describe("A-05 프로젝트 게시 PostgreSQL 통합", () => {
+  it("공통 앱을 통해 프로젝트 게시를 라우팅한다", async () => {
     const clientId = randomUUID();
     await db.user.create({ data: { id: clientId, email: `a05-app-${clientId}@example.invalid`, role: Role.CLIENT } });
     userIds.push(clientId);
@@ -169,7 +169,7 @@ describe("A-05 project publication PostgreSQL integration", () => {
     expect(body.error?.code).toBe("DRAFT_NOT_FOUND");
   });
 
-  it("publishes a draft over authenticated HTTP through the common app", async () => {
+  it("공통 앱을 통해 인증된 HTTP로 초안을 게시한다", async () => {
     const { clientId, draftId } = await makeDraft();
     const token = issueAccessToken({ userId: clientId, role: Role.CLIENT, expiresAt: now.getTime() + 60_000 }, tokenSecret);
     const baseUrl = await startCommonAppServer(() => PROJECT_DISCLOSURE_CONSENT_DRAFT_VERSION);
@@ -195,7 +195,7 @@ describe("A-05 project publication PostgreSQL integration", () => {
     expect(await db.specItem.count({ where: { projectId: project.id, versionNo: 1 } })).toBe(2);
   });
 
-  it("A-05-T04 serializes duplicate publication and copies all selected rows into version 1", async () => {
+  it("A-05-T04 중복 게시를 직렬화하고 선택한 모든 행을 1차 버전으로 복사한다", async () => {
     const { clientId, draftId } = await makeDraft();
     const outcomes = await Promise.allSettled([
       publishDraft(db, draftId, clientId, publishInput, PROJECT_DISCLOSURE_CONSENT_DRAFT_VERSION, now),
@@ -230,7 +230,7 @@ describe("A-05 project publication PostgreSQL integration", () => {
     expect(await db.eventLog.count({ where: { projectId: project.id, type: "PROJECT_PUBLISHED" } })).toBe(1);
   });
 
-  it("A-05-T04 rolls back Project and Draft changes if SpecItem insertion fails", async () => {
+  it("A-05-T04 SpecItem 삽입이 실패하면 Project·Draft 변경을 롤백한다", async () => {
     const { clientId, draftId } = await makeDraft();
     await db.$executeRaw`DROP TRIGGER IF EXISTS a05_test_reject_spec_item ON spec_items`;
     await db.$executeRaw`DROP FUNCTION IF EXISTS a05_test_reject_spec_item()`;
@@ -249,7 +249,7 @@ describe("A-05 project publication PostgreSQL integration", () => {
     expect(await db.draft.findUniqueOrThrow({ where: { id: draftId }, select: { status: true } })).toEqual({ status: DraftStatus.IN_PROGRESS });
   });
 
-  it("A-05-T05 rejects a recruitment start that is not before the deadline", async () => {
+  it("A-05-T05 모집 시작이 마감보다 앞서지 않으면 거부한다", async () => {
     const { clientId, draftId } = await makeDraft();
     await expect(publishDraft(db, draftId, clientId, {
       ...publishInput,
@@ -258,7 +258,7 @@ describe("A-05 project publication PostgreSQL integration", () => {
     expect(await db.project.findUnique({ where: { draftId } })).toBeNull();
   });
 
-  it("A-05-T06 requires the active disclosure consent version before publishing", async () => {
+  it("A-05-T06 게시 전에 활성 공개 동의 버전을 요구한다", async () => {
     const { clientId, draftId } = await makeDraft();
     await expect(publishDraft(db, draftId, clientId, {
       ...publishInput,
@@ -267,7 +267,7 @@ describe("A-05 project publication PostgreSQL integration", () => {
     expect(await db.project.findUnique({ where: { draftId } })).toBeNull();
   });
 
-  it("fails closed when the draft consent version is not configured", async () => {
+  it("초안 동의 버전이 설정되지 않으면 안전하게 차단한다", async () => {
     const { clientId, draftId } = await makeDraft();
     await expect(publishDraft(db, draftId, clientId, publishInput, null, now))
       .rejects.toMatchObject({ code: "DISCLOSURE_CONSENT_UNAVAILABLE", status: 503 });
@@ -277,7 +277,7 @@ describe("A-05 project publication PostgreSQL integration", () => {
     expect(await db.draft.findUniqueOrThrow({ where: { id: draftId }, select: { status: true } })).toEqual({ status: "IN_PROGRESS" });
   });
 
-  it("returns only a public-safe project summary from POST /publish", async () => {
+  it("POST /publish에서 공개에 안전한 프로젝트 요약만 반환한다", async () => {
     const { clientId, draftId } = await makeDraft();
     const baseUrl = await startProjectServer({ userId: clientId, role: Role.CLIENT });
     const response = await fetch(`${baseUrl}/drafts/${draftId}/publish`, {
@@ -300,7 +300,7 @@ describe("A-05 project publication PostgreSQL integration", () => {
     expect(body).not.toContain("clientFee");
   });
 
-  it("assembles the project title with the overflow feature count", async () => {
+  it("초과 기능 수를 포함해 프로젝트 제목을 구성한다", async () => {
     const { clientId, draftId } = await makeDraft();
     await db.draftBlock.updateMany({ where: { draftId }, data: { status: "ADDED" } });
     const project = await publishDraft(db, draftId, clientId, publishInput, PROJECT_DISCLOSURE_CONSENT_DRAFT_VERSION, now);
@@ -308,7 +308,7 @@ describe("A-05 project publication PostgreSQL integration", () => {
     expect(project.itemCount).toBe(3);
   });
 
-  it("does not publish a draft while generated features are still pending", async () => {
+  it("생성된 기능이 대기 중이면 초안을 게시하지 않는다", async () => {
     const { clientId, draftId } = await makeDraft([{ key: "pending", summary: "회원 알림", attempts: 1, lastTriedAt: null }]);
     await expect(publishDraft(db, draftId, clientId, publishInput, PROJECT_DISCLOSURE_CONSENT_DRAFT_VERSION, now))
       .rejects.toMatchObject({ code: "DRAFT_FEATURES_PENDING", status: 409 });

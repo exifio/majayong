@@ -6,8 +6,8 @@ import { createContractTx } from '../../src/modules/contract/prisma-adapter.ts';
 import { createPrismaApplicationUnitOfWork } from '../../src/modules/application/prisma-adapter.ts';
 import type { PrismaClient } from '@prisma/client';
 
-describe('Prisma runtime wiring', () => {
-  it('application profile reads use the Prisma supplierProfile delegate', async () => {
+describe('Prisma 런타임 연결', () => {
+  it('지원 프로필 조회는 Prisma supplierProfile delegate를 사용한다', async () => {
     const calls: unknown[] = [];
     const supplierProfile = {
       findMany: async (input: unknown) => {
@@ -44,7 +44,7 @@ describe('Prisma runtime wiring', () => {
     assert.deepEqual(calls, [input]);
   });
 
-  it('contract unit of work uses transaction-scoped $queryRaw for row locks', async () => {
+  it('계약 작업 단위는 행 잠금을 위해 트랜잭션 범위 $queryRaw를 사용한다', async () => {
     const queries: string[] = [];
     const txRaw = async (strings: TemplateStringsArray) => {
       queries.push(strings.join('?'));
@@ -71,7 +71,7 @@ describe('Prisma runtime wiring', () => {
     assert.deepEqual(queries, ['SELECT id FROM contracts WHERE id = ? FOR UPDATE']);
   });
 
-  it('application unit of work maps project lock and current spec reads from its transaction client', async () => {
+  it('지원 작업 단위는 트랜잭션 클라이언트에서 프로젝트 잠금과 현재 명세 조회를 매핑한다', async () => {
     const seenQueries: string[] = [];
     let projectFinds = 0;
     const tx = new Proxy({}, {

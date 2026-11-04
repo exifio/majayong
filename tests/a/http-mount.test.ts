@@ -68,8 +68,8 @@ async function makeClient(): Promise<string> {
   return id;
 }
 
-describe("A-04 draft HTTP mount", () => {
-  it("mounts the draft API through createApp only when a catalog adapter is injected", async () => {
+describe("A-04 초안 HTTP 마운트", () => {
+  it("카탈로그 어댑터가 주입된 경우에만 createApp으로 초안 API를 마운트한다", async () => {
     const clientId = await makeClient();
     const token = issueAccessToken({ userId: clientId, role: Role.CLIENT, expiresAt: now.getTime() + 60_000 }, tokenSecret);
     const post = (baseUrl: string) => fetch(`${baseUrl}/drafts`, {
@@ -85,7 +85,7 @@ describe("A-04 draft HTTP mount", () => {
     expect((await post(unmounted)).status).toBe(404);
   });
 
-  it("creates about five blocks for a one-sentence draft from the real A-03 adapter", async () => {
+  it("실제 A-03 어댑터로 한 문장 초안에 약 5개 블록을 생성한다", async () => {
     const clientId = await makeClient();
     const token = issueAccessToken({ userId: clientId, role: Role.CLIENT, expiresAt: now.getTime() + 60_000 }, tokenSecret);
     const baseUrl = await startApp({ catalog: createDraftCatalogAdapter(db, { extractor, generator }) });

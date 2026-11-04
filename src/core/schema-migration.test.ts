@@ -8,9 +8,9 @@ const prisma = new PrismaClient();
 
 afterAll(async () => prisma.$disconnect());
 
-describe("v0.7 PostgreSQL migration", () => {
+describe("v0.7 PostgreSQL 마이그레이션", () => {
   // 이후 트랙의 마이그레이션이 테이블/enum을 더하므로, 여기서는 v0.7 기준 집합이 모두 있는지만 본다.
-  it("creates the v0.7 core tables, A-01 refresh sessions, and enums", async () => {
+  it("v0.7 핵심 테이블·A-01 갱신 세션·enum을 생성한다", async () => {
     const tables = await prisma.$queryRaw<Array<{ tablename: string }>>`
       SELECT tablename FROM pg_tables
       WHERE schemaname = 'public' AND tablename <> '_prisma_migrations'
@@ -52,7 +52,7 @@ describe("v0.7 PostgreSQL migration", () => {
     expect(Number(enums[0]?.count)).toBeGreaterThanOrEqual(33);
   });
 
-  it("applies every required raw database constraint", async () => {
+  it("필요한 모든 원시 DB 제약을 적용한다", async () => {
     const constraints = await prisma.$queryRaw<Array<{ name: string }>>`
       SELECT conname AS name FROM pg_constraint WHERE connamespace = 'public'::regnamespace
       UNION

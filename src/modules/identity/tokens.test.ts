@@ -11,8 +11,8 @@ import {
 
 const secret = "a-test-secret-that-is-at-least-32-characters";
 
-describe("identity signed tokens", () => {
-  it("rejects expired and forged access tokens", () => {
+describe("서명 토큰", () => {
+  it("만료·위조된 액세스 토큰을 거부한다", () => {
     const now = 1_800_000_000_000;
     const token = issueAccessToken({ userId: "user-1", role: Role.CLIENT, expiresAt: now + 60_000 }, secret);
 
@@ -25,7 +25,7 @@ describe("identity signed tokens", () => {
     expect(verifyAccessToken(`${token.slice(0, -1)}x`, secret, now)).toBeNull();
   });
 
-  it("allows password reset up to 30 minutes, then rejects expiry and reuse", () => {
+  it("비밀번호 재설정은 30분까지 허용하고 이후 만료·재사용을 거부한다", () => {
     const now = 1_800_000_000_000;
     const oldHash = "scrypt$old-password-hash";
     const token = issuePasswordResetToken("user-1", oldHash, secret, now);
@@ -36,7 +36,7 @@ describe("identity signed tokens", () => {
     expect(verifyPasswordResetToken(token, "user-2", oldHash, secret, now + 1_000)).toBe(false);
   });
 
-  it("limits signed Google onboarding tokens to ten minutes", () => {
+  it("서명된 Google 온보딩 토큰 수명을 10분으로 제한한다", () => {
     const now = 1_800_000_000_000;
     const token = issueGoogleOnboardingToken({ subject: "google-subject", email: "Person@Example.com" }, secret, now);
     expect(verifyGoogleOnboardingToken(token, secret, now + 599_999)).toEqual({

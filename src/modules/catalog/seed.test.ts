@@ -2,8 +2,8 @@ import { BlockSource } from "@prisma/client";
 import { describe, expect, it } from "@jest/globals";
 import { reservationRestaurantSeedBlocks } from "./seed.ts";
 
-describe("A-03 proposed restaurant reservation seed", () => {
-  it("has 36 ranked active reviewed blocks, six defaults, and validated catalog shapes", () => {
+describe("A-03 식당 예약 제안 시드", () => {
+  it("순위가 있는 활성·검수 블록 36개, 기본 6개, 검증된 카탈로그 형태를 가진다", () => {
     expect(reservationRestaurantSeedBlocks).toHaveLength(36);
 
     const codes = reservationRestaurantSeedBlocks.map(block => block.code);

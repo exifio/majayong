@@ -9,8 +9,8 @@ process.env.DATABASE_URL = assertTestDatabase(process.env.TEST_DATABASE_URL);
 const prisma = new PrismaClient();
 afterAll(async () => prisma.$disconnect());
 
-describe("A-00 seed safety", () => {
-  it("runs twice without duplicate catalog rows or overwriting an existing price", async () => {
+describe("A-00 시드 안전성", () => {
+  it("두 번 실행해도 카탈로그 행이 중복되거나 기존 가격을 덮어쓰지 않는다", async () => {
     const code = `A00-${randomUUID()}`;
     const seed = {
       code,

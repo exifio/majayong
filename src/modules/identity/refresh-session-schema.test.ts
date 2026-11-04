@@ -10,8 +10,8 @@ process.env.DATABASE_URL = databaseUrl;
 const prisma = new PrismaClient();
 afterAll(async () => prisma.$disconnect());
 
-describe("A-01 refresh session schema", () => {
-  it("stores hashed rotating refresh-token sessions with family lineage", async () => {
+describe("A-01 갱신 세션 스키마", () => {
+  it("패밀리 계보를 가진 해시된 회전 리프레시 토큰 세션을 저장한다", async () => {
     const columns = await prisma.$queryRaw<Array<{ column_name: string }>>`
       SELECT column_name
       FROM information_schema.columns
@@ -23,7 +23,7 @@ describe("A-01 refresh session schema", () => {
     ]));
   });
 
-  it("enforces unique token hashes and indexed family lookups", async () => {
+  it("토큰 해시 유일성과 패밀리 조회 인덱스를 강제한다", async () => {
     const indexes = await prisma.$queryRaw<Array<{ indexdef: string }>>`
       SELECT indexdef FROM pg_indexes
       WHERE schemaname = 'public' AND tablename = 'refresh_sessions'

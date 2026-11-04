@@ -8,7 +8,7 @@ const url = process.env.DATABASE_URL!;
 const db = new PrismaClient({ datasources: { db: { url } } });
 const db2 = new PrismaClient({ datasources: { db: { url } } });
 
-describe("PostgreSQL concurrency guards", () => {
+describe("PostgreSQL 동시성 가드", () => {
   const ids = {
     clientId: randomUUID(),
     supplierId: randomUUID(),
@@ -48,7 +48,7 @@ describe("PostgreSQL concurrency guards", () => {
     await db2.$disconnect();
   });
 
-  it("allows only one payment event per deposit/dedup key", async () => {
+  it("예치/중복 제거 키당 결제 이벤트를 하나만 허용한다", async () => {
     const dedupKey = randomUUID();
     const [a, b] = await Promise.allSettled([
       db.$executeRaw`INSERT INTO payment_events (id, "depositId", "eventType", "dedupKey") VALUES (${randomUUID()}, ${ids.depositId}, 'VERIFIED', ${dedupKey})`,
@@ -58,7 +58,7 @@ describe("PostgreSQL concurrency guards", () => {
     expect([a, b].filter((r) => r.status === "rejected").length).toBe(1);
   });
 
-  it("allows only one installment per contract/stage", async () => {
+  it("계약/단계당 분할 지급을 하나만 허용한다", async () => {
     const [a, b] = await Promise.allSettled([
       db.$executeRaw`INSERT INTO payment_installments (id, "contractId", stage, ratio, amount, "supplierFee", "releaseAmount") VALUES (${randomUUID()}, ${ids.contractId}, 'INTERIM', 50, 50, 2, 48)`,
       db2.$executeRaw`INSERT INTO payment_installments (id, "contractId", stage, ratio, amount, "supplierFee", "releaseAmount") VALUES (${randomUUID()}, ${ids.contractId}, 'INTERIM', 50, 50, 2, 48)`,

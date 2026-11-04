@@ -6,8 +6,8 @@ import {
   requestEmailChange,
 } from "./auth.ts";
 
-describe("verified email change", () => {
-  it("updates only after the signed link is used and cannot reuse it", async () => {
+describe("검증된 이메일 변경", () => {
+  it("서명된 링크를 사용한 뒤에만 변경되고 같은 링크는 재사용할 수 없다", async () => {
     const now = 1_800_000_000_000;
     const secret = "a-test-secret-that-is-at-least-32-characters";
     let email = "person@example.com";

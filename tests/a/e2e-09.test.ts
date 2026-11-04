@@ -80,8 +80,8 @@ afterAll(async () => {
   await db.$disconnect();
 });
 
-describe("E2E-09 support inquiry", () => {
-  it("client creates inquiry and admin answers", async () => {
+describe("E2E-09 고객 문의", () => {
+  it("의뢰인이 문의를 만들고 관리자가 답변한다", async () => {
     const clientId = await makeUser(Role.CLIENT);
     const adminId = await makeUser(Role.ADMIN);
     const clientToken = issueAccessToken({ userId: clientId, role: Role.CLIENT, expiresAt: Date.now() + 60_000 }, tokenSecret);

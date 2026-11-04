@@ -96,8 +96,8 @@ afterAll(async () => {
   await db.$disconnect();
 });
 
-describe("E2E-12 PII and security", () => {
-  it("does not expose client email/account or AI price in public project detail", async () => {
+describe("E2E-12 개인정보와 보안", () => {
+  it("공개 프로젝트 상세에서 의뢰인 이메일·계정·AI 단가를 노출하지 않는다", async () => {
     const client = await makeClient();
     const clientToken = issueAccessToken({ userId: client.id, role: Role.CLIENT, expiresAt: Date.now() + 60_000 }, tokenSecret);
     const supplierId = await makeSupplier();

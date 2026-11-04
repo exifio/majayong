@@ -67,8 +67,8 @@ afterAll(async () => {
   await db.$disconnect();
 });
 
-describe("A-04 draft catalog adapter", () => {
-  it("returns only active, unmerged default-draft blocks for DEFAULT_DRAFT", async () => {
+describe("A-04 초안 카탈로그 어댑터", () => {
+  it("DEFAULT_DRAFT에는 활성·미병합 기본 초안 블록만 반환한다", async () => {
     const clientId = await makeClient();
     const activeDefault = await makeBlock({ inDefaultDraft: true, isActive: true, recommendRank: 1, sortOrder: 1 });
     const nonDefault = await makeBlock({ inDefaultDraft: false, isActive: true, recommendRank: null, sortOrder: 2 });
@@ -83,7 +83,7 @@ describe("A-04 draft catalog adapter", () => {
     expect(defaults.pendingFeatures).toEqual([]);
   });
 
-  it("extracts about five features and resolves each to a generated block", async () => {
+  it("약 5개 기능을 추출하고 각각을 생성된 블록으로 연결한다", async () => {
     const clientId = await makeClient();
     const features = ["예약 달력", "예약금 결제", "노쇼 기록", "예약 알림", "리뷰 요청"];
     const adapter = createDraftCatalogAdapter(db, {
@@ -108,7 +108,7 @@ describe("A-04 draft catalog adapter", () => {
     expect(reused).toMatchObject({ reusedBlocks: 5, generatedBlocks: 0 });
   });
 
-  it("keeps one pending feature when extraction yields nothing", async () => {
+  it("추출 결과가 없으면 대기 기능 하나를 유지한다", async () => {
     const clientId = await makeClient();
     const adapter = createDraftCatalogAdapter(db, {
       extractor: featureExtractor([]),
@@ -122,7 +122,7 @@ describe("A-04 draft catalog adapter", () => {
     expect(result.pendingFeatures).toHaveLength(1);
   });
 
-  it("generates a catalog block from a pending feature and clears pending", async () => {
+  it("대기 기능에서 카탈로그 블록을 생성하고 대기 상태를 해제한다", async () => {
     const clientId = await makeClient();
     const adapter = createDraftCatalogAdapter(db, { generator: blockGenerator() });
     const pending = [{ key: randomUUID(), summary: "예약 취소 기능", attempts: 0, lastTriedAt: null }];
@@ -138,7 +138,7 @@ describe("A-04 draft catalog adapter", () => {
     expect(stored.isActive).toBe(true);
   });
 
-  it("keeps the pending feature unchanged when no generator is configured", async () => {
+  it("생성기가 설정되지 않으면 대기 기능을 그대로 둔다", async () => {
     const clientId = await makeClient();
     const adapter = createDraftCatalogAdapter(db, {});
     const pending = [{ key: randomUUID(), summary: "대기", attempts: 0, lastTriedAt: null }];

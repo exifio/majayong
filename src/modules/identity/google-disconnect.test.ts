@@ -2,8 +2,8 @@ import { describe, expect, it, jest } from "@jest/globals";
 import { AuthProvider, Role } from "@prisma/client";
 import { GoogleDisconnectStore, disconnectGoogle } from "./auth.ts";
 
-describe("Google account disconnect", () => {
-  it("requires a password before disconnecting a Google-only account", async () => {
+describe("Google 계정 연결 해제", () => {
+  it("Google 전용 계정은 연결 해제 전에 비밀번호를 요구한다", async () => {
     const now = new Date("2026-11-03T00:00:00.000Z");
     const store: GoogleDisconnectStore = {
       findByEmail: jest.fn(async () => null),

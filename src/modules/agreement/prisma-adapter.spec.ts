@@ -6,8 +6,8 @@ import type { AgreementDraft } from './draft.ts';
 
 const NOW = new Date('2026-11-03T12:00:00.000Z');
 
-describe('B-04 agreementDraft adapter', () => {
-  it('round-trips JSON dates', async () => {
+describe('B-04 합의 초안 어댑터', () => {
+  it('JSON 날짜를 왕복 변환한다', async () => {
     const databaseNull = Object.freeze({ dbNull: true });
     let stored: unknown = databaseNull;
     const prisma = {
@@ -37,7 +37,7 @@ describe('B-04 agreementDraft adapter', () => {
     assert.ok(loaded?.lastMessageAt instanceof Date);
   });
 
-  it('invalidates using the database-null sentinel', async () => {
+  it('DB NULL 센티널로 무효화한다', async () => {
     const databaseNull = Object.freeze({ dbNull: true });
     let stored: unknown = { stale: true };
     const prisma = {
@@ -57,7 +57,7 @@ describe('B-04 agreementDraft adapter', () => {
     assert.equal(await store.get('app-1'), null);
   });
 
-  it('round-trips validated agreement state and leaves evidence revalidation to the domain', async () => {
+  it('검증된 합의 상태를 왕복 변환하고 근거 재검증은 도메인에 맡긴다', async () => {
     const databaseNull = Object.freeze({ dbNull: true });
     let stored: unknown = databaseNull;
     const prisma = {
@@ -85,7 +85,7 @@ describe('B-04 agreementDraft adapter', () => {
     assert.equal(loaded?.ratioState, 'DECIDED');
   });
 
-  it('rejects malformed cached JSON at the database boundary', async () => {
+  it('DB 경계에서 잘못된 캐시 JSON을 거부한다', async () => {
     const prisma = {
       application: {
         async findUnique() { return { agreementDraft: { items: 'not-an-array' } }; },
