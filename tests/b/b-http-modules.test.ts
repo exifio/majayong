@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
-import { createApp } from '../../src/app.ts';
+import { createApp } from '../../src/http/create-app.ts';
 import { createDevAuthVerifier } from '../../src/http/auth.ts';
 import type { Actor } from '../../src/modules/application/dto.ts';
 import { createChatRouter } from '../../src/modules/chat/http.ts';

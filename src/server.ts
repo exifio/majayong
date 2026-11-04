@@ -7,7 +7,7 @@
  */
 import type { Express } from 'express';
 
-import { createApp, type MountedRouter } from './app.js';
+import { createApp, type MountedRouter } from './http/create-app.js';
 import type { AuthVerifier } from './http/auth.js';
 import {
   createApplicationRouter,
