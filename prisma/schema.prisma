@@ -1017,3 +1017,27 @@ model EventLog {
   @@index([contractId, occurredAt])
   @@map("event_logs")
 }
+
+enum FilePurpose {
+  DELIVERY
+  PORTFOLIO
+  SUPPORT_INQUIRY
+  CONTRACT_DOCUMENT
+}
+
+model FileAttachment {
+  id         String      @id @default(uuid())
+  purpose    FilePurpose
+  contractId String?
+  inquiryId  String?
+  uploaderId String
+  objectKey  String      @unique
+  fileName   String
+  fileSize   Int
+  mimeType   String
+  createdAt  DateTime    @default(now())
+
+  @@index([inquiryId])
+  @@index([contractId])
+  @@map("file_attachments")
+}

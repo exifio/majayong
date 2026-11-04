@@ -6,14 +6,16 @@
     "build": "tsc",
     "typecheck": "tsc --noEmit",
     "start": "node dist/index.js",
-    "test": "npm run test:b && npm run test:a",
+    "test": "npm run test:b && npm run test:c && npm run test:a",
     "db:validate": "prisma validate --schema prisma/schema.prisma",
     "db:generate": "prisma generate --schema prisma/schema.prisma",
     "db:migrate": "prisma migrate deploy --schema prisma/schema.prisma",
     "db:verify:b": "node scripts/verify-b-pg.mjs",
     "test:a": "jest --runInBand tests/a",
     "test:b": "node --import ./tests/b/resolve-ts.mjs --test tests/b",
-    "test:c": "jest --runInBand tests/c"
+    "test:c": "node --test tests/c/*.test.ts",
+    "test:integration": "node --test tests/integration/*.test.ts",
+    "test:typecheck": "tsc -p tsconfig.test.json"
   },
   "devDependencies": {
     "@types/express": "^5.0.6",
