@@ -21,6 +21,41 @@
     try { sessionStorage.removeItem(SIGNUP_KEY); } catch { /* ignore */ }
   }
 
+  function escapeHtml(value) {
+    return String(value ?? '').replace(/[&<>"']/g, (character) => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+    }[character]));
+  }
+
+  function won(value) {
+    return typeof value === 'number' && Number.isFinite(value)
+      ? `${value.toLocaleString('ko-KR')}원`
+      : '미정';
+  }
+
+  function industryLabel(code) {
+    if (code === 'RESTAURANT_RESERVATION') return '음식점';
+    if (!code) return '기타';
+    return String(code);
+  }
+
+  function formatDeadline(iso) {
+    if (!iso) return '마감일 미정';
+    const date = new Date(iso);
+    if (Number.isNaN(date.getTime())) return '마감일 미정';
+    return `마감 ${new Intl.DateTimeFormat('ko-KR', { timeZone: 'Asia/Seoul', month: 'long', day: 'numeric' }).format(date)}`;
+  }
+
+  function conditionText(conditions) {
+    if (!Array.isArray(conditions)) return '';
+    return conditions
+      .map((condition) => (typeof condition === 'string'
+        ? condition
+        : (condition && typeof condition === 'object' && 'text' in condition ? String(condition.text ?? '') : '')))
+      .filter(Boolean)
+      .join(' · ');
+  }
+
   function showError(anchor, message) {
     let box = $('#flow-error');
     if (!box) {
@@ -87,6 +122,206 @@
     const next = new Date(date);
     next.setDate(next.getDate() + days);
     return next;
+  }
+
+  if (screen === 'Find-Supplier') {
+    if (!MJ.requireLogin('/Find-Supplier')) return;
+    const section = document.querySelector('section[aria-label="프로젝트 목록"]');
+    if (!section) return;
+    let list = section.querySelector('.plist');
+    if (!list) {
+      list = document.createElement('div');
+      list.className = 'plist';
+      section.insertBefore(list, section.querySelector('.foot2'));
+    }
+    list.innerHTML = '<p class="sec" style="padding:24px 0">프로젝트를 불러오는 중…</p>';
+
+    MJ.request('/projects?page=1&pageSize=10')
+      .then((items) => {
+        list.innerHTML = '';
+        const rows = Array.isArray(items) ? items : [];
+        const count = section.querySelector('.cnt');
+        if (count) count.textContent = `모집 프로젝트 ${rows.length}건`;
+        if (rows.length === 0) {
+          list.innerHTML = '<div class="empty"><h2>모집 중인 프로젝트가 없습니다</h2><p>새 프로젝트가 등록되면 여기에 표시됩니다.</p></div>';
+          return;
+        }
+        for (const project of rows) {
+          const closed = project.status !== 'RECRUITING';
+          const article = document.createElement('article');
+          article.className = `pc${closed ? ' closed' : ''}`;
+          article.innerHTML = `<div class="l">
+            <div class="top">
+              <span class="chip">${escapeHtml(industryLabel(project.industryCode))}</span>
+              ${closed ? '<span class="chip out">모집 마감</span>' : ''}
+              <span class="dl${closed ? '' : ' soon'}">${escapeHtml(formatDeadline(project.deadline))}</span>
+            </div>
+            <h2 class="ti">${escapeHtml(project.title)}</h2>
+            <p class="it">명세 항목 <b>${Number(project.itemCount) || 0}개</b></p>
+            <div class="stk">${(project.requiredSkills || []).map((skill) => `<span class="tag">${escapeHtml(skill)}</span>`).join('')}</div>
+          </div>
+          <div class="r">
+            <div class="bud"><p class="k">희망 예산</p><div class="v">${escapeHtml(project.hopeBudgetBand || '미정')}</div></div>
+            <div class="rt2"><a class="btn sm ${closed ? 'gh' : 'tint'}" href="/Project-Supplier?projectId=${encodeURIComponent(project.projectId)}">${closed ? '명세 보기' : '명세 열어보기'}</a></div>
+          </div>`;
+          list.appendChild(article);
+        }
+        const pager = section.querySelector('.pager');
+        if (pager) pager.style.display = 'none';
+        const empty = section.querySelector('.empty');
+        if (empty) empty.style.display = 'none';
+      })
+      .catch((error) => {
+        list.innerHTML = `<div class="empty"><h2>프로젝트를 불러오지 못했습니다</h2><p>${escapeHtml(error.message)}</p></div>`;
+        if (error.code === 'SUPPLIER_NDA_REQUIRED') {
+          const link = document.createElement('a');
+          link.className = 'btn tint';
+          link.href = '/Signup-Supplier';
+          link.textContent = '공급자 프로필·NDA 입력하기';
+          list.querySelector('.empty')?.appendChild(link);
+        }
+      });
+    return;
+  }
+
+  if (screen === 'Project-Supplier') {
+    const projectId = new URL(location.href).searchParams.get('projectId');
+    if (!projectId) return;
+    if (!MJ.requireLogin(location.pathname + location.search)) return;
+
+    MJ.request(`/projects/${encodeURIComponent(projectId)}`)
+      .then((project) => {
+        const items = Array.isArray(project.items) ? project.items : [];
+        const title = document.querySelector('h1.t');
+        if (title) title.textContent = project.title;
+        const sub = document.querySelector('.sub');
+        if (sub) sub.textContent = `명세 항목 ${items.length}개 · ${formatDeadline(project.deadline)}`;
+        const budget = document.querySelector('.budget .big');
+        if (budget) budget.textContent = won(project.hopeBudget);
+        const meta = document.querySelectorAll('.budget .meta div b');
+        if (meta[0]) meta[0].textContent = formatDeadline(project.deadline).replace('마감 ', '');
+        if (meta[1]) meta[1].textContent = `${items.length}개`;
+
+        const host = document.querySelector('.lay > div');
+        if (host) {
+          host.querySelectorAll('.fc:not(.pay)').forEach((element) => element.remove());
+          const pay = host.querySelector('.fc.pay');
+          items.forEach((item, index) => {
+            const section = document.createElement('section');
+            section.className = 'fc';
+            section.innerHTML = `<div class="nmrow"><span class="no">${index + 1}</span><span class="nm">${escapeHtml(item.title)}</span></div>
+              <p class="ds">${escapeHtml(item.description)}</p>
+              <div class="dec"><p class="k">공급자와 정할 것</p><div class="tg2">${(Array.isArray(item.conditions) ? item.conditions : [])
+                .map((condition) => `<span>${escapeHtml(typeof condition === 'string' ? condition : (condition?.text || ''))}</span>`)
+                .join('')}</div></div>`;
+            if (pay) host.insertBefore(section, pay);
+            else host.appendChild(section);
+          });
+          const heading = host.querySelector('.secH h2');
+          if (heading) heading.textContent = `기능 ${items.length}개`;
+        }
+
+        const cta = document.querySelector('a[href*="QuoteWrite-Supplier"]');
+        if (cta) {
+          if (project.status === 'RECRUITING') {
+            cta.href = `/QuoteWrite-Supplier?projectId=${encodeURIComponent(projectId)}`;
+          } else {
+            cta.removeAttribute('href');
+            cta.classList.add('off');
+            cta.setAttribute('aria-disabled', 'true');
+            cta.textContent = '모집이 마감되었습니다';
+          }
+        }
+      })
+      .catch((error) => showError(document.body, error.message));
+    return;
+  }
+
+  if (screen === 'QuoteWrite-Supplier') {
+    const projectId = new URL(location.href).searchParams.get('projectId');
+    if (!projectId) return;
+    if (!MJ.requireLogin(location.href)) return;
+
+    MJ.request(`/projects/${encodeURIComponent(projectId)}`)
+      .then((project) => {
+        const items = Array.isArray(project.items) ? project.items : [];
+        const container = document.querySelector('.items');
+        if (!container) return;
+        container.innerHTML = '';
+        items.forEach((item, index) => {
+          const row = document.createElement('div');
+          row.className = `ir${index === 0 ? ' first' : ''}`;
+          row.dataset.specItemId = item.specItemId || '';
+          row.dataset.available = 'true';
+          row.innerHTML = `<div style="min-width:0">
+            <div class="nm">${escapeHtml(item.title)}</div>
+            <div class="ds">${escapeHtml(item.description)}</div>
+            <div class="cd">공급자와 정할 것 · <b>${escapeHtml(conditionText(item.conditions))}</b></div>
+          </div>
+          <span class="tg2" role="group" aria-label="${escapeHtml(item.title)} 가능 여부">
+            <span class="on" data-avail="true">가능</span><span data-avail="false">불가</span>
+          </span>`;
+          const toggles = row.querySelectorAll('[data-avail]');
+          toggles.forEach((toggle) => toggle.addEventListener('click', () => {
+            const available = toggle.dataset.avail === 'true';
+            row.dataset.available = String(available);
+            toggles[0].className = available ? 'on' : '';
+            toggles[1].className = available ? '' : 'on no';
+          }));
+          container.appendChild(row);
+        });
+
+        const count = document.querySelector('#h-it span');
+        if (count) count.textContent = `할 수 있는 항목 ${items.length} / ${items.length}`;
+        const amount = $('#amt');
+        if (amount && project.hopeBudget !== null && project.hopeBudget !== undefined) {
+          amount.value = String(project.hopeBudget);
+        }
+        const days = $('#days');
+        if (days && !days.value) days.value = '42';
+
+        const submit = document.querySelector('.sumc a.btn');
+        if (!submit) return;
+        submit.addEventListener('click', async (event) => {
+          event.preventDefault();
+          clearError();
+          const rows = [...container.querySelectorAll('.ir[data-spec-item-id]')]
+            .map((row) => ({ specItemId: row.dataset.specItemId, isAvailable: row.dataset.available === 'true' }))
+            .filter((row) => Boolean(row.specItemId));
+          if (rows.length === 0 || rows.every((row) => !row.isAvailable)) {
+            showError(submit, '할 수 있는 항목을 하나 이상 골라 주세요.');
+            return;
+          }
+          const totalAmount = Number(String(amount?.value || '').replace(/[^\d]/g, ''));
+          const durationDays = Number(String(days?.value || '').replace(/[^\d]/g, ''));
+          if (!Number.isInteger(totalAmount) || totalAmount <= 0) {
+            showError(submit, '총액을 입력해 주세요.');
+            return;
+          }
+          if (!Number.isInteger(durationDays) || durationDays <= 0) {
+            showError(submit, '작업 기간을 입력해 주세요.');
+            return;
+          }
+          busy(submit, true, '제출하는 중…');
+          try {
+            await MJ.request(`/projects/${encodeURIComponent(projectId)}/applications`, {
+              method: 'POST',
+              body: {
+                items: rows,
+                totalAmount,
+                durationDays,
+                ...(($('#msg')?.value.trim() || '') ? { message: $('#msg').value.trim() } : {}),
+              },
+            });
+            location.assign('/Apps-Supplier');
+          } catch (error) {
+            busy(submit, false);
+            showError(submit, error.message);
+          }
+        });
+      })
+      .catch((error) => showError(document.body, error.message));
+    return;
   }
 
   if (screen === 'Signup') {

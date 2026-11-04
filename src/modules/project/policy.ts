@@ -22,6 +22,8 @@ export type PublicProjectSummary = {
 };
 
 export type PublicSpecItem = {
+  /** 지원 제출 시 필요한 명세 항목 식별자. 공개 UUID이며 개인정보가 아니다. */
+  specItemId?: string;
   title: string;
   description: string;
   conditions: unknown;
