@@ -219,7 +219,7 @@ describe("E2E-05 납품·검수·정산", () => {
     try {
       const installments = await req(baseUrl, "GET", `/api/v1/contracts/${seed.contractId}/installments`, clientToken);
       expect(installments.status).toBe(200);
-      const installmentRows = installments.body.installments as Array<{ id: string; stage: string }>;
+      const installmentRows = installments.body.data.installments as Array<{ id: string; stage: string }>;
       const interim = installmentRows.find(row => row.stage === "INTERIM");
       const final = installmentRows.find(row => row.stage === "FINAL");
       if (!interim || !final) throw new Error("installments missing");
@@ -233,7 +233,7 @@ describe("E2E-05 납품·검수·정산", () => {
         });
         expect(submitted.status).toBe(201);
         const approved = await req(baseUrl, "POST", `/api/v1/contract-items/${contractItemId}/approve`, clientToken, {
-          deliveryId: submitted.body.id,
+          deliveryId: submitted.body.data.id,
         });
         expect(approved.status).toBe(200);
         await services.settlement.releaseInstallment({ installmentId: installment.id });
@@ -298,7 +298,7 @@ describe("E2E-06 상호 리뷰", () => {
 
       const list = await req(baseUrl, "GET", `/api/v1/contracts/${seed.contractId}/reviews`, clientToken);
       expect(list.status).toBe(200);
-      expect(list.body).toHaveLength(2);
+      expect(list.body.data).toHaveLength(2);
 
       const profile = await db.supplierProfile.findUniqueOrThrow({ where: { userId: seed.supplierId } });
       expect(profile.ratingAvg).toBe(5);

@@ -32,7 +32,16 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DataEnvelope'
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SupplierApplicationCardDto'
+                  meta:
+                    type: object
+                    additionalProperties: true
         '401':
           $ref: '#/components/responses/Unauthenticated'
         '403':
@@ -60,7 +69,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DataEnvelope'
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ApplicationRevisionDto'
+                  meta:
+                    type: object
+                    additionalProperties: true
         '401':
           $ref: '#/components/responses/Unauthenticated'
         '403':
@@ -81,7 +97,16 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DataEnvelope'
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ApplicationRevisionDto'
+                  meta:
+                    type: object
+                    additionalProperties: true
         '401':
           $ref: '#/components/responses/Unauthenticated'
         '403':
@@ -104,7 +129,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DataEnvelope'
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ApplicationRevisionDto'
+                  meta:
+                    type: object
+                    additionalProperties: true
         '401':
           $ref: '#/components/responses/Unauthenticated'
         '403':
@@ -134,7 +166,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DataEnvelope'
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ApplicationStatusResultDto'
+                  meta:
+                    type: object
+                    additionalProperties: true
         '401':
           $ref: '#/components/responses/Unauthenticated'
         '403':
@@ -164,7 +203,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DataEnvelope'
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ApplicationStatusResultDto'
+                  meta:
+                    type: object
+                    additionalProperties: true
         '401':
           $ref: '#/components/responses/Unauthenticated'
         '403':
@@ -193,7 +239,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DataEnvelope'
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ReviseApplicationResultDto'
+                  meta:
+                    type: object
+                    additionalProperties: true
         '401':
           $ref: '#/components/responses/Unauthenticated'
         '403':
@@ -214,7 +267,16 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DataEnvelope'
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/BookmarkListItemDto'
+                  meta:
+                    type: object
+                    additionalProperties: true
         '401':
           $ref: '#/components/responses/Unauthenticated'
         '403':
@@ -244,7 +306,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DataEnvelope'
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/BookmarkDto'
+                  meta:
+                    type: object
+                    additionalProperties: true
         '401':
           $ref: '#/components/responses/Unauthenticated'
         '403':
@@ -273,7 +342,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DataEnvelope'
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/RemoveBookmarkResultDto'
+                  meta:
+                    type: object
+                    additionalProperties: true
         '401':
           $ref: '#/components/responses/Unauthenticated'
         '403':
@@ -296,7 +372,16 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DataEnvelope'
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/RecommendedProjectDto'
+                  meta:
+                    type: object
+                    additionalProperties: true
         '401':
           $ref: '#/components/responses/Unauthenticated'
         '403':
@@ -317,7 +402,16 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DataEnvelope'
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ChatRoomSummaryDto'
+                  meta:
+                    type: object
+                    additionalProperties: true
         '401':
           $ref: '#/components/responses/Unauthenticated'
         '403':
@@ -347,7 +441,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DataEnvelope'
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/OpenChatResultDto'
+                  meta:
+                    type: object
+                    additionalProperties: true
         '401':
           $ref: '#/components/responses/Unauthenticated'
         '403':
@@ -371,7 +472,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DataEnvelope'
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ConversationViewDto'
+                  meta:
+                    type: object
+                    additionalProperties: true
         '401':
           $ref: '#/components/responses/Unauthenticated'
         '403':
@@ -399,7 +507,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DataEnvelope'
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ChatMessageDto'
+                  meta:
+                    type: object
+                    additionalProperties: true
         '401':
           $ref: '#/components/responses/Unauthenticated'
         '403':
@@ -429,7 +544,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DataEnvelope'
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/UpdatedCountDto'
+                  meta:
+                    type: object
+                    additionalProperties: true
         '401':
           $ref: '#/components/responses/Unauthenticated'
         '403':
@@ -452,7 +574,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DataEnvelope'
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/AgreementPreviewDto'
+                  meta:
+                    type: object
+                    additionalProperties: true
         '401':
           $ref: '#/components/responses/Unauthenticated'
         '403':
@@ -482,7 +611,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DataEnvelope'
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ConfirmAgreementResultDto'
+                  meta:
+                    type: object
+                    additionalProperties: true
         '401':
           $ref: '#/components/responses/Unauthenticated'
         '403':
@@ -503,7 +639,16 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DataEnvelope'
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ContractRecordDto'
+                  meta:
+                    type: object
+                    additionalProperties: true
         '401':
           $ref: '#/components/responses/Unauthenticated'
         '403':
@@ -526,7 +671,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DataEnvelope'
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ContractRecordDto'
+                  meta:
+                    type: object
+                    additionalProperties: true
         '401':
           $ref: '#/components/responses/Unauthenticated'
         '403':
@@ -549,7 +701,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DataEnvelope'
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ContractDocumentDto'
+                  meta:
+                    type: object
+                    additionalProperties: true
         '401':
           $ref: '#/components/responses/Unauthenticated'
         '403':
@@ -578,7 +737,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DataEnvelope'
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/SignContractResultDto'
+                  meta:
+                    type: object
+                    additionalProperties: true
         '401':
           $ref: '#/components/responses/Unauthenticated'
         '403':
@@ -608,7 +774,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DataEnvelope'
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/BreakContractResultDto'
+                  meta:
+                    type: object
+                    additionalProperties: true
         '401':
           $ref: '#/components/responses/Unauthenticated'
         '403':
@@ -638,7 +811,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DataEnvelope'
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/BreakContractResultDto'
+                  meta:
+                    type: object
+                    additionalProperties: true
         '401':
           $ref: '#/components/responses/Unauthenticated'
         '403':
@@ -661,7 +841,18 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DataEnvelope'
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/NotificationDto'
+                  meta:
+                    type: object
+                    required: [unreadCount]
+                    properties:
+                      unreadCount: { type: integer }
         '401':
           $ref: '#/components/responses/Unauthenticated'
         '403':
@@ -684,7 +875,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DataEnvelope'
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/NotificationReadResultDto'
+                  meta:
+                    type: object
+                    additionalProperties: true
         '401':
           $ref: '#/components/responses/Unauthenticated'
         '403':
@@ -705,7 +903,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DataEnvelope'
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/UpdatedCountDto'
+                  meta:
+                    type: object
+                    additionalProperties: true
         '401':
           $ref: '#/components/responses/Unauthenticated'
         '403':
@@ -734,7 +939,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DataEnvelope'
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ReportDto'
+                  meta:
+                    type: object
+                    additionalProperties: true
         '401':
           $ref: '#/components/responses/Unauthenticated'
         '403':
@@ -757,7 +969,16 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DataEnvelope'
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ReportDto'
+                  meta:
+                    type: object
+                    additionalProperties: true
         '401':
           $ref: '#/components/responses/Unauthenticated'
         '403':
@@ -780,7 +1001,16 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DataEnvelope'
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ReportDto'
+                  meta:
+                    type: object
+                    additionalProperties: true
         '401':
           $ref: '#/components/responses/Unauthenticated'
         '403':
@@ -809,7 +1039,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DataEnvelope'
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ResolveReportResultDto'
+                  meta:
+                    type: object
+                    additionalProperties: true
         '401':
           $ref: '#/components/responses/Unauthenticated'
         '403':
@@ -836,7 +1073,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DataEnvelope'
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/InquiryDto'
+                  meta:
+                    type: object
+                    additionalProperties: true
         '401':
           $ref: '#/components/responses/Unauthenticated'
         '403':
@@ -856,7 +1100,16 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DataEnvelope'
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/InquiryDto'
+                  meta:
+                    type: object
+                    additionalProperties: true
         '401':
           $ref: '#/components/responses/Unauthenticated'
         '403':
@@ -879,7 +1132,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DataEnvelope'
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/InquiryDto'
+                  meta:
+                    type: object
+                    additionalProperties: true
         '401':
           $ref: '#/components/responses/Unauthenticated'
         '403':
@@ -902,7 +1162,16 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DataEnvelope'
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/InquiryDto'
+                  meta:
+                    type: object
+                    additionalProperties: true
         '401':
           $ref: '#/components/responses/Unauthenticated'
         '403':
@@ -931,7 +1200,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DataEnvelope'
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/InquiryDto'
+                  meta:
+                    type: object
+                    additionalProperties: true
         '401':
           $ref: '#/components/responses/Unauthenticated'
         '403':
@@ -1157,3 +1433,444 @@ components:
       required: [answer]
       properties:
         answer: { type: string, minLength: 1, maxLength: 5000 }
+    ApplicationRecordDto:
+      type: object
+      required: [id, projectId, clientUserId, supplierId, revisionNo, specVersionNo, status, totalAmount, durationDays, firstViewedAt, submittedAt]
+      properties:
+        id: { type: string }
+        projectId: { type: string }
+        clientUserId: { type: string }
+        supplierId: { type: string }
+        revisionNo: { type: integer }
+        specVersionNo: { type: integer }
+        status: { type: string, enum: [SUBMITTED, STALE, ACCEPTED, REJECTED, AUTO_REJECTED, WITHDRAWN, SUPERSEDED] }
+        totalAmount: { type: integer }
+        durationDays: { type: integer }
+        firstViewedAt: { type: string, format: date-time }
+        submittedAt: { type: string, format: date-time }
+    ApplicationRevisionDto:
+      allOf:
+        - $ref: '#/components/schemas/ApplicationRecordDto'
+        - type: object
+          required: [message, questions, isMessageMasked, revisionReason, items]
+          properties:
+            message: { type: [string, 'null'] }
+            questions:
+              type: array
+              items:
+                type: object
+                required: [text]
+                properties:
+                  text: { type: string }
+            isMessageMasked: { type: boolean }
+            revisionReason: { type: [string, 'null'] }
+            items:
+              type: array
+              items:
+                type: object
+                required: [specItemId, isAvailable]
+                properties:
+                  specItemId: { type: string }
+                  isAvailable: { type: boolean }
+    SupplierApplicationCardDto:
+      type: object
+      required: [applicationId, supplierId, revisionNo, totalAmount, durationDays, questionCount, revisionCount, submittedAt, careerYears, ratingAvg, reviewCount, completedContractCount, portfolioSummary]
+      properties:
+        applicationId: { type: string }
+        supplierId: { type: string }
+        revisionNo: { type: integer }
+        totalAmount: { type: integer }
+        durationDays: { type: integer }
+        questionCount: { type: integer }
+        revisionCount: { type: integer }
+        submittedAt: { type: string, format: date-time }
+        careerYears: { type: [integer, 'null'] }
+        ratingAvg: { type: [number, 'null'] }
+        reviewCount: { type: integer }
+        completedContractCount: { type: integer }
+        portfolioSummary: { type: [string, 'null'] }
+    ApplicationStatusResultDto:
+      type: object
+      required: [status]
+      properties:
+        status: { type: string, enum: [SUBMITTED, STALE, ACCEPTED, REJECTED, AUTO_REJECTED, WITHDRAWN, SUPERSEDED] }
+    RemoveBookmarkResultDto:
+      type: object
+      required: [removed]
+      properties:
+        removed: { type: boolean }
+    OpenChatResultDto:
+      type: object
+      required: [opened]
+      properties:
+        opened: { type: boolean }
+    ReviseApplicationResultDto:
+      type: object
+      required: [previous, current]
+      properties:
+        previous: { $ref: '#/components/schemas/ApplicationRevisionDto' }
+        current: { $ref: '#/components/schemas/ApplicationRevisionDto' }
+    HopeBudgetRangeDto:
+      type: object
+      required: [minKrw, maxKrw]
+      properties:
+        minKrw: { type: integer }
+        maxKrw: { type: integer }
+    PublicProjectSummaryDto:
+      type: object
+      required: [id, title, summary, industryCode, requiredSkills, hopeBudgetRange, deadline, status, publishedAt, currentSpecVersion, specItemCount, specItemTitles]
+      properties:
+        id: { type: string }
+        title: { type: string }
+        summary: { type: string }
+        industryCode: { type: string }
+        requiredSkills:
+          type: array
+          items: { type: string }
+        hopeBudgetRange:
+          oneOf:
+            - $ref: '#/components/schemas/HopeBudgetRangeDto'
+            - type: 'null'
+        deadline:
+          oneOf:
+            - { type: string, format: date-time }
+            - type: 'null'
+        status: { type: string, enum: [SCHEDULED, RECRUITING, SELECTING, ACCEPTED, CONTRACTED, EXPIRED] }
+        publishedAt:
+          oneOf:
+            - { type: string, format: date-time }
+            - type: 'null'
+        currentSpecVersion: { type: integer }
+        specItemCount: { type: integer }
+        specItemTitles:
+          type: array
+          items: { type: string }
+    RecommendedProjectDto:
+      type: object
+      required: [project, matchedSkills]
+      properties:
+        project: { $ref: '#/components/schemas/PublicProjectSummaryDto' }
+        matchedSkills:
+          type: array
+          items: { type: string }
+    BookmarkDto:
+      type: object
+      required: [supplierId, projectId, createdAt]
+      properties:
+        supplierId: { type: string }
+        projectId: { type: string }
+        createdAt: { type: string, format: date-time }
+    BookmarkListItemDto:
+      type: object
+      required: [project, createdAt, applicationOpen]
+      properties:
+        project: { $ref: '#/components/schemas/PublicProjectSummaryDto' }
+        createdAt: { type: string, format: date-time }
+        applicationOpen: { type: boolean }
+    ChatApplicationDto:
+      type: object
+      required: [id, projectId, clientUserId, supplierId, status, contractStatus]
+      properties:
+        id: { type: string }
+        projectId: { type: string }
+        clientUserId: { type: string }
+        supplierId: { type: string }
+        status: { type: string, enum: [SUBMITTED, STALE, ACCEPTED, REJECTED, AUTO_REJECTED, WITHDRAWN, SUPERSEDED] }
+        contractStatus:
+          oneOf:
+            - { type: string, enum: [PENDING_CONSENT, ACTIVE, CANCEL_REQUESTED, COMPLETED, CANCELLED] }
+            - type: 'null'
+    ChatMessageDto:
+      type: object
+      required: [id, applicationId, senderId, kind, body, isMasked, readAt, createdAt]
+      properties:
+        id: { type: string }
+        applicationId: { type: string }
+        senderId:
+          oneOf:
+            - { type: string }
+            - type: 'null'
+        kind: { type: string, enum: [TEXT, SYSTEM] }
+        body:
+          type: string
+          description: 계약 ACTIVE 전에는 연락처 원문이 서버에서 `[연락처 비공개]`로 치환되어 저장·반환된다. FE는 이 문자열을 자체 표시 토큰으로 매핑한다.
+        isMasked:
+          type: boolean
+          description: 본문에 `[연락처 비공개]` 치환이 포함되면 true.
+        readAt:
+          oneOf:
+            - { type: string, format: date-time }
+            - type: 'null'
+        createdAt: { type: string, format: date-time }
+    ChatRoomSummaryDto:
+      allOf:
+        - $ref: '#/components/schemas/ChatApplicationDto'
+        - type: object
+          required: [projectTitle, counterpartDisplayName, lastMessage, unreadCount]
+          properties:
+            projectTitle: { type: string }
+            counterpartDisplayName: { type: string }
+            lastMessage:
+              oneOf:
+                - $ref: '#/components/schemas/ChatMessageDto'
+                - type: 'null'
+            unreadCount: { type: integer }
+    ConversationViewDto:
+      type: object
+      required: [messages, unreadCount]
+      properties:
+        messages:
+          type: array
+          items: { $ref: '#/components/schemas/ChatMessageDto' }
+        unreadCount: { type: integer }
+    AgreementConditionDto:
+      type: object
+      required: [key, text, state, evidenceMessageIds]
+      properties:
+        key: { type: string }
+        text: { type: string }
+        state: { type: string, enum: [DECIDED, PROPOSED, UNDECIDED] }
+        evidenceMessageIds:
+          type: array
+          items: { type: string }
+    AgreementItemDto:
+      type: object
+      required: [blockId, specItemId, title, stage, conditions]
+      properties:
+        blockId: { type: string }
+        specItemId:
+          oneOf:
+            - { type: string }
+            - type: 'null'
+        title: { type: string }
+        stage: { type: string, enum: [INTERIM, FINAL] }
+        conditions:
+          type: array
+          items: { $ref: '#/components/schemas/AgreementConditionDto' }
+    AgreementDraftDto:
+      type: object
+      required: [items, interimRatio, ratioState, cachedAt, lastMessageAt]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/AgreementItemDto' }
+        interimRatio: { type: number }
+        ratioState: { type: string, enum: [DECIDED, PROPOSED, UNDECIDED] }
+        cachedAt: { type: string, format: date-time }
+        lastMessageAt:
+          oneOf:
+            - { type: string, format: date-time }
+            - type: 'null'
+    AgreementPreviewDto:
+      type: object
+      required: [draft, stale, readOnly]
+      properties:
+        draft: { $ref: '#/components/schemas/AgreementDraftDto' }
+        stale: { type: boolean }
+        readOnly: { type: boolean, const: true }
+    ContractItemDto:
+      type: object
+      required: [blockId, title, description, origin, stage, sortOrder, conditions]
+      properties:
+        blockId: { type: string }
+        title: { type: string }
+        description: { type: string }
+        origin: { type: string, enum: [FIRST_SENTENCE, CHAT, RECOMMENDATION, DEFAULT_DRAFT, AGREEMENT] }
+        stage: { type: string, enum: [INTERIM, FINAL] }
+        sortOrder: { type: integer }
+        conditions:
+          type: array
+          items: { $ref: '#/components/schemas/AgreementConditionDto' }
+    ContractRecordDto:
+      type: object
+      required: [id, applicationId, projectId, clientUserId, supplierId, status, specVersionNo, agreedAmount, durationDays, clientFee, supplierFee, interimRatio, consentDeadline, contentHash, clientSignedAt, supplierSignedAt, depositDeadline, paymentStatus, totalDeposited, items]
+      properties:
+        id: { type: string }
+        applicationId: { type: string }
+        projectId: { type: string }
+        clientUserId: { type: string }
+        supplierId: { type: string }
+        status: { type: string, enum: [PENDING_CONSENT, ACTIVE, CANCEL_REQUESTED, COMPLETED, CANCELLED] }
+        specVersionNo: { type: integer }
+        agreedAmount: { type: integer }
+        durationDays: { type: integer }
+        clientFee: { type: integer }
+        supplierFee: { type: integer }
+        interimRatio: { type: number }
+        consentDeadline: { type: string, format: date-time }
+        contentHash: { type: string }
+        clientSignedAt:
+          oneOf:
+            - { type: string, format: date-time }
+            - type: 'null'
+        supplierSignedAt:
+          oneOf:
+            - { type: string, format: date-time }
+            - type: 'null'
+        depositDeadline:
+          oneOf:
+            - { type: string, format: date-time }
+            - type: 'null'
+        paymentStatus: { type: string, enum: [PENDING, DEPOSITED, PARTIALLY_RELEASED, RELEASED, REFUNDED] }
+        totalDeposited: { type: integer }
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/ContractItemDto' }
+    ProvisionalContractPlanDto:
+      type: object
+      required: [applicationId, projectId, specVersionNo, agreedAmount, durationDays, clientFee, supplierFee, interimRatio, consentDeadline, contentHash, items]
+      properties:
+        applicationId: { type: string }
+        projectId: { type: string }
+        specVersionNo: { type: integer }
+        agreedAmount: { type: integer }
+        durationDays: { type: integer }
+        clientFee: { type: integer }
+        supplierFee: { type: integer }
+        interimRatio: { type: number }
+        consentDeadline: { type: string, format: date-time }
+        contentHash: { type: string }
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/ContractItemDto' }
+    ConfirmAgreementResultDto:
+      type: object
+      required: [contract, plan]
+      properties:
+        contract: { $ref: '#/components/schemas/ContractRecordDto' }
+        plan: { $ref: '#/components/schemas/ProvisionalContractPlanDto' }
+    SignContractResultDto:
+      type: object
+      required: [contract, activated]
+      properties:
+        contract: { $ref: '#/components/schemas/ContractRecordDto' }
+        activated: { type: boolean }
+    BreakContractResultDto:
+      type: object
+      required: [broken, contract, projectStatus]
+      properties:
+        broken: { type: boolean }
+        contract:
+          oneOf:
+            - $ref: '#/components/schemas/ContractRecordDto'
+            - type: 'null'
+        projectStatus:
+          oneOf:
+            - { type: string, enum: [SCHEDULED, RECRUITING, SELECTING, ACCEPTED, CONTRACTED, EXPIRED] }
+            - type: 'null'
+    ContractDocumentDto:
+      type: object
+      required: [contractId, contentHash, status, agreedAmount, clientFee, supplierFee, interimRatio, depositAmount, supplierPayout, items]
+      properties:
+        contractId: { type: string }
+        contentHash: { type: string }
+        status: { type: string, enum: [PENDING_CONSENT, ACTIVE, CANCEL_REQUESTED, COMPLETED, CANCELLED] }
+        agreedAmount: { type: integer }
+        clientFee: { type: integer }
+        supplierFee: { type: integer }
+        interimRatio: { type: number }
+        depositAmount: { type: integer }
+        supplierPayout: { type: integer }
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/ContractItemDto' }
+    NotificationDto:
+      type: object
+      required: [id, userId, type, targetUrl, targetId, payload, isRead, createdAt]
+      properties:
+        id: { type: string }
+        userId: { type: string }
+        type: { type: string }
+        targetUrl: { type: string }
+        targetId: { type: string }
+        payload:
+          oneOf:
+            - type: object
+              additionalProperties: true
+            - type: 'null'
+        isRead: { type: boolean }
+        createdAt: { type: string, format: date-time }
+    NotificationReadResultDto:
+      type: object
+      required: [isRead]
+      properties:
+        isRead: { type: boolean, const: true }
+    UpdatedCountDto:
+      type: object
+      required: [updated]
+      properties:
+        updated: { type: integer }
+    ReportDto:
+      type: object
+      required: [id, messageId, reporterId, targetUserId, reason, detail, status, action, actionNote, resolvedById, resolvedAt, createdAt]
+      properties:
+        id: { type: string }
+        messageId: { type: string }
+        reporterId: { type: string }
+        targetUserId: { type: string }
+        reason: { type: string, enum: [CONTACT_OR_OFFSITE, ABUSE, FALSE_INFO, OTHER] }
+        detail:
+          oneOf:
+            - { type: string }
+            - type: 'null'
+        status: { type: string, enum: [OPEN, RESOLVED] }
+        action:
+          oneOf:
+            - { type: string, enum: [NONE, WARNING, CHAT_RESTRICT_7D, SUSPEND] }
+            - type: 'null'
+        actionNote:
+          oneOf:
+            - { type: string }
+            - type: 'null'
+        resolvedById:
+          oneOf:
+            - { type: string }
+            - type: 'null'
+        resolvedAt:
+          oneOf:
+            - { type: string, format: date-time }
+            - type: 'null'
+        createdAt: { type: string, format: date-time }
+    ResolveReportResultDto:
+      type: object
+      required: [report, warningReviewRecommended]
+      properties:
+        report: { $ref: '#/components/schemas/ReportDto' }
+        warningReviewRecommended: { type: boolean }
+    InquiryAttachmentDto:
+      type: object
+      required: [url, name, size]
+      properties:
+        url: { type: string }
+        name: { type: string }
+        size: { type: integer }
+    InquiryDto:
+      type: object
+      required: [id, userId, category, contractId, title, body, attachments, status, answer, answeredById, answeredAt, createdAt]
+      properties:
+        id: { type: string }
+        userId: { type: string }
+        category: { type: string, enum: [USAGE, PAYMENT, INSPECTION, CANCEL, ACCOUNT, OTHER] }
+        contractId:
+          oneOf:
+            - { type: string }
+            - type: 'null'
+        title: { type: string }
+        body: { type: string }
+        attachments:
+          type: array
+          items: { $ref: '#/components/schemas/InquiryAttachmentDto' }
+        status: { type: string, enum: [WAITING, ANSWERED] }
+        answer:
+          oneOf:
+            - { type: string }
+            - type: 'null'
+        answeredById:
+          oneOf:
+            - { type: string }
+            - type: 'null'
+        answeredAt:
+          oneOf:
+            - { type: string, format: date-time }
+            - type: 'null'
+        createdAt: { type: string, format: date-time }

@@ -89,14 +89,17 @@ export function createContractRouter(ports: ContractHttpPorts): Router {
     bodyObject(request.body, []);
     const applicationId = request.params.applicationId as string;
     const application = await requireApplication(ports, applicationId, actor);
-    const [agreement, items] = await Promise.all([
-      ports.agreements.get(applicationId),
+    const [spec, items] = await Promise.all([
+      ports.preview.getSpec(applicationId),
       ports.items.listSources(applicationId),
     ]);
+    if (spec === null) {
+      throw new HttpError(404, 'APPLICATION_NOT_FOUND', '지원 정보를 찾을 수 없습니다.');
+    }
     const result = await acceptAgreement(ports.uow, {
       actor,
       application,
-      agreement,
+      spec,
       items,
       now: ports.now(),
     });

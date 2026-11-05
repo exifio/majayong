@@ -75,7 +75,46 @@ describe("INT-C-01: HTTP 라우트", () => {
         headers: { "x-user-id": "u1", "x-role": "CLIENT" },
       });
       assert.equal(res.status, 403);
-      assert.deepEqual(await res.json(), { message: "계약 당사자만 조회할 수 있습니다." });
+      const body = (await res.json()) as {
+        error?: { code?: string; message?: string; requestId?: string };
+      };
+      assert.equal(body.error?.code, "FORBIDDEN");
+      assert.equal(body.error?.message, "계약 당사자만 조회할 수 있습니다.");
+      assert.equal(typeof body.error?.requestId, "string");
+      assert.equal(res.headers.get("x-request-id"), body.error?.requestId);
+    } finally {
+      await app.close();
+    }
+  });
+
+  it("사용자용 C 성공은 data 봉투, 웹훅은 raw 응답을 유지한다", async () => {
+    const app = await start(
+      services({
+        deposits: {
+          async getDeposits() {
+            return [{ id: "deposit-1" }];
+          },
+          async handleTossWebhook() {
+            return { status: "HELD", deposit: { id: "deposit-1" } };
+          },
+        } as never,
+      }),
+    );
+    try {
+      const list = await fetch(`${app.baseUrl}/contracts/c1/deposits`, {
+        headers: { "x-user-id": "u1", "x-role": "CLIENT" },
+      });
+      assert.equal(list.status, 200);
+      assert.deepEqual(await list.json(), { data: [{ id: "deposit-1" }] });
+      assert.ok(list.headers.get("x-request-id"));
+
+      const webhook = await fetch(`${app.baseUrl}/integrations/toss/payment-events`, {
+        method: "POST",
+        headers: { "content-type": "application/json", "x-toss-webhook-secret": "secret-1" },
+        body: JSON.stringify({ orderId: "d1", paymentKey: "p1", amount: 1000, status: "DONE" }),
+      });
+      assert.equal(webhook.status, 200);
+      assert.deepEqual(await webhook.json(), { status: "HELD", deposit: { id: "deposit-1" } });
     } finally {
       await app.close();
     }

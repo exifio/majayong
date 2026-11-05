@@ -1,6 +1,10 @@
 import { BlockSource } from "@prisma/client";
 import { describe, expect, it } from "@jest/globals";
-import { reservationRestaurantSeedBlocks } from "../../src/modules/catalog/seed.ts";
+import { readFileSync } from "node:fs";
+import {
+  reservationRestaurantIndustryCode,
+  reservationRestaurantSeedBlocks,
+} from "../../src/modules/catalog/seed.ts";
 
 describe("A-03 proposed restaurant reservation seed", () => {
   it("has 36 ranked active reviewed blocks, six defaults, and validated catalog shapes", () => {
@@ -23,5 +27,13 @@ describe("A-03 proposed restaurant reservation seed", () => {
       for (const part of wireframe.parts ?? []) types.add(part.type);
     }
     expect([...types].sort()).toEqual(["BUTTON", "CALENDAR", "FORM", "LIST", "PREVIEW", "TEXT"]);
+  });
+
+  it("has a stable display label for the seed industry code", () => {
+    const contract = JSON.parse(
+      readFileSync(new URL("../../openapi/industry-labels.json", import.meta.url), "utf8"),
+    ) as { labels: Record<string, string>; fallbackLabel: string };
+    expect(contract.labels[reservationRestaurantIndustryCode]).toBe("예약기반음식점");
+    expect(contract.fallbackLabel.length).toBeGreaterThan(0);
   });
 });

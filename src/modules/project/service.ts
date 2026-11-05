@@ -346,7 +346,7 @@ export async function getPublicProjectDetail(
     db.specItem.findMany({
       where: { projectId, versionNo: project.currentVersion, status: SpecItemStatus.INCLUDED },
       orderBy: { sortOrder: "asc" },
-      select: { title: true, description: true, conditions: true, wireframe: true },
+      select: { id: true, title: true, description: true, conditions: true, wireframe: true },
     }),
     db.clientProfile.findUnique({
       where: { userId: project.draft.clientId },
@@ -359,7 +359,7 @@ export async function getPublicProjectDetail(
 
   return publicProjectDetail(project, {
     summary: project.summary,
-    items: items.map(item => ({ title: item.title, description: item.description, conditions: item.conditions, wireframe: item.wireframe })),
+    items: items.map(item => ({ specItemId: item.id, title: item.title, description: item.description, conditions: item.conditions, wireframe: item.wireframe })),
     client: {
       name: clientProfile.user.name,
       businessName: clientProfile.businessName,

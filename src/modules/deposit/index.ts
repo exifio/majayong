@@ -202,10 +202,12 @@ function pgEvidenceRejects(evidence: unknown, payload: TossWebhookPayload): bool
 
 export class DepositHttpError extends Error {
   readonly status: number;
-  constructor(status: number, message: string) {
+  readonly code?: string;
+  constructor(status: number, message: string, code?: string) {
     super(message);
     this.name = "DepositHttpError";
     this.status = status;
+    this.code = code;
   }
 }
 
@@ -373,19 +375,19 @@ export class DepositService {
   ): Promise<{ deposit: EscrowDeposit; isNew: boolean }> {
     const contract = await this.contractsPort.getContract(input.contractId);
     if (!contract) {
-      throw new DepositHttpError(404, "계약을 찾을 수 없습니다.");
+      throw new DepositHttpError(404, "계약을 찾을 수 없습니다.", "CONTRACT_NOT_FOUND");
     }
 
     if (actor.role !== "CLIENT" || actor.userId !== contract.clientUserId) {
-      throw new DepositHttpError(403, "의뢰인 본인만 예치할 수 있습니다.");
+      throw new DepositHttpError(403, "의뢰인 본인만 예치할 수 있습니다.", "CLIENT_ONLY");
     }
 
     if (contract.status !== "ACTIVE" || contract.paymentStatus !== "PENDING") {
-      throw new DepositHttpError(409, "예치 가능한 계약 상태가 아닙니다.");
+      throw new DepositHttpError(409, "예치 가능한 계약 상태가 아닙니다.", "CONTRACT_NOT_DEPOSITABLE");
     }
 
     if (contract.depositDeadline && this.clock.now() > contract.depositDeadline) {
-      throw new DepositHttpError(400, "예치 기한이 초과되었습니다.");
+      throw new DepositHttpError(400, "예치 기한이 초과되었습니다.", "DEPOSIT_DEADLINE_EXPIRED");
     }
 
     const expectedAmount = contract.agreedAmount + contract.clientFee;
@@ -393,6 +395,7 @@ export class DepositService {
       throw new DepositHttpError(
         400,
         `예치 금액이 일치하지 않습니다. (예상 금액: ${expectedAmount}원, 입력 금액: ${input.amount}원)`,
+        "AMOUNT_MISMATCH",
       );
     }
 
@@ -401,13 +404,13 @@ export class DepositService {
       if (existingByIdem.contractId === input.contractId) {
         return { deposit: existingByIdem, isNew: false };
       }
-      throw new DepositHttpError(409, "이미 다른 계약에 사용된 멱등키입니다.");
+      throw new DepositHttpError(409, "이미 다른 계약에 사용된 멱등키입니다.", "IDEMPOTENCY_KEY_REUSED");
     }
 
     const contractDeposits = await this.repo.findByContractId(input.contractId);
     const completed = contractDeposits.find((d) => d.status === "COMPLETED");
     if (completed) {
-      throw new DepositHttpError(409, "이미 예치가 완료된 계약입니다.");
+      throw new DepositHttpError(409, "이미 예치가 완료된 계약입니다.", "DEPOSIT_ALREADY_COMPLETED");
     }
 
     const openPending = contractDeposits.find((d) => d.status === "PENDING" || d.status === "HELD");
@@ -433,7 +436,7 @@ export class DepositService {
   async getDeposits(actor: { userId: string; role: string }, contractId: string): Promise<EscrowDeposit[]> {
     const contract = await this.contractsPort.getContract(contractId);
     if (!contract) {
-      throw new DepositHttpError(404, "계약을 찾을 수 없습니다.");
+      throw new DepositHttpError(404, "계약을 찾을 수 없습니다.", "CONTRACT_NOT_FOUND");
     }
 
     const isParty =
@@ -442,7 +445,7 @@ export class DepositService {
       (actor.role === "SUPPLIER" && actor.userId === contract.supplierUserId);
 
     if (!isParty) {
-      throw new DepositHttpError(403, "계약 당사자만 조회할 수 있습니다.");
+      throw new DepositHttpError(403, "계약 당사자만 조회할 수 있습니다.", "FORBIDDEN");
     }
 
     return this.repo.findByContractId(contractId);
@@ -453,14 +456,14 @@ export class DepositService {
     rawPayload: unknown,
   ): Promise<{ status: DepositStatus; deposit: EscrowDeposit; isDuplicate?: boolean; reason?: string }> {
     if (auth.isPublicUserToken) {
-      throw new DepositHttpError(403, "서버 전용 웹훅 엔드포인트입니다. 공개 사용자 토큰으로 호출할 수 없습니다.");
+      throw new DepositHttpError(403, "서버 전용 웹훅 엔드포인트입니다. 공개 사용자 토큰으로 호출할 수 없습니다.", "WEBHOOK_FORBIDDEN");
     }
 
     if (!webhookSecretMatches(auth.serverSecret, this.webhookSecret)) {
-      throw new DepositHttpError(401, "웹훅 인증 실패: 위조되었거나 유효하지 않은 비밀키입니다.");
+      throw new DepositHttpError(401, "웹훅 인증 실패: 위조되었거나 유효하지 않은 비밀키입니다.", "WEBHOOK_AUTH_FAILED");
     }
     const payload = parseTossWebhookPayload(rawPayload);
-    if (!payload) throw new DepositHttpError(400, "웹훅 본문이 올바르지 않습니다.");
+    if (!payload) throw new DepositHttpError(400, "웹훅 본문이 올바르지 않습니다.", "INVALID_WEBHOOK_PAYLOAD");
 
     return this.withDepositLock(payload.orderId, async () => {
       const deposit = await this.repo.findById(payload.orderId);
@@ -489,7 +492,7 @@ export class DepositService {
       }
 
       const contract = await this.contractsPort.getContract(deposit.contractId);
-      if (!contract) throw new DepositHttpError(404, "계약을 찾을 수 없습니다.");
+      if (!contract) throw new DepositHttpError(404, "계약을 찾을 수 없습니다.", "CONTRACT_NOT_FOUND");
       if (contract.depositDeadline !== null && this.clock.now().getTime() > contract.depositDeadline.getTime()) {
         return this.holdDeposit(deposit, dedupKey, payload, "DEPOSIT_EXPIRED", "예치 기한이 지난 콜백");
       }
@@ -636,7 +639,7 @@ export class DepositCompletionService {
     if (!deposit) throw new DepositHttpError(404, "예치 건을 찾을 수 없습니다.");
 
     const contract = await this.contractsPort.getContract(deposit.contractId, tx);
-    if (!contract) throw new DepositHttpError(404, "계약을 찾을 수 없습니다.");
+    if (!contract) throw new DepositHttpError(404, "계약을 찾을 수 없습니다.", "CONTRACT_NOT_FOUND");
 
     // 이미 완료된 경우 멱등 반환
     if (deposit.status === "COMPLETED" && contract.paymentStatus === "DEPOSITED") {

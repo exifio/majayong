@@ -30,7 +30,14 @@ function application(overrides: Partial<ChatApplicationRow> = {}): ChatApplicati
     projectId: 'prj-1',
     supplierId: 'supplier-1',
     status: 'SUBMITTED',
-    project: { draft: { clientId: 'client-1' } },
+    project: {
+      title: '예약 기능',
+      draft: {
+        clientId: 'client-1',
+        client: { name: '김의뢰', clientProfile: { businessName: '카페 블루' } },
+      },
+    },
+    supplier: { displayName: '박공급' },
     contract: null,
     ...overrides,
   };
@@ -149,7 +156,19 @@ describe('B-03 Prisma 채팅 어댑터', () => {
     const fixture = makeDb(
       [
         application({ id: 'app-1', messages: [message()] }),
-        application({ id: 'app-2', supplierId: 'supplier-2', project: { draft: { clientId: 'client-2' } }, messages: [] }),
+        application({
+          id: 'app-2',
+          supplierId: 'supplier-2',
+          project: {
+            title: '다른 프로젝트',
+            draft: {
+              clientId: 'client-2',
+              client: { name: '이다른', clientProfile: { businessName: '다른 가게' } },
+            },
+          },
+          supplier: { displayName: '최공급' },
+          messages: [],
+        }),
       ],
       [message()],
     );
@@ -159,5 +178,31 @@ describe('B-03 Prisma 채팅 어댑터', () => {
 
     assert.deepEqual(rooms.map((room) => room.id), ['app-1']);
     assert.equal(rooms[0]?.messages.length, 1);
+    assert.equal(rooms[0]?.projectTitle, '예약 기능');
+    assert.equal(rooms[0]?.clientDisplayName, '김의뢰');
+    assert.equal(rooms[0]?.supplierDisplayName, '박공급');
+  });
+
+  it('의뢰인 이름이 없으면 상호를 표시 이름으로 쓴다', async () => {
+    const fixture = makeDb(
+      [
+        application({
+          messages: [message()],
+          project: {
+            title: '예약 기능',
+            draft: {
+              clientId: 'client-1',
+              client: { name: null, clientProfile: { businessName: '카페 블루' } },
+            },
+          },
+        }),
+      ],
+      [message()],
+    );
+    const port = createPrismaChatRoomListPort(fixture.db);
+
+    const rooms = await port.listRoomsForUser('supplier-1');
+
+    assert.equal(rooms[0]?.clientDisplayName, '카페 블루');
   });
 });

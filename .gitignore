@@ -1,14 +1,23 @@
 node_modules/
 dist/
+
+# 로컬 전용 (AGENTS.md 6.1) — GitHub 업로드 금지
 .DS_Store
+AGENTS.md
+docs/
+
+# 비밀값·환경 설정
 .env
 .env.*
 !.env.example
+
+# 로그
 *.log
 coverage/
-docs/
-AGENTS.md
+
+# 기존 저장소 규칙 유지
 CLAUDE.md
 .cursor/
+
 .code-review-graph
 .commandcode

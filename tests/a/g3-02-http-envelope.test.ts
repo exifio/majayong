@@ -71,7 +71,7 @@ describe("G3-02: 공통 오류 봉투", () => {
     expect(reached).toBe(true);
   });
 
-  it("단독 C 핸들러는 기존 404 형식을 유지한다", async () => {
+  it("단독 C 핸들러도 공통 404 봉투를 쓴다", async () => {
     const handler = createHttpHandler({
       services: {} as unknown as AppServices,
       authenticate: () => null,
@@ -79,6 +79,12 @@ describe("G3-02: 공통 오류 봉투", () => {
     const baseUrl = await listen(createServer((req, res) => { void handler(req, res); }));
     const res = await fetch(`${baseUrl}/nope`);
     expect(res.status).toBe(404);
-    expect(await res.json()).toEqual({ message: "NOT_FOUND" });
+    const body = (await res.json()) as {
+      error?: { code?: string; message?: string; requestId?: string };
+    };
+    expect(body.error?.code).toBe("NOT_FOUND");
+    expect(body.error?.message).toBe("NOT_FOUND");
+    expect(typeof body.error?.requestId).toBe("string");
+    expect(res.headers.get("x-request-id")).toBe(body.error?.requestId);
   });
 });

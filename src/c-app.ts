@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import type { AdminOpsService } from "./modules/admin-ops/index.ts";
 import type { CancellationService } from "./modules/cancellation/index.ts";
@@ -312,19 +313,56 @@ async function readJsonBody(req: IncomingMessage, maxBytes: number): Promise<Rec
   }
 }
 
+const STATUS_ERROR_CODES: Readonly<Record<number, string>> = {
+  400: "INVALID_REQUEST",
+  401: "UNAUTHORIZED",
+  403: "FORBIDDEN",
+  404: "NOT_FOUND",
+  409: "CONFLICT",
+  413: "PAYLOAD_TOO_LARGE",
+  422: "UNPROCESSABLE_ENTITY",
+  503: "SERVICE_UNAVAILABLE",
+};
+
+function errorCodeFor(err: unknown, status: number): string {
+  const code = (err as { code?: unknown } | null)?.code;
+  if (typeof code === "string" && code.length > 0) return code;
+  return STATUS_ERROR_CODES[status] ?? (status >= 500 ? "INTERNAL_ERROR" : "ERROR");
+}
+
+function requestIdOf(req: IncomingMessage, res: ServerResponse): string {
+  const fromResponse = res.getHeader("x-request-id");
+  if (typeof fromResponse === "string" && fromResponse.length > 0) return fromResponse;
+  const fromRequest = req.headers["x-request-id"];
+  if (typeof fromRequest === "string" && fromRequest.length > 0) return fromRequest;
+  return randomUUID();
+}
+
+function writeJson(
+  res: ServerResponse,
+  status: number,
+  body: unknown,
+  requestId: string,
+): void {
+  res.setHeader("x-request-id", requestId);
+  res.writeHead(status, { "content-type": "application/json; charset=utf-8" });
+  res.end(JSON.stringify(body));
+}
+
 export function createHttpHandler(options: AppOptions) {
   const maxBodyBytes = options.maxBodyBytes ?? 1_000_000;
 
   return async function handler(req: IncomingMessage, res: ServerResponse): Promise<void> {
     const url = new URL(req.url ?? "/", "http://localhost");
     const matched = matchRoute(req.method ?? "GET", url.pathname);
+    const requestId = requestIdOf(req, res);
     if (!matched) {
       // 통합 앱에서는 상위 Express의 공통 404 봉투가 응답하도록 넘긴다.
       if (options.deferUnmatched === true) return;
-      res.writeHead(404, { "content-type": "application/json; charset=utf-8" });
-      res.end(JSON.stringify({ message: "NOT_FOUND" }));
+      writeJson(res, 404, { error: { code: "NOT_FOUND", message: "NOT_FOUND", requestId } }, requestId);
       return;
     }
+    const isWebhook = matched.route.auth === "webhook";
 
     try {
       const body = matched.route.method === "GET" ? {} : await readJsonBody(req, maxBodyBytes);
@@ -332,8 +370,7 @@ export function createHttpHandler(options: AppOptions) {
       if (matched.route.auth === "user") {
         actor = await options.authenticate(req);
         if (!actor) {
-          res.writeHead(401, { "content-type": "application/json; charset=utf-8" });
-          res.end(JSON.stringify({ message: "UNAUTHORIZED" }));
+          writeJson(res, 401, { error: { code: "UNAUTHORIZED", message: "UNAUTHORIZED", requestId } }, requestId);
           return;
         }
       }
@@ -348,14 +385,30 @@ export function createHttpHandler(options: AppOptions) {
         },
         options.services,
       );
-      res.writeHead(result.status ?? 200, { "content-type": "application/json; charset=utf-8" });
-      res.end(JSON.stringify(result.body ?? null));
+      const status = result.status ?? 200;
+      const responseBody = isWebhook ? (result.body ?? null) : { data: result.body ?? null };
+      writeJson(res, status, responseBody, requestId);
     } catch (err) {
-      const status = (err as { status?: unknown } | null)?.status;
-      const code = typeof status === "number" ? status : 500;
-      const message = err instanceof Error ? err.message : "INTERNAL_ERROR";
-      res.writeHead(code, { "content-type": "application/json; charset=utf-8" });
-      res.end(JSON.stringify({ message: code === 500 ? "INTERNAL_ERROR" : message }));
+      const rawStatus = (err as { status?: unknown } | null)?.status;
+      const status = typeof rawStatus === "number" ? rawStatus : 500;
+      const rawMessage = err instanceof Error ? err.message : "INTERNAL_ERROR";
+      if (isWebhook) {
+        // Toss webhook은 외부 PG 프로토콜이므로 공통 봉투를 적용하지 않는다.
+        writeJson(res, status, { message: status >= 500 ? "INTERNAL_ERROR" : rawMessage }, requestId);
+        return;
+      }
+      writeJson(
+        res,
+        status,
+        {
+          error: {
+            code: errorCodeFor(err, status),
+            message: status >= 500 ? "요청을 처리할 수 없습니다." : rawMessage,
+            requestId,
+          },
+        },
+        requestId,
+      );
     }
   };
 }

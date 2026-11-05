@@ -4,7 +4,8 @@
  * `Contract`에는 projectId/clientUserId 컬럼이 없어 `Application`에서 가져온다.
  * 결렬 사유는 EventLog에 남기고, 취소 정산 컬럼은 C 소유라 건드리지 않는다.
  */
-import type { AgreementCondition, ConditionState } from '../agreement/draft.js';
+import type { AgreementCondition, AgreementDraft, ConditionState } from '../agreement/draft.js';
+import { parseAgreementDraft } from '../agreement/prisma-adapter.js';
 import type { ApplicationRecord } from '../application/dto.js';
 import { toApplicationRevision, type ApplicationRow } from '../application/prisma-adapter.js';
 import type { PaymentStatus } from './display-status.js';
@@ -180,6 +181,14 @@ export interface ContractDbClient extends NotificationDbClient {
       readonly where: Readonly<Record<string, unknown>>;
       readonly include: { readonly items: true; readonly project: { readonly select: { readonly draft: { readonly select: { readonly clientId: true } } } } };
     }): Promise<readonly ApplicationRow[]>;
+    findUnique(input: {
+      readonly where: { readonly id: string };
+      readonly select: { readonly agreementDraft: true };
+    }): Promise<{ readonly agreementDraft: unknown } | null>;
+    update(input: {
+      readonly where: { readonly id: string };
+      readonly data: { readonly agreementDraft: unknown };
+    }): Promise<unknown>;
     updateMany(input: {
       readonly where: Readonly<Record<string, unknown>>;
       readonly data: Readonly<Record<string, unknown>>;
@@ -270,6 +279,27 @@ export function createContractTx(
         include: { items: true, project: { select: { draft: { select: { clientId: true } } } } },
       });
       return rows.map((row): ApplicationRecord => toApplicationRevision(row));
+    },
+
+    async findAgreementDraft(applicationId): Promise<AgreementDraft | null> {
+      const row = await db.application.findUnique({
+        where: { id: applicationId },
+        select: { agreementDraft: true },
+      });
+      if (row === null || row.agreementDraft === null || row.agreementDraft === undefined) return null;
+      try {
+        return parseAgreementDraft(row.agreementDraft);
+      } catch {
+        // 손상된 캐시는 없는 것으로 보고 현재 명세 기준 기본 초안을 다시 만든다.
+        return null;
+      }
+    },
+
+    async saveAgreementDraft(applicationId, draft): Promise<void> {
+      await db.application.update({
+        where: { id: applicationId },
+        data: { agreementDraft: JSON.parse(JSON.stringify(draft)) },
+      });
     },
 
     async updateApplicationStatus(input) {

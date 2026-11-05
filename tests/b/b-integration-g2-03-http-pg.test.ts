@@ -242,7 +242,7 @@ async function openDeposit(
     { idempotencyKey, method: "CARD", amount },
     { "x-test-user": ids.clientId, "x-test-role": "CLIENT" },
   );
-  const depositId = (created.body as { deposit?: { id?: string } } | null)?.deposit?.id;
+  const depositId = (created.body as { data?: { deposit?: { id?: string } } } | null)?.data?.deposit?.id;
   assert.equal(created.status, 201);
   assert.equal(typeof depositId, "string");
   return { depositId: depositId as string, status: created.status };
