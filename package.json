@@ -1,0 +1,35 @@
+{
+  "name": "majayong",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "start": "node dist/index.js",
+    "test": "npm run test:b && npm run test:c && npm run test:a",
+    "db:validate": "prisma validate --schema prisma/schema.prisma",
+    "db:generate": "prisma generate --schema prisma/schema.prisma",
+    "db:migrate": "prisma migrate deploy --schema prisma/schema.prisma",
+    "db:verify:b": "node scripts/verify-b-pg.mjs",
+    "test:a": "jest --runInBand tests/a",
+    "test:b": "DATABASE_URL=\"${DATABASE_URL:-}\" node --import ./tests/b/resolve-ts.mjs --test tests/b",
+    "test:c": "DATABASE_URL=\"${DATABASE_URL:-}\" node --test tests/c/*.test.ts",
+    "test:integration": "DATABASE_URL=\"${DATABASE_URL:-}\" node --import ./tests/b/resolve-ts.mjs --test tests/integration/*.test.ts",
+    "test:typecheck": "tsc -p tsconfig.test.json",
+    "check:rules": "node scripts/check-rules.mjs"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^26.6.5",
+    "prisma": "^6.19.3",
+    "typescript": "^7.0.2",
+    "@swc/core": "^1.16.20",
+    "@swc/jest": "^0.2.39",
+    "@types/jest": "^30.0.0",
+    "jest": "^30.5.2"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.19.3",
+    "express": "^5.3.0"
+  }
+}
