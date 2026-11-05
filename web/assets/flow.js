@@ -188,6 +188,250 @@
     return next;
   }
 
+  if (screen === 'Admin-Disputes') {
+    if (!MJ.requireLogin(location.pathname + location.search)) return;
+    const user = MJ.session().user;
+    if (user?.role !== 'ADMIN') {
+      showError(document.body, '운영자만 이견을 판정할 수 있습니다.');
+      return;
+    }
+
+    void (async () => {
+      try {
+        const [cancellations, inspections] = await Promise.all([
+          MJ.request('/admin/contracts/cancellation-queue'),
+          MJ.request('/admin/inspection-requests/escalated'),
+        ]);
+        const cancelList = Array.isArray(cancellations) ? cancellations : [];
+        const inspectionList = Array.isArray(inspections) ? inspections : [];
+        const host = document.createElement('section');
+        host.className = 'card';
+        host.id = 'live-admin-disputes';
+        host.style.marginBottom = '16px';
+        host.innerHTML = `<h2 class="ct">이견 판정</h2>
+          <p class="sec">취소 ${cancelList.length}건 · 검수 이견 ${inspectionList.length}건</p>
+          <h3 style="margin-top:16px">취소 판정</h3>
+          ${cancelList.length === 0 ? '<p class="note">대기 중인 취소 건이 없습니다.</p>' : cancelList.map((row) => `<div class="fc" data-cancel-contract="${row.id}" style="margin:12px 0">
+            <div class="nmrow"><span class="nm">${escapeHtml(row.id.slice(0, 8))}</span><span class="chip amber">${escapeHtml(row.cancelCause || '')}</span></div>
+            <p class="sec">상태 ${escapeHtml(row.status)} · 예치 ${won(Number(row.totalDeposited || 0))} · 합의 ${won(Number(row.agreedAmount || 0))} · 이의 비율 ${row.objectionRate ?? '-'}%</p>
+            <label class="lbl">판정 보상 비율</label>
+            <input class="inp" data-cancel-rate type="number" min="0" max="100" value="${row.objectionRate ?? 50}">
+            <label class="lbl" style="margin-top:8px">판정 사유</label>
+            <textarea class="inp" data-cancel-reason placeholder="판정 근거를 적어 주세요"></textarea>
+            <button type="button" class="btn" data-cancel-decide style="margin-top:8px">판정 보내기</button>
+          </div>`).join('')}
+          <h3 style="margin-top:20px">검수 이견 판정</h3>
+          ${inspectionList.length === 0 ? '<p class="note">대기 중인 검수 이견이 없습니다.</p>' : inspectionList.map((row) => `<div class="fc" data-inspection="${row.id}" style="margin:12px 0">
+            <div class="nmrow"><span class="nm">${escapeHtml(row.id.slice(0, 8))}</span><span class="chip amber">${escapeHtml(row.status)}</span></div>
+            <p class="sec">${escapeHtml(row.reason || '')}</p>
+            <label class="lbl">판정</label>
+            <select class="inp" data-inspection-decision>
+              <option value="REWORK_VALID">보완이 맞다</option>
+              <option value="APPROVE">승인이 맞다</option>
+              <option value="UNDECIDED_CONDITION">정하지 않은 조건이다</option>
+            </select>
+            <label class="lbl" style="margin-top:8px">판정 사유</label>
+            <textarea class="inp" data-inspection-reason></textarea>
+            <button type="button" class="btn" data-inspection-decide style="margin-top:8px">판정 보내기</button>
+          </div>`).join('')}`;
+        const main = document.querySelector('.ad-main');
+        main?.insertBefore(host, main.querySelector('.ad-split') || null);
+        document.querySelector('.ad-split')?.style.setProperty('display', 'none');
+
+        host.querySelectorAll('[data-cancel-decide]').forEach((button) => {
+          button.addEventListener('click', async (event) => {
+            event.preventDefault();
+            const card = button.closest('[data-cancel-contract]');
+            const contractId = card?.dataset.cancelContract;
+            const rate = Number(card?.querySelector('[data-cancel-rate]')?.value);
+            const reason = card?.querySelector('[data-cancel-reason]')?.value.trim() || '';
+            if (!reason) {
+              showError(button, '판정 사유를 적어 주세요.');
+              return;
+            }
+            busy(button, true, '판정 중…');
+            try {
+              await MJ.request(`/admin/contracts/${encodeURIComponent(contractId)}/cancellation/decide`, {
+                method: 'POST',
+                body: { compensationRate: rate, reason },
+              });
+              location.reload();
+            } catch (error) {
+              busy(button, false);
+              showError(button, error.message);
+            }
+          });
+        });
+
+        host.querySelectorAll('[data-inspection-decide]').forEach((button) => {
+          button.addEventListener('click', async (event) => {
+            event.preventDefault();
+            const card = button.closest('[data-inspection]');
+            const inspectionId = card?.dataset.inspection;
+            const decision = card?.querySelector('[data-inspection-decision]')?.value;
+            const reason = card?.querySelector('[data-inspection-reason]')?.value.trim() || '';
+            if (!reason) {
+              showError(button, '판정 사유를 적어 주세요.');
+              return;
+            }
+            busy(button, true, '판정 중…');
+            try {
+              await MJ.request(`/admin/inspection-requests/${encodeURIComponent(inspectionId)}/decision`, {
+                method: 'POST',
+                body: { decision, reason },
+              });
+              location.reload();
+            } catch (error) {
+              busy(button, false);
+              showError(button, error.message);
+            }
+          });
+        });
+      } catch (error) {
+        showError(document.body, error.message);
+      }
+    })();
+    return;
+  }
+
+  if (screen === 'Cancel-Client' || screen === 'Cancel-Supplier') {
+    if (!MJ.requireLogin(location.pathname + location.search)) return;
+    const isClient = screen === 'Cancel-Client';
+    const params = new URLSearchParams(location.search);
+
+    void (async () => {
+      try {
+        let contract = null;
+        if (params.get('contractId')) {
+          contract = await MJ.request(`/contracts/${encodeURIComponent(params.get('contractId'))}`);
+        } else {
+          const rows = await MJ.request('/me/contracts');
+          const list = Array.isArray(rows) ? rows : [];
+          contract = list.find((row) => row.status === 'CANCEL_REQUESTED')
+            || list.find((row) => row.status === 'ACTIVE' && (row.paymentStatus === 'DEPOSITED' || row.paymentStatus === 'PARTIALLY_RELEASED'));
+        }
+        if (!contract) throw new Error('취소할 진행 계약이 없습니다.');
+        const cancellation = await MJ.request(`/contracts/${encodeURIComponent(contract.id)}/cancellation`);
+        const requested = Boolean(cancellation.cancelRequestedAt);
+        const causeLabel = cancellation.cancelCause === 'SUPPLIER' ? '공급자 사정' : cancellation.cancelCause === 'MUTUAL' ? '서로 합의' : '의뢰인 사정';
+        const canRespond = !isClient
+          && cancellation.cancelRequestedBy !== MJ.session().user?.id
+          && !cancellation.cancelResolvedAt
+          && !cancellation.cancelEscalatedAt;
+
+        const host = document.createElement('section');
+        host.className = 'card';
+        host.id = 'live-cancel';
+        host.style.marginBottom = '16px';
+        host.innerHTML = requested
+          ? `<h2 class="ct">취소 요청 현황</h2>
+            <p class="sec">${escapeHtml(causeLabel)} · ${escapeHtml(cancellation.cancelNote || '')}</p>
+            <p class="sec">상태 ${escapeHtml(cancellation.status)}${cancellation.cancelResolvedAt ? ` · 환불 ${won(Number(cancellation.refundAmount ?? 0))} · 보상 ${won(Number(cancellation.settledAmount ?? 0))}` : cancellation.cancelEscalatedAt ? ' · 운영자 판정 대기' : ' · 상대방 답변 대기'}</p>
+            <a class="btn sm gh" href="/Settle-Client?contractId=${encodeURIComponent(contract.id)}">정산 내역 보기</a>
+            ${canRespond ? `<div style="margin-top:14px">
+              <label class="lbl">이의 보상 비율</label>
+              <input class="inp" id="live-object-rate" type="number" min="0" max="100" value="70">
+              <label class="lbl" style="margin-top:8px">이의 사유</label>
+              <textarea class="inp" id="live-object-note" placeholder="이의 사유를 적어 주세요"></textarea>
+              <div style="display:flex;gap:8px;margin-top:10px">
+                <button type="button" class="btn tint" id="live-agree">동의</button>
+                <button type="button" class="btn warn" id="live-object">이의 제기</button>
+              </div>
+            </div>` : ''}`
+          : `<h2 class="ct">계약 취소 요청</h2>
+            <p class="sec">예치 완료 계약입니다. 취소 사유와 설명을 적어 주세요.</p>
+            <label class="lbl" style="margin-top:12px">취소 사유</label>
+            <select class="inp" id="live-cancel-cause">
+              <option value="CLIENT">의뢰인 사정</option>
+              <option value="MUTUAL">서로 합의</option>
+            </select>
+            <label class="lbl" style="margin-top:8px">합의 보상 비율(서로 합의 선택 시)</label>
+            <input class="inp" id="live-cancel-rate" type="number" min="0" max="100" value="50">
+            <label class="lbl" style="margin-top:8px">사유 설명</label>
+            <textarea class="inp" id="live-cancel-note" placeholder="취소 사유를 적어 주세요"></textarea>
+            <button type="button" class="btn warn" id="live-cancel-submit" style="margin-top:10px">취소 요청 보내기</button>`;
+        const head = document.querySelector('.head');
+        head?.parentElement?.insertBefore(host, head.nextSibling);
+        document.querySelector('.lay')?.style.setProperty('display', 'none');
+
+        if (requested) {
+          if (canRespond) {
+            const agree = host.querySelector('#live-agree');
+            agree?.addEventListener('click', async (event) => {
+              event.preventDefault();
+              busy(agree, true, '동의하는 중…');
+              try {
+                await MJ.request(`/contracts/${encodeURIComponent(contract.id)}/cancellation/agree`, { method: 'POST', body: {} });
+                location.reload();
+              } catch (error) {
+                busy(agree, false);
+                showError(agree, error.message);
+              }
+            });
+            const object = host.querySelector('#live-object');
+            object?.addEventListener('click', async (event) => {
+              event.preventDefault();
+              clearError();
+              const note = host.querySelector('#live-object-note')?.value.trim() || '';
+              const rate = Number(host.querySelector('#live-object-rate')?.value);
+              if (!note) {
+                showError(object, '이의 사유를 적어 주세요.');
+                return;
+              }
+              if (!Number.isInteger(rate) || rate < 0 || rate > 100) {
+                showError(object, '보상 비율은 0~100 사이의 정수여야 합니다.');
+                return;
+              }
+              busy(object, true, '이의를 보내는 중…');
+              try {
+                await MJ.request(`/contracts/${encodeURIComponent(contract.id)}/cancellation/object`, {
+                  method: 'POST',
+                  body: { objectionRate: rate, note },
+                });
+                location.reload();
+              } catch (error) {
+                busy(object, false);
+                showError(object, error.message);
+              }
+            });
+          }
+          return;
+        }
+
+        const submit = host.querySelector('#live-cancel-submit');
+        submit?.addEventListener('click', async (event) => {
+          event.preventDefault();
+          clearError();
+          const cause = host.querySelector('#live-cancel-cause')?.value || 'CLIENT';
+          const note = host.querySelector('#live-cancel-note')?.value.trim() || '';
+          const rate = Number(host.querySelector('#live-cancel-rate')?.value);
+          if (!note) {
+            showError(submit, '사유 설명을 적어 주세요.');
+            return;
+          }
+          busy(submit, true, '요청하는 중…');
+          try {
+            await MJ.request(`/contracts/${encodeURIComponent(contract.id)}/cancellation`, {
+              method: 'POST',
+              body: {
+                cause,
+                note,
+                ...(cause === 'MUTUAL' ? { proposedCompensationRate: Number.isInteger(rate) ? rate : 50 } : {}),
+              },
+            });
+            location.reload();
+          } catch (error) {
+            busy(submit, false);
+            showError(submit, error.message);
+          }
+        });
+      } catch (error) {
+        showError(document.body, error.message);
+      }
+    })();
+    return;
+  }
+
   if (screen === 'Review-Client' || screen === 'Review-Supplier') {
     if (!MJ.requireLogin(location.pathname + location.search)) return;
     const isClient = screen === 'Review-Client';
