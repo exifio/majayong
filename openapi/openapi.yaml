@@ -103,7 +103,7 @@ paths:
                   data:
                     type: array
                     items:
-                      $ref: '#/components/schemas/ApplicationRecordDto'
+                      $ref: '#/components/schemas/ApplicationRevisionDto'
                   meta:
                     type: object
                     additionalProperties: true
