@@ -10,6 +10,7 @@
     "db:validate": "prisma validate --schema prisma/schema.prisma",
     "db:generate": "prisma generate --schema prisma/schema.prisma",
     "db:migrate": "prisma migrate deploy --schema prisma/schema.prisma",
+    "db:seed:staging": "node scripts/seed-staging.mjs",
     "db:verify:b": "node scripts/verify-b-pg.mjs",
     "test:a": "jest --runInBand tests/a",
     "test:b": "DATABASE_URL=\"${DATABASE_URL:-}\" node --import ./tests/b/resolve-ts.mjs --test tests/b",
