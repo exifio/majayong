@@ -22,6 +22,8 @@ export type PublicProjectSummary = {
 };
 
 export type PublicSpecItem = {
+  /** 현재 버전 INCLUDED 항목의 실제 SpecItem.id. B 지원 제출이 이 값을 요구한다. */
+  specItemId: string;
   title: string;
   description: string;
   conditions: unknown;

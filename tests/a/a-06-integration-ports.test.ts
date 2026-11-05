@@ -195,6 +195,19 @@ describe("A-06-G2-01: real public-project ports against PostgreSQL", () => {
     const supplierId = await makeSupplier();
     const projectId = await makeProject(clientId);
     const item = await db.specItem.findFirstOrThrow({ where: { projectId, versionNo: 1 } });
+    // 같은 버전의 제외 항목과 다음 버전의 포함 항목은 상세 응답에 나오지 않아야 한다.
+    await db.specItem.create({
+      data: {
+        projectId, versionNo: 1, blockId: item.blockId, title: "제외 항목", description: "제외",
+        origin: "FIRST_SENTENCE", status: "EXCLUDED", unitPrice: 100_000, sortOrder: 1,
+      },
+    });
+    await db.specItem.create({
+      data: {
+        projectId, versionNo: 2, blockId: item.blockId, title: "다음 버전 항목", description: "다음 버전",
+        origin: "FIRST_SENTENCE", status: "INCLUDED", unitPrice: 100_000, sortOrder: 0,
+      },
+    });
 
     const server = createServer(integratedApp(db));
     await new Promise<void>(resolve => server.listen(0, "127.0.0.1", resolve));
@@ -223,8 +236,14 @@ describe("A-06-G2-01: real public-project ports against PostgreSQL", () => {
 
     const detailResponse = await fetch(`${baseUrl}/projects/${projectId}`, { headers: supplierAuth });
     expect(detailResponse.status).toBe(200);
-    expect((await detailResponse.json() as { data: Record<string, unknown> }).data)
-      .toMatchObject({ projectId, hopeBudget: 4_000_000 });
+    const detailBody = await detailResponse.json() as {
+      data: { items: Array<Record<string, unknown>>; client: Record<string, unknown> };
+    };
+    expect(detailBody.data).toMatchObject({ projectId, hopeBudget: 4_000_000 });
+    expect(detailBody.data.items).toHaveLength(1);
+    expect(detailBody.data.items[0]).toMatchObject({ specItemId: item.id, title: item.title });
+    expect(detailBody.data.client).not.toHaveProperty("userId");
+    expect(JSON.stringify(detailBody.data)).not.toContain("unitPrice");
     expect(await db.eventLog.count({ where: { type: "SPEC_DETAIL_VIEWED", projectId, userId: supplierId } })).toBe(1);
 
     const applicationResponse = await fetch(`${baseUrl}/projects/${projectId}/applications`, {

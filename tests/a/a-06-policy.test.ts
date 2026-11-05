@@ -77,7 +77,7 @@ describe("A-06 project policy", () => {
   it("returns detail fields without any internal price or contact data", () => {
     const detail = publicProjectDetail(row, {
       summary: "예약 관련 기능 3종",
-      items: [{ title: "예약 달력", description: "달력 조회", conditions: [{ key: "k", text: "조건" }], wireframe: { parts: [] } }],
+      items: [{ specItemId: "spec-1", title: "예약 달력", description: "달력 조회", conditions: [{ key: "k", text: "조건" }], wireframe: { parts: [] } }],
       client: {
         name: "김의뢰", businessName: "카페 블루", industryField: "카페", storeAddress: "서울 마포구",
         bio: "소개", websiteUrl: "https://cafe.example.invalid", ratingAvg: 4.5, reviewCount: 3,

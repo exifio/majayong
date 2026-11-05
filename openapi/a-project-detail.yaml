@@ -1,0 +1,153 @@
+openapi: 3.1.0
+info:
+  title: 마자용 A 프로젝트 상세 (SUPPLIER + NDA)
+  version: 0.7.0
+  description: |
+    D-19 계약. `GET /projects/{projectId}`는 SUPPLIER 전용이며 NDA 동의가 필요하다.
+    응답 `items[]`는 현재 `currentVersion`의 `INCLUDED` SpecItem만 포함하고,
+    B 지원 제출이 요구하는 실제 `SpecItem.id`를 `specItemId`로 제공한다.
+    이 필드는 additive이며 `client.userId`, `unitPrice` 등 내부 식별자·단가는 노출하지 않는다.
+servers:
+  - url: /api/v1
+security:
+  - bearerAuth: []
+paths:
+  /projects/{projectId}:
+    get:
+      operationId: getPublicProjectDetail
+      tags: [project]
+      parameters:
+        - $ref: '#/components/parameters/projectId'
+      responses:
+        '200':
+          description: NDA 동의 SUPPLIER에게 공개되는 상세
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectDetailEnvelope'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: SUPPLIER NDA 미동의 또는 역할 불일치
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '503':
+          description: NDA/프로젝트 Port 미연결
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: access-token
+  parameters:
+    projectId:
+      name: projectId
+      in: path
+      required: true
+      schema: { type: string }
+  responses:
+    Unauthenticated:
+      description: 인증 실패
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+    NotFound:
+      description: 없거나 비공개이거나 모집 전
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+  schemas:
+    ErrorEnvelope:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message, requestId]
+          properties:
+            code: { type: string }
+            message: { type: string }
+            requestId: { type: string }
+    ProjectDetailEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: '#/components/schemas/ProjectDetail' }
+    ProjectDetail:
+      type: object
+      required: [projectId, title, status, itemCount, items, client]
+      properties:
+        projectId: { type: string }
+        title: { type: string }
+        industryCode: { type: string }
+        requiredSkills:
+          type: array
+          items: { type: string }
+        status:
+          type: string
+          enum: [SCHEDULED, RECRUITING, SELECTING, ACCEPTED, CONTRACTED, EXPIRED]
+        deadline:
+          oneOf:
+            - { type: string, format: date-time }
+            - type: 'null'
+        itemCount: { type: integer }
+        hopeBudgetBand:
+          oneOf:
+            - { type: string }
+            - type: 'null'
+        summary: { type: string }
+        hopeBudget:
+          oneOf:
+            - { type: integer }
+            - type: 'null'
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/SpecItem' }
+        client: { $ref: '#/components/schemas/ClientCard' }
+    SpecItem:
+      type: object
+      required: [specItemId, title, description, conditions, wireframe]
+      properties:
+        specItemId:
+          type: string
+          description: 현재 버전 INCLUDED SpecItem의 실제 ID. B 지원 제출 `items[].specItemId`에 그대로 사용한다.
+        title: { type: string }
+        description: { type: string }
+        conditions: {}
+        wireframe: {}
+    ClientCard:
+      type: object
+      required: [name, businessName, industryField, storeAddress, bio, websiteUrl, ratingAvg, reviewCount]
+      properties:
+        name:
+          oneOf:
+            - { type: string }
+            - type: 'null'
+        businessName: { type: string }
+        industryField:
+          oneOf:
+            - { type: string }
+            - type: 'null'
+        storeAddress:
+          oneOf:
+            - { type: string }
+            - type: 'null'
+        bio:
+          oneOf:
+            - { type: string }
+            - type: 'null'
+        websiteUrl:
+          oneOf:
+            - { type: string }
+            - type: 'null'
+        ratingAvg:
+          oneOf:
+            - { type: number }
+            - type: 'null'
+        reviewCount: { type: integer }
