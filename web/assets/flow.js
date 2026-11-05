@@ -188,6 +188,165 @@
     return next;
   }
 
+  if (screen === 'Contracts-Client' || screen === 'Contracts-Supplier') {
+    if (!MJ.requireLogin(location.pathname + location.search)) return;
+    const isClient = screen === 'Contracts-Client';
+
+    void (async () => {
+      try {
+        const rows = await MJ.request('/me/contracts');
+        const list = Array.isArray(rows) ? rows : [];
+        const label = (status) => ({
+          PENDING_CONSENT: '서명 대기', ACTIVE: '진행 중', CANCEL_REQUESTED: '취소 요청 중',
+          COMPLETED: '완료', CANCELLED: '취소/결렬',
+        })[status] || status;
+        const host = document.createElement('section');
+        host.className = 'card';
+        host.id = 'live-contracts';
+        host.style.marginBottom = '16px';
+        host.innerHTML = `<h2 class="ct">내 계약</h2>
+          ${list.length === 0 ? '<p class="note">계약이 없습니다.</p>' : list.map((contract) => {
+            const items = Array.isArray(contract.items) ? contract.items : [];
+            const title = `${items[0]?.title || '계약'}${items.length > 1 ? ` 외 ${items.length - 1}개` : ''}`;
+            const actions = [
+              `<a class="btn sm gh" href="/Contract-${isClient ? 'Client' : 'Supplier'}?contractId=${encodeURIComponent(contract.id)}">계약서</a>`,
+              isClient && contract.status === 'ACTIVE' && (contract.paymentStatus === 'DEPOSITED' || contract.paymentStatus === 'PARTIALLY_RELEASED')
+                ? `<a class="btn sm gh" href="/Cancel-Client?contractId=${encodeURIComponent(contract.id)}">취소 요청</a>` : '',
+              !isClient && contract.status === 'ACTIVE' && contract.paymentStatus === 'DEPOSITED'
+                ? `<a class="btn sm tint" href="/Deliver-Supplier?contractId=${encodeURIComponent(contract.id)}">납품하기</a>` : '',
+              contract.status === 'COMPLETED'
+                ? `<a class="btn sm tint" href="/Review-${isClient ? 'Client' : 'Supplier'}?contractId=${encodeURIComponent(contract.id)}">리뷰 쓰기</a>` : '',
+              isClient && (contract.status === 'ACTIVE' || contract.status === 'CANNOT')
+                ? `<a class="btn sm gh" href="/Settle-Client?contractId=${encodeURIComponent(contract.id)}">정산</a>` : '',
+            ].filter(Boolean).join('');
+            return `<article class="ck" style="margin:12px 0">
+              <div class="bd">
+                <div class="hd"><span class="chip ${contract.status === 'COMPLETED' ? 'teal' : contract.status === 'CANCELLED' ? 'out' : 'amber'}">${escapeHtml(label(contract.status))}</span><span class="dd">${escapeHtml(contract.paymentStatus)}</span></div>
+                <div class="row1"><div><h3 class="ti">${escapeHtml(title)}</h3>
+                  <p class="mt">합의 ${won(Number(contract.agreedAmount))} · ${Number(contract.durationDays)}일 · 예치 ${won(Number(contract.totalDeposited || 0))}</p></div>
+                  <div class="amt"><div class="k">합의 금액</div><div class="v">${won(Number(contract.agreedAmount))}</div></div></div>
+                <div class="acts" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">${actions}</div>
+              </div>
+            </article>`;
+          }).join('')}`;
+        const head = document.querySelector('.head');
+        head?.parentElement?.insertBefore(host, head.nextSibling);
+        document.querySelectorAll('article.ck, .gx, .cnt').forEach((element) => { element.style.display = 'none'; });
+      } catch (error) {
+        showError(document.body, error.message);
+      }
+    })();
+    return;
+  }
+
+  if (screen === 'Apps-Supplier') {
+    if (!MJ.requireLogin(location.pathname + location.search)) return;
+
+    void (async () => {
+      try {
+        const rows = await MJ.request('/me/applications');
+        const list = Array.isArray(rows) ? rows : [];
+        const label = (status) => ({
+          SUBMITTED: '검토 중', STALE: '재견적 필요', ACCEPTED: '선택됨',
+          REJECTED: '거절됨', AUTO_REJECTED: '자동 거절', WITHDRAWN: '철회됨', SUPERSEDED: '대체됨',
+        })[status] || status;
+        const host = document.createElement('section');
+        host.className = 'card';
+        host.id = 'live-apps';
+        host.style.marginBottom = '16px';
+        host.innerHTML = `<h2 class="ct">내 지원</h2>
+          ${list.length === 0 ? '<p class="note">지원한 프로젝트가 없습니다.</p>' : list.map((application) => `<div class="pj" style="margin:12px 0">
+            <div class="lt"><div class="top"><span class="chip ${application.status === 'ACCEPTED' ? 'teal' : application.status === 'STALE' ? 'amber' : 'blue'}">${escapeHtml(label(application.status))}</span><span class="mt">${kstDate(application.submittedAt)} 지원</span></div>
+              <div class="ti">프로젝트 ${escapeHtml(String(application.projectId).slice(0, 8))}</div>
+              <div class="mt">${won(Number(application.totalAmount))} · ${Number(application.durationDays)}일</div>
+              ${application.message ? `<p class="nt">${escapeHtml(application.message)}</p>` : ''}</div>
+            <div class="rt">${application.status === 'ACCEPTED' ? '<a class="btn sm tint" href="/Contracts-Supplier">계약 보기</a>' : ''}
+              <a class="btn sm gh" href="/Project-Supplier?projectId=${encodeURIComponent(application.projectId)}">프로젝트 보기</a></div>
+          </div>`).join('')}`;
+        const head = document.querySelector('.head');
+        head?.parentElement?.insertBefore(host, head.nextSibling);
+        document.querySelectorAll('.lst, .grp2, .tabs, .tabrow, .tabs2').forEach((element) => { element.style.display = 'none'; });
+      } catch (error) {
+        showError(document.body, error.message);
+      }
+    })();
+    return;
+  }
+
+  if (screen === 'Notify-Client' || screen === 'Notify-Supplier') {
+    if (!MJ.requireLogin(location.pathname + location.search)) return;
+    const isClient = screen === 'Notify-Client';
+
+    void (async () => {
+      try {
+        const rows = await MJ.request('/me/notifications');
+        const list = Array.isArray(rows) ? rows : [];
+        const label = (type) => ({
+          APPLICATION_RECEIVED: '지원이 도착했습니다', APPLICATION_ACCEPTED: '지원이 선택되었습니다',
+          APPLICATION_AUTO_REJECTED: '지원이 자동 거절되었습니다', APPLICATION_REJECTED: '지원이 거절되었습니다',
+          PROJECT_CLOSED: '프로젝트 모집이 마감되었습니다', REQUOTE_REQUESTED: '재견적이 요청되었습니다',
+          NEW_MESSAGE: '새 메시지가 도착했습니다', CONTRACT_BROKEN: '계약이 결렬되었습니다',
+          DEPOSIT_DUE: '예치 기한이 다가옵니다', INSPECTION_DUE: '검수 기한이 다가옵니다',
+          WORK_DUE: '작업 마감이 다가옵니다', WORK_OVERDUE: '작업 마감이 지났습니다',
+          AUTO_APPROVED: '검수 기한이 지나 자동 승인되었습니다', REPORT_REVIEWED: '신고가 처리되었습니다',
+          INQUIRY_ANSWERED: '1:1 문의 답변이 도착했습니다',
+        })[type] || type;
+        const hrefFor = (notification) => {
+          const id = encodeURIComponent(notification.targetId);
+          switch (notification.type) {
+            case 'APPLICATION_RECEIVED': return `/Compare-Client?projectId=${id}`;
+            case 'APPLICATION_ACCEPTED': return `/Contract-${isClient ? 'Client' : 'Supplier'}?contractId=${id}`;
+            case 'APPLICATION_AUTO_REJECTED':
+            case 'APPLICATION_REJECTED':
+            case 'REQUOTE_REQUESTED': return isClient ? `/Compare-Client?projectId=${id}` : `/Apps-Supplier`;
+            case 'PROJECT_CLOSED': return `/Spec-Client?projectId=${id}`;
+            case 'NEW_MESSAGE': return isClient ? `/Compare-Client?projectId=${id.split('%3A')[0]}` : '/Apps-Supplier';
+            case 'CONTRACT_BROKEN': return `/Contract-${isClient ? 'Client' : 'Supplier'}?contractId=${id}`;
+            case 'DEPOSIT_DUE': return `/Escrow-Client?contractId=${id}`;
+            case 'INSPECTION_DUE': return `/Inspect-Client?contractId=${id}`;
+            case 'WORK_DUE':
+            case 'WORK_OVERDUE': return `/Deliver-Supplier?contractId=${id}`;
+            case 'AUTO_APPROVED': return `/Settle-Client?contractId=${id}`;
+            case 'INQUIRY_ANSWERED': return '/Help-Inquiry';
+            default: return null;
+          }
+        };
+        const dropdown = document.querySelector('.dd');
+        if (!dropdown) return;
+        dropdown.innerHTML = `<div class="hd"><b>알림 <span class="n3">${list.filter((row) => !row.isRead).length}</span></b>
+          <button type="button" class="allread" id="live-read-all">모두 읽음</button></div>
+          <div class="scr" id="nt-list">
+            ${list.length === 0 ? '<p class="day">알림이 없습니다</p>' : list.map((notification) => `<a class="nr${notification.isRead ? '' : ' un'}" href="${hrefFor(notification) || '#'}" data-notification="${notification.id}">
+              <span><span class="msg" style="display:block">${escapeHtml(label(notification.type))}</span>
+              <span class="sb" style="display:block">${escapeHtml(String(notification.targetId).slice(0, 8))} · ${kstDate(notification.createdAt)}</span></span>
+              <span class="rt"><span class="tm">${notification.isRead ? '' : '새 알림'}</span></span>
+            </a>`).join('')}
+          </div>`;
+        dropdown.querySelectorAll('[data-notification]').forEach((link) => {
+          link.addEventListener('click', async (event) => {
+            event.preventDefault();
+            const id = link.dataset.notification;
+            const href = link.getAttribute('href');
+            try { await MJ.request(`/me/notifications/${encodeURIComponent(id)}/read`, { method: 'PATCH', body: {} }); } catch { /* ignore */ }
+            if (href && href !== '#') location.assign(href);
+          });
+        });
+        dropdown.querySelector('#live-read-all')?.addEventListener('click', async (event) => {
+          event.preventDefault();
+          try {
+            await MJ.request('/me/notifications/read-all', { method: 'POST', body: {} });
+            location.reload();
+          } catch (error) {
+            showError(event.currentTarget, error.message);
+          }
+        });
+      } catch (error) {
+        showError(document.body, error.message);
+      }
+    })();
+    return;
+  }
+
   if (screen === 'Admin-Disputes') {
     if (!MJ.requireLogin(location.pathname + location.search)) return;
     const user = MJ.session().user;
