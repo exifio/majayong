@@ -306,6 +306,9 @@ function chatRoom(overrides: Partial<ChatRoomRecord> = {}): ChatRoomRecord {
     status: 'SUBMITTED',
     contractStatus: null,
     messages: [],
+    projectTitle: '예약 기능',
+    clientDisplayName: '김의뢰',
+    supplierDisplayName: '박공급',
     ...overrides,
   };
 }

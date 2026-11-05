@@ -31,7 +31,17 @@ export interface ChatApplicationRow {
   readonly projectId: string;
   readonly supplierId: string;
   readonly status: ApplicationStatus;
-  readonly project: { readonly draft: { readonly clientId: string } };
+  readonly project: {
+    readonly title: string;
+    readonly draft: {
+      readonly clientId: string;
+      readonly client: {
+        readonly name: string | null;
+        readonly clientProfile: { readonly businessName: string | null } | null;
+      };
+    };
+  };
+  readonly supplier: { readonly displayName: string };
   readonly contract: { readonly status: ContractDbStatus } | null;
   readonly messages?: readonly ChatMessageRow[];
 }
@@ -41,7 +51,18 @@ const APPLICATION_SELECT = {
   projectId: true,
   supplierId: true,
   status: true,
-  project: { select: { draft: { select: { clientId: true } } } },
+  project: {
+    select: {
+      title: true,
+      draft: {
+        select: {
+          clientId: true,
+          client: { select: { name: true, clientProfile: { select: { businessName: true } } } },
+        },
+      },
+    },
+  },
+  supplier: { select: { displayName: true } },
   contract: { select: { status: true } },
 } as const;
 
@@ -56,7 +77,23 @@ export interface ChatDbClient {
       readonly select?: typeof APPLICATION_SELECT;
       readonly include?: {
         readonly messages: true;
-        readonly project: { readonly select: { readonly draft: { readonly select: { readonly clientId: true } } } };
+        readonly project: {
+          readonly select: {
+            readonly title: true;
+            readonly draft: {
+              readonly select: {
+                readonly clientId: true;
+                readonly client: {
+                  readonly select: {
+                    readonly name: true;
+                    readonly clientProfile: { readonly select: { readonly businessName: true } };
+                  };
+                };
+              };
+            };
+          };
+        };
+        readonly supplier: { readonly select: { readonly displayName: true } };
         readonly contract: { readonly select: { readonly status: true } };
       };
       readonly orderBy?: readonly Readonly<Record<string, 'asc' | 'desc'>>[];
@@ -173,7 +210,20 @@ export function createPrismaChatRoomListPort(db: ChatDbClient): ChatRoomListPort
         },
         include: {
           messages: true,
-          project: { select: { draft: { select: { clientId: true } } } },
+          project: {
+            select: {
+              title: true,
+              draft: {
+                select: {
+                  clientId: true,
+                  client: {
+                    select: { name: true, clientProfile: { select: { businessName: true } } },
+                  },
+                },
+              },
+            },
+          },
+          supplier: { select: { displayName: true } },
           contract: { select: { status: true } },
         },
         orderBy: [{ submittedAt: 'desc' }, { id: 'asc' }],
@@ -182,6 +232,12 @@ export function createPrismaChatRoomListPort(db: ChatDbClient): ChatRoomListPort
         (row): ChatRoomRecord => ({
           ...toChatApplication(row),
           messages: (row.messages ?? []).map(toChatMessage),
+          projectTitle: row.project.title,
+          clientDisplayName:
+            row.project.draft.client.name ??
+            row.project.draft.client.clientProfile?.businessName ??
+            '의뢰인',
+          supplierDisplayName: row.supplier.displayName,
         }),
       );
     },

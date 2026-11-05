@@ -5,6 +5,7 @@ import {
   ChatError,
   countUnread,
   openConversation,
+  listChatRooms,
   listConversation,
   markConversationRead,
   sendMessage,
@@ -14,6 +15,8 @@ import {
   type ChatApplication,
   type ChatMessage,
   type ChatRepository,
+  type ChatRoomListPort,
+  type ChatRoomRecord,
   type NewChatMessage,
 } from '../../src/modules/chat/conversation.ts';
 import {
@@ -595,5 +598,42 @@ describe('B-03-T08 방별 새 메시지 알림 연결', () => {
       isChatError(403, 'CHAT_READ_ONLY'),
     );
     assert.equal(calls, 0);
+  });
+});
+
+describe('B-03-T05 채팅방 표시 정보', () => {
+  function room(overrides: Partial<ChatRoomRecord> = {}): ChatRoomRecord {
+    return {
+      ...chatApplication(),
+      messages: [chatMessage()],
+      projectTitle: '예약 기능',
+      clientDisplayName: '김의뢰',
+      supplierDisplayName: '박공급',
+      ...overrides,
+    };
+  }
+  function port(rooms: readonly ChatRoomRecord[]): ChatRoomListPort {
+    return {
+      async listRoomsForUser() {
+        return rooms;
+      },
+    };
+  }
+
+  it('CLIENT에게는 상대 공급자 표시 이름과 프로젝트 제목을 준다', async () => {
+    const rooms = await listChatRooms(port([room()]), { actor: CLIENT });
+    assert.equal(rooms[0]?.projectTitle, '예약 기능');
+    assert.equal(rooms[0]?.counterpartDisplayName, '박공급');
+  });
+
+  it('SUPPLIER에게는 상대 의뢰인 표시 이름과 프로젝트 제목을 준다', async () => {
+    const rooms = await listChatRooms(port([room()]), { actor: SUPPLIER });
+    assert.equal(rooms[0]?.projectTitle, '예약 기능');
+    assert.equal(rooms[0]?.counterpartDisplayName, '김의뢰');
+  });
+
+  it('비당사자에게는 방을 주지 않는다', async () => {
+    const rooms = await listChatRooms(port([room()]), { actor: INTRUDER });
+    assert.equal(rooms.length, 0);
   });
 });

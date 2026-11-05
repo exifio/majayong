@@ -113,6 +113,9 @@ export interface ConversationView {
 /** 채팅방 목록 Port. 회차가 여러 개여도 방(project+supplier) 단위 record를 준다. */
 export interface ChatRoomRecord extends ChatApplication {
   readonly messages: readonly ChatMessage[];
+  readonly projectTitle: string;
+  readonly clientDisplayName: string;
+  readonly supplierDisplayName: string;
 }
 
 export interface ChatRoomListPort {
@@ -120,6 +123,9 @@ export interface ChatRoomListPort {
 }
 
 export interface ChatRoomSummary extends ChatApplication {
+  readonly projectTitle: string;
+  /** 조회자 기준 상대방 표시 이름. 내부 사용자 ID는 새로 노출하지 않는다. */
+  readonly counterpartDisplayName: string;
   readonly lastMessage: ChatMessage | null;
   readonly unreadCount: number;
 }
@@ -278,6 +284,11 @@ export async function listChatRooms(
       supplierId: room.supplierId,
       status: room.status,
       contractStatus: room.contractStatus,
+      projectTitle: room.projectTitle,
+      counterpartDisplayName:
+        room.clientUserId === input.actor.userId
+          ? room.supplierDisplayName
+          : room.clientDisplayName,
       lastMessage,
       unreadCount: countUnread(room.messages, input.actor.userId),
     };
