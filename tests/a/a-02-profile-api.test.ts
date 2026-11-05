@@ -312,6 +312,37 @@ describe("A-02 profile and disclosure API", () => {
     });
   });
 
+  it("allows an NDA-only patch on an existing supplier profile when the user has no name", async () => {
+    const row = await prisma.user.create({ data: { email: `a02-${randomUUID()}@example.invalid`, role: Role.SUPPLIER, name: null } });
+    createdUsers.add(row.id);
+    await prisma.supplierProfile.create({ data: { userId: row.id, displayName: "Existing Vendor", industryCodes: [], skills: [] } });
+    const token = issueAccessToken({ userId: row.id, role: Role.SUPPLIER, expiresAt: now.getTime() + 60_000 }, secret);
+
+    await withServer({ encryptionKey, supplierNdaVersion: "nda-v1" }, async baseUrl => {
+      const response = await request(baseUrl, "PATCH", "/me/supplier-profile", token, { ndaConsent: true });
+      expect(response.status).toBe(200);
+      const body = await response.json() as { data: { displayName: string; ndaAgreedAt: string | null } };
+      expect(body.data.displayName).toBe("Existing Vendor");
+      expect(body.data.ndaAgreedAt).not.toBeNull();
+      const saved = await prisma.supplierProfile.findUniqueOrThrow({ where: { userId: row.id } });
+      expect(saved.displayName).toBe("Existing Vendor");
+      expect(saved.ndaAgreedAt).not.toBeNull();
+    });
+  });
+
+  it("still requires displayName when creating a new supplier profile", async () => {
+    const row = await prisma.user.create({ data: { email: `a02-${randomUUID()}@example.invalid`, role: Role.SUPPLIER, name: null } });
+    createdUsers.add(row.id);
+    const token = issueAccessToken({ userId: row.id, role: Role.SUPPLIER, expiresAt: now.getTime() + 60_000 }, secret);
+
+    await withServer({ encryptionKey, supplierNdaVersion: "nda-v1" }, async baseUrl => {
+      const response = await request(baseUrl, "PATCH", "/me/supplier-profile", token, { ndaConsent: true });
+      expect(response.status).toBe(422);
+      const body = await response.json() as { error: { code: string } };
+      expect(body.error.code).toBe("SUPPLIER_PROFILE_INCOMPLETE");
+    });
+  });
+
   it("does not expose a client profile before supplier NDA and detailed-disclosure evidence", async () => {
     const client = await user(Role.CLIENT, "Client Owner");
     await prisma.clientProfile.create({ data: { userId: client.id, businessName: "Client Shop", industryField: "Cafe", storeAddress: "Private after NDA", bizRegNo: "111-22-33333", taxInvoiceEmail: "client-tax@example.invalid", profileCompleted: true } });

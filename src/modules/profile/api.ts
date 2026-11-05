@@ -144,8 +144,12 @@ function ownSupplierData(row: ProfileAccount, user: { name: string | null; bio: 
 type SupplierProfileStore = Pick<PrismaClient, "user" | "supplierProfile">;
 
 async function upsertSupplier(db: SupplierProfileStore, userId: string, data: Prisma.SupplierProfileUpdateInput, createDisplayName?: string): Promise<ProfileAccount> {
-  const account = await db.user.findUnique({ where: { id: userId }, select: { name: true } });
-  const displayName = createDisplayName ?? account?.name;
+  const [account, existing] = await Promise.all([
+    db.user.findUnique({ where: { id: userId }, select: { name: true } }),
+    db.supplierProfile.findUnique({ where: { userId }, select: { displayName: true } }),
+  ]);
+  // 기존 프로필의 displayName은 유효한 값이므로 부분 수정(NDA 동의 등)에서 다시 요구하지 않는다.
+  const displayName = createDisplayName ?? account?.name ?? existing?.displayName;
   if (!displayName) throw new ProfileError("SUPPLIER_PROFILE_INCOMPLETE", 422);
   return db.supplierProfile.upsert({
     where: { userId },
