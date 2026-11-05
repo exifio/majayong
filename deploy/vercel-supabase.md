@@ -1,0 +1,105 @@
+# Vercel Functions + Supabase PostgreSQL 배포 런북
+
+- 백엔드 저장소: `https://github.com/exifio/majayong-backend`
+- 배포 브랜치: `main`
+- 이 문서는 Vercel/Supabase 기준이다. 기존 `railway.json`과 `deploy/staging.md`는 Railway 시절 기록이며 이 배포에서 사용하지 않는다.
+
+## 1. 구성
+
+```text
+Browser
+  → Vercel Frontend (majayong-frontend)
+  → Vercel Function proxy /api/v1/*
+  → Vercel Backend Function (majayong-backend)
+  → Supabase PostgreSQL (private)
+```
+
+- 프론트엔드는 기존 `apps/web/api/v1/[...path].js` 프록시로 공개 HTTPS 백엔드에 전달한다.
+- 백엔드는 Express 앱을 그대로 Vercel Function handler로 사용한다.
+- Vercel Function은 DB에 직접 붙지 않고, Supabase의 Postgres 연결 문자열로 붙는다.
+- Supabase Data API(PostgREST)는 공개하지 않는다. Prisma는 Postgres 연결만 사용한다.
+
+## 2. Vercel 백엔드 프로젝트
+
+기존 `majayong-deploy`(실패한 설정)를 재사용하지 않고 **새 프로젝트**를 만든다.
+
+- Project name: `majayong-backend-staging`
+- Git repository: `exifio/majayong-backend`
+- Production branch: `main`
+- Root Directory: `.`
+- Framework Preset: `Other`
+- Node.js: `22.x`
+- Build Command: `npx prisma generate && npm run build`
+- Output Directory: 비움
+- Install Command: 기본값
+
+`vercel.json`이 build/function 설정을 함께 정의한다.
+
+```json
+{
+  "buildCommand": "npx prisma generate && npm run build",
+  "functions": { "api/**/*.js": { "maxDuration": 60, "memory": 1024 } },
+  "rewrites": [{ "source": "/health", "destination": "/api/health" }]
+}
+```
+
+- `api/v1/[...path].js`가 `/api/v1/*`를 Express 앱으로 전달한다.
+- `api/health.js`는 `/health`를 200 `{data:{status:"ok"}}`로 응답한다.
+- `src/index.ts`는 로컬 listen/스케줄러 전용이고, Vercel handler는 `app.listen`을 호출하지 않는다.
+- PrismaClient는 `src/server-app.ts` module scope에서 한 번 생성한다.
+
+## 3. Supabase PostgreSQL
+
+- Supabase 프로젝트의 **Postgres 연결 문자열**을 사용한다.
+- 런타임 `DATABASE_URL`: Transaction Pooler URL (6543) + `?pgbouncer=true&connection_limit=1`
+- 마이그레이션 `MIGRATION_DATABASE_URL`: Direct connection (5432)
+- Prisma 6은 PgBouncer transaction mode에서 prepared statement를 쓰지 않도록 `pgbouncer=true`를 사용한다.
+- Data API/anon key로 테이블을 공개하지 않는다. RLS/스키마 노출 설정을 확인한다.
+- Vercel Function은 Supabase 내부 private network에 직접 붙는 것이 아니라, 공개 Postgres endpoint(또는 pooler)로 TLS 연결한다.
+
+### migration·seed (Function 시작 시 실행 금지)
+
+별도 배포/운영 단계에서 한 번만 실행한다.
+
+```bash
+MIGRATION_DATABASE_URL='postgresql://...:5432/postgres' npm run db:migrate:staging
+DATABASE_URL="$MIGRATION_DATABASE_URL" npm run db:seed:staging
+```
+
+- `prisma migrate deploy` 4개 migration 적용을 확인한다.
+- `db:seed:staging`은 승인된 catalog block 36개를 upsert한다.
+- Vercel Function의 cold start/매 요청에서 migration을 실행하지 않는다.
+- 실패 시 배포를 중단하고, 이전 Vercel deployment로 rollback한다. DB migration은 forward-only이므로 배포 전 백업을 남긴다.
+
+## 4. 환경변수 (값 제외)
+
+필수:
+`DATABASE_URL`, `MIGRATION_DATABASE_URL`(배포 단계에서만), `TOKEN_SECRET`, `PROFILE_DATA_KEY`, `PROJECT_DISCLOSURE_CONSENT_VERSION`, `SUPPLIER_NDA_VERSION`, `NODE_ENV=production`, `JOB_SCHEDULER_ENABLED=false`.
+
+선택:
+`OPENAI_API_KEY`, `OPENAI_MODEL`, `OPENAI_USD_TO_KRW_RATE`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_STORAGE_BUCKET`.
+
+결제 완료 검증 전 비활성:
+`TOSS_SECRET_KEY`, `TOSS_SANDBOX_BASE_URL`, `TOSS_WEBHOOK_SECRET`.
+
+FE Vercel:
+`BACKEND_API_URL=https://<backend-domain>` (`/api/v1` 제외).
+
+## 5. 검증
+
+1. `GET https://<backend-domain>/health` 200
+2. `POST /api/v1/auth/login` 200
+3. `POST /api/v1/auth/refresh` 200 (refresh rotation)
+4. `GET /api/v1/me` 200
+5. 프로젝트·지원·채팅·알림·합의·계약·서명
+6. C API `{data}`/`{error:{code,message,requestId}}` 봉투
+7. `GET /api/v1/contracts/{id}/deposits` 200 `{data:[]}` 또는 PENDING
+8. Vercel Function logs에 Prisma connection error/secret 노출이 없는지 확인
+
+## 6. 제한·차단
+
+- Vercel Function `maxDuration` 60초, `memory` 1024MB. 장시간 배치/대용량 작업은 별도 worker 필요.
+- `JOB_SCHEDULER_ENABLED=false`이므로 서명·예치 기한 자동 결렬/마감 배치는 실행되지 않는다.
+- Toss 실제 결제·webhook 완료는 비활성. 예치 요청은 PENDING까지만.
+- 실제 송금·정산·환불, PDF 렌더링, 이메일 발송은 범위 밖/미연결.
+- Supabase DB 연결 문자열과 Vercel 프로젝트 연결은 별도 승인·자격이 필요하다.

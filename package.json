@@ -2,6 +2,9 @@
   "name": "majayong",
   "version": "1.0.0",
   "type": "module",
+  "engines": {
+    "node": "22.x"
+  },
   "scripts": {
     "build": "tsc",
     "typecheck": "tsc --noEmit",
@@ -10,6 +13,7 @@
     "db:validate": "prisma validate --schema prisma/schema.prisma",
     "db:generate": "prisma generate --schema prisma/schema.prisma",
     "db:migrate": "prisma migrate deploy --schema prisma/schema.prisma",
+    "db:migrate:staging": "DATABASE_URL=\"$MIGRATION_DATABASE_URL\" prisma migrate deploy --schema prisma/schema.prisma",
     "db:seed:staging": "node scripts/seed-staging.mjs",
     "db:verify:b": "node scripts/verify-b-pg.mjs",
     "test:a": "jest --runInBand tests/a",
