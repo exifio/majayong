@@ -87,7 +87,14 @@ DATABASE_URL="$MIGRATION_DATABASE_URL" npm run db:seed:staging
 FE Vercel:
 `BACKEND_API_URL=https://<backend-domain>` (`/api/v1` 제외).
 
-## 5. 검증
+## 5. 스테이징 접근 보호
+
+- Vercel 프로젝트에 Deployment Protection(Standard Protection 또는 Password Protection)을 적용한다.
+- FE는 `apps/web/api/v1/[...path].js` **서버 함수 프록시**로 백엔드에 접근한다.
+- 보호가 켜져 있으면 FE Vercel 프로젝트의 서버 환경변수에 `VERCEL_AUTOMATION_BYPASS_SECRET`을 두고, 프록시 요청에 `x-vercel-protection-bypass` 헤더를 추가한다. 이 값은 브라우저에 노출하지 않는다.
+- 프록시가 보호를 통과하지 못하면 `BACKEND_API_URL`만으로는 401/403이 난다. 배포 후 실제 프록시 경로로 확인한다.
+
+## 6. 검증
 
 1. `GET https://<backend-domain>/health` 200
 2. `POST /api/v1/auth/login` 200
@@ -97,6 +104,7 @@ FE Vercel:
 6. C API `{data}`/`{error:{code,message,requestId}}` 봉투
 7. `GET /api/v1/contracts/{id}/deposits` 200 `{data:[]}` 또는 PENDING
 8. Vercel Function logs에 Prisma connection error/secret 노출이 없는지 확인
+9. `api/v1/[...path].js`가 `/api/v1/auth/login` 같은 다중 세그먼트를 404 없이 처리하는지 확인
 
 ## 6. 제한·차단
 
