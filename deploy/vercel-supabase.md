@@ -51,9 +51,11 @@ Browser
 ## 3. Supabase PostgreSQL
 
 - Supabase 프로젝트의 **Postgres 연결 문자열**을 사용한다.
-- 런타임 `DATABASE_URL`: Transaction Pooler URL (6543) + `?pgbouncer=true&connection_limit=1`
-- 마이그레이션 `MIGRATION_DATABASE_URL`: Direct connection (5432)
-- Prisma 6은 PgBouncer transaction mode에서 prepared statement를 쓰지 않도록 `pgbouncer=true`를 사용한다.
+- 런타임 `DATABASE_URL`: **Transaction Pooler**(6543) + `?pgbouncer=true&connection_limit=1&sslmode=require`
+- 마이그레이션 `MIGRATION_DATABASE_URL`: **Direct connection**(5432) 우선. Direct가 IPv6/네트워크 문제로 불가하면 공식 문서에 따라 **Session Pooler**(5432, shared pooler)를 사용한다.
+- Session Pooler는 prepared statement와 session state를 지원하므로 migration/pg_dump에 사용할 수 있다. **Transaction Pooler(6543)는 migration에 사용하지 않는다.**
+- Prisma 6은 PgBouncer transaction mode에서 prepared statement를 쓰지 않도록 `pgbouncer=true`를 사용한다. SSL은 `sslmode=require`를 사용한다.
+- Pooler host/username은 Supabase Dashboard의 **Connect**에서 복사한다. `aws-[INDEX]-[REGION].pooler.supabase.com`의 index/region은 임의로 조합하지 않는다.
 - Data API/anon key로 테이블을 공개하지 않는다. RLS/스키마 노출 설정을 확인한다.
 - Vercel Function은 Supabase 내부 private network에 직접 붙는 것이 아니라, 공개 Postgres endpoint(또는 pooler)로 TLS 연결한다.
 
