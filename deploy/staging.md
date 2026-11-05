@@ -25,6 +25,7 @@ healthcheck: GET /health (200)
 
 - `PORT`는 플랫폼이 주입한다. 코드는 `process.env.PORT ?? 3000`을 사용한다.
 - migration 실패 시 `npm run db:migrate`가 실패하고 프로세스가 뜨지 않아 배포가 실패한다.
+- 런타임에 `prisma` CLI가 필요하므로 `npm ci --omit=dev`만으로 시작하지 않는다. Nixpacks 기본 설치(빌드용 devDependencies 포함)를 사용하거나 migration을 pre-deploy 단계로 분리한다.
 - `GET /health`는 인증 없이 `{data:{status:"ok"}}`를 반환한다.
 - 데이터는 PostgreSQL에만 있으므로 재시작해도 유지된다. access token은 `TOKEN_SECRET`이 같으면 유효하다.
 
