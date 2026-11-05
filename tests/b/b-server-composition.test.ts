@@ -71,7 +71,7 @@ function prismaPorts(): BPrismaPorts {
         update: unused,
         updateMany: unused,
       },
-      application: { findFirst: unused, findMany: unused, updateMany: unused },
+      application: { findFirst: unused, findMany: unused, findUnique: unused, update: unused, updateMany: unused },
       project: { findUnique: unused, updateMany: unused },
       applicationMessage: { create: unused },
       eventLog: { create: unused },

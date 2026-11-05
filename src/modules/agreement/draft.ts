@@ -395,7 +395,7 @@ function latestMessageTime(
   }, Number.NEGATIVE_INFINITY);
 }
 
-function emptyDraft(spec: AgreementSpec, now: Date): AgreementDraft {
+export function emptyDraft(spec: AgreementSpec, now: Date): AgreementDraft {
   return {
     items: spec.items.map((item) => ({
       blockId: item.blockId,

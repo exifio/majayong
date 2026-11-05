@@ -9,7 +9,7 @@
  */
 import { createHash } from 'node:crypto';
 
-import type { AgreementCondition, AgreementDraft } from '../agreement/draft.js';
+import { emptyDraft, type AgreementCondition, type AgreementDraft, type AgreementSpec } from '../agreement/draft.js';
 import { ApplicationError, type ApplicationRecord, type ApplicationStatus } from '../application/dto.js';
 import type { PaymentStatus } from './display-status.js';
 import type { ProjectStatus } from '../market/public-project.js';
@@ -135,6 +135,8 @@ export interface ContractTx {
   findContract(contractId: string): Promise<ContractRecord | null>;
   listBreakCandidates(now: Date): Promise<readonly ContractRecord[]>;
   listProjectApplications(projectId: string): Promise<readonly ApplicationRecord[]>;
+  findAgreementDraft(applicationId: string): Promise<AgreementDraft | null>;
+  saveAgreementDraft(applicationId: string, draft: AgreementDraft): Promise<void>;
   updateApplicationStatus(input: {
     readonly applicationId: string;
     readonly from: readonly ApplicationStatus[];
@@ -436,7 +438,10 @@ export async function acceptAgreement(
   input: {
     readonly actor: ContractActor;
     readonly application: ApplicationRecord;
-    readonly agreement: AgreementDraft | null;
+    /** 저장된 초안이 없을 때 결정론적 기본 초안을 만드는 데 쓴다. HTTP 경로는 preview.getSpec을 넘긴다. */
+    readonly spec?: AgreementSpec;
+    /** 기존 호출자 호환용. 트랜잭션에 저장된 초안이 있으면 그쪽이 우선한다. */
+    readonly agreement?: AgreementDraft | null;
     readonly items: readonly ContractItemSource[];
     readonly now: Date;
   },
@@ -448,13 +453,6 @@ export async function acceptAgreement(
     throw new ContractError(404, 'APPLICATION_NOT_FOUND', '지원 정보를 찾을 수 없습니다.');
   }
 
-  const plan = prepareProvisionalContract({
-    application: input.application,
-    agreement: input.agreement,
-    items: input.items,
-    now: input.now,
-  });
-
   return uow.run(async (tx) => {
     const latest = await tx.findLatestRevision({
       projectId: input.application.projectId,
@@ -463,7 +461,7 @@ export async function acceptAgreement(
     if (latest === null) {
       throw new ContractError(404, 'APPLICATION_NOT_FOUND', '지원 정보를 찾을 수 없습니다.');
     }
-    if (latest.id !== plan.applicationId || latest.revisionNo !== input.application.revisionNo) {
+    if (latest.id !== input.application.id || latest.revisionNo !== input.application.revisionNo) {
       throw new ContractError(
         409,
         'APPLICATION_REVISION_SUPERSEDED',
@@ -478,10 +476,40 @@ export async function acceptAgreement(
       );
     }
 
-    const project = await tx.findProject(input.application.projectId);
+    const project = await tx.findProject(latest.projectId);
     if (project === null) {
       throw new ContractError(404, 'PROJECT_NOT_FOUND', '프로젝트를 찾을 수 없습니다.');
     }
+    if (project.status !== 'RECRUITING' && project.status !== 'SELECTING') {
+      throw new ContractError(
+        409,
+        'PROJECT_ALREADY_CONTRACTED',
+        '이미 다른 공급자와 계약을 진행 중입니다.',
+      );
+    }
+
+    // 저장된 유효 초안을 우선 사용하고, 없으면 현재 명세 기준 기본 초안을 같은 tx에서 만든다.
+    let agreement = await tx.findAgreementDraft(latest.id);
+    if (agreement === null) {
+      agreement =
+        input.agreement ??
+        (input.spec === undefined ? null : emptyDraft(input.spec, input.now));
+      if (agreement === null) {
+        throw new ContractError(
+          409,
+          'AGREEMENT_REQUIRED',
+          '최종 합의 내용이 없어 임시 계약을 만들 수 없습니다.',
+        );
+      }
+      await tx.saveAgreementDraft(latest.id, agreement);
+    }
+
+    const plan = prepareProvisionalContract({
+      application: latest,
+      agreement,
+      items: input.items,
+      now: input.now,
+    });
 
     const projectAccepted = await tx.updateProjectStatus({
       projectId: project.id,
@@ -512,8 +540,8 @@ export async function acceptAgreement(
 
     const contract = await tx.createContract({
       ...plan,
-      clientUserId: input.application.clientUserId,
-      supplierId: input.application.supplierId,
+      clientUserId: latest.clientUserId,
+      supplierId: latest.supplierId,
     });
 
     await tx.appendSystemMessage({
@@ -521,14 +549,14 @@ export async function acceptAgreement(
       body: '합의가 완료되어 임시 계약이 생성되었습니다. 서명 기한은 7일입니다.',
     });
     await tx.notify({
-      userId: input.application.supplierId,
+      userId: latest.supplierId,
       type: 'APPLICATION_ACCEPTED',
       targetId: contract.id,
       payload: { applicationId: plan.applicationId },
       now: input.now,
     });
     await tx.logEvent({
-      userId: input.application.clientUserId,
+      userId: latest.clientUserId,
       type: 'APPLICATION_ACCEPTED',
       payload: {
         applicationId: plan.applicationId,

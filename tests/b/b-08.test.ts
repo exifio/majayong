@@ -220,6 +220,8 @@ describe('B-08-T03 transaction rollback·대화 메시지 불변', () => {
           findContract: async () => null,
           listBreakCandidates: async () => [],
           listProjectApplications: async () => [],
+          findAgreementDraft: async () => null,
+          saveAgreementDraft: async () => {},
           updateApplicationStatus: async (input) => {
             if (draft.applicationStatus !== input.from[0]) return false;
             draft.applicationStatus = input.to === 'ACCEPTED' ? 'ACCEPTED' : 'SUBMITTED';

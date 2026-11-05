@@ -147,6 +147,12 @@ function makeDb(rows: ContractRow[]) {
       async findMany() {
         return [];
       },
+      async findUnique() {
+        return null;
+      },
+      async update() {
+        return {};
+      },
       async updateMany() {
         return { count: 1 };
       },

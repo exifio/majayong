@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
-import type { AgreementCondition, AgreementDraft } from '../../src/modules/agreement/draft.ts';
+import type { AgreementCondition, AgreementDraft, AgreementSpec } from '../../src/modules/agreement/draft.ts';
 import type { ApplicationRecord, ApplicationStatus } from '../../src/modules/application/dto.ts';
 import {
   createContractNotificationPort,
@@ -95,6 +95,16 @@ function agreementDraft(overrides: Partial<AgreementDraft> = {}): AgreementDraft
   };
 }
 
+function spec(): AgreementSpec {
+  return {
+    items: [
+      { blockId: 'block-1', specItemId: 'spec-1', title: '예약 달력', stage: 'FINAL', conditions: [{ key: 'scope', text: '예약 시간대' }] },
+      { blockId: 'block-2', specItemId: 'spec-2', title: '예약금 결제', stage: 'INTERIM', conditions: [{ key: 'milestone', text: '중간 지급 시점' }] },
+    ],
+    defaultInterimRatio: 50,
+  };
+}
+
 function sources(): readonly ContractItemSource[] {
   return [
     {
@@ -169,6 +179,7 @@ class FakeContractTx implements ContractTx {
   notifications: NotificationRow[] = [];
   events: EventRow[] = [];
   lastCancelReason: ContractBreakReason | null = null;
+  readonly agreementDrafts = new Map<string, AgreementDraft>();
   readonly notificationTx = new FakeNotificationTx();
   readonly notificationPort = createContractNotificationPort(this.notificationTx);
   failNotificationInsert = false;
@@ -237,6 +248,14 @@ class FakeContractTx implements ContractTx {
 
   async listProjectApplications(projectId: string): Promise<readonly ApplicationRecord[]> {
     return this.applications.filter((application) => application.projectId === projectId);
+  }
+
+  async findAgreementDraft(applicationId: string): Promise<AgreementDraft | null> {
+    return this.agreementDrafts.get(applicationId) ?? null;
+  }
+
+  async saveAgreementDraft(applicationId: string, draft: AgreementDraft): Promise<void> {
+    this.agreementDrafts.set(applicationId, draft);
   }
 
   async updateApplicationStatus(input: {
@@ -1233,5 +1252,48 @@ describe('B-05-T08 계약 중 명세 변경 거부', () => {
 
     const active = await signBoth(uow, contract);
     assert.equal(active.status, 'ACTIVE');
+  });
+});
+
+describe('B-05-T09 기본 합의 초안 자동 생성', () => {
+  it('저장된 초안이 없으면 현재 명세 기준 기본 초안을 만들어 저장한다', async () => {
+    const { tx, uow } = setup();
+
+    const result = await acceptAgreement(uow, {
+      actor: CLIENT,
+      application: applicationRecord(),
+      spec: spec(),
+      items: sources(),
+      now: FIXED_NOW,
+    });
+
+    const saved = tx.agreementDrafts.get('app-1');
+    assert.ok(saved !== undefined);
+    assert.equal(saved.ratioState, 'UNDECIDED');
+    assert.equal(saved.interimRatio, 50);
+    assert.ok(saved.items.every((item) => item.conditions.every((condition) => condition.state === 'UNDECIDED')));
+    assert.equal(result.contract.status, 'PENDING_CONSENT');
+    assert.equal(result.plan.interimRatio, 50);
+    assert.equal(tx.applications[0]?.status, 'ACCEPTED');
+    assert.equal(tx.projects[0]?.status, 'ACCEPTED');
+    assert.equal(tx.notifications.length, 1);
+    assert.equal(tx.systemMessages.length, 1);
+  });
+
+  it('저장된 유효 초안이 있으면 그 초안을 재사용한다', async () => {
+    const { tx, uow } = setup();
+    const stored = agreementDraft({ interimRatio: 60, ratioState: 'DECIDED' });
+    tx.agreementDrafts.set('app-1', stored);
+
+    const result = await acceptAgreement(uow, {
+      actor: CLIENT,
+      application: applicationRecord(),
+      spec: spec(),
+      items: sources(),
+      now: FIXED_NOW,
+    });
+
+    assert.equal(result.plan.interimRatio, 60);
+    assert.deepEqual(tx.agreementDrafts.get('app-1'), stored);
   });
 });

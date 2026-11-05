@@ -51,7 +51,7 @@ export function createPrismaAgreementDraftStore(
   };
 }
 
-function parseAgreementDraft(value: unknown): AgreementDraft {
+export function parseAgreementDraft(value: unknown): AgreementDraft {
   if (!isRecord(value) || !Array.isArray(value.items)) throw new Error('Invalid agreementDraft JSON');
   if (typeof value.interimRatio !== 'number' || !Number.isInteger(value.interimRatio) ||
     value.interimRatio < 10 || value.interimRatio > 90) {

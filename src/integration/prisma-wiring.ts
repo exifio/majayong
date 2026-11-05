@@ -66,6 +66,8 @@ function delegates(db: Db) {
       application: {
         findFirst: db.application.findFirst.bind(db.application),
         findMany: db.application.findMany.bind(db.application),
+        findUnique: db.application.findUnique.bind(db.application),
+        update: db.application.update.bind(db.application),
         updateMany: db.application.updateMany.bind(db.application),
       },
       project: {
