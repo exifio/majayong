@@ -188,6 +188,198 @@
     return next;
   }
 
+  if (screen === 'Profile-Client') {
+    if (!MJ.requireLogin(location.pathname + location.search)) return;
+
+    void (async () => {
+      try {
+        const profile = await MJ.request('/me/client-profile');
+        const industry = profile?.industryField === 'RESTAURANT_RESERVATION' ? '예약 기반 음식점' : '기타 (직접 입력)';
+        const set = (selector, value) => { const element = $(selector); if (element) element.value = value == null ? "" : value; };
+        set('#p-name', profile?.name);
+        set('#p-biz', profile?.businessName);
+        set('#p-field', industry);
+        set('#p-addr', profile?.storeAddress);
+        set('#p-web', profile?.websiteUrl);
+        set('#p-bio', profile?.bio);
+
+        const save = $('#profile-save');
+        const note = document.createElement('p');
+        note.className = 'sec';
+        note.hidden = true;
+        save?.parentElement?.appendChild(note);
+        save?.addEventListener('click', async (event) => {
+          event.preventDefault();
+          clearError();
+          note.hidden = true;
+          const businessName = String($('#p-biz')?.value || '').trim();
+          if (!businessName) {
+            showError(save, '상호를 입력해 주세요.');
+            return;
+          }
+          busy(save, true, '저장하는 중…');
+          try {
+            await MJ.updateClientProfile({
+              name: String($('#p-name')?.value || '').trim() || null,
+              businessName,
+              industryField: String($('#p-field')?.value || '').includes('예약') ? 'RESTAURANT_RESERVATION' : 'GENERAL',
+              storeAddress: String($('#p-addr')?.value || '').trim() || null,
+              websiteUrl: String($('#p-web')?.value || '').trim() || null,
+              bio: String($('#p-bio')?.value || '').trim() || null,
+            });
+            busy(save, false);
+            note.textContent = '저장했습니다.';
+            note.hidden = false;
+          } catch (error) {
+            busy(save, false);
+            showError(save, error.message);
+          }
+        });
+      } catch (error) {
+        showError(document.body, error.message);
+      }
+    })();
+    return;
+  }
+
+  if (screen === 'Profile-Supplier') {
+    if (!MJ.requireLogin(location.pathname + location.search)) return;
+
+    void (async () => {
+      try {
+        const profile = await MJ.request('/me/supplier-profile');
+        const set = (selector, value) => { const element = $(selector); if (element) element.value = value == null ? "" : value; };
+        set('#s-name', profile?.displayName || profile?.name);
+        set('#s-career', profile?.careerYears);
+        set('#s-bio', profile?.bio);
+        const industry = (profile?.industryCodes || []).includes('RESTAURANT_RESERVATION') ? '예약 기반 음식점' : '기타 (직접 입력)';
+        set('#s-ind', industry);
+        document.querySelectorAll('.tag').forEach((tag) => {
+          const name = tag.textContent?.trim() || '';
+          tag.classList.toggle('on', (profile?.skills || []).includes(name));
+        });
+        const links = (Array.isArray(profile?.portfolioItems) ? profile.portfolioItems : [])
+          .filter((item) => item && item.type === 'LINK' && typeof item.url === 'string')
+          .map((item) => item.url);
+        const linkInputs = [...document.querySelectorAll('input[type="url"]')];
+        linkInputs.forEach((input, index) => { input.value = links[index] || ''; });
+
+        const host = document.createElement('section');
+        host.className = 'card';
+        host.id = 'live-portfolio';
+        host.style.marginBottom = '16px';
+        const status = profile?.portfolioSummaryStatus || '없음';
+        host.innerHTML = `<h2 class="ct">포트폴리오 요약</h2>
+          <p class="sec">상태 ${escapeHtml(status)}${profile?.portfolioSummary ? ` · ${escapeHtml(profile.portfolioSummary.slice(0, 120))}` : ''}</p>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+            <button type="button" class="btn sm gh" id="portfolio-regenerate">요약 다시 만들기</button>
+            ${status === 'DRAFT' ? '<button type="button" class="btn sm tint" id="portfolio-publish">요약 공개</button>' : ''}
+            ${status === 'PUBLISHED' ? '<button type="button" class="btn sm gh" id="portfolio-hide">요약 숨김</button>' : ''}
+          </div>`;
+        const anchor = document.querySelector('main .wrap')?.firstElementChild;
+        if (anchor) anchor.parentElement?.insertBefore(host, anchor.nextSibling);
+        else document.querySelector('main')?.prepend(host);
+
+        const save = $('#profile-save');
+        save?.addEventListener('click', async (event) => {
+          event.preventDefault();
+          clearError();
+          const displayName = String($('#s-name')?.value || '').trim();
+          if (!displayName) {
+            showError(save, '이름을 입력해 주세요.');
+            return;
+          }
+          const career = Number($('#s-career')?.value);
+          const skills = [...document.querySelectorAll('.tag.on')].map((tag) => tag.textContent?.trim()).filter(Boolean);
+          const portfolioItems = linkInputs
+            .map((input) => input.value.trim())
+            .filter(Boolean)
+            .map((url) => ({ type: 'LINK', url }));
+          busy(save, true, '저장하는 중…');
+          try {
+            await MJ.updateSupplierProfile({
+              name: displayName,
+              displayName,
+              bio: String($('#s-bio')?.value || '').trim() || null,
+              industryCodes: String($('#s-ind')?.value || '').includes('예약') ? ['RESTAURANT_RESERVATION'] : ['GENERAL'],
+              skills,
+              ...(Number.isInteger(career) ? { careerYears: career } : {}),
+              portfolioItems,
+            });
+            location.reload();
+          } catch (error) {
+            busy(save, false);
+            showError(save, error.message);
+          }
+        });
+
+        const regenerate = host.querySelector('#portfolio-regenerate');
+        regenerate?.addEventListener('click', async (event) => {
+          event.preventDefault();
+          busy(regenerate, true, '만드는 중…');
+          try {
+            await MJ.request('/me/portfolio-summary/regenerate', { method: 'POST', body: {} });
+            location.reload();
+          } catch (error) {
+            busy(regenerate, false);
+            showError(regenerate, error.message);
+          }
+        });
+        host.querySelector('#portfolio-publish')?.addEventListener('click', async (event) => {
+          event.preventDefault();
+          try { await MJ.request('/me/portfolio-summary/publish', { method: 'POST', body: {} }); location.reload(); }
+          catch (error) { showError(event.currentTarget, error.message); }
+        });
+        host.querySelector('#portfolio-hide')?.addEventListener('click', async (event) => {
+          event.preventDefault();
+          try { await MJ.request('/me/portfolio-summary/hide', { method: 'POST', body: {} }); location.reload(); }
+          catch (error) { showError(event.currentTarget, error.message); }
+        });
+      } catch (error) {
+        showError(document.body, error.message);
+      }
+    })();
+    return;
+  }
+
+  if (screen === 'PublicSupplier') {
+    const supplierId = new URLSearchParams(location.search).get('supplierId');
+    if (!supplierId) return;
+
+    void (async () => {
+      try {
+        const [profile, reviews] = await Promise.all([
+          MJ.request(`/profiles/suppliers/${encodeURIComponent(supplierId)}`),
+          MJ.request(`/profiles/suppliers/${encodeURIComponent(supplierId)}/reviews`).catch(() => []),
+        ]);
+        const main = document.querySelector('main.pp') || document.querySelector('main');
+        if (!main) return;
+        const links = (profile.portfolioItems || []).filter((item) => item.type === 'LINK');
+        const reviewList = Array.isArray(reviews) ? reviews : [];
+        main.innerHTML = `<div class="wrap">
+          <section class="card" style="margin:24px 0">
+            <h1 class="t">${escapeHtml(profile.displayName || profile.name || '공급자')}</h1>
+            <p class="sub">${profile.careerYears != null ? `경력 ${profile.careerYears}년 · ` : ''}${profile.ratingAvg != null ? `★ ${profile.ratingAvg} · 리뷰 ${profile.reviewCount}건` : '리뷰 없음'}</p>
+            <p class="sec">${escapeHtml(profile.bio || '')}</p>
+            <p class="sec">업종 ${escapeHtml((profile.industryCodes || []).join(', ') || '미정')} · 기술 ${escapeHtml((profile.skills || []).join(', ') || '미정')}</p>
+          </section>
+          <section class="card" style="margin:24px 0">
+            <h2 class="ct">포트폴리오</h2>
+            ${profile.portfolioSummary ? `<p class="sec">${escapeHtml(profile.portfolioSummary)}</p>` : '<p class="sec">요약이 아직 없습니다.</p>'}
+            ${links.length ? `<ul>${links.map((item) => `<li><a class="ft" href="${escapeHtml(item.url)}" target="_blank" rel="noreferrer">${escapeHtml(item.title || item.url)}</a></li>`).join('')}</ul>` : '<p class="sec">등록된 링크가 없습니다.</p>'}
+          </section>
+          <section class="card" style="margin:24px 0">
+            <h2 class="ct">받은 리뷰 ${reviewList.length}건</h2>
+            ${reviewList.length === 0 ? '<p class="sec">아직 리뷰가 없습니다.</p>' : reviewList.map((review) => `<div class="rcard" style="margin:12px 0"><div class="st2">${'★'.repeat(Number(review.rating))}${'☆'.repeat(5 - Number(review.rating))} <em>${Number(review.rating)}점</em></div><p class="tx2">${escapeHtml(review.comment || '')}</p><div class="tg3">${(review.tags || []).map((tag) => `<span>${escapeHtml(tag)}</span>`).join('')}</div></div>`).join('')}
+          </section>
+        </div>`;
+      } catch (error) {
+        showError(document.body, error.message);
+      }
+    })();
+    return;
+  }
+
   if (screen === 'Contracts-Client' || screen === 'Contracts-Supplier') {
     if (!MJ.requireLogin(location.pathname + location.search)) return;
     const isClient = screen === 'Contracts-Client';
