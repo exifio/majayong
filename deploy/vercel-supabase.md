@@ -44,6 +44,7 @@ Browser
 ```
 
 - `api/v1/[...path].js`가 `/api/v1/*`를 Express 앱으로 전달한다.
+- Vercel 파일 라우터는 `[...path]`를 단일 세그먼트로만 매칭하므로 `vercel.json`의 `/api/v1/:path*` rewrite가 원래 경로를 `?path=`로 넘기고 핸들러가 복원한다. 이 rewrite를 제거하면 `/api/v1/auth/login` 같은 다중 세그먼트가 404가 된다.
 - `api/health.js`는 `/health`를 200 `{data:{status:"ok"}}`로 응답한다.
 - `src/index.ts`는 로컬 listen/스케줄러 전용이고, Vercel handler는 `app.listen`을 호출하지 않는다.
 - PrismaClient는 `src/server-app.ts` module scope에서 한 번 생성한다.
@@ -51,9 +52,10 @@ Browser
 ## 3. Supabase PostgreSQL
 
 - Supabase 프로젝트의 **Postgres 연결 문자열**을 사용한다.
-- 런타임 `DATABASE_URL`: **Transaction Pooler**(6543) + `?pgbouncer=true&connection_limit=1&sslmode=require`
+- 런타임 `DATABASE_URL`: **Session Pooler**(5432) + `?connection_limit=1&sslmode=require`
+  - Prisma interactive transaction(`$transaction`)이 Transaction Pooler(6543)에서 `P2028 Transaction not found`로 실패하는 것을 스테이징에서 확인했다. 초안 생성처럼 여러 쓰기를 한 트랜잭션으로 묶는 경로가 있으므로 런타임도 Session Pooler를 쓴다.
 - 마이그레이션 `MIGRATION_DATABASE_URL`: **Direct connection**(5432) 우선. Direct가 IPv6/네트워크 문제로 불가하면 공식 문서에 따라 **Session Pooler**(5432, shared pooler)를 사용한다.
-- Session Pooler는 prepared statement와 session state를 지원하므로 migration/pg_dump에 사용할 수 있다. **Transaction Pooler(6543)는 migration에 사용하지 않는다.**
+- Session Pooler는 prepared statement와 session state를 지원하므로 migration/pg_dump/런타임 interactive transaction에 사용할 수 있다. **Transaction Pooler(6543)는 migration과 interactive transaction에 사용하지 않는다.**
 - Prisma 6은 PgBouncer transaction mode에서 prepared statement를 쓰지 않도록 `pgbouncer=true`를 사용한다. SSL은 `sslmode=require`를 사용한다.
 - Pooler host/username은 Supabase Dashboard의 **Connect**에서 복사한다. `aws-[INDEX]-[REGION].pooler.supabase.com`의 index/region은 임의로 조합하지 않는다.
 - Data API/anon key로 테이블을 공개하지 않는다. RLS/스키마 노출 설정을 확인한다.
